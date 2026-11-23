@@ -72,6 +72,8 @@ func costruisci(d: MappaDati, esag: float = 1.5) -> void:
 	materiale.set_shader_parameter("acque", ImageTexture.create_from_image(img_acque))
 	materiale.set_shader_parameter("esagerazione", esag)
 	materiale.set_shader_parameter("suolo", load("res://asset/texture/erba.png"))
+	materiale.set_shader_parameter("suolo_secco", load("res://asset/texture/erba_secca.png"))
+	materiale.set_shader_parameter("macchie", load("res://asset/texture/macchie.png"))
 	material_override = materiale
 
 

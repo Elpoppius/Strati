@@ -5,7 +5,7 @@ extends Node3D
 
 const INCLINAZIONE := -30.0
 const DISTANZA := 20000.0
-const DIM_MIN := 120.0
+const DIM_MIN := 40.0
 const DIM_MAX := 12000.0
 
 var camera: Camera3D
@@ -97,3 +97,8 @@ func aggiorna() -> void:
 		var b := Basis.from_euler(Vector3(deg_to_rad(INCLINAZIONE), deg_to_rad(yaw), 0.0))
 		camera.transform = Transform3D(b, b.z * DISTANZA)
 		camera.size = dimensione
+		# Piani di taglio stretti attorno al terreno visibile: le ombre coprono solo quella fetta
+		# e restano nitide anche da vicino (la camera sta lontanissima, la profondità utile è poca).
+		var margine := dimensione + 80.0 + clampf(dimensione * 0.3, 0.0, 900.0)
+		camera.near = maxf(10.0, DISTANZA - margine)
+		camera.far = DISTANZA + margine

@@ -3,7 +3,8 @@
 Uso:  blender-py strumenti/blender/prova_stile_verosimile.py gioco/asset/prove_stile tavola.png [vicino|gioco]
 
 Rispetto al primo lotto: texture procedurali (paglia, argilla, legno, corteccia, foglie),
-tetti spessi e irregolari, pali a vista, alberi con tronco, rami e chiome di foglie.
+tetti spessi e irregolari, pali a vista. Alberi (terza versione): chioma a lobi fatta di carte
+con foglie singole, normali sferiche per la luce sul volume, cinque specie compresi gli arbusti.
 Le texture si generano prima con strumenti/blender/texture_procedurali.py.
 """
 import math
@@ -24,10 +25,12 @@ TILE = 2.5  # metri coperti da una ripetizione della texture
 
 
 # ---------- materiali ----------
-def materiale(nome, immagine, ruvidezza=0.9, ritaglio=False, tinta=None):
+def materiale(nome, immagine, ruvidezza=0.9, ritaglio=False, tinta=None, due_facce=True):
     if nome in bpy.data.materials:
         return bpy.data.materials[nome]
     m = bpy.data.materials.new(nome)
+    # Le carte di foglie hanno già fronte e retro come facce distinte: niente doppia faccia nel materiale.
+    m.use_backface_culling = not due_facce
     m.use_nodes = True
     nt = m.node_tree
     bsdf = nt.nodes["Principled BSDF"]
@@ -203,9 +206,8 @@ def M():
         "argilla": materiale("argilla", "argilla"),
         "legno": materiale("legno", "legno"),
         "corteccia": materiale("corteccia", "corteccia"),
-        "foglie": materiale("foglie", "foglie", ruvidezza=0.8, ritaglio=True),
-        "foglie_chiare": materiale("foglie_chiare", "foglie_chiare", ruvidezza=0.8, ritaglio=True),
-        "foglie_scure": materiale("foglie_scure", "foglie_scure", ruvidezza=0.8, ritaglio=True),
+        **{f: materiale(f, f, ruvidezza=0.8, ritaglio=True, due_facce=False) for f in
+           ("foglie_quercia", "foglie_carpino", "foglie_pioppo", "foglie_nocciolo", "foglie_autunno")},
         "vano": materiale("vano", "legno", tinta=(0.15, 0.12, 0.1)),
     }
 
@@ -253,68 +255,142 @@ def granaio(nome, seme):
     return unisci(nome, parti)
 
 
-def carta_foglie(centro, dim, rnd, mat):
-    """Tre carte incrociate con la texture delle foglie."""
+# ---------- alberi ----------
+# Parametri per specie (misure in frazioni dell'altezza): tronco visibile, raggi della chioma,
+# numero e grandezza dei lobi, texture delle foglie.
+SPECIE = {
+    "quercia":   dict(tronco=0.32, r_tronco=0.034, rx=0.42, rz=0.32, lobi=(6, 8), lobo=0.42, foglie="foglie_quercia"),
+    "carpino":   dict(tronco=0.30, r_tronco=0.028, rx=0.32, rz=0.36, lobi=(5, 6), lobo=0.5, foglie="foglie_carpino"),
+    "pioppo":    dict(tronco=0.18, r_tronco=0.028, rx=0.16, rz=0.42, lobi=(7, 8), lobo=0.85, foglie="foglie_pioppo"),
+    "acero":     dict(tronco=0.30, r_tronco=0.03, rx=0.36, rz=0.33, lobi=(5, 7), lobo=0.45, foglie="foglie_autunno"),
+    "cespuglio": dict(tronco=0.0, r_tronco=0.0, rx=0.6, rz=0.45, lobi=(4, 5), lobo=0.55, foglie="foglie_nocciolo"),
+}
+
+
+def punto_sfera(rnd, z_min=-1.0):
+    while True:
+        d = Vector((rnd.uniform(-1, 1), rnd.uniform(-1, 1), rnd.uniform(-1, 1)))
+        if 0.05 < d.length <= 1.0 and d.normalized().z >= z_min:
+            return d.normalized()
+
+
+def chioma(nome, lobi, centro, rx, rz, rnd, mat):
+    """Fogliame fatto di carte rivolte verso l'esterno dei lobi, ognuna in due facce (fronte e retro).
+
+    Le normali non sono quelle delle carte ma quelle di una sfera attorno alla chioma:
+    la luce scorre sul volume intero, chiara in alto e verso il sole, scura sotto.
+    """
     bm = bmesh.new()
     uvl = bm.loops.layers.uv.new("UVMap")
-    for k in range(3):
-        a = k * math.pi / 3 + rnd.uniform(0, 0.5)
-        incl = rnd.uniform(-1.0, 1.0)
-        d = Vector((math.cos(a), math.sin(a), 0)) * dim / 2
-        su = Vector((0, 0, 1)) * dim / 2
-        su = Matrix.Rotation(incl, 3, d.normalized()) @ su
-        c = Vector(centro)
-        vs = [bm.verts.new(c - d - su), bm.verts.new(c + d - su), bm.verts.new(c + d + su), bm.verts.new(c - d + su)]
-        f = bm.faces.new(vs)
-        for loop, uv in zip(f.loops, [(0, 0), (1, 0), (1, 1), (0, 1)]):
-            loop[uvl].uv = uv
-    me = bpy.data.meshes.new("chioma")
+    normali = []
+
+    def normale_volume(p, lobo_c):
+        q = p - centro
+        n_chioma = Vector((q.x / rx, q.y / rx, q.z / rz)).normalized()
+        n_lobo = (p - lobo_c).normalized()
+        return (n_chioma * 0.65 + n_lobo * 0.35 + Vector((0, 0, 0.12))).normalized()
+
+    def carta(p, verso, dim, lobo_c):
+        verso = (verso + Vector((rnd.uniform(-1, 1), rnd.uniform(-1, 1), rnd.uniform(-1, 1))) * 0.28).normalized()
+        a = verso.orthogonal().normalized()
+        a = Matrix.Rotation(rnd.uniform(0, 2 * math.pi), 3, verso) @ a
+        b = verso.cross(a)
+        h = dim / 2
+        angoli = [p - a * h - b * h, p + a * h - b * h, p + a * h + b * h, p - a * h + b * h]
+        uv = [(0, 0), (1, 0), (1, 1), (0, 1)]
+        for ordine in ((0, 1, 2, 3), (3, 2, 1, 0)):
+            vs = [bm.verts.new(angoli[i]) for i in ordine]
+            for v in vs:
+                normali.append(normale_volume(v.co.copy(), lobo_c))
+            f = bm.faces.new(vs)
+            for loop, i in zip(f.loops, ordine):
+                loop[uvl].uv = uv[i]
+
+    for lobo_c, r_l in lobi:
+        dim_media = max(r_l * 1.3, 1.2)
+        area = 4 * math.pi * r_l * r_l
+        n = int(min(70, max(12, area / (dim_media * dim_media * 0.33))))
+        for _ in range(n):
+            d = punto_sfera(rnd, -0.75)
+            p = lobo_c + d * r_l * rnd.uniform(0.6, 1.0)
+            carta(p, d, dim_media * rnd.uniform(0.85, 1.2), lobo_c)
+        # Riempimento interno: chiude i buchi tra una carta e l'altra (l'occlusione lo scurisce).
+        for _ in range(max(3, n // 8)):
+            d = punto_sfera(rnd)
+            carta(lobo_c + d * r_l * rnd.uniform(0.0, 0.4), d, dim_media * 1.2, lobo_c)
+    me = bpy.data.meshes.new(nome)
     bm.to_mesh(me)
     bm.free()
-    ob = bpy.data.objects.new("chioma", me)
+    me.normals_split_custom_set_from_vertices(normali)
+    ob = bpy.data.objects.new(nome, me)
     return collega(ob, mat)
 
 
-def quercia(nome, seme, alta=12.0):
-    """Quercia: tronco, rami principali e una chioma tondeggiante fatta di carte di foglie."""
+def albero(nome, seme, alta, specie):
+    """Albero o arbusto: tronco, rami verso i lobi della chioma, fogliame a carte."""
     m = M()
+    s = SPECIE[specie]
     rnd = random.Random(seme)
     parti = []
-    h_tronco = alta * 0.3
-    base_r = alta * 0.04
-    parti.append(cilindro_tra("tronco", (0, 0, -0.2), (0, 0, h_tronco), base_r, base_r * 0.75, m["corteccia"], lati=9))
-    # Chioma: ellissoide largo e un po' schiacciato, come nelle querce isolate.
-    rx, rz = alta * rnd.uniform(0.38, 0.45), alta * rnd.uniform(0.3, 0.35)
-    centro = Vector((rnd.uniform(-0.5, 0.5), rnd.uniform(-0.5, 0.5), alta - rz))
-    n_rami = rnd.randint(4, 6)
-    for k in range(n_rami):
-        a = 2 * math.pi * k / n_rami + rnd.uniform(-0.3, 0.3)
-        meta = centro + Vector((math.cos(a) * rx * 0.6, math.sin(a) * rx * 0.6, rnd.uniform(-0.3, 0.2) * rz))
-        p0 = Vector((0, 0, h_tronco * rnd.uniform(0.85, 1.0)))
-        parti.append(cilindro_tra("ramo", p0, meta, base_r * 0.55, base_r * 0.25, m["corteccia"], lati=6))
-    n_carte = int(60 + alta * 2.5)
-    for _ in range(n_carte):
-        while True:
-            d = Vector((rnd.uniform(-1, 1), rnd.uniform(-1, 1), rnd.uniform(-1, 1)))
-            if d.length <= 1.0:
-                break
-        r = d.length ** 0.35  # più carte verso la superficie della chioma
-        d = d.normalized() * r if d.length > 0 else d
-        p = centro + Vector((d.x * rx, d.y * rx, d.z * rz))
-        dim = alta * rnd.uniform(0.17, 0.25)
-        # Sopra foglie illuminate, sotto e dentro foglie in ombra: volume "dipinto".
-        mat = m["foglie_chiare"] if d.z > 0.15 and r > 0.7 else (m["foglie_scure"] if d.z < -0.2 or r < 0.55 else m["foglie"])
-        parti.append(carta_foglie(p, dim, rnd, mat))
-    return unisci(nome, parti)
+    rx = alta * s["rx"] * rnd.uniform(0.9, 1.1)
+    rz = alta * s["rz"] * rnd.uniform(0.92, 1.08)
+    centro = Vector((rnd.uniform(-0.3, 0.3), rnd.uniform(-0.3, 0.3), alta - rz))
+    # Lobi: sfere minori sul guscio della chioma, più una in cima; danno il contorno a nuvola.
+    lobi = []
+    n_lobi = rnd.randint(*s["lobi"])
+    r_base = min(rx, rz) * s["lobo"] if specie != "pioppo" else rx * s["lobo"]
+    for k in range(n_lobi):
+        if specie == "pioppo":
+            # Colonnare: lobi impilati lungo il fusto.
+            t = k / (n_lobi - 1)
+            off = Vector((rnd.uniform(-0.25, 0.25) * rx, rnd.uniform(-0.25, 0.25) * rx, (t * 2 - 1) * rz * 0.75))
+            r_l = r_base * (1.05 - 0.45 * abs(t - 0.4))
+        else:
+            a = 2 * math.pi * k / n_lobi + rnd.uniform(-0.3, 0.3)
+            el = rnd.uniform(-0.35, 0.45)
+            off = Vector((math.cos(a) * math.cos(el) * rx * 0.55, math.sin(a) * math.cos(el) * rx * 0.55, math.sin(el) * rz * 0.55))
+            r_l = r_base * rnd.uniform(0.85, 1.12)
+        lobi.append((centro + off, r_l))
+    if specie != "pioppo":
+        lobi.append((centro + Vector((0, 0, rz * 0.4)), r_base * 1.05))
+    # Tronco e rami.
+    if s["tronco"] > 0:
+        r_t = alta * s["r_tronco"]
+        h_t = alta * s["tronco"]
+        cima = alta * 0.85 if specie == "pioppo" else centro.z
+        parti.append(cilindro_tra("tronco", (0, 0, -0.25), (centro.x * 0.5, centro.y * 0.5, cima), r_t, r_t * 0.35, m["corteccia"], lati=9))
+        for lobo_c, r_l in lobi:
+            if lobo_c.z < h_t:
+                continue
+            p0 = Vector((centro.x * 0.3, centro.y * 0.3, rnd.uniform(h_t * 0.9, min(lobo_c.z, centro.z) * 0.95)))
+            p1 = p0.lerp(lobo_c, 0.85)
+            parti.append(cilindro_tra("ramo", p0, p1, r_t * 0.45, r_t * 0.15, m["corteccia"], lati=6))
+    else:
+        # Arbusto: alcuni fusti sottili dal suolo.
+        for k in range(5):
+            a = rnd.uniform(0, 2 * math.pi)
+            p1 = centro + Vector((math.cos(a) * rx * 0.4, math.sin(a) * rx * 0.4, rnd.uniform(-0.2, 0.3) * rz))
+            parti.append(cilindro_tra("fusto", (0, 0, -0.1), p1, 0.05, 0.025, m["corteccia"], lati=5))
+    parti.append(chioma("chioma", lobi, centro, rx, rz, rnd, m[s["foglie"]]))
+    ob = unisci(nome, parti)
+    # Servono a calcolare l'ombra interna della chioma (vedi occlusione_chioma).
+    ob["chioma"] = (centro.x, centro.y, centro.z, rx, rz)
+    return ob
 
 
 ASSET = [
     ("casa_lunga_media", lambda n: casa_lunga(n, 12.0, 6.0, 1), (-9, -2)),
     ("capanna_tonda", lambda n: capanna_tonda(n, 3.0, 2), (9, -7)),
     ("granaio_su_pali", lambda n: granaio(n, 3), (5, 3)),
-    ("quercia_1", lambda n: quercia(n, 1, 12.0), (-4, 12)),
-    ("quercia_2", lambda n: quercia(n, 2, 15.0), (14, 9)),
+    ("quercia_1", lambda n: albero(n, 1, 12.0, "quercia"), (-6, 13)),
+    ("quercia_2", lambda n: albero(n, 2, 15.0, "quercia"), (14, 11)),
+    ("carpino_1", lambda n: albero(n, 3, 10.0, "carpino"), (-16, 6)),
+    ("pioppo_1", lambda n: albero(n, 4, 16.0, "pioppo"), (24, -2)),
+    ("acero_autunno", lambda n: albero(n, 5, 11.0, "acero"), (3, 18)),
+    ("cespuglio_1", lambda n: albero(n, 6, 2.6, "cespuglio"), (-2, 4)),
+    ("cespuglio_2", lambda n: albero(n, 7, 3.4, "cespuglio"), (-14, -9)),
 ]
+ALBERI = ("quercia", "carpino", "pioppo", "acero", "cespuglio")
 
 
 def cuoci_occlusione(ob, minimo=0.45):
@@ -335,6 +411,26 @@ def cuoci_occlusione(ob, minimo=0.45):
         v = c.color
         k = minimo + (1 - minimo) * v[0]
         c.color = (k, k, k, 1.0)
+
+
+def occlusione_chioma(ob, minimo=0.42):
+    """Ombra interna delle chiome, calcolata e non cotta: con le carte così fitte la cottura
+    darebbe nero ovunque. Scuro al centro e sotto, pieno sul guscio e in cima."""
+    cx, cy, cz, rx, rz = ob["chioma"]
+    me = ob.data
+    attr = me.color_attributes["Occlusione"]
+    for poly in me.polygons:
+        if not me.materials[poly.material_index].name.startswith("foglie"):
+            continue
+        for li in poly.loop_indices:
+            p = me.vertices[me.loops[li].vertex_index].co
+            q = Vector(((p.x - cx) / rx, (p.y - cy) / rx, (p.z - cz) / rz))
+            r = q.length
+            guscio = min(max((r - 0.3) / 0.75, 0.0), 1.0)
+            guscio = guscio * guscio * (3 - 2 * guscio)
+            alto = 0.72 + 0.28 * min(max(q.z * 0.6 + 0.5, 0.0), 1.0)
+            k = minimo + (1 - minimo) * guscio * alto
+            attr.data[li].color = (k, k, k, 1.0)
 
 
 def esporta(ob, percorso):
@@ -376,13 +472,18 @@ def main():
     oggetti = []
     for nome, fabbrica, pos in ASSET:
         ob = fabbrica(nome)
-        cuoci_occlusione(ob, 0.72 if nome.startswith("quercia") else 0.45)
+        cuoci_occlusione(ob, 0.5 if nome.startswith(ALBERI) else 0.45)
+        if "chioma" in ob:
+            occlusione_chioma(ob)
         esporta(ob, os.path.join(USCITA, nome + ".glb"))
         d = ob.dimensions
         print(f"{nome}: {d.x:.1f} x {d.y:.1f} x {d.z:.1f} m, {len(ob.data.polygons)} facce")
         ob.location = (pos[0], pos[1], 0)
+        ob.hide_render = True  # non deve ombreggiare gli asset cotti dopo
         oggetti.append(ob)
     bpy.data.objects.remove(suolo_ao, do_unlink=True)
+    for ob in oggetti:
+        ob.hide_render = False
     mostra_occlusione_nei_materiali()
     # Suolo d'erba.
     bpy.ops.mesh.primitive_plane_add(size=1, location=(2, 2, 0))
@@ -394,7 +495,7 @@ def main():
     scn = bpy.context.scene
     cam_d = bpy.data.cameras.new("Cam")
     cam_d.type = "ORTHO"
-    cam_d.ortho_scale = 48 if INQUADRATURA == "vicino" else 160
+    cam_d.ortho_scale = 56 if INQUADRATURA == "vicino" else 160
     cam = bpy.data.objects.new("Cam", cam_d)
     scn.collection.objects.link(cam)
     pitch, yaw, dist = math.radians(30), math.radians(45), 150

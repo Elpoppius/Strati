@@ -9,6 +9,10 @@ uniform sampler2D acque : filter_linear, repeat_disable;
 uniform int modo = 0;
 // Texture del suolo, ripetuta ogni lato_suolo metri; realismo 0 = colori da plastico, 1 = suolo verosimile.
 uniform sampler2D suolo : source_color, filter_linear_mipmap, repeat_enable;
+// Erba secca delle chiazze incolte e maschera a bassa frequenza che le distribuisce.
+uniform sampler2D suolo_secco : source_color, filter_linear_mipmap, repeat_enable;
+uniform sampler2D macchie : filter_linear_mipmap, repeat_enable;
+uniform float soglia_secco = 0.65;
 uniform float lato_suolo = 9.0;
 uniform float realismo = 1.0;
 uniform float esagerazione = 1.5;
@@ -29,13 +33,24 @@ void vertex() {
 void fragment() {
 	// I colori dei vertici sono in sRGB: si convertono in lineare per l'illuminazione.
 	vec3 base = pow(COLOR.rgb, vec3(2.2));
-	// Suolo verosimile: la texture dell'erba, tinta dal colore della zona (più secca in collina, più verde in pianura).
-	vec3 tex_suolo = texture(suolo, pos_mondo.xz / lato_suolo).rgb;
-	vec3 tex_largo = texture(suolo, pos_mondo.xz / (lato_suolo * 7.3)).rgb;
+	// Suolo verosimile: erba fine, con una seconda lettura ruotata e una maschera lenta
+	// che spezzano la ripetizione; chiazze di erba secca; tinta della zona (più secca in collina).
+	vec2 uv = pos_mondo.xz / lato_suolo;
+	mat2 ruota = mat2(vec2(0.8, 0.6), vec2(-0.6, 0.8));
+	float m_vicina = texture(macchie, ruota * pos_mondo.xz / 71.0).r;
+	float m_lontana = texture(macchie, pos_mondo.xz / 233.0 + vec2(0.37, 0.11)).r;
+	// Scala del chilometro: alterna zone più secche e più verdi, così da lontano non si vede la ripetizione.
+	float m_grande = texture(macchie, ruota * pos_mondo.xz / 1370.0 + vec2(0.61, 0.23)).r;
+	vec3 erba = mix(texture(suolo, uv).rgb, texture(suolo, ruota * uv * 0.83 + vec2(0.31, 0.57)).rgb, smoothstep(0.38, 0.62, m_vicina));
+	vec3 secca = texture(suolo_secco, ruota * uv * 1.07).rgb;
 	float lum = max(dot(base, vec3(0.333)), 1e-3);
 	vec3 tinta = base / lum;
-	vec3 verosimile = tex_suolo * mix(vec3(1.0), tex_largo / max(dot(tex_largo, vec3(0.333)), 1e-3), 0.35) * mix(vec3(1.0), tinta, 0.3) * 0.78;
-	verosimile = mix(vec3(dot(verosimile, vec3(0.299, 0.587, 0.114))), verosimile, 0.72);
+	// Dove la zona è già gialla (colline asciutte) le chiazze secche si allargano.
+	float aridita = clamp((tinta.r - tinta.g) * 0.8, 0.0, 0.05);
+	float quanto_secco = smoothstep(soglia_secco - 0.035, soglia_secco + 0.04, m_lontana * 0.6 + m_vicina * 0.4 + (m_grande - 0.5) * 0.4 + aridita);
+	vec3 verosimile = mix(erba, secca, quanto_secco) * (0.86 + 0.28 * m_lontana);
+	verosimile *= mix(vec3(1.0), tinta, 0.25) * 0.74;
+	verosimile = mix(vec3(dot(verosimile, vec3(0.299, 0.587, 0.114))), verosimile, 0.8);
 	base = mix(base, verosimile, realismo * COLOR.a);
 	vec4 t = texture(tematici, UV);
 	vec3 col = base;

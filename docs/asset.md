@@ -26,12 +26,26 @@
 - **Terreno coerente:** nel gioco il suolo usa una texture d'erba, tinta dalla zona; boschi, paludi, gessi e colline restano riconoscibili. Il vecchio aspetto si ottiene con il parametro `realismo = 0` dello shader del terreno.
 - Immagini: `docs/immagini/prova-stile-verosimile-blender.png` (anteprima di Blender) e `docs/immagini/prova-stile-verosimile-gioco.png` (come appare davvero in Godot, renderer Compatibilità).
 
+**Parere di Fede sulla seconda versione (23/11/2026):** "un ottimo passo avanti", direzione giusta. Da sistemare: il prato è grossolano; il livello di dettaglio va verificato con uno zoom molto più vicino, come in AoE IV, dove da vicino gli alberi restano verosimili; la texture delle foglie va bene, vanno curati forma e riempimento delle chiome. Reference inviate: boschetti di AoE IV (chiome piene e tondeggianti fatte di molte foglie distinte, specie e colori diversi tra verde, verde acqua, verde chiaro e autunnali, tronchi e rami visibili, sottobosco di erba secca rossiccia) e una foresta realistica vista dall'alto.
+
+**Terza versione (proposta di Claude, da valutare con Fede):**
+- **Zoom più vicino:** la vista minima scende da 120 a 40 m (`DIM_MIN` in `camera_isometrica.gd`). Prove fatte a 35, 70 e 160 m.
+- **Foglie singole e leggibili:** ogni texture è un ciuffo di 40–60 foglie a mandorla su rametti, con bordo scuro, metà in luce e nervatura. Le foglie sono volutamente grandi (circa 1/20 della chioma), come nelle reference. Una texture per specie.
+- **Chiome a lobi:** ogni chioma è fatta di 5–8 sfere minori ("lobi") che danno il contorno a nuvola; su ogni lobo, carte rivolte verso l'esterno, più alcune carte interne che chiudono i buchi.
+- **Luce sul volume:** le carte hanno normali sferiche (rivolte dal centro della chioma), quindi la luce scorre sulla chioma intera: chiara in alto e verso il sole, scura sotto. Ogni carta ha fronte e retro come facce distinte, così il retro non si illumina al contrario.
+- **Ombra interna calcolata:** per le chiome l'occlusione non si cuoce (con le carte così fitte verrebbe nera ovunque) ma si calcola dalla profondità nella chioma: scuro al centro e sotto, pieno sul guscio e in cima.
+- **Cinque specie:** quercia (larga, verde oliva), carpino (tondo, verde freddo), pioppo (colonnare, verde chiaro), acero in autunno (giallo e arancio), arbusto di nocciolo (senza tronco, con fusti dal suolo). L'acero autunnale serve a provare la varietà di colore: le stagioni nel gioco non sono ancora decise.
+- **Prato:** texture fatta di migliaia di fili sottili invece che di macchie; una seconda lettura ruotata della stessa texture e tre maschere a scale diverse (circa 70 m, 230 m, 1,4 km) spezzano la ripetizione; chiazze di erba secca rossiccia, più frequenti dove la zona è già asciutta.
+- **Ombre:** la camera ora taglia la scena attorno al terreno visibile e il sole usa una sola mappa d'ombra su quella fetta, per ombre nitide da vicino. **Da verificare sui PC di Fede:** nell'ambiente di Claude (rendering software) le ombre non compaiono nemmeno in una scena di prova minima, quindi le immagini qui sotto sono senza ombre.
+- Immagini: `docs/immagini/prova-stile-v3-vicino.jpg` (vista di 35 m), `-medio.jpg` (70 m), `-territorio.jpg` (1500 m), `-foglie.jpg` (le quattro texture delle foglie).
+
 ## Regole tecniche
 - **Unità:** 1 unità = 1 metro, misure reali.
 - **Origine:** al centro della base, a quota 0. Tronchi e pali possono affondare fino a 30 cm, per non restare sospesi sui pendii.
 - **Orientamento:** lato lungo sull'asse X; ingresso verso +X.
 - **Formato:** un file `.glb` per asset, in `gioco/asset/<epoca>/`, con nome italiano in minuscolo e trattini bassi (es. `casa_lunga_media.glb`). Le texture sono incorporate nel `.glb`; le stesse immagini stanno in `gioco/asset/texture/` per lo shader del terreno.
 - **Trasparenze:** foglie e simili con ritaglio netto (alpha clip), non con trasparenza graduale, per resa e prestazioni.
+- **Alberi:** carte di foglie in due facce (fronte e retro) con materiale a faccia singola; normali sferiche impostate nello script; occlusione delle chiome calcolata (`occlusione_chioma`), quella di tronchi ed edifici cotta.
 - **Sorgente:** ogni asset nasce da uno script in `strumenti/blender/`, così si può rigenerare e modificare.
 - **Verifica:** `godot --headless --path gioco -s res://test/verifica_asset.gd` controlla che ogni asset si carichi, poggi a terra e abbia misure plausibili. `test/foto_asset.gd` mostra gli asset posati sul terreno del gioco.
 - **Licenze:** solo asset creati da noi o CC0, con la fonte annotata in questo documento.
@@ -46,13 +60,21 @@ Generati da `strumenti/blender/prova_stile_verosimile.py` in `gioco/asset/prove_
 | casa_lunga_media | 13,8 × 7,9 × 7,2 | 580 |
 | capanna_tonda | 7,5 × 7,6 × 5,6 | 272 |
 | granaio_su_pali | 3,9 × 3,8 × 5,5 | 496 |
-| quercia_1 | 12,3 × 12,3 × 13,0 | 321 |
-| quercia_2 | 15,9 × 16,6 × 16,7 | 334 |
+| quercia_1 | 9,9 × 9,2 × 12,0 | 475 |
+| quercia_2 | 13,0 × 12,6 × 15,4 | 417 |
+| carpino_1 | 6,8 × 6,8 × 10,0 | 359 |
+| pioppo_1 | 6,3 × 6,2 × 16,8 | 417 |
+| acero_autunno | 8,5 × 8,9 × 11,4 | 475 |
+| cespuglio_1 | 4,0 × 3,8 × 3,2 | 195 |
+| cespuglio_2 | 4,5 × 4,4 × 3,8 | 229 |
+
+Gli alberi sono della terza versione; le facce delle chiome contano fronte e retro delle carte.
 
 **Note storiche:** forme plausibili per l'Europa neolitica senza riferirsi a una cultura precisa. Le case lunghe a pianta rettangolare sono tipiche del Neolitico europeo; capanne tonde e ovali sono diffuse nell'area mediterranea. Il granaio su pali è una scelta di leggibilità: nel Neolitico erano comuni anche i silos scavati nel terreno.
 
 ### Da fare
-- **Da migliorare nella prova:** la texture del prato si ripete in modo visibile; le chiome, da vicino, mostrano ancora i singoli ciuffi.
+- **Da verificare nella terza versione:** ombre sui PC di Fede; carte viste di taglio che a volte si vedono come strisce ai bordi delle chiome; la casa lunga e le capanne viste a 35 m (le texture di paglia e argilla sono nate per viste più lontane).
+- **Alberi in quantità:** per i boschi servirà una versione più leggera (meno carte) da usare da lontano, e la posa di molti alberi con istanze multiple (`MultiMeshInstance3D`).
 - **Villaggio:** completare il lotto nello stile scelto (case lunghe piccola e grande, palizzata e varco, luogo sacro, canneto, rocce, arbusti, fosse-silos, focolare, recinto per animali) e varianti per evitare ripetizioni.
-- **Terreno:** texture distinte per prato, campo coltivato, bosco, palude, roccia; alberi veri al posto delle macchie scure dei boschi.
+- **Terreno:** texture distinte per campo coltivato, bosco, palude, roccia; alberi veri al posto delle macchie scure dei boschi, che da vicino mostrano ancora i gradini della griglia da 40 m.
 - **Abitato protourbano:** terrapieno e fossato modulari, villaggio arginato ispirato alle terramare dell'età del Bronzo, tipiche della pianura emiliana.

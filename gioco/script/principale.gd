@@ -11,6 +11,7 @@ const SITO_INIZIALE := 1
 var dati: MappaDati
 var terreno: Terreno
 var cam: CameraIsometrica
+var sole: DirectionalLight3D
 var modo := 0
 var griglia_attiva := true
 var lotto_corrente := Vector2i(-1, -1)
@@ -45,11 +46,13 @@ func _ready() -> void:
 
 
 func _crea_ambiente() -> void:
-	var sole := DirectionalLight3D.new()
+	sole = DirectionalLight3D.new()
 	sole.name = "Sole"
 	sole.rotation_degrees = Vector3(-50.0, 35.0, 0.0)
 	sole.light_energy = 0.95
 	sole.shadow_enabled = true
+	# Una sola mappa d'ombra sulla fetta visibile (vedi CameraIsometrica.aggiorna).
+	sole.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
 	sole.directional_shadow_max_distance = 12000.0
 	add_child(sole)
 	var amb := Environment.new()
@@ -147,6 +150,8 @@ func _process(_delta: float) -> void:
 	if griglia_attiva:
 		alfa = clampf(remap(cam.dimensione, 900.0, 400.0, 0.0, 0.45), 0.0, 0.45)
 	terreno.materiale.set_shader_parameter("alfa_griglia", alfa)
+	if sole and cam.camera:
+		sole.directional_shadow_max_distance = cam.camera.far
 
 
 func _unhandled_input(ev: InputEvent) -> void:

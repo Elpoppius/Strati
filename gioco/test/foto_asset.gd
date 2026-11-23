@@ -13,8 +13,13 @@ const DISPOSIZIONE := {
 	"casa_lunga_media": Vector3(-14, 0, 4),
 	"capanna_tonda": Vector3(6, 0, 12),
 	"granaio_su_pali": Vector3(4, 0, -2),
-	"quercia_1": Vector3(-6, 0, -20),
-	"quercia_2": Vector3(20, 0, -10),
+	"cespuglio_1": Vector3(-4, 0, 6),
+	"cespuglio_2": Vector3(-22, 0, -6),
+	"quercia_1": Vector3(-8, 0, -22),
+	"quercia_2": Vector3(14, 0, -18),
+	"carpino_1": Vector3(-20, 0, -18),
+	"pioppo_1": Vector3(30, 0, 8),
+	"acero_autunno": Vector3(2, 0, -30),
 }
 
 

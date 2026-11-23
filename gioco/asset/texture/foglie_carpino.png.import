@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://fxw05adc1jh2"
-path="res://.godot/imported/foglie_scure.png-7ce7ab79bffe5ff532b0b2b408e5d985.ctex"
+uid="uid://uttsgp7crqgw"
+path="res://.godot/imported/foglie_carpino.png-ab4fc674f488fdc1ee5c9957b2415af3.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://asset/texture/foglie_scure.png"
-dest_files=["res://.godot/imported/foglie_scure.png-7ce7ab79bffe5ff532b0b2b408e5d985.ctex"]
+source_file="res://asset/texture/foglie_carpino.png"
+dest_files=["res://.godot/imported/foglie_carpino.png-ab4fc674f488fdc1ee5c9957b2415af3.ctex"]
 
 [params]
 

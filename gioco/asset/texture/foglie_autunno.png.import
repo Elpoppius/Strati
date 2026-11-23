@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://nakns86xusl7"
-path="res://.godot/imported/foglie_chiare.png-9d3c6b77d0f60ea1d5b8f839f4bd6166.ctex"
+uid="uid://dcjpmdxqhyg2k"
+path="res://.godot/imported/foglie_autunno.png-654fa9ce04bd8d13c3300b782dc0da8f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://asset/texture/foglie_chiare.png"
-dest_files=["res://.godot/imported/foglie_chiare.png-9d3c6b77d0f60ea1d5b8f839f4bd6166.ctex"]
+source_file="res://asset/texture/foglie_autunno.png"
+dest_files=["res://.godot/imported/foglie_autunno.png-654fa9ce04bd8d13c3300b782dc0da8f.ctex"]
 
 [params]
 
