@@ -41,5 +41,6 @@ Voci più recenti in cima.
   - acqua: corrente nel verso del fiume, rapide e cascate sui torrenti, paludi con acqua bassa e canne, livelli che cambiano con le piene;
   - alberi: carte viste di taglio ai bordi delle chiome;
   - texture di paglia e argilla delle case da rivedere per lo zoom ravvicinato;
-  - poi completare il lotto del villaggio nello stile scelto.
+  - poi completare il lotto del villaggio nello stile scelto;
+  - portare in Godot il Prototipo 0 (ciclo del villaggio: fondazione, campi, case, sentieri, granaio, stagioni) sulla mappa vera, con la simulazione separata dalla grafica e verificabile senza grafica (proposta di Claude, da confermare con Fede).
 - In sospeso: recinto come primo strumento di regolazione nel Prototipo 0.
