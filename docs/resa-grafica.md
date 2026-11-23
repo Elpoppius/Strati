@@ -34,8 +34,15 @@ Codice: in fondo a `gioco/shader/terreno.gdshader`. Dati: la distanza dalla riva
 - Increspature che scorrono nel tempo: tre strati a scale e orientamenti diversi, su coordinate deformate da un rumore più ampio, più un'ondulazione lenta unica per tutta la mappa. Così non si vede un motivo ripetuto (segnalato da Fede); riflessi del cielo sulle creste e un poco di luce propria, così l'acqua non diventa scura in ombra.
 - Superficie liscia e riflettente (il terreno no).
 - Schiuma sottile lungo la riva, sponda bagnata più scura e un velo di limo.
+- **L'acqua segue i rilievi:** prende la stessa ombreggiatura del versante su cui scorre (richiesta di Fede), così un fiume in una valle non sembra incollato sopra.
 - **Sponde in rilievo** (dopo la prova di Fede, "acqua piatta"): dal campo di distanza lo shader ricava il verso della riva e inclina la normale del terreno negli ultimi metri, così la luce modella l'argine; dalla parte del sole l'argine fa ombra sull'acqua. Tre toni di profondità (bassa, media, fonda), fondale chiaro che traspare dove l'acqua è bassa, chiazze larghe di vento e cielo riflesso visibili anche da lontano.
 - Da fare: corrente nel verso del fiume, cascate e rapide sui torrenti, paludi con acqua bassa e canne, livelli che cambiano con le piene.
+
+## Paludi e gessi
+Non stanno più nei colori dei vertici, che facevano quadretti da 40 m (segnalato da Fede). `terreno.gd` passa allo shader la texture `zone_speciali` (rosso palude, verde gessi), letta in otto punti e frastagliata come i boschi.
+- **Paludi:** erba umida e scura, canneti giallastri, pozze d'acqua bassa e ferma che riflettono il cielo (disegnate con l'acqua, con un bordo di fango).
+- **Gessi:** roccia chiara grigio-calda che affiora a chiazze tra l'erba rada; da lontano le chiazze si fondono in un tono unico.
+- Da fare: canne vere (oggetti) ai margini delle pozze, livelli che cambiano con le stagioni e le piene.
 
 ## Mappe tematiche
 I dati tematici non hanno più gradini: le fasce di fertilità e di rischio di piena passano gradualmente da una all'altra (circa 160 m) e la vicinanza all'acqua si misura in linea d'aria, non più a scacchiera (attorno alle sorgenti venivano quadrati). Lo shader le legge ammorbidite. Codice: `strumenti/mappe/genera_pedecollinare.py`.

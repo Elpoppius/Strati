@@ -11,9 +11,6 @@ const TINTE := [
 	[100.0, Color8(214, 196, 150)], [200.0, Color8(196, 172, 128)], [350.0, Color8(174, 150, 112)],
 	[500.0, Color8(156, 134, 102)],
 ]
-const COLORE_PALUDE := Color8(170, 196, 186)
-## Gessi: roccia chiara grigio-calda che affiora tra l'erba rada (non più una macchia bianca piena).
-const COLORE_GESSI := Color8(204, 199, 184)
 
 var dati: MappaDati
 var esagerazione := 1.5
@@ -82,6 +79,7 @@ func costruisci(d: MappaDati, esag: float = 1.5) -> void:
 	materiale.set_shader_parameter("rumore_bosco", _rumore_mappa(1849, 1.0 / 6.0))
 	var img_coperture := Image.create_from_data(d.lato, d.lato, false, Image.FORMAT_L8, d.copertura)
 	materiale.set_shader_parameter("coperture", ImageTexture.create_from_image(img_coperture))
+	materiale.set_shader_parameter("zone_speciali", _texture_zone_speciali())
 	materiale.set_shader_parameter("chioma_a", load("res://asset/texture/foglie_quercia.png"))
 	materiale.set_shader_parameter("chioma_b", load("res://asset/texture/foglie_carpino.png"))
 	material_override = materiale
@@ -90,10 +88,8 @@ func costruisci(d: MappaDati, esag: float = 1.5) -> void:
 func _colore(i: int) -> Color:
 	var t := dati.tipo[i]
 	# Il canale alfa dice allo shader quanto usare la texture d'erba (1) o il colore della zona (0).
-	if t == MappaDati.PALUDE:
-		return Color(COLORE_PALUDE, 0.3)
-	if t == MappaDati.GESSI:
-		return Color(COLORE_GESSI, 0.45)
+	# Paludi e gessi non stanno più nei colori dei vertici (facevano quadretti da 40 m):
+	# li disegna lo shader dalla texture delle zone speciali, con bordi irregolari.
 	var q := dati.altezze[i]
 	var c: Color = TINTE[-1][1]
 	for j in TINTE.size() - 1:
@@ -118,6 +114,17 @@ func _rumore_mappa(seme: int, frequenza: float) -> ImageTexture:
 	r.fractal_octaves = 6
 	r.frequency = frequenza
 	return ImageTexture.create_from_image(r.get_image(1024, 1024, false, false, true))
+
+
+## Zone speciali per lo shader: rosso = palude, verde = gessi (255 dentro, 0 fuori).
+func _texture_zone_speciali() -> ImageTexture:
+	var n := dati.lato
+	var byte := PackedByteArray()
+	byte.resize(n * n * 2)
+	for i in n * n:
+		byte[i * 2] = 255 if dati.tipo[i] == MappaDati.PALUDE else 0
+		byte[i * 2 + 1] = 255 if dati.tipo[i] == MappaDati.GESSI else 0
+	return ImageTexture.create_from_image(Image.create_from_data(n, n, false, Image.FORMAT_RG8, byte))
 
 
 func _texture_tematica() -> ImageTexture:

@@ -1,6 +1,6 @@
 extends SceneTree
-## Foto del margine di bosco o della riva del fiume più vicini al sito iniziale.
-## Uso: xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto_luogo.gd -- dimensione_vista [bosco|acqua]
+## Foto del margine di bosco, della riva del fiume, della palude o dei gessi più vicini al sito iniziale.
+## Uso: xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto_luogo.gd -- dimensione_vista [bosco|acqua|palude|gessi]
 ## Salva /tmp/<luogo>_<dimensione>.png
 var _s: Node
 var _f := 0
@@ -23,7 +23,12 @@ func _process(_d: float) -> bool:
 		for z in d.lato:
 			for x in d.lato:
 				var i := d.indice(x, z)
-				var preso := d.copertura[i] > 127 if _luogo == "bosco" else d.tipo[i] == MappaDati.FIUME
+				var preso := false
+				match _luogo:
+					"bosco": preso = d.copertura[i] > 127
+					"palude": preso = d.tipo[i] == MappaDati.PALUDE
+					"gessi": preso = d.tipo[i] == MappaDati.GESSI
+					_: preso = d.tipo[i] == MappaDati.FIUME
 				if preso:
 					var dd := Vector2(x - pc.x, z - pc.y).length()
 					if dd < dist:

@@ -24,6 +24,9 @@ Voci più recenti in cima.
   - mappe tematiche: passaggi graduali tra le fasce di fertilità e di rischio di piena, vicinanza all'acqua in linea d'aria (portata 9 celle, stessa area di prima);
   - acqua: sponde modellate dalla luce, ombra dell'argine sull'acqua, tre toni di profondità, fondale che traspare, chiazze di vento visibili anche da lontano.
   Verifiche senza grafica superate (base e asset). Godot sul portatile reimporterà le texture alla prima apertura.
+- **Seconda prova di Fede** (dopo il Pull): meglio. Chiesti l'ombreggiatura dei rilievi anche sull'acqua e paludi senza quadretti. Fatto: l'acqua prende l'ombreggiatura del versante; paludi e gessi disegnati dallo shader (texture `zone_speciali`) con bordi irregolari; paludi con erba umida, canneti e pozze d'acqua ferma; gessi a chiazze che da lontano si fondono. Immagine: `docs/immagini/paludi-gessi-acqua-23-11.jpg`.
+- Conflitto in GitHub Desktop sul portatile: Godot riscriveva da solo i file `.import` delle texture quando le rilevava in 3D. Disattivato (`detect_3d/compress_to=0` in tutti i file `.import`).
+- Nel pannello Output di Fede, all'apertura dell'editor: quattro errori `core/io/file_access.cpp:967`. Probabilmente file di cache dell'editor mancanti alla prima apertura (non verificato): da ricontrollare se si ripetono.
 - Strumenti nell'ambiente di Claude: Godot 4.7.2 senza grafica e Blender 5.3 come modulo Python; catena Blender → glTF → Godot provata con una casa lunga neolitica.
 
 **Decisioni (Fede)**

@@ -20,6 +20,8 @@ uniform sampler2D rumore_verde : filter_linear, repeat_disable;
 uniform sampler2D rumore_bosco : filter_linear, repeat_disable;
 // Boschi: copertura (0 o 1 per cella da 40 m) e due texture di foglie per la volta degli alberi.
 uniform sampler2D coperture : filter_linear, repeat_disable;
+// Zone speciali a celle da 40 m: R palude, G gessi. Lo shader ne ammorbidisce e frastaglia i bordi.
+uniform sampler2D zone_speciali : filter_linear, repeat_disable;
 uniform sampler2D chioma_a : source_color, filter_linear_mipmap, repeat_enable;
 uniform sampler2D chioma_b : source_color, filter_linear_mipmap, repeat_enable;
 uniform float lato_suolo = 9.0;
@@ -140,12 +142,47 @@ void fragment() {
 		volta *= mix(0.8, 1.0, smoothstep(0.0, 0.6, bosco));
 		verosimile = mix(verosimile, volta * 0.6, bosco);
 	}
+	// Zone speciali lette in otto punti attorno, come la copertura dei boschi: bordi senza gradini.
+	vec2 pz = 1.2 / vec2(textureSize(zone_speciali, 0));
+	vec2 zs = vec2(0.0);
+	for (int i = 0; i < 8; i++) {
+		float a = float(i) * 0.785398 + 0.1;
+		zs += texture(zone_speciali, UV + pz * vec2(cos(a), sin(a))).rg;
+	}
+	zs = zs / 8.0 * 0.7 + texture(zone_speciali, UV).rg * 0.3;
+	// Stesso rumore dei boschi letto con gli assi scambiati: altro disegno, nessuna ripetizione.
+	float n_zona = texture(rumore_bosco, UV.yx).r;
+	// Gessi: roccia chiara grigio-calda che affiora a chiazze tra l'erba rada, più fitta al centro.
+	float gessi = smoothstep(0.42, 0.58, zs.g + (lobi - 0.5) * 0.35 + (m_vicina - 0.5) * 0.25);
+	if (gessi > 0.0) {
+		float affiora = smoothstep(0.5, 0.66, n_zona * 0.6 + m_vicina * 0.25 + zs.g * 0.22);
+		// Da lontano le chiazze si fondono, altrimenti tornano i puntini.
+		affiora = mix(affiora, smoothstep(0.3, 0.9, zs.g) * 0.55, lontano * 0.8);
+		vec3 gesso = vec3(0.43, 0.42, 0.39) * (0.86 + 0.24 * mix(m_fine, 0.5, lontano));
+		vec3 rada = verosimile * vec3(1.05, 1.0, 0.86);
+		verosimile = mix(verosimile, mix(rada, gesso, affiora), gessi);
+	}
+	// Paludi: erba umida e scura, canneti giallastri e pozze d'acqua bassa (disegnate più sotto
+	// con l'acqua). palude = quanto si è dentro la palude; pozze = dove affiora l'acqua.
+	float palude = smoothstep(0.42, 0.58, zs.r + (lobi - 0.5) * 0.4 + (m_vicina - 0.5) * 0.3);
+	float pozze = 0.0;
+	if (palude > 0.0) {
+		float n_p = n_zona * 0.6 + texture(macchie, ruota * pos_mondo.xz / 43.0 + vec2(0.5, 0.2)).r * 0.4;
+		float dentro = smoothstep(0.55, 0.85, zs.r);
+		pozze = smoothstep(0.5, 0.56, n_p + dentro * 0.12 - 0.08) * palude;
+		float canneto = smoothstep(0.38, 0.5, n_p) * (1.0 - pozze);
+		vec3 umida = verosimile * vec3(0.72, 0.86, 0.7);
+		vec3 canne = vec3(0.5, 0.47, 0.25) * (0.85 + 0.3 * mix(m_fine, 0.5, lontano));
+		verosimile = mix(verosimile, mix(umida, canne, canneto * 0.75), palude);
+	}
 	base = mix(base, verosimile, realismo * COLOR.a);
 	// Rilievo: i pendii rivolti al sole si schiariscono, quelli in ombra si scuriscono, in proporzione
 	// alla luce che riceverebbe un terreno piano. Sostituisce le isoipse nella vista normale.
 	vec3 ls = normalize(verso_sole);
 	float rilievo = clamp(dot(n_terra, ls) / max(ls.y, 0.25), 0.3, 1.6);
 	base *= mix(1.0, rilievo, forza_rilievo);
+	// Anche l'acqua segue i rilievi: prende l'ombreggiatura del versante su cui scorre.
+	float rilievo_acqua = clamp(dot(normale_mondo, ls) / max(ls.y, 0.25), 0.3, 1.6);
 	vec3 col = base;
 	{
 		if (modo == 1) {
@@ -179,6 +216,8 @@ void fragment() {
 	// Acqua disegnata dal campo di distanza (d_acqua, calcolato all'inizio): bordi morbidi a qualunque zoom.
 	float bordo = max(fwidth(d_acqua), 0.5);
 	float in_acqua = 1.0 - smoothstep(-bordo, bordo, d_acqua);
+	// Le pozze delle paludi sono acqua bassa e ferma.
+	in_acqua = max(in_acqua, pozze);
 	// Riva: terra bagnata e scura per qualche metro, poi un velo più chiaro di sabbia e limo.
 	float bagnato = (1.0 - smoothstep(0.0, 3.0 + bordo, d_acqua)) * (1.0 - in_acqua);
 	float limo = (1.0 - smoothstep(2.0, 7.0 + bordo, d_acqua)) * (1.0 - in_acqua) * (1.0 - bagnato);
@@ -208,7 +247,11 @@ void fragment() {
 	vec3 acqua = mix(bassa, media, smoothstep(0.0, 0.45, prof));
 	acqua = mix(acqua, fonda, smoothstep(0.4, 1.0, prof));
 	// Fondale chiaro che traspare dove l'acqua è bassa.
-	acqua = mix(acqua, pow(vec3(0.58, 0.54, 0.42), vec3(2.2)), (1.0 - smoothstep(0.0, 4.0, -d_acqua)) * 0.35);
+	acqua = mix(acqua, pow(vec3(0.58, 0.54, 0.42), vec3(2.2)), (1.0 - smoothstep(0.0, 4.0, -d_acqua)) * 0.35 * (1.0 - pozze));
+	// Pozze delle paludi: acqua ferma e bassa che riflette il cielo, bordo di fango più scuro.
+	vec3 pozza = mix(pow(vec3(0.4, 0.5, 0.47), vec3(2.2)), pow(vec3(0.55, 0.64, 0.66), vec3(2.2)), smoothstep(0.3, 0.7, vento) * 0.5);
+	pozza *= mix(0.7, 1.0, smoothstep(0.55, 0.95, pozze));
+	acqua = mix(acqua, pozza, pozze);
 	acqua *= mix(0.86, 1.14, smoothstep(0.25, 0.75, vento));
 	// Riflessi del cielo sulle creste delle increspature.
 	float cresta = smoothstep(0.2, 0.55, onde);
@@ -220,14 +263,15 @@ void fragment() {
 	// Ombra della sponda sull'acqua: lungo la riva dalla parte del sole l'argine fa ombra.
 	vec2 sole_o = length(ls.xz) > 1e-4 ? normalize(ls.xz) : vec2(0.0);
 	float ombra_sponda = smoothstep(0.1, 0.7, dot(verso_riva, sole_o)) * (1.0 - smoothstep(0.0, 7.0, -d_acqua));
-	acqua *= 1.0 - 0.35 * ombra_sponda;
+	acqua *= 1.0 - 0.35 * ombra_sponda * (1.0 - pozze);
+	acqua *= mix(1.0, rilievo_acqua, forza_rilievo);
 	col = mix(col, acqua, in_acqua);
 	// Luce: l'acqua è liscia e riflette, il terreno no. Le increspature inclinano la normale.
 	vec3 n_acqua = normalize(vec3((o1 - o4) * 0.25, 1.0, (o2 - 0.5) * 0.25));
 	NORMAL = normalize(mix((VIEW_MATRIX * vec4(n_terra, 0.0)).xyz, (VIEW_MATRIX * vec4(n_acqua, 0.0)).xyz, in_acqua));
 	SPECULAR = 0.5 * in_acqua;
 	// Il cielo riflesso: un poco di luce propria, così l'acqua non diventa scura in ombra.
-	EMISSION = pow(vec3(0.55, 0.68, 0.78), vec3(2.2)) * (0.08 + 0.12 * cresta + 0.1 * smoothstep(0.55, 0.85, vento)) * in_acqua * (1.0 - 0.6 * ombra_sponda);
+	EMISSION = pow(vec3(0.55, 0.68, 0.78), vec3(2.2)) * (0.08 + 0.12 * cresta + 0.1 * smoothstep(0.55, 0.85, vento)) * in_acqua * (1.0 - 0.6 * ombra_sponda) * clamp(rilievo_acqua, 0.5, 1.0);
 	ROUGHNESS = mix(1.0, 0.12, in_acqua);
 	ALBEDO = col;
 }
