@@ -74,6 +74,8 @@ func costruisci(d: MappaDati, esag: float = 1.5) -> void:
 	materiale.set_shader_parameter("suolo", load("res://asset/texture/erba.png"))
 	materiale.set_shader_parameter("suolo_secco", load("res://asset/texture/erba_secca.png"))
 	materiale.set_shader_parameter("macchie", load("res://asset/texture/macchie.png"))
+	materiale.set_shader_parameter("rumore_secco", _rumore_mappa(1847, 1.0 / 90.0))
+	materiale.set_shader_parameter("rumore_verde", _rumore_mappa(1848, 1.0 / 60.0))
 	var img_coperture := Image.create_from_data(d.lato, d.lato, false, Image.FORMAT_L8, d.copertura)
 	materiale.set_shader_parameter("coperture", ImageTexture.create_from_image(img_coperture))
 	materiale.set_shader_parameter("chioma_a", load("res://asset/texture/foglie_quercia.png"))
@@ -100,6 +102,18 @@ func _colore(i: int) -> Color:
 	# I boschi non stanno più nei colori dei vertici (davano bordi a gradini da 40 m):
 	# li disegna lo shader dalla texture delle coperture, con bordi irregolari.
 	return Color(c, peso)
+
+
+## Rumore frattale unico per tutta la mappa (1024 x 1024, circa 10 m per pixel):
+## distribuisce verde e secco senza ripetizioni. La frequenza è in cicli per pixel.
+func _rumore_mappa(seme: int, frequenza: float) -> ImageTexture:
+	var r := FastNoiseLite.new()
+	r.seed = seme
+	r.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	r.fractal_type = FastNoiseLite.FRACTAL_FBM
+	r.fractal_octaves = 6
+	r.frequency = frequenza
+	return ImageTexture.create_from_image(r.get_image(1024, 1024, false, false, true))
 
 
 func _texture_tematica() -> ImageTexture:

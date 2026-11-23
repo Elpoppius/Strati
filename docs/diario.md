@@ -14,6 +14,7 @@ Voci più recenti in cima.
 - **Prova di stile verosimile** (`gioco/asset/prove_stile/`, 5 modelli: casa lunga, capanna tonda, granaio, due querce): texture procedurali generate da script (paglia, argilla, legno, corteccia, pietra, erba, foglie), tetti spessi e irregolari, pali a vista, querce con rami e chioma di foglie. Il terreno del gioco ora usa una texture d'erba tinta dalla zona. Seconda versione ispirata ad Age of Empires IV: texture più "dipinte", tetti più alti e sporgenti, occlusione ambientale cotta nei vertici, alberi più pieni in tre toni, prato più vivo. Guida in `docs/asset.md`, immagini in `docs/immagini/prova-stile-verosimile-*.png`.
 - **Terza versione di alberi e prato**, dopo il parere di Fede sulla seconda e le sue reference di AoE IV: zoom fino a 40 m; foglie singole e grandi, una texture per specie; chiome a lobi con normali sferiche e ombra interna calcolata; cinque specie (quercia, carpino, pioppo, acero autunnale, arbusto); prato a fili sottili con chiazze di erba secca e meno ripetizione; piani di taglio della camera stretti per ombre nitide da vicino. Dettagli in `docs/asset.md`, immagini in `docs/immagini/prova-stile-v3-*.jpg`. Ombre: Fede ha notato che mancavano del tutto. Non era un limite dell'ambiente di Claude ma due errori del progetto: il sole stava alle spalle della camera (ombre nascoste dietro gli oggetti) e la camera era a 20 km (ombre sfumate fino a sparire). Ora il sole gira con la camera (da sinistra, ombre lunghe verso destra, come chiesto da Fede) e la distanza della camera segue lo zoom: le ombre si vedono e sono nitide da vicino.
 - **Terreno migliorato:** boschi con bordi irregolari (non più a gradini da 40 m) e una volta di chiome dipinta, in attesa degli alberi veri; terra che affiora sui pendii ripidi.
+- **Prato senza ripetizioni:** verde, ingiallito e secco distribuiti da rumori unici per tutta la mappa e dai dati del luogo (acqua, fertilità), bordi morbidi senza scalini, variazione di tono minuta da vicino.
 - Strumenti nell'ambiente di Claude: Godot 4.7.2 senza grafica e Blender 5.3 come modulo Python; catena Blender → glTF → Godot provata con una casa lunga neolitica.
 
 **Decisioni (Fede)**
@@ -26,11 +27,12 @@ Voci più recenti in cima.
 - Base Godot: partire dal terreno, dalla camera isometrica e dalla griglia dei lotti.
 - Stile degli asset: verosimile, anche nei colori; no allo stile "plastico" e agli alberi con pochi poligoni. Riferimento per l'aspetto: Age of Empires IV.
 - Luce: sole da sinistra, ombre lunghe proiettate verso destra sullo schermo.
+- Terreno: priorità alla resa del prato; niente texture ripetute nelle parti aride. Gli alberi veri andranno posati sulla mappa al posto della volta di chiome dipinta.
 - Seconda versione della prova di stile: direzione giusta. Da migliorare il prato (grossolano), il dettaglio a zoom ravvicinato e la forma e il riempimento delle chiome.
 
 **Prossimo passo**
 - Fede: preparare il PC dedicato (Godot 4.7.2, Blender 5.3, GitHub Desktop: vedi `docs/setup-pc.md`); continuare a provare il Prototipo 0.
 - Fede: aprire `gioco/project.godot` con Godot 4.7.2 sul PC dedicato, premere F5 e riportare cosa si vede e come risponde (vedi `docs/setup-pc.md`).
 - Fede: dare un parere sulla terza versione di alberi e prato (`docs/immagini/prova-stile-v3-*.jpg`); sul PC, avvicinare lo zoom al massimo vicino al terrazzo centrale, ruotare con Q/E e dire come appaiono ombre e luce (gli alberi si vedono nel gioco solo con `test/foto_asset.gd`, per ora non sono posati sulla mappa).
-- Claude: dopo il parere di Fede, completare il lotto del villaggio nello stile scelto, oppure portare in Godot il ciclo del villaggio.
+- Claude: posare gli alberi veri sulla mappa (boschi e alberi sparsi, con istanze multiple e una versione leggera per la distanza), poi completare il lotto del villaggio nello stile scelto.
 - In sospeso: recinto come primo strumento di regolazione nel Prototipo 0.

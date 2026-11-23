@@ -12,7 +12,10 @@ uniform sampler2D suolo : source_color, filter_linear_mipmap, repeat_enable;
 // Erba secca delle chiazze incolte e maschera a bassa frequenza che le distribuisce.
 uniform sampler2D suolo_secco : source_color, filter_linear_mipmap, repeat_enable;
 uniform sampler2D macchie : filter_linear_mipmap, repeat_enable;
-uniform float soglia_secco = 0.65;
+uniform float soglia_secco = 0.62;
+// Rumori unici per tutta la mappa (coordinate UV del terreno): secchezza e variazione del verde.
+uniform sampler2D rumore_secco : filter_linear, repeat_disable;
+uniform sampler2D rumore_verde : filter_linear, repeat_disable;
 // Boschi: copertura (0 o 1 per cella da 40 m) e due texture di foglie per la volta degli alberi.
 uniform sampler2D coperture : filter_linear, repeat_disable;
 uniform sampler2D chioma_a : source_color, filter_linear_mipmap, repeat_enable;
@@ -39,22 +42,41 @@ void vertex() {
 void fragment() {
 	// I colori dei vertici sono in sRGB: si convertono in lineare per l'illuminazione.
 	vec3 base = pow(COLOR.rgb, vec3(2.2));
-	// Suolo verosimile: erba fine, con una seconda lettura ruotata e una maschera lenta
-	// che spezzano la ripetizione; chiazze di erba secca; tinta della zona (più secca in collina).
+	// Suolo verosimile. La distribuzione di verde e secco viene da rumori unici per tutta la
+	// mappa (nessuna ripetizione a nessuno zoom) e dai dati del luogo: più secco lontano
+	// dall'acqua e sui terreni poco fertili. Le maschere piccole servono solo a frastagliare
+	// i bordi da vicino e a spezzare la ripetizione della texture dell'erba.
+	vec4 t = texture(tematici, UV);
 	vec2 uv = pos_mondo.xz / lato_suolo;
 	mat2 ruota = mat2(vec2(0.8, 0.6), vec2(-0.6, 0.8));
 	float m_vicina = texture(macchie, ruota * pos_mondo.xz / 71.0).r;
-	float m_lontana = texture(macchie, pos_mondo.xz / 233.0 + vec2(0.37, 0.11)).r;
-	// Scala del chilometro: alterna zone più secche e più verdi, così da lontano non si vede la ripetizione.
-	float m_grande = texture(macchie, ruota * pos_mondo.xz / 1370.0 + vec2(0.61, 0.23)).r;
+	float m_fine = texture(macchie, pos_mondo.xz / 13.0 + vec2(0.37, 0.11)).r;
 	vec3 erba = mix(texture(suolo, uv).rgb, texture(suolo, ruota * uv * 0.83 + vec2(0.31, 0.57)).rgb, smoothstep(0.38, 0.62, m_vicina));
 	vec3 secca = texture(suolo_secco, ruota * uv * 1.07).rgb;
 	float lum = max(dot(base, vec3(0.333)), 1e-3);
 	vec3 tinta = base / lum;
-	// Dove la zona è già gialla (colline asciutte) le chiazze secche si allargano.
+	// Dati del luogo ammorbiditi con quattro letture sfalsate: le celle da 40 m non fanno più scalini.
+	vec2 px = 1.0 / vec2(textureSize(tematici, 0));
+	vec4 tm = (texture(tematici, UV + px * vec2(0.8, 0.3)) + texture(tematici, UV + px * vec2(-0.3, 0.8))
+			+ texture(tematici, UV + px * vec2(-0.8, -0.3)) + texture(tematici, UV + px * vec2(0.3, -0.8))) * 0.25;
+	vec2 pr = 1.0 / vec2(textureSize(rumore_secco, 0));
+	float n_secco = (texture(rumore_secco, UV + pr * vec2(0.8, 0.3)) + texture(rumore_secco, UV + pr * vec2(-0.3, 0.8))
+			+ texture(rumore_secco, UV + pr * vec2(-0.8, -0.3)) + texture(rumore_secco, UV + pr * vec2(0.3, -0.8))).r * 0.25;
+	float n_verde = texture(rumore_verde, UV).r;
+	// Dove la zona è già gialla (colline asciutte) il secco si allarga; vicino all'acqua si ritira.
 	float aridita = clamp((tinta.r - tinta.g) * 0.8, 0.0, 0.05);
-	float quanto_secco = smoothstep(soglia_secco - 0.035, soglia_secco + 0.04, m_lontana * 0.6 + m_vicina * 0.4 + (m_grande - 0.5) * 0.4 + aridita);
-	vec3 verosimile = mix(erba, secca, quanto_secco) * (0.86 + 0.28 * m_lontana);
+	float umido = max(tm.b, tm.a * 0.6);
+	float secchezza = n_secco * 0.8 + (1.0 - tm.r) * 0.18 + aridita - umido * 0.22;
+	float frastaglio = (m_vicina - 0.5) * 0.18 + (m_fine - 0.5) * 0.06;
+	// Tre stadi: erba verde, erba ingiallita, erba secca rossiccia.
+	float ingiallito = smoothstep(soglia_secco - 0.22, soglia_secco - 0.02, secchezza + frastaglio * 0.5);
+	float quanto_secco = smoothstep(soglia_secco - 0.04, soglia_secco + 0.05, secchezza + frastaglio);
+	erba *= mix(vec3(1.0), vec3(1.16, 1.04, 0.7), ingiallito * 0.55);
+	// Variazione di verde su scala di centinaia di metri: prati più grassi e più magri.
+	erba *= mix(vec3(0.9, 0.97, 0.92), vec3(1.06, 1.03, 0.94), n_verde);
+	// Variazione minuta di tono, visibile solo da vicino: ciuffi più chiari e più scuri.
+	erba *= 0.93 + 0.14 * smoothstep(0.25, 0.75, m_fine * 0.6 + m_vicina * 0.4);
+	vec3 verosimile = mix(erba, secca * vec3(0.96, 0.92, 0.9), quanto_secco) * (0.9 + 0.2 * n_verde);
 	verosimile *= mix(vec3(1.0), tinta, 0.25) * 0.74;
 	verosimile = mix(vec3(dot(verosimile, vec3(0.299, 0.587, 0.114))), verosimile, 0.8);
 	// Pendii ripidi: l'erba si dirada e affiora la terra.
@@ -83,7 +105,6 @@ void fragment() {
 		verosimile = mix(verosimile, volta * 0.6, bosco);
 	}
 	base = mix(base, verosimile, realismo * COLOR.a);
-	vec4 t = texture(tematici, UV);
 	vec3 col = base;
 	{
 		if (modo == 1) {
