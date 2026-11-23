@@ -98,16 +98,26 @@ void fragment() {
 	float aridita = clamp((tinta.r - tinta.g) * 0.8, 0.0, 0.05);
 	float umido = max(t.b, t.a * 0.6);
 	float secchezza = n_secco * 0.8 + (1.0 - t.r) * 0.18 + aridita - umido * 0.22;
-	float frastaglio = (m_vicina - 0.5) * 0.18 + (m_fine - 0.5) * 0.06;
+	// Bordi delle chiazze secche spezzati a più scale (30 m senza ripetizioni, 13 e 5 m): niente
+	// macchie morbide "a pennellata" (parere di Fede), ma chiazze frastagliate come in un prato vero.
+	float n_30 = texture(rumore_palude, UV.yx + vec2(0.13, 0.07)).r;
+	float m_5 = texture(macchie, ruota * pos_mondo.xz / 5.3 + vec2(0.71, 0.29)).r;
+	float frastaglio = (m_vicina - 0.5) * 0.1 + (n_30 - 0.5) * 0.22 + (m_fine - 0.5) * 0.1 + (m_5 - 0.5) * 0.08 * (1.0 - lontano);
 	// Tre stadi: erba verde, erba ingiallita, erba secca rossiccia.
 	float ingiallito = smoothstep(soglia_secco - 0.22, soglia_secco - 0.02, secchezza + frastaglio * 0.5);
 	float quanto_secco = smoothstep(soglia_secco - 0.04, soglia_secco + 0.05, secchezza + frastaglio);
 	erba *= mix(vec3(1.0), vec3(1.16, 1.04, 0.7), ingiallito * 0.55);
-	// Variazione di verde su scala di centinaia di metri: prati più grassi e più magri.
-	erba *= mix(vec3(0.9, 0.97, 0.92), vec3(1.06, 1.03, 0.94), n_verde);
-	// Variazione minuta di tono, visibile solo da vicino: ciuffi più chiari e più scuri.
-	erba *= 0.93 + 0.14 * mix(smoothstep(0.25, 0.75, m_fine * 0.6 + m_vicina * 0.4), 0.5, lontano);
-	vec3 verosimile = mix(erba, secca * vec3(0.96, 0.92, 0.9), quanto_secco) * (0.9 + 0.2 * n_verde);
+	// Variazione di verde su scala di centinaia di metri, tenue: prati più grassi e più magri.
+	erba *= mix(vec3(0.94, 0.98, 0.95), vec3(1.04, 1.02, 0.96), n_verde);
+	// Variazione di tono a più scale, più forte da vicino: ciuffi scuri e verdi (trifoglio,
+	// erba alta) e chiari e giallastri (erba bassa, fiori secchi), da 3 a 30 m.
+	float m_3 = texture(macchie, ruota * ruota * pos_mondo.xz / 3.1 + vec2(0.17, 0.83)).r;
+	float ciuffi = (m_3 - 0.5) * 0.6 * (1.0 - lontano) + (m_5 - 0.5) * 0.5 * (1.0 - lontano * 0.6) + (m_fine - 0.5) * 0.4 + (n_30 - 0.5) * 0.5;
+	erba *= mix(vec3(0.82, 0.9, 0.8), vec3(1.12, 1.08, 0.94), smoothstep(-0.35, 0.35, ciuffi));
+	// Erba secca color paglia (meno rossa), con ciuffi verdi che restano dentro la chiazza.
+	vec3 paglia = mix(secca, vec3(dot(secca, vec3(0.333))) * vec3(1.12, 1.0, 0.72), 0.45) * (0.86 + 0.28 * m_5);
+	float secco_vero = quanto_secco * mix(0.45, 1.0, smoothstep(0.3, 0.7, m_3 * 0.4 + m_5 * 0.3 + n_30 * 0.3 + quanto_secco * 0.3));
+	vec3 verosimile = mix(erba, paglia, secco_vero) * (0.95 + 0.1 * n_verde);
 	verosimile *= mix(vec3(1.0), tinta, 0.25) * 0.74;
 	verosimile = mix(vec3(dot(verosimile, vec3(0.299, 0.587, 0.114))), verosimile, 0.8);
 	// Pendii ripidi: l'erba si dirada e affiora la terra.

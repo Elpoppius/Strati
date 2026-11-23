@@ -46,6 +46,7 @@ Voci più recenti in cima.
   - corretto un difetto che poteva tenere in coda per secondi i blocchi di alberi della vista (il calcolo in sottofondo occupava l'unico posto a bassa priorità): ora i blocchi della vista hanno la precedenza;
   - le versioni semplificate generate da Godot all'importazione facevano sparire le canne: disattivate per i modelli degli alberi.
   Immagine: `docs/immagini/paludi-canneti-acqua-23-11.jpg`. Verifiche senza grafica superate.
+  - **prato:** meno "pennellate": variazione larga più tenue, chiazze secche color paglia e frastagliate, ciuffi da 3 a 30 m visibili da vicino. Immagine: `docs/immagini/prato-rifinito-23-11.jpg`.
 - Conflitto in GitHub Desktop sul portatile: Godot riscriveva da solo i file `.import` delle texture quando le rilevava in 3D. Disattivato (`detect_3d/compress_to=0` in tutti i file `.import`).
 - Nel pannello Output di Fede, all'apertura dell'editor: quattro errori `core/io/file_access.cpp:967`. Probabilmente file di cache dell'editor mancanti alla prima apertura (non verificato): da ricontrollare se si ripetono.
 - Strumenti nell'ambiente di Claude: Godot 4.7.2 senza grafica e Blender 5.3 come modulo Python; catena Blender → glTF → Godot provata con una casa lunga neolitica.
@@ -72,11 +73,12 @@ Voci più recenti in cima.
 - Fede: dare un parere sulla terza versione di alberi e prato (`docs/immagini/prova-stile-v3-*.jpg`); sul PC, avvicinare lo zoom al massimo vicino al terrazzo centrale, ruotare con Q/E e dire come appaiono ombre e luce (gli alberi si vedono nel gioco solo con `test/foto_asset.gd`, per ora non sono posati sulla mappa).
 - Claude, prossima sessione (rimandato da Fede alla prossima):
   - alberi sulla mappa: tarare livelli di dettaglio e densità sulle prestazioni dei PC di Fede; confermare con Fede la scelta delle specie;
+  - prato da vicino: valutare ciuffi d'erba, fiori e sassi in 3D posati come gli alberi (proposta di Claude), se a zoom stretto il terreno sembra ancora piatto;
   - alberi come dati modificabili: abbattere o costruire su un'area boscata la segna come "area disboscata" (costruita: bosco perso ma ricordato; solo abbattuta: può ricrescere); il terreno sotto cambia (terra battuta, terra nuda, erba rada) con una mappa dell'uso del suolo aggiornabile durante il gioco; progettare l'interazione con il gameplay (proposte di Claude da discutere: legname, rischio di frane e piene più rapide, ricrescita per stadi da arbusti ad alberi);
   - acqua: corrente nel verso del fiume, rapide e cascate sui torrenti, paludi con acqua bassa e canne, livelli che cambiano con le piene;
   - alberi: carte viste di taglio ai bordi delle chiome;
   - texture di paglia e argilla delle case da rivedere per lo zoom ravvicinato;
   - poi completare il lotto del villaggio nello stile scelto;
   - portare in Godot il Prototipo 0 (ciclo del villaggio: fondazione, campi, case, sentieri, granaio, stagioni) sulla mappa vera, con la simulazione separata dalla grafica e verificabile senza grafica (proposta di Claude, da confermare con Fede).
-- Fede: provare gli alberi sul portatile (e poi sugli altri PC): zoomare fino agli alberi completi (vista sotto 220 m) e leggeri (sotto 700 m), dire i fotogrammi al secondo mostrati nel pannello, se ci sono scatti scorrendo la mappa e come appaiono specie, densità e passaggio tra i livelli.
+- Fede: provare sul portatile (e poi sugli altri PC) alberi, paludi, acqua e prato: dire i fotogrammi al secondo mostrati nel pannello a circa 150, 600, 2000 e 6000 m di vista, se ci sono scatti scorrendo la mappa, come appaiono specie, densità, canneti, acqua e passaggio tra i livelli.
 - In sospeso: recinto come primo strumento di regolazione nel Prototipo 0.
