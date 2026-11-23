@@ -71,15 +71,17 @@ func costruisci(d: MappaDati, esag: float = 1.5) -> void:
 	var img_acque := Image.create_from_data(d.lato_acqua, d.lato_acqua, false, Image.FORMAT_L8, d.distanza_acqua)
 	materiale.set_shader_parameter("acque", ImageTexture.create_from_image(img_acque))
 	materiale.set_shader_parameter("esagerazione", esag)
+	materiale.set_shader_parameter("suolo", load("res://asset/texture/erba.png"))
 	material_override = materiale
 
 
 func _colore(i: int) -> Color:
 	var t := dati.tipo[i]
+	# Il canale alfa dice allo shader quanto usare la texture d'erba (1) o il colore della zona (0).
 	if t == MappaDati.PALUDE:
-		return Color(COLORE_PALUDE, 1.0)
+		return Color(COLORE_PALUDE, 0.3)
 	if t == MappaDati.GESSI:
-		return Color(COLORE_GESSI, 1.0)
+		return Color(COLORE_GESSI, 0.2)
 	var q := dati.altezze[i]
 	var c: Color = TINTE[-1][1]
 	for j in TINTE.size() - 1:
@@ -88,9 +90,11 @@ func _colore(i: int) -> Color:
 			c = TINTE[j][1].lerp(TINTE[j + 1][1], f)
 			break
 	# Sotto fiumi e torrenti resta la tinta del terreno: l'acqua la disegna lo shader.
+	var peso := 1.0 if dati.zona[i] != 3 else 0.65
 	if dati.copertura[i] > 127:
-		c = c.darkened(0.18)
-	return Color(c, 1.0)
+		c = Color8(78, 92, 58)
+		peso = 0.45
+	return Color(c, peso)
 
 
 func _texture_tematica() -> ImageTexture:

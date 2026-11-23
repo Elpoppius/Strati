@@ -7,6 +7,10 @@ uniform sampler2D tematici : filter_linear, repeat_disable;
 uniform sampler2D acque : filter_linear, repeat_disable;
 // 0 terreno, 1 acqua, 2 fertilità, 3 rischio di piena.
 uniform int modo = 0;
+// Texture del suolo, ripetuta ogni lato_suolo metri; realismo 0 = colori da plastico, 1 = suolo verosimile.
+uniform sampler2D suolo : source_color, filter_linear_mipmap, repeat_enable;
+uniform float lato_suolo = 9.0;
+uniform float realismo = 1.0;
 uniform float esagerazione = 1.5;
 uniform float passo_isoipse = 25.0;
 uniform float alfa_isoipse = 0.35;
@@ -25,6 +29,14 @@ void vertex() {
 void fragment() {
 	// I colori dei vertici sono in sRGB: si convertono in lineare per l'illuminazione.
 	vec3 base = pow(COLOR.rgb, vec3(2.2));
+	// Suolo verosimile: la texture dell'erba, tinta dal colore della zona (più secca in collina, più verde in pianura).
+	vec3 tex_suolo = texture(suolo, pos_mondo.xz / lato_suolo).rgb;
+	vec3 tex_largo = texture(suolo, pos_mondo.xz / (lato_suolo * 7.3)).rgb;
+	float lum = max(dot(base, vec3(0.333)), 1e-3);
+	vec3 tinta = base / lum;
+	vec3 verosimile = tex_suolo * mix(vec3(1.0), tex_largo / max(dot(tex_largo, vec3(0.333)), 1e-3), 0.35) * mix(vec3(1.0), tinta, 0.3) * 0.78;
+	verosimile = mix(vec3(dot(verosimile, vec3(0.299, 0.587, 0.114))), verosimile, 0.72);
+	base = mix(base, verosimile, realismo * COLOR.a);
 	vec4 t = texture(tematici, UV);
 	vec3 col = base;
 	{
