@@ -18,6 +18,9 @@ Produce nella cartella indicata:
   grezzi/bosco_fine.u8       (1024 x 1024, 10 m) quanto un punto è dentro il bosco: 128 = margine,
                              sopra è bosco. Lo usano sia lo shader (volta dipinta, sottobosco) sia
                              la posa degli alberi, così il bordo dipinto e gli alberi coincidono.
+  grezzi/palude_fine.u8      (1024 x 1024, 10 m) quanto un punto è dentro la palude: 128 = margine.
+  grezzi/pozze_fine.u8       (1024 x 1024, 10 m) acqua ferma nella palude: sopra 128 c'è acqua.
+                             Li usano lo shader (pozze, erba umida) e la posa dei canneti.
   grezzi/distanza_acqua.u8   (1024 x 1024) distanza dal bordo del corso d'acqua più vicino: 128 = riva,
                              ogni unità vale 2 m (sotto 128 si è in acqua). Serve a disegnare
                              fiumi e torrenti con bordi morbidi a qualunque zoom.
@@ -193,9 +196,27 @@ def genera(uscita):
     v_bosco = np.where(dist_acqua < 4.0, np.minimum(v_bosco, 0.3), v_bosco)
     bosco_u8 = (np.clip(v_bosco, 0, 1) * 255).round().astype(np.uint8)
 
+    # Palude a 10 m: celle di palude ammorbidite e frastagliate. Le pozze vengono da un rumore
+    # senza periodo (campo casuale filtrato a tre scale, 20-120 m), più fitte verso l'interno.
+    rng = np.random.default_rng(1847)
+    def rumore(sigma):
+        r = gaussian_filter(rng.standard_normal((LATO * FINE, LATO * FINE)), sigma)
+        return (r - r.mean()) / (r.std() + 1e-9)
+    pal = map_coordinates((tipo == 4).astype(np.float64), [PY, PX], order=1, mode="nearest")
+    pal = gaussian_filter(pal, 1.4)
+    v_pal = pal + (vnoise(xcf * 2.0 + 41, yqf * 2.0 + 17) - 0.5) * 0.35 + rumore(3.0) * 0.06
+    interno = np.clip((gaussian_filter(pal, 4.0) - 0.5) / 0.4, 0, 1)
+    n_pozze = rumore(2.0) * 0.28 + rumore(5.0) * 0.45 + rumore(12.0) * 0.35
+    v_pozze = 0.5 + (n_pozze + interno * 0.9 - 0.95) * 0.25
+    v_pozze = np.where(v_pal > 0.55, v_pozze, np.minimum(v_pozze, 0.35))
+    palude_u8 = (np.clip(v_pal, 0, 1) * 255).round().astype(np.uint8)
+    pozze_u8 = (np.clip(v_pozze, 0, 1) * 255).round().astype(np.uint8)
+
     g = os.path.join(uscita, "grezzi"); os.makedirs(g, exist_ok=True)
     dist_u8.tofile(os.path.join(g, "distanza_acqua.u8"))
     bosco_u8.tofile(os.path.join(g, "bosco_fine.u8"))
+    palude_u8.tofile(os.path.join(g, "palude_fine.u8"))
+    pozze_u8.tofile(os.path.join(g, "pozze_fine.u8"))
     e.astype("<f4").tofile(os.path.join(g, "altezze.f32"))
     tipo.tofile(os.path.join(g, "tipo.u8"))
     zona.tofile(os.path.join(g, "zona.u8"))

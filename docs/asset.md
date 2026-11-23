@@ -83,8 +83,11 @@ Generati da `strumenti/blender/alberi_mappa.py` in `gioco/asset/alberi/`, ognuno
 | carpino_1, _2 | 10,3 · 12,1 | 359 / 55 |
 | pioppo_1, _2 | 16,8 · 19,4 | 417–475 / 63–71 |
 | cespuglio_1, _2 | 3,3 · 3,9 | 185–263 / 54 |
+| canna_1, _2 (ciuffi di cannuccia di palude) | 3,2 · 3,7 | 420 / 68 |
 
-Nel gioco ogni albero è scalato tra 0,95 e 1,35 (bosco maturo) e ruotato a caso; gli arbusti tra 0,75 e 1,25.
+Nel gioco ogni albero è scalato tra 0,95 e 1,35 (bosco maturo) e ruotato a caso; gli arbusti tra 0,75 e 1,25, le canne tra 0,9 e 1,5. Le canne non hanno texture: il colore (verde alla base, paglia in cima, pennacchi bruni) sta nei vertici, in valori lineari.
+
+**Attenzione all'importazione:** nei file `.glb.import` di `asset/alberi/` va tenuto `meshes/generate_lods=false`. Le versioni semplificate che Godot genera da solo facevano sparire le lame sottili delle canne; i livelli di dettaglio li gestisce già `VistaAlberi`.
 
 ### Da fare
 - **Da verificare nella terza versione:** ombre e prestazioni sui PC di Fede; carte viste di taglio che a volte si vedono come strisce ai bordi delle chiome; la casa lunga e le capanne viste a 35 m (le texture di paglia e argilla sono nate per viste più lontane).

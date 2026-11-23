@@ -36,8 +36,8 @@ func _process(_d: float) -> bool:
 	var t0 := Time.get_ticks_usec()
 	var totale := 0
 	var in_acqua := 0
-	var per_specie := [0, 0, 0, 0]
-	var colline := [0, 0, 0, 0]
+	var per_specie := [0, 0, 0, 0, 0]
+	var colline := [0, 0, 0, 0, 0]
 	for bz in nb:
 		for bx in nb:
 			var arr := a.alberi_nel_blocco(Vector2i(bx, bz))
@@ -46,16 +46,18 @@ func _process(_d: float) -> bool:
 				var x := arr[i * k]
 				var z := arr[i * k + 1]
 				var m := int(arr[i * k + 4])
-				var sp := 0 if m < 3 else (1 if m < 5 else (2 if m < 7 else 3))
+				var sp := 0 if m < 3 else (1 if m < 5 else (2 if m < 7 else (3 if m < 9 else 4)))
 				per_specie[sp] += 1
 				var p := d.pixel_da_mondo(x, z)
 				if d.zona[d.indice(p.x, p.y)] == 3:
 					colline[sp] += 1
-				if a.distanza_acqua(x, z) < 2.0:
+				# Le canne possono stare con i piedi nell'acqua bassa della riva.
+				if sp != 4 and a.distanza_acqua(x, z) < 2.0:
 					in_acqua += 1
 			totale += arr.size() / k
 	var ms := (Time.get_ticks_usec() - t0) / 1000.0
-	print("   alberi su tutta la mappa: %d (querce %d, carpini %d, pioppi %d, arbusti %d), %.0f ms per %d blocchi (%.1f ms a blocco)" % [totale, per_specie[0], per_specie[1], per_specie[2], per_specie[3], ms, nb * nb, ms / (nb * nb)])
+	print("   piante su tutta la mappa: %d (querce %d, carpini %d, pioppi %d, arbusti %d, canne %d), %.0f ms per %d blocchi (%.1f ms a blocco)" % [totale, per_specie[0], per_specie[1], per_specie[2], per_specie[3], per_specie[4], ms, nb * nb, ms / (nb * nb)])
+	controlla(per_specie[4] > 20000, "ci sono i canneti (%d ciuffi)" % per_specie[4])
 	controlla(totale > 300000, "il bosco è fitto (più di 300 000 alberi)")
 	controlla(in_acqua == 0, "nessun albero nell'acqua (%d)" % in_acqua)
 	controlla(colline[2] < (colline[0] + colline[1]) * 0.15, "sulle colline pochi pioppi, solo lungo i torrenti (%d su %d)" % [colline[2], colline[0] + colline[1] + colline[2] + colline[3]])

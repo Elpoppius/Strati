@@ -23,6 +23,11 @@ uniform sampler2D rumore_palude : filter_linear, repeat_disable;
 // Boschi: campo a 10 m generato con la mappa (0,5 = margine) e due texture di foglie per la volta.
 // È lo stesso campo da cui Alberi posa gli alberi veri: bordo dipinto e alberi coincidono.
 uniform sampler2D bosco_fine : filter_linear, repeat_disable;
+// Paludi a 10 m generate con la mappa: palude_fine (0,5 = margine) e pozze_fine (sopra 0,5 c'è
+// acqua ferma). Gli stessi campi guidano la posa dei canneti (Alberi), che così stanno attorno
+// alle pozze e non dentro.
+uniform sampler2D palude_fine : filter_linear, repeat_disable;
+uniform sampler2D pozze_fine : filter_linear, repeat_disable;
 // 1 quando gli alberi veri sono visibili (vista vicina): sotto il bosco si dipinge il sottobosco.
 uniform float sottobosco = 0.0;
 // Zone speciali a celle da 40 m: R palude, G gessi. Lo shader ne ammorbidisce e frastaglia i bordi.
@@ -155,20 +160,21 @@ void fragment() {
 		vec3 rada = verosimile * vec3(1.05, 1.0, 0.86);
 		verosimile = mix(verosimile, mix(rada, gesso, affiora), gessi);
 	}
-	// Paludi: erba umida e scura, canneti giallastri e pozze d'acqua bassa (disegnate più sotto
-	// con l'acqua). palude = quanto si è dentro la palude; pozze = dove affiora l'acqua.
-	float palude = smoothstep(0.42, 0.58, zs.r + (lobi - 0.5) * 0.4 + (m_vicina - 0.5) * 0.3);
-	float pozze = 0.0;
+	// Paludi: erba umida e scura, fango attorno alle pozze, fascia di canne secche (da vicino ci
+	// sono i canneti veri). Le pozze si disegnano più sotto, con l'acqua.
+	float palude = smoothstep(0.47, 0.53, texture(palude_fine, UV).r);
+	float v_pozze = texture(pozze_fine, UV).r;
+	float pozze = smoothstep(0.495, 0.505 + fwidth(v_pozze), v_pozze) * palude;
 	if (palude > 0.0) {
-		float n_p = n_zona * 0.65 + texture(rumore_palude, UV).r * 0.35;
-		float dentro = smoothstep(0.55, 0.85, zs.r);
-		pozze = smoothstep(0.5, 0.56, n_p + dentro * 0.12 - 0.08) * palude;
-		float canneto = smoothstep(0.38, 0.5, n_p) * (1.0 - pozze);
-		vec3 umida = verosimile * vec3(0.72, 0.86, 0.7);
-		vec3 canne = vec3(0.5, 0.47, 0.25) * (0.85 + 0.3 * mix(m_fine, 0.5, lontano));
-		verosimile = mix(verosimile, mix(umida, canne, canneto * 0.75), palude);
+		float fango = smoothstep(0.44, 0.5, v_pozze) * (1.0 - pozze);
+		float canneto = smoothstep(0.28, 0.38, v_pozze) * (1.0 - fango);
+		vec3 umida = verosimile * vec3(0.55, 0.66, 0.48);
+		vec3 canne_secche = vec3(0.42, 0.38, 0.2) * (0.85 + 0.3 * mix(m_fine, 0.5, lontano));
+		vec3 terra_bagnata = vec3(0.17, 0.15, 0.1) * (0.85 + 0.3 * m_fine);
+		vec3 suolo_palude = mix(umida, canne_secche, canneto * 0.55);
+		suolo_palude = mix(suolo_palude, terra_bagnata, fango * 0.85);
+		verosimile = mix(verosimile, suolo_palude, palude);
 	}
-	// Sulle colline il suolo prende un po' della tinta della quota (COLOR.a < 1); i boschi no.
 	base = mix(base, verosimile, realismo * max(COLOR.a, bosco));
 	// Rilievo: i pendii rivolti al sole si schiariscono, quelli in ombra si scuriscono, in proporzione
 	// alla luce che riceverebbe un terreno piano. Sostituisce le isoipse nella vista normale.
@@ -219,53 +225,69 @@ void fragment() {
 	col = mix(col, col * vec3(0.5, 0.48, 0.44), bagnato * 0.85);
 	// Increspature. Le coordinate sono deformate da un rumore più ampio e gli strati hanno scale
 	// e orientamenti non multipli tra loro: così la piccola texture non forma un motivo regolare.
+	// Nei fiumi le increspature si allungano e scorrono nel verso della corrente (lungo la riva);
+	// nelle pozze l'acqua è ferma.
 	vec2 pa = pos_mondo.xz;
+	vec2 lungo = length(verso_riva) > 0.0 ? vec2(-verso_riva.y, verso_riva.x) : vec2(1.0, 0.0);
+	vec2 pf = vec2(dot(pa, lungo), dot(pa, verso_riva));
+	float corrente = 1.0 - pozze;
+	vec2 pc_ = mix(pa, vec2(pf.x / 3.0, pf.y), corrente * 0.8) + vec2(TIME * 0.6 * corrente, 0.0);
 	vec2 deforma = vec2(texture(macchie, pa / 23.0 + vec2(TIME * 0.003, 0.0)).r, texture(macchie, ruota * pa / 19.0 + vec2(0.3, TIME * 0.002)).r) - 0.5;
-	vec2 pd = pa + deforma * 9.0;
+	vec2 pd = pc_ + deforma * 9.0;
 	float o1 = texture(macchie, pd / 4.3 + vec2(TIME * 0.03, TIME * 0.017)).r;
 	float o2 = texture(macchie, ruota * pd / 2.9 - vec2(TIME * 0.022, -TIME * 0.031)).r;
 	float o4 = texture(macchie, ruota * ruota * pd / 6.7 + vec2(0.17, 0.61) + vec2(-TIME * 0.012, TIME * 0.02)).r;
-	// Ondulazione lenta e larga, unica per tutta la mappa: alterna tratti più lisci e più mossi.
 	float o3 = texture(rumore_verde, UV + vec2(TIME * 0.00002, 0.0)).r;
-	float onde = ((o1 + o2 + o4) / 1.5 - 1.0) * (0.35 + o3);
-	// Variazione larga, visibile anche da lontano: chiazze di vento e di cielo riflesso di decine
-	// di metri, che scorrono lente. Da lontano le increspature piccole si fondono e l'acqua
-	// restava di un colore uniforme ("piatta").
+	float onde = ((o1 + o2 + o4) / 1.5 - 1.0) * (0.35 + o3) * mix(0.5, 1.0, corrente);
+	// Variazione larga, visibile anche da lontano: chiazze di vento e di cielo riflesso.
 	float vento = texture(macchie, ruota * pa / 97.0 + vec2(TIME * 0.0015, TIME * 0.0009)).r * 0.6
 			+ texture(macchie, pa / 211.0 - vec2(TIME * 0.0007, 0.0)).r * 0.4;
-	// Profondità: bassa e verdastra vicino alla riva, fonda e scura al centro dei fiumi.
+	// Colore di un fiume di pianura: acqua torbida verde-grigia, più scura dove è fonda, con il
+	// fondale bruno che traspare vicino alla riva (prima era un azzurro saturo, poco verosimile).
 	float prof = smoothstep(0.0, 18.0, -d_acqua + onde * 3.0);
-	vec3 bassa = pow(vec3(0.5, 0.56, 0.42), vec3(2.2));
-	vec3 media = pow(vec3(0.37, 0.51, 0.48), vec3(2.2));
-	vec3 fonda = pow(vec3(0.26, 0.42, 0.44), vec3(2.2));
-	vec3 acqua = mix(bassa, media, smoothstep(0.0, 0.45, prof));
-	acqua = mix(acqua, fonda, smoothstep(0.4, 1.0, prof));
-	// Fondale chiaro che traspare dove l'acqua è bassa.
-	acqua = mix(acqua, pow(vec3(0.58, 0.54, 0.42), vec3(2.2)), (1.0 - smoothstep(0.0, 4.0, -d_acqua)) * 0.35 * (1.0 - pozze));
-	// Pozze delle paludi: acqua ferma e bassa che riflette il cielo, bordo di fango più scuro.
-	vec3 pozza = mix(pow(vec3(0.4, 0.5, 0.47), vec3(2.2)), pow(vec3(0.55, 0.64, 0.66), vec3(2.2)), smoothstep(0.3, 0.7, vento) * 0.5);
-	pozza *= mix(0.7, 1.0, smoothstep(0.55, 0.95, pozze));
+	vec3 bassa = vec3(0.26, 0.25, 0.16);
+	vec3 media = vec3(0.13, 0.17, 0.12);
+	vec3 fonda = vec3(0.06, 0.1, 0.08);
+	vec3 acqua = mix(bassa, media, smoothstep(0.0, 0.4, prof));
+	acqua = mix(acqua, fonda, smoothstep(0.35, 1.0, prof));
+	// Pozze delle paludi: acqua ferma e scura, qualche velo di lenticchie d'acqua verdi.
+	float lenticchie = smoothstep(0.62, 0.7, texture(rumore_palude, UV).r * 0.6 + m_vicina * 0.4) * smoothstep(0.5, 0.56, v_pozze);
+	vec3 pozza = mix(vec3(0.09, 0.11, 0.09), vec3(0.2, 0.3, 0.1), lenticchie * 0.8);
 	acqua = mix(acqua, pozza, pozze);
-	acqua *= mix(0.86, 1.14, smoothstep(0.25, 0.75, vento));
-	// Riflessi del cielo sulle creste delle increspature.
-	float cresta = smoothstep(0.2, 0.55, onde);
-	acqua = mix(acqua, pow(vec3(0.66, 0.78, 0.82), vec3(2.2)), cresta * 0.12);
-	acqua *= 0.93 + 0.14 * smoothstep(-0.4, 0.4, onde) + 0.06 * (o3 - 0.5);
-	// Schiuma sottile lungo la riva, spezzata dalle increspature.
-	float schiuma = (1.0 - smoothstep(0.3, 1.6 + bordo, abs(d_acqua + 1.0 + deforma.x * 1.5))) * smoothstep(0.45, 0.6, o1 * 0.5 + o4 * 0.5);
-	acqua = mix(acqua, pow(vec3(0.85, 0.86, 0.82), vec3(2.2)), schiuma * 0.45);
+	// Riflessi: il cielo, più chiaro dove l'acqua è liscia, e la riva lontana (con i suoi alberi)
+	// che si specchia scura nei metri d'acqua vicino a lei. "Lontana" vuol dire dalla parte
+	// opposta alla camera.
+	vec2 avanti_cam = normalize(-INV_VIEW_MATRIX[2].xz);
+	float riva_lontana = smoothstep(0.0, 0.7, dot(verso_riva, avanti_cam)) * (1.0 - smoothstep(1.0, 14.0, -d_acqua)) * corrente;
+	float bosco_riva = texture(bosco_fine, UV + verso_riva * 2.0 / vec2(textureSize(bosco_fine, 0))).r;
+	vec3 riflesso_riva = mix(vec3(0.16, 0.17, 0.11), vec3(0.06, 0.09, 0.05), smoothstep(0.4, 0.6, bosco_riva));
+	vec3 cielo = vec3(0.42, 0.5, 0.54);
+	float liscio = smoothstep(0.25, 0.75, vento) * (1.0 - smoothstep(0.0, 0.5, abs(onde)));
+	acqua = mix(acqua, cielo, 0.08 + 0.12 * liscio);
+	acqua = mix(acqua, riflesso_riva, riva_lontana * 0.7);
+	// Scie della corrente: righe chiare sottili e allungate lungo il fiume.
+	float scie = smoothstep(0.62, 0.72, texture(macchie, vec2(pf.x / 41.0 - TIME * 0.02, pf.y / 2.3)).r) * corrente * smoothstep(2.0, 6.0, -d_acqua);
+	acqua = mix(acqua, cielo * 1.1, scie * 0.25 * (1.0 - lontano));
+	acqua *= 0.94 + 0.12 * smoothstep(-0.4, 0.4, onde);
+	// Scintillii del sole sulle creste: pochi punti chiari che si accendono e spengono.
+	float scintille = smoothstep(0.86, 0.93, o1 * 0.55 + o2 * 0.45) * smoothstep(0.4, 0.8, vento) * (1.0 - lontano) * corrente;
+	acqua = mix(acqua, vec3(0.95, 0.93, 0.85), scintille * 0.6);
+	// Schiuma sottile lungo la riva dei fiumi, spezzata dalle increspature.
+	float schiuma = (1.0 - smoothstep(0.3, 1.6 + bordo, abs(d_acqua + 1.0 + deforma.x * 1.5))) * smoothstep(0.45, 0.6, o1 * 0.5 + o4 * 0.5) * corrente;
+	acqua = mix(acqua, vec3(0.7, 0.7, 0.64), schiuma * 0.35);
 	// Ombra della sponda sull'acqua: lungo la riva dalla parte del sole l'argine fa ombra.
 	vec2 sole_o = length(ls.xz) > 1e-4 ? normalize(ls.xz) : vec2(0.0);
 	float ombra_sponda = smoothstep(0.1, 0.7, dot(verso_riva, sole_o)) * (1.0 - smoothstep(0.0, 7.0, -d_acqua));
-	acqua *= 1.0 - 0.35 * ombra_sponda * (1.0 - pozze);
+	acqua *= 1.0 - 0.35 * ombra_sponda * corrente;
 	acqua *= mix(1.0, rilievo_acqua, forza_rilievo);
 	col = mix(col, acqua, in_acqua);
 	// Luce: l'acqua è liscia e riflette, il terreno no. Le increspature inclinano la normale.
 	vec3 n_acqua = normalize(vec3((o1 - o4) * 0.25, 1.0, (o2 - 0.5) * 0.25));
 	NORMAL = normalize(mix((VIEW_MATRIX * vec4(n_terra, 0.0)).xyz, (VIEW_MATRIX * vec4(n_acqua, 0.0)).xyz, in_acqua));
 	SPECULAR = 0.5 * in_acqua;
-	// Il cielo riflesso: un poco di luce propria, così l'acqua non diventa scura in ombra.
-	EMISSION = pow(vec3(0.55, 0.68, 0.78), vec3(2.2)) * (0.08 + 0.12 * cresta + 0.1 * smoothstep(0.55, 0.85, vento)) * in_acqua * (1.0 - 0.6 * ombra_sponda) * clamp(rilievo_acqua, 0.5, 1.0);
+	// Il cielo riflesso è già nel colore: l'acqua resta poco illuminata dal sole (come una
+	// superficie scura e lucida) e un poco luminosa di suo, così non diventa nera in ombra.
+	EMISSION = acqua * 0.15 * in_acqua;
 	ROUGHNESS = mix(1.0, 0.12, in_acqua);
 	ALBEDO = col;
 }

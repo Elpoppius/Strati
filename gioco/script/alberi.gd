@@ -17,14 +17,19 @@ const PASSO_BOSCO := 7.0
 ## Griglia dei candidati per gli alberi sparsi fuori dal bosco.
 const PASSO_SPARSI := 20.0
 ## Modelli in gioco/asset/alberi/ (ognuno ha anche la versione _leggero).
-const MODELLI := ["quercia_1", "quercia_2", "quercia_3", "carpino_1", "carpino_2", "pioppo_1", "pioppo_2", "cespuglio_1", "cespuglio_2"]
+const MODELLI := ["quercia_1", "quercia_2", "quercia_3", "carpino_1", "carpino_2", "pioppo_1", "pioppo_2", "cespuglio_1", "cespuglio_2", "canna_1", "canna_2"]
 const QUERCIA := 0
 const CARPINO := 1
 const PIOPPO := 2
 const CESPUGLIO := 3
-const NOMI_SPECIE := ["quercia", "carpino", "pioppo", "cespuglio"]
+const CANNA := 4
+const NOMI_SPECIE := ["quercia", "carpino", "pioppo", "cespuglio", "canna"]
 ## Primo modello e numero di varianti di ogni specie dentro MODELLI.
-const VARIANTI := [[0, 3], [3, 2], [5, 2], [7, 2]]
+const VARIANTI := [[0, 3], [3, 2], [5, 2], [7, 2], [9, 2]]
+## Primo modello che non è un albero (arbusti e canne): escluso dalle sagome rade.
+const PRIMO_MINORE := 7
+## Canneti: distanza media tra un ciuffo e l'altro.
+const PASSO_CANNE := 3.5
 ## Valori per albero nell'array restituito da alberi_nel_blocco.
 const CAMPI := 7  # x, z, rotazione, scala, modello, tinta, quota del suolo (m, senza esagerazione)
 
@@ -131,7 +136,54 @@ func _calcola_blocco(b: Vector2i) -> PackedFloat32Array:
 			var specie := _specie_sparsa(x, z, _caso(gx, gz, 13), _caso(gx, gz, 14))
 			if specie >= 0:
 				_aggiungi(out, x, z, specie, gx + 100000, gz)
+	_canneti(out, x0, z0)
 	return out
+
+
+## Canneti: fitti nella fascia attorno alle pozze delle paludi (anche con i piedi nell'acqua al
+## bordo), radi nel resto della palude, a tratti lungo le rive basse dei fiumi in pianura.
+func _canneti(out: PackedFloat32Array, x0: float, z0: float) -> void:
+	# Prima un controllo rapido: niente palude e niente acqua nel blocco, niente canne.
+	var c_e := false
+	for j in 9:
+		for i in 9:
+			var x := x0 + i * LATO_BLOCCO / 8.0
+			var z := z0 + j * LATO_BLOCCO / 8.0
+			if _campiona_fine(dati.palude_fine, x, z) > 100.0 or absf(distanza_acqua(x, z)) < 60.0:
+				c_e = true
+	if not c_e:
+		return
+	var lato_m := dati.lato_metri()
+	var n := int(LATO_BLOCCO / PASSO_CANNE)
+	var gx0 := int(round(x0 / PASSO_CANNE))
+	var gz0 := int(round(z0 / PASSO_CANNE))
+	for j in n:
+		for i in n:
+			var gx := gx0 + i + 300000
+			var gz := gz0 + j
+			var x := (gx - 300000 + 0.5 + (_caso(gx, gz, 21) - 0.5) * 0.9) * PASSO_CANNE
+			var z := (gz + 0.5 + (_caso(gx, gz, 22) - 0.5) * 0.9) * PASSO_CANNE
+			if x < 0.0 or z < 0.0 or x > lato_m or z > lato_m:
+				continue
+			var p := 0.0
+			var v_pal := _campiona_fine(dati.palude_fine, x, z) / 255.0
+			if v_pal > 0.5:
+				var v_poz := _campiona_fine(dati.pozze_fine, x, z) / 255.0
+				if v_poz > 0.55:
+					p = 0.0
+				elif v_poz > 0.5:
+					p = 0.65
+				elif v_poz > 0.3:
+					p = 0.9
+				else:
+					p = 0.15
+			else:
+				var d := distanza_acqua(x, z)
+				if d > -3.0 and d < 5.0 and dati.zona[_indice(x, z)] < 3 and valore_bosco(x, z) < 0.5:
+					# A tratti: un rumore lento decide dove la riva ha il canneto.
+					p = 0.6 * smoothstep(0.45, 0.6, _campiona_fine(dati.pozze_fine, x * 0.37 + 900.0, z * 0.37 + 700.0) / 255.0 + 0.2)
+			if p > 0.0 and _caso(gx, gz, 23) < p:
+				_aggiungi(out, x, z, CANNA, gx, gz)
 
 
 ## Quanto il punto è dentro il bosco (0,5 = margine): bilineare su bosco_fine, come lo shader.
@@ -236,6 +288,8 @@ func _aggiungi(out: PackedFloat32Array, x: float, z: float, specie: int, gx: int
 	var scala := 0.95 + 0.4 * _caso(gx, gz, 6)
 	if specie == CESPUGLIO:
 		scala = 0.75 + 0.5 * _caso(gx, gz, 6)
+	elif specie == CANNA:
+		scala = 0.9 + 0.6 * _caso(gx, gz, 6)
 	out.append(x)
 	out.append(z)
 	out.append(_caso(gx, gz, 7) * TAU)

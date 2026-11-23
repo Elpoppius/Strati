@@ -7,8 +7,9 @@ render_mode unshaded, cull_disabled, skip_vertex_transform, depth_draw_opaque;
 
 uniform sampler2D tavola : filter_linear_mipmap, repeat_disable;
 // Per modello: rettangolo in metri rispetto alla base (sinistra, destra, basso, alto) e nella tavola.
-uniform vec4 quad[9];
-uniform vec4 uv_tavola[9];
+// Spazio per 16 modelli (oggi 11: alberi, arbusti, canne).
+uniform vec4 quad[16];
+uniform vec4 uv_tavola[16];
 // Correzione di tono, per accordare le sagome agli alberi in 3D.
 uniform vec3 tono = vec3(1.0);
 

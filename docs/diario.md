@@ -39,6 +39,13 @@ Voci più recenti in cima.
   - corretto il calcolo dei blocchi inquadrati: sui rilievi scartava blocchi visibili (forse il motivo per cui Fede non vedeva alberi);
   - confini sfrangiati tra boschi di specie diverse.
   Immagine: `docs/immagini/sagome-alberi-23-11.jpg`. Verifiche senza grafica superate.
+- **Rifinitura chiesta da Fede** ("le pennellate stonano col dettaglio degli alberi; palude e acqua stonano"; la scelta tra alberi a vista e pennellate lasciata a Claude):
+  - **decisione di Claude:** alberi visibili a ogni zoom; oltre 2,6 km sagome rade (un albero su due o tre, ingrandito, in blocchi da 1280 m, senza ombre); la volta dipinta resta solo come fondo;
+  - **paludi** come dati della mappa (`palude_fine`, `pozze_fine` a 10 m) e **canneti in 3D** (circa 330 000 ciuffi) attorno alle pozze e lungo le rive basse;
+  - **acqua** rifatta: colore di fiume di pianura, riflessi del cielo e della riva, corrente, scie, scintillii;
+  - corretto un difetto che poteva tenere in coda per secondi i blocchi di alberi della vista (il calcolo in sottofondo occupava l'unico posto a bassa priorità): ora i blocchi della vista hanno la precedenza;
+  - le versioni semplificate generate da Godot all'importazione facevano sparire le canne: disattivate per i modelli degli alberi.
+  Immagine: `docs/immagini/paludi-canneti-acqua-23-11.jpg`. Verifiche senza grafica superate.
 - Conflitto in GitHub Desktop sul portatile: Godot riscriveva da solo i file `.import` delle texture quando le rilevava in 3D. Disattivato (`detect_3d/compress_to=0` in tutti i file `.import`).
 - Nel pannello Output di Fede, all'apertura dell'editor: quattro errori `core/io/file_access.cpp:967`. Probabilmente file di cache dell'editor mancanti alla prima apertura (non verificato): da ricontrollare se si ripetono.
 - Strumenti nell'ambiente di Claude: Godot 4.7.2 senza grafica e Blender 5.3 come modulo Python; catena Blender → glTF → Godot provata con una casa lunga neolitica.

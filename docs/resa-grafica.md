@@ -15,6 +15,7 @@ Ogni mappa è una risorsa `MappaDati` (`gioco/script/mappa_dati.gd`), generata d
 | fertilità, acqua affidabile, acqua stagionale | griglia | mappe tematiche; distribuzione di verde e secco nel prato |
 | copertura (bosco) | griglia | base per il campo fine del bosco |
 | bosco fine | 4 volte la griglia (10 m) | margine del bosco dipinto, sottobosco, posa degli alberi (0,5 = margine) |
+| palude fine, pozze fine | 10 m | paludi: erba umida, fango, pozze d'acqua ferma; posa dei canneti |
 | distanza dall'acqua | 4 volte la griglia (oggi 1024 × 1024, 2 m per unità) | fiumi, torrenti, rive |
 
 Una mappa nuova eredita tutto il resto: basta che fornisca questi strati.
@@ -31,7 +32,8 @@ Codice: `gioco/shader/terreno.gdshader`, `gioco/script/terreno.gd`.
 
 ## Acqua
 Codice: in fondo a `gioco/shader/terreno.gdshader`. Dati: la distanza dalla riva, che `terreno.gd` converte in virgola mobile (in 8 bit faceva fasce a gradini).
-- Profondità che sfuma dalla riva (bassa e verdastra) al centro (verde-azzurro più scuro).
+- **Rifinita il 23/11 sera** (parere di Fede: l'acqua stonava con gli alberi): colore di fiume di pianura, torbido verde-grigio, più scuro dove è fondo, fondale bruno vicino alla riva (prima era un azzurro saturo); riflesso del cielo più chiaro dove l'acqua è liscia; la riva lontana dalla camera, con i suoi alberi, si specchia scura nei metri d'acqua vicino a lei; increspature allungate che scorrono nel verso della corrente e scie chiare sottili; qualche scintillio del sole sulle creste. Nelle pozze l'acqua è ferma.
+- Profondità che sfuma dalla riva al centro.
 - Increspature che scorrono nel tempo: tre strati a scale e orientamenti diversi, su coordinate deformate da un rumore più ampio, più un'ondulazione lenta unica per tutta la mappa. Così non si vede un motivo ripetuto (segnalato da Fede); riflessi del cielo sulle creste e un poco di luce propria, così l'acqua non diventa scura in ombra.
 - Superficie liscia e riflettente (il terreno no).
 - Schiuma sottile lungo la riva, sponda bagnata più scura e un velo di limo.
@@ -40,8 +42,9 @@ Codice: in fondo a `gioco/shader/terreno.gdshader`. Dati: la distanza dalla riva
 - Da fare: corrente nel verso del fiume, cascate e rapide sui torrenti, paludi con acqua bassa e canne, livelli che cambiano con le piene.
 
 ## Paludi e gessi
-Non stanno più nei colori dei vertici, che facevano quadretti da 40 m (segnalato da Fede). `terreno.gd` passa allo shader la texture `zone_speciali` (rosso palude, verde gessi), letta in otto punti e frastagliata come i boschi.
-- **Paludi:** erba umida e scura, canneti giallastri, pozze d'acqua bassa e ferma che riflettono il cielo (disegnate con l'acqua, con un bordo di fango). Pozze e canneti vengono da rumori unici per la mappa (`rumore_bosco`, `rumore_palude`): una texture ripetuta si notava (segnalato da Fede).
+Non stanno più nei colori dei vertici, che facevano quadretti da 40 m (segnalato da Fede).
+- **Paludi (rifinite il 23/11 sera, dopo il parere di Fede: "stonano col dettaglio degli alberi"):** sono dati della mappa, come il bosco: `palude_fine` e `pozze_fine` a 10 m, generati in Python con un rumore senza periodo (campo casuale filtrato a 20–120 m). Lo shader dipinge erba umida, una fascia di canne secche, fango attorno alle pozze e le pozze d'acqua ferma, scura, con veli di lenticchie d'acqua. **Canneti in 3D** (`canna_1`, `canna_2`, completi e leggeri, più le sagome) posati da `Alberi` con gli stessi campi: fitti nella fascia attorno alle pozze, qualche ciuffo nell'acqua bassa del bordo, radi nel resto della palude, a tratti lungo le rive basse dei fiumi in pianura. Circa 330 000 ciuffi. Niente alberi nelle paludi.
+- **Gessi:** texture `zone_speciali` (verde), letta in otto punti e frastagliata come i boschi.
 - **Gessi:** roccia chiara grigio-calda che affiora a chiazze tra l'erba rada; da lontano le chiazze si fondono in un tono unico.
 - Da fare: canne vere (oggetti) ai margini delle pozze, livelli che cambiano con le stagioni e le piene.
 

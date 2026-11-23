@@ -31,6 +31,9 @@ const NOMI_ZONA := ["Bassa pianura", "Alta pianura", "Fascia pedecollinare", "Co
 ## Bosco a 10 m (stessa griglia di distanza_acqua): 128 = margine, sopra è bosco.
 ## Lo usano lo shader del terreno e la posa degli alberi (Alberi).
 @export var bosco_fine: PackedByteArray
+## Palude a 10 m (128 = margine) e pozze d'acqua ferma (sopra 128 c'è acqua), stessa griglia.
+@export var palude_fine: PackedByteArray
+@export var pozze_fine: PackedByteArray
 ## Lato della griglia di distanza_acqua e bosco_fine (più fine di quella del terreno).
 @export var lato_acqua: int = 0
 @export var sorgenti: PackedVector2Array

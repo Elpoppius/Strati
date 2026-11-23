@@ -80,6 +80,9 @@ func costruisci(d: MappaDati, esag: float = 1.5) -> void:
 	materiale.set_shader_parameter("rumore_palude", _rumore_mappa(1850, 1.0 / 3.0))
 	var img_bosco := Image.create_from_data(d.lato_acqua, d.lato_acqua, false, Image.FORMAT_L8, d.bosco_fine)
 	materiale.set_shader_parameter("bosco_fine", ImageTexture.create_from_image(img_bosco))
+	for strato in ["palude_fine", "pozze_fine"]:
+		var img := Image.create_from_data(d.lato_acqua, d.lato_acqua, false, Image.FORMAT_L8, d.get(strato))
+		materiale.set_shader_parameter(strato, ImageTexture.create_from_image(img))
 	materiale.set_shader_parameter("zone_speciali", _texture_zone_speciali())
 	materiale.set_shader_parameter("chioma_a", load("res://asset/texture/foglie_quercia.png"))
 	materiale.set_shader_parameter("chioma_b", load("res://asset/texture/foglie_carpino.png"))

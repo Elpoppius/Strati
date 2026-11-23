@@ -130,7 +130,9 @@ func aggiorna(budget_us: int) -> void:
 		if parti == null:
 			mancano += 1
 			if not _in_corso.has(chiave) and _in_corso.size() < COMPITI_MAX:
-				_in_corso[chiave] = WorkerThreadPool.add_task(_prepara.bind(chiave), false, "Blocco di alberi")
+				# Alta priorità: il calcolo di tutta la mappa (Alberi.calcola_in_sottofondo) gira a bassa
+				# priorità e, con pochi processori, altrimenti teneva in coda questi blocchi per secondi.
+				_in_corso[chiave] = WorkerThreadPool.add_task(_prepara.bind(chiave), true, "Blocco di alberi")
 			continue
 		if _in_corso.has(chiave):
 			WorkerThreadPool.wait_for_task_completion(_in_corso[chiave])
@@ -227,7 +229,7 @@ func _prepara(chiave: Vector4i) -> void:
 		for i in n:
 			# Sagome rade: si tengono solo alcuni alberi (la tinta è un numero casuale per albero),
 			# niente arbusti.
-			if liv == RADE and ((dati[i * k + 5] - 0.84) / 0.24 >= RADE_QUOTA or int(dati[i * k + 4]) >= 7):
+			if liv == RADE and ((dati[i * k + 5] - 0.84) / 0.24 >= RADE_QUOTA or int(dati[i * k + 4]) >= Alberi.PRIMO_MINORE):
 				continue
 			elenco.append(i)
 		if not elenco.is_empty():
