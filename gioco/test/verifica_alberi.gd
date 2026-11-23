@@ -66,14 +66,14 @@ func _process(_d: float) -> bool:
 	controlla(prima == a.alberi_nel_blocco(Vector2i(10, 10)), "la posa è deterministica")
 	# Vista: livelli di dettaglio secondo lo zoom.
 	var cam: CameraIsometrica = _s.cam
-	for prova in [[3000.0, 0], [1800.0, VistaAlberi.SAGOME], [600.0, VistaAlberi.LEGGERI], [180.0, VistaAlberi.COMPLETI]]:
+	for prova in [[12000.0, VistaAlberi.RADE], [3000.0, VistaAlberi.RADE], [1800.0, VistaAlberi.SAGOME], [600.0, VistaAlberi.LEGGERI], [180.0, VistaAlberi.COMPLETI]]:
 		cam.dimensione = prova[0]
 		cam.dimensione_obiettivo = prova[0]
 		cam.aggiorna()
 		var t1 := Time.get_ticks_usec()
 		v.aggiorna(-1)
 		var ms2 := (Time.get_ticks_usec() - t1) / 1000.0
-		controlla(v.livello == prova[1], "vista di %d m: livello %d, %d alberi disegnati, %d blocchi (%.0f ms)" % [prova[0], v.livello, v.alberi_visibili, v._blocchi.size(), ms2])
+		controlla(v.livello == prova[1] and v.alberi_visibili > 0, "vista di %d m: livello %d, %d alberi disegnati, %d blocchi (%.0f ms)" % [prova[0], v.livello, v.alberi_visibili, v._blocchi.size(), ms2])
 	print("Verifica completata: " + ("nessun errore" if _errori == 0 else "%d errori" % _errori))
 	quit(1 if _errori > 0 else 0)
 	return true

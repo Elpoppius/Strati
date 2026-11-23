@@ -64,7 +64,7 @@ Modelli: `strumenti/blender/prova_stile_verosimile.py` (funzione `albero`) e `st
   - vista più stretta di 220 m: alberi completi (360–530 facce);
   - fino a 700 m: versione leggera (55–80 facce, poche carte grandi, senza rami);
   - fino a 2600 m: **sagome** (dopo il parere di Fede: la volta dipinta stonava con gli alberi). Ogni albero è un rettangolo sempre parallelo allo schermo con l'immagine del suo modello, fotografata in Godot con la stessa camera e lo stesso sole da sinistra del gioco (`strumenti/genera_sagome.gd` → `asset/alberi/sagome.png` e `sagome_dati.gd`; shader `shader/sagome_alberi.gdshader`). La luce è già nell'immagine; metà delle sagome è specchiata;
-  - oltre: la volta dipinta, quando un albero è grande pochi pixel.
+  - oltre: **sagome rade** (gli alberi si vedono a ogni zoom: decisione di Claude, su mandato di Fede, perché la volta dipinta da sola stonava con gli alberi): un albero su due o tre (niente arbusti), ingrandito di 1,45 volte, in blocchi di 1280 m, senza ombre. Sotto resta la volta dipinta come fondo.
   Le soglie (`DIM_COMPLETI`, `DIM_LEGGERI`, `DIM_SAGOME`) vanno tarate con le prove sui PC di Fede.
 - **Sottobosco:** con alberi completi o leggeri lo shader dipinge sotto il bosco terra con foglie secche ed erba rada (parametro `sottobosco`); con le sagome resta sotto la volta dipinta, così tra una sagoma e l'altra e nei blocchi non ancora pronti si vede bosco. La volta dipinta ha il colore medio degli alberi veri e delle sagome, misurato sulle foto: al cambio di zoom il bosco non cambia colore.
 - **Prestazioni:** il pannello mostra fotogrammi al secondo, alberi disegnati e livello. Calcolare un blocco pieno di bosco costa circa 9 ms (una volta sola, poi resta in memoria).

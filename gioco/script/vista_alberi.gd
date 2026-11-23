@@ -1,22 +1,29 @@
 class_name VistaAlberi
 extends Node3D
 ## Disegna gli alberi di Alberi con istanze multiple (MultiMesh per blocco), solo nei blocchi
-## inquadrati e con un livello di dettaglio che segue lo zoom:
+## inquadrati e con un livello di dettaglio che segue lo zoom. Gli alberi si vedono a ogni zoom
+## (decisione di Claude su richiesta di Fede: la volta dipinta da sola stonava con gli alberi).
 ## - vista più stretta di DIM_COMPLETI: alberi completi (360–530 facce);
 ## - fino a DIM_LEGGERI: versione leggera (55–80 facce, poche carte grandi);
 ## - fino a DIM_SAGOME: sagome, un rettangolo per albero con l'immagine del modello
 ##   (strumenti/genera_sagome.gd), sempre rivolto verso la camera;
-## - oltre: nessun albero, il terreno dipinge la volta delle chiome.
+## - oltre: sagome rade, una ogni due o tre alberi e più grandi, in blocchi quattro volte più
+##   larghi (meno oggetti da disegnare), senza ombre.
 ## Con alberi completi o leggeri lo shader del terreno dipinge il sottobosco; con le sagome resta
-## la volta dipinta sotto, così tra una sagoma e l'altra (e nei blocchi non ancora pronti) si vede
+## sotto la volta dipinta, così tra una sagoma e l'altra (e nei blocchi non ancora pronti) si vede
 ## bosco e non terra.
 
 const DIM_COMPLETI := 220.0
 const DIM_LEGGERI := 700.0
 const DIM_SAGOME := 2600.0
+## Sagome rade: quota di alberi tenuti, ingrandimento, blocchi per lato di un blocco grande.
+const RADE_QUOTA := 0.4
+const RADE_SCALA := 1.45
+const RADE_BLOCCO := 4
 ## Tempo massimo per fotogramma dedicato a costruire blocchi (microsecondi).
 const BUDGET_US := 6000
-const NOMI_LIVELLI := ["volta dipinta", "sagome", "alberi leggeri", "alberi completi"]
+const NOMI_LIVELLI := ["sagome rade", "sagome", "alberi leggeri", "alberi completi"]
+const RADE := 0
 const SAGOME := 1
 const LEGGERI := 2
 const COMPLETI := 3
@@ -24,7 +31,7 @@ const COMPLETI := 3
 var alberi: Alberi
 var terreno: Terreno
 var cam: CameraIsometrica
-## 0 volta dipinta, 1 sagome, 2 leggeri, 3 completi.
+## 0 sagome rade, 1 sagome, 2 leggeri, 3 completi.
 var livello := 0
 ## Alberi attualmente disegnati (per la lettura delle prestazioni).
 var alberi_visibili := 0
@@ -32,11 +39,13 @@ var alberi_visibili := 0
 var _mesh: Array = [[], [], [], []]  # per livello: una Mesh per modello (le sagome usano _quad)
 var _quad: ArrayMesh
 var _materiale_sagome: ShaderMaterial
-var _blocchi := {}  # Vector2i -> { "livello": int, "nodi": Array, "n": int }
+## Blocchi disegnati: Vector3i(bx, bz, lato in blocchi) -> { "livello", "nodi", "n" }.
+var _blocchi := {}
 ## I buffer delle MultiMesh si preparano su altri thread; qui arrivano pronti.
+## Chiave: Vector4i(bx, bz, lato in blocchi, livello).
 var _mutex := Mutex.new()
-var _in_corso := {}  # Vector3i(bx, bz, livello) -> id del compito
-var _pronti := {}  # Vector3i(bx, bz, livello) -> parti (vedi _prepara)
+var _in_corso := {}
+var _pronti := {}
 ## Compiti in sottofondo al massimo insieme.
 const COMPITI_MAX := 6
 
@@ -89,7 +98,7 @@ func _process(_delta: float) -> void:
 
 
 ## Aggiorna i blocchi visibili; costruisce blocchi finché non supera `budget_us` microsecondi
-## (almeno uno per chiamata; -1 = tutti).
+## (almeno uno per chiamata; -1 = tutti subito, per le verifiche).
 func aggiorna(budget_us: int) -> void:
 	var d := cam.dimensione
 	if d < DIM_COMPLETI:
@@ -99,22 +108,19 @@ func aggiorna(budget_us: int) -> void:
 	elif d < DIM_SAGOME:
 		livello = SAGOME
 	else:
-		livello = 0
+		livello = RADE
 	terreno.materiale.set_shader_parameter("sottobosco", 1.0 if livello >= LEGGERI else 0.0)
-	var servono := _blocchi_inquadrati() if livello > 0 else []
+	var lato := RADE_BLOCCO if livello == RADE else 1
+	var servono := _blocchi_inquadrati(lato)
 	var tenere := {}
-	for b in servono:
-		tenere[b] = true
-	for b in _blocchi.keys():
-		if not tenere.has(b):
-			_togli(b)
-	# I blocchi di un altro livello restano visibili finché non c'è quello nuovo: niente buchi.
-	# I dati e i buffer si preparano su altri thread (budget_us = -1: tutto subito, per le verifiche).
+	for u in servono:
+		tenere[u] = true
 	var t0 := Time.get_ticks_usec()
-	for b in servono:
-		if _blocchi.has(b) and _blocchi[b]["livello"] == livello:
+	var mancano := 0
+	for u in servono:
+		if _blocchi.has(u) and _blocchi[u]["livello"] == livello:
 			continue
-		var chiave := Vector3i(b.x, b.y, livello)
+		var chiave := Vector4i(u.x, u.y, u.z, livello)
 		if budget_us < 0:
 			_prepara(chiave)
 		_mutex.lock()
@@ -122,19 +128,27 @@ func aggiorna(budget_us: int) -> void:
 		_pronti.erase(chiave)
 		_mutex.unlock()
 		if parti == null:
+			mancano += 1
 			if not _in_corso.has(chiave) and _in_corso.size() < COMPITI_MAX:
 				_in_corso[chiave] = WorkerThreadPool.add_task(_prepara.bind(chiave), false, "Blocco di alberi")
 			continue
 		if _in_corso.has(chiave):
 			WorkerThreadPool.wait_for_task_completion(_in_corso[chiave])
 			_in_corso.erase(chiave)
-		var vecchio: Variant = _blocchi.get(b)
-		_costruisci(b, parti)
+		var vecchio: Variant = _blocchi.get(u)
+		_costruisci(u, parti)
 		if vecchio != null:
 			for nodo in vecchio["nodi"]:
 				(nodo as Node).queue_free()
 		if budget_us >= 0 and Time.get_ticks_usec() - t0 > budget_us:
+			mancano += 1
 			break
+	# I blocchi non più inquadrati (o dell'altra grandezza) si tolgono solo quando quelli nuovi
+	# sono tutti pronti: cambiando zoom non si vedono buchi.
+	if mancano == 0:
+		for u in _blocchi.keys():
+			if not tenere.has(u):
+				_togli(u)
 	# Compiti finiti: si liberano i posti.
 	for chiave in _in_corso.keys():
 		if WorkerThreadPool.is_task_completed(_in_corso[chiave]):
@@ -143,19 +157,20 @@ func aggiorna(budget_us: int) -> void:
 	# Risultati non più utili (blocchi usciti dalla vista o livello cambiato).
 	_mutex.lock()
 	for chiave in _pronti.keys():
-		if chiave.z != livello or not tenere.has(Vector2i(chiave.x, chiave.y)):
+		if chiave.w != livello or not tenere.has(Vector3i(chiave.x, chiave.y, chiave.z)):
 			_pronti.erase(chiave)
 	_mutex.unlock()
 	alberi_visibili = 0
-	for b in _blocchi:
-		alberi_visibili += _blocchi[b]["n"]
+	for u in _blocchi:
+		if _blocchi[u]["livello"] == livello:
+			alberi_visibili += _blocchi[u]["n"]
 
 
-## Blocchi inquadrati: il centro di ogni blocco, alla sua quota, si proietta sugli assi dello
-## schermo (destra e alto della camera). Tenere conto della quota conta: con la camera inclinata
-## un rilievo sposta il terreno in alto sullo schermo, e i blocchi ai bordi altrimenti mancavano.
-## Ordinati dal più vicino al centro.
-func _blocchi_inquadrati() -> Array:
+## Blocchi inquadrati (di `lato` x `lato` blocchi): il centro di ognuno, alla sua quota, si
+## proietta sugli assi dello schermo (destra e alto della camera). Tenere conto della quota conta:
+## con la camera inclinata un rilievo sposta il terreno in alto sullo schermo, e i blocchi ai bordi
+## altrimenti mancavano. Ordinati dal più vicino al centro.
+func _blocchi_inquadrati(lato: int) -> Array:
 	var base := cam.camera.global_transform.basis
 	var destra := base.x
 	var alto := base.y
@@ -167,7 +182,7 @@ func _blocchi_inquadrati() -> Array:
 		aspetto = r.x / maxf(r.y, 1.0)
 	var mezza_l := d * aspetto * 0.5
 	var mezza_a := d * 0.5
-	var lb := Alberi.LATO_BLOCCO
+	var lb := Alberi.LATO_BLOCCO * lato
 	# Mezzo blocco in diagonale, alberi alti e dislivelli dentro il blocco.
 	var margine := lb * 0.71 + 60.0
 	var c := cam.bersaglio
@@ -184,29 +199,39 @@ func _blocchi_inquadrati() -> Array:
 			var p := Vector3(cx, dati.quota(cx, cz) * esag, cz) - c
 			if absf(p.dot(destra)) > mezza_l + margine or absf(p.dot(alto)) > mezza_a + margine:
 				continue
-			out.append(Vector2i(bx, bz))
-	out.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+			out.append(Vector3i(bx, bz, lato))
+	out.sort_custom(func(a: Vector3i, b: Vector3i) -> bool:
 		return _dist_blocco(a, c) < _dist_blocco(b, c))
 	return out
 
 
-func _dist_blocco(b: Vector2i, c: Vector3) -> float:
-	var lb := Alberi.LATO_BLOCCO
-	return Vector2((b.x + 0.5) * lb - c.x, (b.y + 0.5) * lb - c.z).length()
+func _dist_blocco(u: Vector3i, c: Vector3) -> float:
+	var lb := Alberi.LATO_BLOCCO * u.z
+	return Vector2((u.x + 0.5) * lb - c.x, (u.y + 0.5) * lb - c.z).length()
 
 
 ## Su un altro thread: dati del blocco e buffer delle MultiMesh, una parte per modello
 ## (per le sagome una parte sola). Ogni parte: [modello o -1, buffer, istanze, y_min, y_max].
-func _prepara(chiave: Vector3i) -> void:
-	var b := Vector2i(chiave.x, chiave.y)
-	var liv := chiave.z
-	var dati := alberi.alberi_nel_blocco(b)
+func _prepara(chiave: Vector4i) -> void:
+	var liv := chiave.w
+	var lato := chiave.z
 	var k := Alberi.CAMPI
+	var dati := PackedFloat32Array()
+	for j in lato:
+		for i in lato:
+			dati.append_array(alberi.alberi_nel_blocco(Vector2i(chiave.x * lato + i, chiave.y * lato + j)))
 	var n := dati.size() / k
 	var parti := []
-	if liv == SAGOME:
-		if n > 0:
-			parti.append(_buffer(dati, PackedInt32Array(range(n)), true, -1))
+	if liv == RADE or liv == SAGOME:
+		var elenco := PackedInt32Array()
+		for i in n:
+			# Sagome rade: si tengono solo alcuni alberi (la tinta è un numero casuale per albero),
+			# niente arbusti.
+			if liv == RADE and ((dati[i * k + 5] - 0.84) / 0.24 >= RADE_QUOTA or int(dati[i * k + 4]) >= 7):
+				continue
+			elenco.append(i)
+		if not elenco.is_empty():
+			parti.append(_buffer(dati, elenco, true, -1, RADE_SCALA if liv == RADE else 1.0))
 	else:
 		var per_modello := []
 		for _m in Alberi.MODELLI.size():
@@ -215,7 +240,7 @@ func _prepara(chiave: Vector3i) -> void:
 			per_modello[int(dati[i * k + 4])].append(i)
 		for m in per_modello.size():
 			if not (per_modello[m] as PackedInt32Array).is_empty():
-				parti.append(_buffer(dati, per_modello[m], false, m))
+				parti.append(_buffer(dati, per_modello[m], false, m, 1.0))
 	_mutex.lock()
 	_pronti[chiave] = parti
 	_mutex.unlock()
@@ -224,7 +249,7 @@ func _prepara(chiave: Vector3i) -> void:
 ## Buffer di una MultiMesh: per ogni istanza trasformazione 3 x 4 per righe, colore e, per le
 ## sagome, dati personalizzati (modello, specchiata). Riempire il buffer in un colpo solo è molto
 ## più veloce che impostare le istanze una per una.
-func _buffer(dati: PackedFloat32Array, elenco: PackedInt32Array, sagome: bool, modello: int) -> Array:
+func _buffer(dati: PackedFloat32Array, elenco: PackedInt32Array, sagome: bool, modello: int, ingrandimento: float) -> Array:
 	var k := Alberi.CAMPI
 	var passo := 20 if sagome else 16
 	var esag := terreno.esagerazione
@@ -237,7 +262,7 @@ func _buffer(dati: PackedFloat32Array, elenco: PackedInt32Array, sagome: bool, m
 		var x := dati[i]
 		var z := dati[i + 1]
 		var rot := dati[i + 2]
-		var s := dati[i + 3]
+		var s := dati[i + 3] * ingrandimento
 		var y := dati[i + 6] * esag - 0.1
 		y_min = minf(y_min, y)
 		y_max = maxf(y_max, y)
@@ -259,7 +284,7 @@ func _buffer(dati: PackedFloat32Array, elenco: PackedInt32Array, sagome: bool, m
 
 
 ## Sul thread principale: crea le MultiMesh dai buffer già pronti (operazione veloce).
-func _costruisci(b: Vector2i, parti: Array) -> void:
+func _costruisci(u: Vector3i, parti: Array) -> void:
 	var nodi := []
 	var n := 0
 	for p in parti:
@@ -278,14 +303,16 @@ func _costruisci(b: Vector2i, parti: Array) -> void:
 		n += int(p[2])
 		var mmi := MultiMeshInstance3D.new()
 		mmi.multimesh = mm
+		if livello == RADE:
+			mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		if sagome:
 			# Il rettangolo vero lo calcola lo shader: l'ingombro va dato a mano, altrimenti
 			# Godot scarterebbe i blocchi ai bordi dello schermo.
-			var lb := Alberi.LATO_BLOCCO
-			mmi.custom_aabb = AABB(Vector3(b.x * lb - 30.0, p[3] - 20.0, b.y * lb - 30.0), Vector3(lb + 60.0, p[4] - p[3] + 60.0, lb + 60.0))
+			var lb := Alberi.LATO_BLOCCO * u.z
+			mmi.custom_aabb = AABB(Vector3(u.x * lb - 40.0, p[3] - 20.0, u.y * lb - 40.0), Vector3(lb + 80.0, p[4] - p[3] + 80.0, lb + 80.0))
 		add_child(mmi)
 		nodi.append(mmi)
-	_blocchi[b] = {"livello": livello, "nodi": nodi, "n": n}
+	_blocchi[u] = {"livello": livello, "nodi": nodi, "n": n}
 
 
 ## Attende i compiti in sottofondo (da chiamare prima di chiudere).
@@ -295,7 +322,7 @@ func aspetta() -> void:
 	_in_corso.clear()
 
 
-func _togli(b: Vector2i) -> void:
-	for nodo in _blocchi[b]["nodi"]:
+func _togli(u: Vector3i) -> void:
+	for nodo in _blocchi[u]["nodi"]:
 		(nodo as Node).queue_free()
-	_blocchi.erase(b)
+	_blocchi.erase(u)
