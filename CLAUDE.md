@@ -35,7 +35,7 @@ Dopo `sh scripts/setup_strumenti.sh`, aggiungi i comandi al percorso: `export PA
 - `godot --headless --path gioco -s res://test/verifica_base.gd` esegue le verifiche della base. Devono passare tutte prima di ogni push.
 - `python3 strumenti/mappe/genera_pedecollinare.py gioco/mappe/pedecollinare` rigenera i dati della mappa; poi `godot --headless --path gioco -s res://strumenti/importa_mappa.gd -- pedecollinare` li converte in `mappa.res`.
 - `xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto.gd -- /tmp/foto.png [modo] [dimensione_vista] [rotazioni]` salva un'immagine reale della scena (schermo virtuale, rendering software). Serve a controllare shader e aspetto; non sostituisce le prove di Fede.
-- `blender-py strumenti/blender/casa_lunga.py uscita.glb anteprima.png` modella, esporta e crea un'anteprima.
+- `blender-py strumenti/blender/asset_villaggio.py gioco/asset/villaggio docs/immagini/asset-villaggio.png` rigenera gli asset del villaggio e la tavola di anteprima; poi `godot --headless --path gioco --import` e `godot --headless --path gioco -s res://test/verifica_asset.gd`. Regole sugli asset: `docs/asset.md`.
 
 ## Base del gioco (stato)
 - Scena principale: `gioco/scene/principale.tscn` con `script/principale.gd`, che costruisce tutto da codice.

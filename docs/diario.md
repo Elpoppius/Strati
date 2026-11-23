@@ -10,6 +10,7 @@ Voci più recenti in cima.
 - Creato il repository `Elpoppius/Strati` con documenti di design, diario, istruzioni per Claude, guida di installazione e prototipo. GitHub collegato a entrambi gli account Claude di Fede.
 - Collegato il repository al secondo account Claude e verificato da smartphone: lettura e scrittura funzionano. Nota: all'inizio della sessione la richiesta di scrittura può essere bloccata da un controllo automatico dei permessi; basta che Fede la autorizzi esplicitamente e si riprova.
 - **Base del progetto Godot** (`gioco/`): terreno 3D della mappa pedecollinare (10 × 10 km, griglia da 40 m, esagerazione verticale 1,5) con tinte ipsometriche, boschi, paludi, isoipse ogni 25 m e acque dai bordi morbidi; camera isometrica ortografica che ruota a scatti di 90° (Q/E), zoom con la rotella, spostamento con WASD o tasto destro; mappe tematiche Terreno, Acqua, Fertilità, Rischio piena (tasti 1–4); griglia dei lotti da 20 m visibile da vicino (G); lettura del lotto sotto il puntatore; etichette dei sei siti. Verifiche senza grafica tutte superate; immagini reali in `docs/immagini/`.
+- **Primo lotto di asset dell'epoca del villaggio** (`gioco/asset/villaggio/`, 11 modelli): tre case lunghe, capanna tonda, granaio su pali, palizzata e varco, luogo sacro, due querce, canneto. Generati da script Blender, stile "plastico architettonico" (proposta). Guida e catalogo in `docs/asset.md`, anteprima in `docs/immagini/asset-villaggio.png`, verifica in `gioco/test/verifica_asset.gd` (superata).
 - Strumenti nell'ambiente di Claude: Godot 4.7.2 senza grafica e Blender 5.3 come modulo Python; catena Blender → glTF → Godot provata con una casa lunga neolitica.
 
 **Decisioni (Fede)**
@@ -24,5 +25,6 @@ Voci più recenti in cima.
 **Prossimo passo**
 - Fede: preparare il PC dedicato (Godot 4.7.2, Blender 5.3, GitHub Desktop: vedi `docs/setup-pc.md`); continuare a provare il Prototipo 0.
 - Fede: aprire `gioco/project.godot` con Godot 4.7.2 sul PC dedicato, premere F5 e riportare cosa si vede e come risponde (vedi `docs/setup-pc.md`).
+- Fede: dare la direzione artistica sugli asset (stile, colori, proporzioni) guardando `docs/immagini/asset-villaggio.png`.
 - Claude: in attesa delle prove di Fede. Proposte per il passo successivo: portare in Godot il ciclo del villaggio (fondazione, campi, case) oppure ritoccare l'aspetto del terreno secondo le indicazioni di Fede.
 - In sospeso: recinto come primo strumento di regolazione nel Prototipo 0.
