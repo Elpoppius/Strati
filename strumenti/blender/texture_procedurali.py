@@ -66,11 +66,16 @@ def paglia():
     fibre = rumore_anisotropo(LATO, 160, 6, 1) * 0.6 + rumore_anisotropo(LATO, 64, 3, 2) * 0.4
     macchie = fbm(LATO, 4, 4, 3)
     campo = 0.62 + 0.55 * fibre
-    base = np.array([0.56, 0.46, 0.30])
+    # Corsi di paglia sovrapposti: bande orizzontali più scure alla base di ogni corso.
+    y = (np.arange(LATO)[:, None] / LATO * 6 + rumore_anisotropo(LATO, 8, 4, 4) * 0.4) % 1.0
+    corsi = 0.78 + 0.22 * np.clip(y * 1.6, 0, 1)
+    grande = 0.85 + 0.3 * fbm(LATO, 2, 3, 5)
+    campo = campo * corsi * grande
+    base = np.array([0.70, 0.55, 0.31])
     img = colore(base, campo)
     # Invecchiamento: zone ingrigite e più scure.
-    grigio = np.array([0.42, 0.40, 0.36])
-    peso = np.clip((macchie - 0.45) * 2.2, 0, 0.6)[..., None]
+    grigio = np.array([0.50, 0.45, 0.36])
+    peso = np.clip((macchie - 0.55) * 2.0, 0, 0.4)[..., None]
     return img * (1 - peso) + colore(grigio, campo) * peso
 
 
@@ -80,14 +85,15 @@ def argilla():
     # Tracce dell'incannicciato sotto l'intonaco: righe orizzontali appena visibili.
     righe = 0.5 + 0.5 * np.sin(np.arange(LATO)[:, None] / LATO * 2 * math.pi * 14 + n * 3)
     campo = 0.78 + 0.3 * n + 0.12 * fine - 0.05 * righe
-    return colore(np.array([0.55, 0.43, 0.31]), campo)
+    chiare = np.clip((fbm(LATO, 3, 3, 12) - 0.55) * 2.5, 0, 0.35)[..., None]
+    return colore(np.array([0.66, 0.50, 0.34]), campo) * (1 - chiare) + colore(np.array([0.78, 0.66, 0.50]), campo) * chiare
 
 
 def legno():
     venature = rumore_anisotropo(LATO, 48, 4, 20)
     n = fbm(LATO, 8, 3, 21)
     campo = 0.7 + 0.4 * venature + 0.15 * n
-    return colore(np.array([0.40, 0.30, 0.20]), campo)
+    return colore(np.array([0.42, 0.29, 0.18]), campo)
 
 
 def corteccia():
@@ -112,10 +118,18 @@ def erba():
     fine = np.random.default_rng(51).random((LATO, LATO))
     campo = 0.75 + 0.3 * n + 0.1 * fine
     terra = np.clip((fbm(LATO, 3, 3, 52) - 0.68) * 2, 0, 0.35)[..., None]
-    return colore(np.array([0.36, 0.44, 0.22]), campo) * (1 - terra) + colore(np.array([0.42, 0.34, 0.24]), campo) * terra
+    chiaro = np.clip((fbm(LATO, 4, 3, 53) - 0.5) * 2.0, -0.5, 0.5)[..., None]
+    img = colore(np.array([0.40, 0.52, 0.24]), campo) * (1 - terra) + colore(np.array([0.46, 0.38, 0.26]), campo) * terra
+    img = img * (1 + 0.18 * chiaro) + np.array([0.04, 0.03, -0.02]) * np.clip(chiaro, 0, 1)
+    rng = np.random.default_rng(54)
+    fiori = rng.random((LATO, LATO)) > 0.9975
+    img[fiori] = [0.92, 0.86, 0.45]
+    bianchi = rng.random((LATO, LATO)) > 0.9985
+    img[bianchi] = [0.92, 0.92, 0.88]
+    return img
 
 
-def foglie(seme=60):
+def foglie(seme=60, tono=(76, 104, 42)):
     """Ciuffo di foglie con trasparenza, per le carte di fogliame degli alberi."""
     rng = np.random.default_rng(seme)
     img = Image.new("RGBA", (LATO, LATO), (0, 0, 0, 0))
@@ -131,7 +145,7 @@ def foglie(seme=60):
         lung = 9 + rng.random() * 9; larg = lung * 0.45
         ang = rng.random() * math.pi
         luce = 0.75 + 0.45 * rng.random() - 0.25 * (r / rr)
-        col = (int(62 * luce), int(86 * luce), int(38 * luce), 255)
+        col = (min(255, int(tono[0] * luce)), min(255, int(tono[1] * luce)), min(255, int(tono[2] * luce)), 255)
         pts = []
         for k in range(10):
             t = k / 10 * 2 * math.pi
@@ -147,6 +161,8 @@ def main(uscita):
                      ("pietra", pietra), ("erba", erba)]:
         salva(fn(), os.path.join(uscita, nome + ".png"))
     foglie().save(os.path.join(uscita, "foglie.png"))
+    foglie(61, (112, 140, 52)).save(os.path.join(uscita, "foglie_chiare.png"))
+    foglie(62, (58, 84, 34)).save(os.path.join(uscita, "foglie_scure.png"))
     print("Texture scritte in", uscita)
 
 

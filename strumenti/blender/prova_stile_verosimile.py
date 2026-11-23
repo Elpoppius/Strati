@@ -91,9 +91,11 @@ def da_bmesh(nome, bm, mat, uv=True, tile=TILE):
 
 
 # ---------- forme ----------
-def scatola(nome, dim, centro, mat):
+def scatola(nome, dim, centro, mat, tagli=0):
     bm = bmesh.new()
     bmesh.ops.create_cube(bm, size=1.0)
+    if tagli:
+        bmesh.ops.subdivide_edges(bm, edges=bm.edges[:], cuts=tagli, use_grid_fill=True)
     bmesh.ops.scale(bm, vec=Vector(dim), verts=bm.verts)
     bmesh.ops.translate(bm, vec=Vector(centro), verts=bm.verts)
     return da_bmesh(nome, bm, mat)
@@ -202,6 +204,8 @@ def M():
         "legno": materiale("legno", "legno"),
         "corteccia": materiale("corteccia", "corteccia"),
         "foglie": materiale("foglie", "foglie", ruvidezza=0.8, ritaglio=True),
+        "foglie_chiare": materiale("foglie_chiare", "foglie_chiare", ruvidezza=0.8, ritaglio=True),
+        "foglie_scure": materiale("foglie_scure", "foglie_scure", ruvidezza=0.8, ritaglio=True),
         "vano": materiale("vano", "legno", tinta=(0.15, 0.12, 0.1)),
     }
 
@@ -209,16 +213,16 @@ def M():
 # ---------- asset ----------
 def casa_lunga(nome, lungo, largo, seme):
     m = M()
-    altezza_muro = 1.35
-    parti = [scatola("muri", (lungo, largo, altezza_muro), (0, 0, altezza_muro / 2), m["argilla"])]
+    altezza_muro = 1.45
+    parti = [scatola("muri", (lungo, largo, altezza_muro), (0, 0, altezza_muro / 2), m["argilla"], tagli=4)]
     passo = 2.0
     n = int(lungo / passo)
     for k in range(n + 1):
         x = -lungo / 2 + k * lungo / n
         for y in (-largo / 2, largo / 2):
-            parti.append(cilindro_tra("palo", (x, y, 0), (x, y, altezza_muro + 0.15), 0.13, 0.11, m["corteccia"], lati=6))
-    parti.append(scatola("porta", (0.12, 1.0, 1.25), (lungo / 2 + 0.02, 0, 0.62), m["vano"]))
-    parti.append(tetto_a_padiglione("tetto", lungo, largo, altezza_muro - 0.1, 50, 0.6, 0.35, m["paglia"], seme))
+            parti.append(cilindro_tra("palo", (x, y, -0.1), (x, y, altezza_muro + 0.15), 0.16, 0.13, m["corteccia"], lati=6))
+    parti.append(scatola("porta", (0.14, 1.2, 1.4), (lungo / 2 + 0.03, 0, 0.7), m["vano"]))
+    parti.append(tetto_a_padiglione("tetto", lungo, largo, altezza_muro - 0.1, 56, 0.85, 0.45, m["paglia"], seme))
     return unisci(nome, parti)
 
 
@@ -226,10 +230,11 @@ def capanna_tonda(nome, raggio, seme):
     m = M()
     bm = bmesh.new()
     bmesh.ops.create_cone(bm, cap_ends=True, segments=18, radius1=raggio, radius2=raggio, depth=1.4)
+    bmesh.ops.subdivide_edges(bm, edges=[e for e in bm.edges if abs(e.verts[0].co.z - e.verts[1].co.z) > 0.5], cuts=3)
     bmesh.ops.translate(bm, vec=Vector((0, 0, 0.7)), verts=bm.verts)
     parti = [da_bmesh("muro", bm, m["argilla"])]
-    parti.append(scatola("porta", (0.3, 0.9, 1.2), (raggio - 0.05, 0, 0.6), m["vano"]))
-    parti.append(tetto_conico("tetto", raggio + 0.55, 1.25, raggio * 1.25, 0.3, m["paglia"], seme))
+    parti.append(scatola("porta", (0.3, 1.0, 1.3), (raggio - 0.05, 0, 0.65), m["vano"]))
+    parti.append(tetto_conico("tetto", raggio + 0.8, 1.25, raggio * 1.45, 0.4, m["paglia"], seme))
     return unisci(nome, parti)
 
 
@@ -242,9 +247,9 @@ def granaio(nome, seme):
             # Cappello contro i roditori.
             parti.append(cilindro_tra("cappello", (x, y, 1.05), (x, y, 1.13), 0.32, 0.3, m["legno"], lati=8))
     parti.append(scatola("piano", (3.0, 3.0, 0.14), (0, 0, 1.2), m["legno"]))
-    parti.append(scatola("cella", (2.5, 2.5, 1.5), (0, 0, 2.02), m["argilla"]))
+    parti.append(scatola("cella", (2.5, 2.5, 1.5), (0, 0, 2.02), m["argilla"], tagli=3))
     parti.append(scatola("porta", (0.1, 0.7, 0.9), (1.27, 0, 1.8), m["vano"]))
-    parti.append(tetto_a_padiglione("tetto", 2.5, 2.5, 2.65, 52, 0.45, 0.25, m["paglia"], seme))
+    parti.append(tetto_a_padiglione("tetto", 2.5, 2.5, 2.65, 56, 0.6, 0.32, m["paglia"], seme))
     return unisci(nome, parti)
 
 
@@ -287,7 +292,7 @@ def quercia(nome, seme, alta=12.0):
         meta = centro + Vector((math.cos(a) * rx * 0.6, math.sin(a) * rx * 0.6, rnd.uniform(-0.3, 0.2) * rz))
         p0 = Vector((0, 0, h_tronco * rnd.uniform(0.85, 1.0)))
         parti.append(cilindro_tra("ramo", p0, meta, base_r * 0.55, base_r * 0.25, m["corteccia"], lati=6))
-    n_carte = int(38 + alta * 1.5)
+    n_carte = int(60 + alta * 2.5)
     for _ in range(n_carte):
         while True:
             d = Vector((rnd.uniform(-1, 1), rnd.uniform(-1, 1), rnd.uniform(-1, 1)))
@@ -296,8 +301,10 @@ def quercia(nome, seme, alta=12.0):
         r = d.length ** 0.35  # più carte verso la superficie della chioma
         d = d.normalized() * r if d.length > 0 else d
         p = centro + Vector((d.x * rx, d.y * rx, d.z * rz))
-        dim = alta * rnd.uniform(0.2, 0.28)
-        parti.append(carta_foglie(p, dim, rnd, m["foglie"]))
+        dim = alta * rnd.uniform(0.17, 0.25)
+        # Sopra foglie illuminate, sotto e dentro foglie in ombra: volume "dipinto".
+        mat = m["foglie_chiare"] if d.z > 0.15 and r > 0.7 else (m["foglie_scure"] if d.z < -0.2 or r < 0.55 else m["foglie"])
+        parti.append(carta_foglie(p, dim, rnd, mat))
     return unisci(nome, parti)
 
 
@@ -310,24 +317,73 @@ ASSET = [
 ]
 
 
+def cuoci_occlusione(ob, minimo=0.45):
+    """Occlusione ambientale nei colori dei vertici: scurisce incavi, basi e interno delle chiome."""
+    scn = bpy.context.scene
+    scn.render.engine = "CYCLES"
+    scn.cycles.device = "CPU"
+    scn.cycles.samples = 64
+    scn.world.light_settings.distance = 2.5
+    attr = ob.data.color_attributes.new("Occlusione", "BYTE_COLOR", "CORNER")
+    ob.data.color_attributes.active_color = attr
+    bpy.ops.object.select_all(action="DESELECT")
+    ob.select_set(True)
+    bpy.context.view_layer.objects.active = ob
+    bpy.ops.object.bake(type="AO", target="VERTEX_COLORS")
+    # Ammorbidisce: l'occlusione piena è troppo scura per una vista dall'alto.
+    for c in attr.data:
+        v = c.color
+        k = minimo + (1 - minimo) * v[0]
+        c.color = (k, k, k, 1.0)
+
+
 def esporta(ob, percorso):
     bpy.ops.object.select_all(action="DESELECT")
     ob.select_set(True)
     bpy.context.view_layer.objects.active = ob
-    bpy.ops.export_scene.gltf(filepath=percorso, use_selection=True, export_apply=True, export_image_format="AUTO")
+    bpy.ops.export_scene.gltf(filepath=percorso, use_selection=True, export_apply=True, export_image_format="AUTO",
+                              export_vertex_color="ACTIVE")
+
+
+def mostra_occlusione_nei_materiali():
+    """Per l'anteprima di Blender: moltiplica la texture per l'occlusione dei vertici."""
+    for m in bpy.data.materials:
+        if not m.use_nodes or "Principled BSDF" not in m.node_tree.nodes:
+            continue
+        nt = m.node_tree
+        bsdf = nt.nodes["Principled BSDF"]
+        if not bsdf.inputs["Base Color"].links:
+            continue
+        sorgente = bsdf.inputs["Base Color"].links[0].from_socket
+        attr = nt.nodes.new("ShaderNodeVertexColor")
+        attr.layer_name = "Occlusione"
+        mix = nt.nodes.new("ShaderNodeMix")
+        mix.data_type = "RGBA"
+        mix.blend_type = "MULTIPLY"
+        mix.inputs["Factor"].default_value = 1.0
+        nt.links.new(sorgente, mix.inputs["A"])
+        nt.links.new(attr.outputs["Color"], mix.inputs["B"])
+        nt.links.new(mix.outputs["Result"], bsdf.inputs["Base Color"])
 
 
 def main():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     os.makedirs(USCITA, exist_ok=True)
+    bpy.context.scene.world = bpy.data.worlds.new("Mondo")
+    # Suolo temporaneo per l'occlusione alla base degli asset.
+    bpy.ops.mesh.primitive_plane_add(size=60, location=(0, 0, 0))
+    suolo_ao = bpy.context.object
     oggetti = []
     for nome, fabbrica, pos in ASSET:
         ob = fabbrica(nome)
+        cuoci_occlusione(ob, 0.72 if nome.startswith("quercia") else 0.45)
         esporta(ob, os.path.join(USCITA, nome + ".glb"))
         d = ob.dimensions
         print(f"{nome}: {d.x:.1f} x {d.y:.1f} x {d.z:.1f} m, {len(ob.data.polygons)} facce")
         ob.location = (pos[0], pos[1], 0)
         oggetti.append(ob)
+    bpy.data.objects.remove(suolo_ao, do_unlink=True)
+    mostra_occlusione_nei_materiali()
     # Suolo d'erba.
     bpy.ops.mesh.primitive_plane_add(size=1, location=(2, 2, 0))
     suolo = bpy.context.object
@@ -349,11 +405,10 @@ def main():
     sole = bpy.data.objects.new("Sole", bpy.data.lights.new("Sole", "SUN"))
     scn.collection.objects.link(sole)
     sole.rotation_euler = (math.radians(50), math.radians(10), math.radians(-40))
-    sole.data.energy = 4.0
+    sole.data.energy = 4.5
     sole.data.angle = math.radians(3)
-    sole.data.color = (1.0, 0.96, 0.9)
-    mondo = bpy.data.worlds.new("Mondo")
-    scn.world = mondo
+    sole.data.color = (1.0, 0.93, 0.82)
+    mondo = scn.world
     mondo.use_nodes = True
     bg = mondo.node_tree.nodes["Background"]
     bg.inputs["Color"].default_value = (0.55, 0.65, 0.8, 1)

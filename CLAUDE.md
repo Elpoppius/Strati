@@ -41,4 +41,5 @@ Dopo `sh scripts/setup_strumenti.sh`, aggiungi i comandi al percorso: `export PA
 - Scena principale: `gioco/scene/principale.tscn` con `script/principale.gd`, che costruisce tutto da codice.
 - Mappa: `gioco/mappe/pedecollinare/` (dati grezzi generati in Python, convertiti in `mappa.res`, classe `MappaDati`). Griglia di 256 x 256 punti da 40 m; acque disegnate da un campo di distanza a 1024 x 1024.
 - Coordinate: 1 unità = 1 metro; x verso est, z verso sud; quote con esagerazione verticale 1,5.
+- Asset: caricarli sempre con `Asset.istanzia(percorso)` (`script/asset.gd`), che attiva l'occlusione cotta nei colori dei vertici.
 - Lotti: griglia di 20 m disegnata dallo shader del terreno; il lotto sotto il puntatore si calcola intersecando il raggio della camera con il terreno (niente fisica).

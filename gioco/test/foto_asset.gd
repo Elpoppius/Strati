@@ -36,11 +36,9 @@ func _process(_delta: float) -> bool:
 		var cam: CameraIsometrica = _scena.cam
 		var centro := cam.bersaglio
 		for nome in DISPOSIZIONE:
-			var percorso := "%s/%s.glb" % [_cartella, nome]
-			var scena := load(percorso) as PackedScene
-			if scena == null:
+			var nodo := Asset.istanzia("%s/%s.glb" % [_cartella, nome])
+			if nodo == null:
 				continue
-			var nodo: Node3D = scena.instantiate()
 			var p: Vector3 = centro + DISPOSIZIONE[nome]
 			p.y = _scena.terreno.quota_mondo(p.x, p.z)
 			nodo.position = p
