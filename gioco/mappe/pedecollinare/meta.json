@@ -1,0 +1,86 @@
+{
+  "nome": "Pedecollinare",
+  "fonte": "Generata con la logica del Prototipo 0 (strumenti/mappe/genera_pedecollinare.py)",
+  "lato_px": 256,
+  "metri_per_px": 40.0,
+  "lato_acqua_px": 1024,
+  "quota_min": 13.306559369259048,
+  "quota_max": 419.25613470346826,
+  "nord": "in alto (riga 0)",
+  "sorgenti_px": [
+    [
+      70,
+      186
+    ],
+    [
+      90,
+      190
+    ],
+    [
+      122,
+      186
+    ],
+    [
+      154,
+      190
+    ],
+    [
+      174,
+      186
+    ],
+    [
+      194,
+      190
+    ]
+  ],
+  "siti": [
+    {
+      "n": 1,
+      "nome": "Terrazzo centrale",
+      "px": [
+        142,
+        182
+      ]
+    },
+    {
+      "n": 2,
+      "nome": "Sbocco del fiume",
+      "px": [
+        62,
+        190
+      ]
+    },
+    {
+      "n": 3,
+      "nome": "Sperone collinare",
+      "px": [
+        102,
+        182
+      ]
+    },
+    {
+      "n": 4,
+      "nome": "Dosso nelle paludi",
+      "px": [
+        98,
+        26
+      ]
+    },
+    {
+      "n": 5,
+      "nome": "Area dei gessi",
+      "px": [
+        194,
+        214
+      ]
+    },
+    {
+      "n": 6,
+      "nome": "Pianura aperta",
+      "px": [
+        106,
+        122
+      ]
+    }
+  ]
+}

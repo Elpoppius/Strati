@@ -30,6 +30,15 @@ Aggiungi in cima a `docs/diario.md` una voce con data, cosa è stato fatto, deci
 | `scripts/` | Installazione degli strumenti nell'ambiente di Claude |
 
 ## Comandi utili (ambiente di Claude)
-- `godot --headless --path gioco --import` importa le risorse del progetto.
-- `godot --headless --path gioco -s percorso/script.gd` esegue uno script di prova.
+Dopo `sh scripts/setup_strumenti.sh`, aggiungi i comandi al percorso: `export PATH=$HOME/bin:$PATH`.
+- `godot --headless --path gioco --import` importa le risorse del progetto (da rifare dopo ogni modifica a script o risorse).
+- `godot --headless --path gioco -s res://test/verifica_base.gd` esegue le verifiche della base. Devono passare tutte prima di ogni push.
+- `python3 strumenti/mappe/genera_pedecollinare.py gioco/mappe/pedecollinare` rigenera i dati della mappa; poi `godot --headless --path gioco -s res://strumenti/importa_mappa.gd -- pedecollinare` li converte in `mappa.res`.
+- `xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto.gd -- /tmp/foto.png [modo] [dimensione_vista] [rotazioni]` salva un'immagine reale della scena (schermo virtuale, rendering software). Serve a controllare shader e aspetto; non sostituisce le prove di Fede.
 - `blender-py strumenti/blender/casa_lunga.py uscita.glb anteprima.png` modella, esporta e crea un'anteprima.
+
+## Base del gioco (stato)
+- Scena principale: `gioco/scene/principale.tscn` con `script/principale.gd`, che costruisce tutto da codice.
+- Mappa: `gioco/mappe/pedecollinare/` (dati grezzi generati in Python, convertiti in `mappa.res`, classe `MappaDati`). Griglia di 256 x 256 punti da 40 m; acque disegnate da un campo di distanza a 1024 x 1024.
+- Coordinate: 1 unità = 1 metro; x verso est, z verso sud; quote con esagerazione verticale 1,5.
+- Lotti: griglia di 20 m disegnata dallo shader del terreno; il lotto sotto il puntatore si calcola intersecando il raggio della camera con il terreno (niente fisica).

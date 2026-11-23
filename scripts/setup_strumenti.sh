@@ -23,3 +23,4 @@ chmod +x "$HOME/bin/blender-py"
 
 "$HOME/bin/godot" --headless --version
 "$HOME/bin/blender-py" -c "import bpy; print('Blender', bpy.app.version_string)"
+echo "Ricorda: export PATH=$HOME/bin:\$PATH"
