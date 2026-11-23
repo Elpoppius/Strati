@@ -6,7 +6,7 @@ extends RefCounted
 ## che usa lo shader del terreno: il bordo dipinto da lontano e gli alberi veri da vicino coincidono.
 ## Gli alberi si calcolano per blocchi quadrati, in modo deterministico (stesso luogo, stessi alberi),
 ## e restano in memoria una volta calcolati. Fuori dal bosco: alberi sparsi, lungo i corsi d'acqua,
-## ai margini dei boschi, qualche arbusto su paludi e gessi.
+## ai margini dei boschi, qualche arbusto sui gessi. Nelle paludi nessun albero (richiesta di Fede).
 ##
 ## Da fare (in coda nel diario): aree disboscate modificabili durante il gioco, che tolgono gli
 ## alberi e cambiano il suolo; ricrescita per stadi.
@@ -26,20 +26,69 @@ const NOMI_SPECIE := ["quercia", "carpino", "pioppo", "cespuglio"]
 ## Primo modello e numero di varianti di ogni specie dentro MODELLI.
 const VARIANTI := [[0, 3], [3, 2], [5, 2], [7, 2]]
 ## Valori per albero nell'array restituito da alberi_nel_blocco.
-const CAMPI := 6  # x, z, rotazione, scala, modello, tinta
+const CAMPI := 7  # x, z, rotazione, scala, modello, tinta, quota del suolo (m, senza esagerazione)
 
 var dati: MappaDati
 var _cache := {}
+var _mutex := Mutex.new()
+var _compito := -1
+var _ordine: Array = []
 
 
 func _init(d: MappaDati) -> void:
 	dati = d
 
 
+## Calcola in sottofondo (su un altro thread) gli alberi di tutti i blocchi, dal più vicino al
+## punto indicato: quando la vista li chiede sono già pronti.
+func calcola_in_sottofondo(x: float, z: float) -> void:
+	var nb := int(ceil(dati.lato_metri() / LATO_BLOCCO))
+	_ordine = []
+	for bz in nb:
+		for bx in nb:
+			_ordine.append(Vector2i(bx, bz))
+	var c := Vector2(x, z) / LATO_BLOCCO
+	_ordine.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		return (Vector2(a) + Vector2(0.5, 0.5)).distance_squared_to(c) < (Vector2(b) + Vector2(0.5, 0.5)).distance_squared_to(c))
+	_compito = WorkerThreadPool.add_task(_calcola_tutti, false, "Alberi della mappa")
+
+
+func _calcola_tutti() -> void:
+	for b in _ordine:
+		alberi_nel_blocco(b)
+
+
+## Attende la fine del calcolo in sottofondo (da chiamare prima di chiudere).
+func aspetta() -> void:
+	if _compito >= 0:
+		WorkerThreadPool.wait_for_task_completion(_compito)
+		_compito = -1
+
+
+func pronto(b: Vector2i) -> bool:
+	_mutex.lock()
+	var esito := _cache.has(b)
+	_mutex.unlock()
+	return esito
+
+
 ## Alberi del blocco (bx, bz): array piatto di CAMPI valori per albero.
+## Si può chiamare da più thread: il risultato si calcola una volta e resta in memoria.
 func alberi_nel_blocco(b: Vector2i) -> PackedFloat32Array:
+	_mutex.lock()
 	if _cache.has(b):
-		return _cache[b]
+		var pronto_ora: PackedFloat32Array = _cache[b]
+		_mutex.unlock()
+		return pronto_ora
+	_mutex.unlock()
+	var out := _calcola_blocco(b)
+	_mutex.lock()
+	_cache[b] = out
+	_mutex.unlock()
+	return out
+
+
+func _calcola_blocco(b: Vector2i) -> PackedFloat32Array:
 	var out := PackedFloat32Array()
 	var x0 := b.x * LATO_BLOCCO
 	var z0 := b.y * LATO_BLOCCO
@@ -57,13 +106,13 @@ func alberi_nel_blocco(b: Vector2i) -> PackedFloat32Array:
 			if x < 0.0 or z < 0.0 or x > lato_m or z > lato_m:
 				continue
 			var v := valore_bosco(x, z)
-			if v < 0.5 or distanza_acqua(x, z) < 4.0:
+			if v < 0.5 or distanza_acqua(x, z) < 4.0 or _in_palude(x, z):
 				continue
 			# Al margine il bosco si dirada e crescono più arbusti; dentro, qualche radura.
 			var interno := clampf((v - 0.5) / 0.12, 0.0, 1.0)
 			if _caso(gx, gz, 3) < 0.05 + 0.3 * (1.0 - interno):
 				continue
-			var specie := _specie_bosco(x, z, interno, _caso(gx, gz, 4))
+			var specie := _specie_bosco(x, z, interno, _caso(gx, gz, 4), _caso(gx, gz, 9), _caso(gx, gz, 10))
 			_aggiungi(out, x, z, specie, gx, gz)
 	# Fuori dal bosco: alberi sparsi.
 	var m := int(LATO_BLOCCO / PASSO_SPARSI)
@@ -82,7 +131,6 @@ func alberi_nel_blocco(b: Vector2i) -> PackedFloat32Array:
 			var specie := _specie_sparsa(x, z, _caso(gx, gz, 13), _caso(gx, gz, 14))
 			if specie >= 0:
 				_aggiungi(out, x, z, specie, gx + 100000, gz)
-	_cache[b] = out
 	return out
 
 
@@ -104,9 +152,11 @@ func numero_alberi(b: Vector2i) -> int:
 
 ## Bosco: querco-carpineto in pianura, querce e carpini sulle colline, pioppi dove è umido,
 ## arbusti al margine.
-func _specie_bosco(x: float, z: float, interno: float, r: float) -> int:
-	var i := _indice(x, z)
-	var umido := distanza_acqua(x, z) < 60.0 or dati.acqua_stagionale[i] > 191 or dati.zona[i] == 0
+func _specie_bosco(x: float, z: float, interno: float, r: float, r1: float, r2: float) -> int:
+	# Le fasce della mappa hanno confini netti: si leggono in un punto spostato a caso fino a
+	# 80 m, così i passaggi tra un bosco e l'altro sono sfrangiati e non seguono linee dritte.
+	var i := _indice(x + (r1 - 0.5) * 160.0, z + (r2 - 0.5) * 160.0)
+	var umido := distanza_acqua(x, z) < 40.0 + 50.0 * r1 or dati.acqua_stagionale[i] > 191 or dati.zona[i] == 0
 	var pesi: Array
 	if umido and dati.zona[i] == 3:
 		# Valli dei torrenti in collina: qualche pioppo lungo l'acqua, ma restano querce e carpini.
@@ -140,9 +190,9 @@ func _specie_sparsa(x: float, z: float, r_c: float, r_s: float) -> int:
 	elif v > 0.38:
 		p = 0.22
 		pesi = [0.35, 0.1, 0.0, 0.55]
-	elif dati.tipo[i] == MappaDati.PALUDE:
-		p = 0.04
-		pesi = [0.0, 0.0, 0.4, 0.6]
+	elif _in_palude(x, z):
+		# Niente alberi nelle paludi (richiesta di Fede).
+		return -1
 	elif dati.tipo[i] == MappaDati.GESSI:
 		p = 0.03
 		pesi = [0.1, 0.0, 0.0, 0.9]
@@ -151,6 +201,15 @@ func _specie_sparsa(x: float, z: float, r_c: float, r_s: float) -> int:
 	if r_c >= p:
 		return -1
 	return _pesca(pesi, r_s)
+
+
+## Palude: il punto o un vicino entro 30 m sta in una cella di palude (lo shader ne allarga
+## il bordo con il rumore, quindi si tiene un margine).
+func _in_palude(x: float, z: float) -> bool:
+	for o in [Vector2.ZERO, Vector2(30, 0), Vector2(-30, 0), Vector2(0, 30), Vector2(0, -30)]:
+		if dati.tipo[_indice(x + o.x, z + o.y)] == MappaDati.PALUDE:
+			return true
+	return false
 
 
 func _indice(x: float, z: float) -> int:
@@ -183,6 +242,7 @@ func _aggiungi(out: PackedFloat32Array, x: float, z: float, specie: int, gx: int
 	out.append(scala)
 	out.append(modello)
 	out.append(0.84 + 0.24 * _caso(gx, gz, 8))
+	out.append(dati.quota(x, z))
 
 
 ## Bilineare su una griglia fine (lato_acqua x lato_acqua) con la stessa corrispondenza dello

@@ -25,7 +25,7 @@ func _process(_d: float) -> bool:
 	var a: Alberi = _s.alberi
 	var v: VistaAlberi = _s.vista_alberi
 	controlla(a != null and v != null, "alberi e vista creati")
-	for liv in [1, 2]:
+	for liv in [VistaAlberi.LEGGERI, VistaAlberi.COMPLETI]:
 		var tutti := true
 		for m in v._mesh[liv]:
 			tutti = tutti and m != null
@@ -61,11 +61,12 @@ func _process(_d: float) -> bool:
 	controlla(colline[2] < (colline[0] + colline[1]) * 0.15, "sulle colline pochi pioppi, solo lungo i torrenti (%d su %d)" % [colline[2], colline[0] + colline[1] + colline[2] + colline[3]])
 	controlla(per_specie[2] > 0, "ci sono pioppi (luoghi umidi)")
 	var prima := a.alberi_nel_blocco(Vector2i(10, 10))
+	a.aspetta()
 	a._cache.clear()
 	controlla(prima == a.alberi_nel_blocco(Vector2i(10, 10)), "la posa è deterministica")
 	# Vista: livelli di dettaglio secondo lo zoom.
 	var cam: CameraIsometrica = _s.cam
-	for prova in [[3000.0, 0], [600.0, 1], [180.0, 2]]:
+	for prova in [[3000.0, 0], [1800.0, VistaAlberi.SAGOME], [600.0, VistaAlberi.LEGGERI], [180.0, VistaAlberi.COMPLETI]]:
 		cam.dimensione = prova[0]
 		cam.dimensione_obiettivo = prova[0]
 		cam.aggiorna()

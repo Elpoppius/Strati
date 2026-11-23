@@ -32,6 +32,13 @@ Voci più recenti in cima.
   - Vista: `script/vista_alberi.gd`, MultiMesh per blocco; alberi completi sotto 220 m di vista, leggeri fino a 700 m, oltre la volta dipinta, ritarata sul colore medio degli alberi. Sottobosco dipinto sotto gli alberi. Il pannello mostra fotogrammi al secondo e alberi disegnati.
   - Corretto anche: sulle colline la volta dipinta prendeva la tinta gialla della quota.
   - Verifiche senza grafica superate (base, asset, alberi: niente alberi nell'acqua, posa deterministica, livelli di dettaglio). Le prestazioni vere vanno provate sui PC di Fede.
+- **Parere di Fede sugli alberi:** "molto carini", ma la volta dipinta stona totalmente con gli alberi e ce n'erano in mezzo alla palude. Fatto:
+  - nuovo livello **sagome** tra 700 e 2600 m di vista: un'immagine per modello fotografata in Godot con camera e sole del gioco, disegnata su un rettangolo rivolto allo schermo; la volta dipinta resta solo oltre i 2600 m ed è ritarata sul colore delle sagome;
+  - niente alberi nelle paludi;
+  - calcolo degli alberi e dei buffer su altri thread, così la mappa si riempie senza scatti;
+  - corretto il calcolo dei blocchi inquadrati: sui rilievi scartava blocchi visibili (forse il motivo per cui Fede non vedeva alberi);
+  - confini sfrangiati tra boschi di specie diverse.
+  Immagine: `docs/immagini/sagome-alberi-23-11.jpg`. Verifiche senza grafica superate.
 - Conflitto in GitHub Desktop sul portatile: Godot riscriveva da solo i file `.import` delle texture quando le rilevava in 3D. Disattivato (`detect_3d/compress_to=0` in tutti i file `.import`).
 - Nel pannello Output di Fede, all'apertura dell'editor: quattro errori `core/io/file_access.cpp:967`. Probabilmente file di cache dell'editor mancanti alla prima apertura (non verificato): da ricontrollare se si ripetono.
 - Strumenti nell'ambiente di Claude: Godot 4.7.2 senza grafica e Blender 5.3 come modulo Python; catena Blender → glTF → Godot provata con una casa lunga neolitica.

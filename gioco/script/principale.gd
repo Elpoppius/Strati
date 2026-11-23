@@ -59,6 +59,7 @@ func _ready() -> void:
 	vista_alberi.name = "Alberi"
 	add_child(vista_alberi)
 	vista_alberi.prepara(alberi, terreno, cam)
+	alberi.calcola_in_sottofondo(cam.bersaglio.x, cam.bersaglio.z)
 	_crea_interfaccia()
 	imposta_modo(0)
 
@@ -178,7 +179,7 @@ func _process(delta: float) -> void:
 	_tempo_prestazioni += delta
 	if _prestazioni and _tempo_prestazioni > 0.5:
 		_tempo_prestazioni = 0.0
-		var liv: String = ["volta dipinta", "alberi leggeri", "alberi completi"][vista_alberi.livello] if vista_alberi else ""
+		var liv: String = VistaAlberi.NOMI_LIVELLI[vista_alberi.livello] if vista_alberi else ""
 		_prestazioni.text = "%d fotogrammi al secondo · %d alberi (%s)" % [Engine.get_frames_per_second(), vista_alberi.alberi_visibili if vista_alberi else 0, liv]
 	# La griglia compare quando la vista è abbastanza vicina da distinguere i lotti.
 	var alfa := 0.0
@@ -265,3 +266,10 @@ func testo_lettura(x: float, z: float) -> String:
 		if c["bosco"]:
 			parti.append("bosco")
 	return " · ".join(parti)
+
+
+func _exit_tree() -> void:
+	if vista_alberi:
+		vista_alberi.aspetta()
+	if alberi:
+		alberi.aspetta()

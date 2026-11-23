@@ -127,7 +127,8 @@ void fragment() {
 		// Chiome di circa 10 m, appena accennate (una texture ripetuta, quindi a basso contrasto),
 		// e gruppi di alberi di decine di metri da un rumore unico per la mappa.
 		float chiome = texture(macchie, pos_mondo.xz / 11.0).r * 0.5 + texture(macchie, ruota * pos_mondo.xz / 17.0 + 0.3).r * 0.5;
-		volta *= mix(mix(0.86, 1.1, smoothstep(0.3, 0.7, chiome)), 1.0, lontano);
+		// Da lontano più scura: si accorda alle sagome degli alberi (misurato sulle foto).
+		volta *= mix(mix(0.86, 1.1, smoothstep(0.3, 0.7, chiome)), 0.72, lontano);
 		float gruppi = texture(rumore_bosco, UV).r;
 		volta *= mix(0.88, 1.08, smoothstep(0.3, 0.7, gruppi));
 		// Al margine il bosco si dirada.
