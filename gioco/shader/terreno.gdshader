@@ -13,6 +13,10 @@ uniform sampler2D suolo : source_color, filter_linear_mipmap, repeat_enable;
 uniform sampler2D suolo_secco : source_color, filter_linear_mipmap, repeat_enable;
 uniform sampler2D macchie : filter_linear_mipmap, repeat_enable;
 uniform float soglia_secco = 0.65;
+// Boschi: copertura (0 o 1 per cella da 40 m) e due texture di foglie per la volta degli alberi.
+uniform sampler2D coperture : filter_linear, repeat_disable;
+uniform sampler2D chioma_a : source_color, filter_linear_mipmap, repeat_enable;
+uniform sampler2D chioma_b : source_color, filter_linear_mipmap, repeat_enable;
 uniform float lato_suolo = 9.0;
 uniform float realismo = 1.0;
 uniform float esagerazione = 1.5;
@@ -23,10 +27,12 @@ uniform float alfa_griglia = 0.0;
 uniform vec2 lotto_evidenziato = vec2(-1.0, -1.0);
 
 varying vec3 pos_mondo;
+varying vec3 normale_mondo;
 varying float quota;
 
 void vertex() {
 	pos_mondo = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	normale_mondo = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
 	quota = VERTEX.y / esagerazione;
 }
 
@@ -51,6 +57,31 @@ void fragment() {
 	vec3 verosimile = mix(erba, secca, quanto_secco) * (0.86 + 0.28 * m_lontana);
 	verosimile *= mix(vec3(1.0), tinta, 0.25) * 0.74;
 	verosimile = mix(vec3(dot(verosimile, vec3(0.299, 0.587, 0.114))), verosimile, 0.8);
+	// Pendii ripidi: l'erba si dirada e affiora la terra.
+	float ripido = smoothstep(0.12, 0.3, 1.0 - normale_mondo.y) * smoothstep(0.35, 0.65, m_vicina + 0.25);
+	vec3 terra = secca * vec3(0.78, 0.7, 0.62) * 0.62;
+	verosimile = mix(verosimile, terra, ripido * 0.8);
+	// Boschi: bordo irregolare (la copertura a celle viene mossa dalla maschera) e una volta
+	// di chiome fatta da due strati di foglie, con macchie di luce e d'ombra grandi come alberi.
+	float cop = texture(coperture, UV).r;
+	float bosco = smoothstep(0.47, 0.53, cop + (m_vicina - 0.5) * 0.55 + (texture(macchie, pos_mondo.xz / 19.0).r - 0.5) * 0.3);
+	if (bosco > 0.0) {
+		// Coordinate deformate dalla maschera: rompono la griglia regolare delle ripetizioni.
+		vec2 storta = pos_mondo.xz + vec2(texture(macchie, pos_mondo.xz / 31.0).r, texture(macchie, pos_mondo.xz / 29.0 + 0.5).r) * 9.0;
+		vec4 fa = texture(chioma_a, storta / 6.1);
+		vec4 fb = texture(chioma_b, ruota * storta / 4.7 + vec2(0.4, 0.2));
+		vec4 fc = texture(chioma_a, ruota * ruota * storta / 5.3 + vec2(0.7, 0.9));
+		vec3 volta = vec3(0.10, 0.13, 0.07);
+		volta = mix(volta, fb.rgb * 0.75, step(0.5, fb.a));
+		volta = mix(volta, fa.rgb, step(0.5, fa.a));
+		volta = mix(volta, fc.rgb * 1.05, step(0.5, fc.a) * 0.8);
+		// Chiome: macchie di circa 8 m, chiare in cima e scure negli interstizi.
+		float chiome = texture(macchie, pos_mondo.xz / 9.0).r * 0.6 + texture(macchie, ruota * pos_mondo.xz / 23.0).r * 0.4;
+		volta *= mix(0.3, 1.1, smoothstep(0.32, 0.68, chiome));
+		// Al margine il bosco si dirada.
+		volta *= mix(0.8, 1.0, smoothstep(0.0, 0.6, bosco));
+		verosimile = mix(verosimile, volta * 0.6, bosco);
+	}
 	base = mix(base, verosimile, realismo * COLOR.a);
 	vec4 t = texture(tematici, UV);
 	vec3 col = base;

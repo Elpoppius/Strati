@@ -74,6 +74,10 @@ func costruisci(d: MappaDati, esag: float = 1.5) -> void:
 	materiale.set_shader_parameter("suolo", load("res://asset/texture/erba.png"))
 	materiale.set_shader_parameter("suolo_secco", load("res://asset/texture/erba_secca.png"))
 	materiale.set_shader_parameter("macchie", load("res://asset/texture/macchie.png"))
+	var img_coperture := Image.create_from_data(d.lato, d.lato, false, Image.FORMAT_L8, d.copertura)
+	materiale.set_shader_parameter("coperture", ImageTexture.create_from_image(img_coperture))
+	materiale.set_shader_parameter("chioma_a", load("res://asset/texture/foglie_quercia.png"))
+	materiale.set_shader_parameter("chioma_b", load("res://asset/texture/foglie_carpino.png"))
 	material_override = materiale
 
 
@@ -93,9 +97,8 @@ func _colore(i: int) -> Color:
 			break
 	# Sotto fiumi e torrenti resta la tinta del terreno: l'acqua la disegna lo shader.
 	var peso := 1.0 if dati.zona[i] != 3 else 0.65
-	if dati.copertura[i] > 127:
-		c = Color8(78, 92, 58)
-		peso = 0.45
+	# I boschi non stanno più nei colori dei vertici (davano bordi a gradini da 40 m):
+	# li disegna lo shader dalla texture delle coperture, con bordi irregolari.
 	return Color(c, peso)
 
 
