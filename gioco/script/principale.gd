@@ -8,6 +8,10 @@ const LATO_LOTTO := 20.0
 const NOMI_MODI := ["Terreno", "Acqua", "Fertilità", "Rischio piena"]
 const SITO_INIZIALE := 1
 
+## Sole: altezza sull'orizzonte e angolo rispetto alla direzione in cui guarda la camera (gradi).
+const ALTEZZA_SOLE := 42.0
+const AZIMUT_SOLE := 220.0
+
 var dati: MappaDati
 var terreno: Terreno
 var cam: CameraIsometrica
@@ -48,19 +52,22 @@ func _ready() -> void:
 func _crea_ambiente() -> void:
 	sole = DirectionalLight3D.new()
 	sole.name = "Sole"
-	sole.rotation_degrees = Vector3(-50.0, 35.0, 0.0)
+	sole.rotation_degrees = Vector3(-ALTEZZA_SOLE, 45.0 + AZIMUT_SOLE, 0.0)
 	sole.light_energy = 0.95
+	sole.light_color = Color(1.0, 0.95, 0.86)  # sole caldo
 	sole.shadow_enabled = true
 	# Una sola mappa d'ombra sulla fetta visibile (vedi CameraIsometrica.aggiorna).
 	sole.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
 	sole.directional_shadow_max_distance = 12000.0
+	sole.directional_shadow_fade_start = 1.0
 	add_child(sole)
 	var amb := Environment.new()
 	amb.background_mode = Environment.BG_COLOR
 	amb.background_color = Color8(231, 234, 226)
 	amb.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	amb.ambient_light_color = Color(1, 1, 1)
-	amb.ambient_light_energy = 0.35
+	# Luce del cielo un po' fredda: le ombre restano leggibili ma non nere, e contrastano col sole caldo.
+	amb.ambient_light_color = Color(0.82, 0.88, 1.0)
+	amb.ambient_light_energy = 0.45
 	var mondo := WorldEnvironment.new()
 	mondo.environment = amb
 	add_child(mondo)
@@ -152,6 +159,10 @@ func _process(_delta: float) -> void:
 	terreno.materiale.set_shader_parameter("alfa_griglia", alfa)
 	if sole and cam.camera:
 		sole.directional_shadow_max_distance = cam.camera.far
+		# Il sole gira con la camera: illumina gli oggetti di lato e da dietro, così le ombre
+		# cadono verso chi guarda e si vedono a ogni rotazione (con il sole alle spalle
+		# della camera restavano nascoste dietro gli oggetti e tutto sembrava piatto).
+		sole.rotation_degrees = Vector3(-ALTEZZA_SOLE, cam.yaw + AZIMUT_SOLE, 0.0)
 
 
 func _unhandled_input(ev: InputEvent) -> void:

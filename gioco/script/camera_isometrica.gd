@@ -1,10 +1,9 @@
 class_name CameraIsometrica
 extends Node3D
 ## Camera ortografica a inclinazione fissa che ruota a scatti di 90°.
-## Il nodo sta sul punto guardato (bersaglio); la Camera3D figlia lo guarda da lontano.
+## Il nodo sta sul punto guardato (bersaglio); la Camera3D figlia lo guarda da una distanza che segue lo zoom.
 
 const INCLINAZIONE := -30.0
-const DISTANZA := 20000.0
 const DIM_MIN := 40.0
 const DIM_MAX := 12000.0
 
@@ -23,7 +22,7 @@ func _ready() -> void:
 	camera = Camera3D.new()
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	camera.near = 10.0
-	camera.far = DISTANZA * 3.0
+	camera.far = 60000.0
 	add_child(camera)
 	camera.make_current()
 	aggiorna()
@@ -95,10 +94,13 @@ func aggiorna() -> void:
 	position = bersaglio
 	if camera:
 		var b := Basis.from_euler(Vector3(deg_to_rad(INCLINAZIONE), deg_to_rad(yaw), 0.0))
-		camera.transform = Transform3D(b, b.z * DISTANZA)
+		# La camera sta appena fuori dalla fetta di terreno visibile, non lontanissima:
+		# le ombre del sole coprono lo spazio dalla camera alla distanza massima, e con la
+		# camera lontana sfumavano fino a sparire. Il margine copre la profondità del terreno
+		# inquadrato (circa 0,87 volte l'altezza della vista), i rilievi e gli edifici.
+		var margine := dimensione * 0.9 + clampf(dimensione * 0.6, 0.0, 1500.0) + 60.0
+		var distanza := margine + 20.0
+		camera.transform = Transform3D(b, b.z * distanza)
 		camera.size = dimensione
-		# Piani di taglio stretti attorno al terreno visibile: le ombre coprono solo quella fetta
-		# e restano nitide anche da vicino (la camera sta lontanissima, la profondità utile è poca).
-		var margine := dimensione + 80.0 + clampf(dimensione * 0.3, 0.0, 900.0)
-		camera.near = maxf(10.0, DISTANZA - margine)
-		camera.far = DISTANZA + margine
+		camera.near = 10.0
+		camera.far = distanza + margine
