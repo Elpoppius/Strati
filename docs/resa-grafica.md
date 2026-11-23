@@ -40,7 +40,7 @@ Codice: in fondo a `gioco/shader/terreno.gdshader`. Dati: la distanza dalla riva
 
 ## Paludi e gessi
 Non stanno più nei colori dei vertici, che facevano quadretti da 40 m (segnalato da Fede). `terreno.gd` passa allo shader la texture `zone_speciali` (rosso palude, verde gessi), letta in otto punti e frastagliata come i boschi.
-- **Paludi:** erba umida e scura, canneti giallastri, pozze d'acqua bassa e ferma che riflettono il cielo (disegnate con l'acqua, con un bordo di fango).
+- **Paludi:** erba umida e scura, canneti giallastri, pozze d'acqua bassa e ferma che riflettono il cielo (disegnate con l'acqua, con un bordo di fango). Pozze e canneti vengono da rumori unici per la mappa (`rumore_bosco`, `rumore_palude`): una texture ripetuta si notava (segnalato da Fede).
 - **Gessi:** roccia chiara grigio-calda che affiora a chiazze tra l'erba rada; da lontano le chiazze si fondono in un tono unico.
 - Da fare: canne vere (oggetti) ai margini delle pozze, livelli che cambiano con le stagioni e le piene.
 

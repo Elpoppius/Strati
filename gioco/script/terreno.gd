@@ -77,6 +77,7 @@ func costruisci(d: MappaDati, esag: float = 1.5) -> void:
 	materiale.set_shader_parameter("rumore_secco", _rumore_mappa(1847, 1.0 / 90.0))
 	materiale.set_shader_parameter("rumore_verde", _rumore_mappa(1848, 1.0 / 60.0))
 	materiale.set_shader_parameter("rumore_bosco", _rumore_mappa(1849, 1.0 / 6.0))
+	materiale.set_shader_parameter("rumore_palude", _rumore_mappa(1850, 1.0 / 3.0))
 	var img_coperture := Image.create_from_data(d.lato, d.lato, false, Image.FORMAT_L8, d.copertura)
 	materiale.set_shader_parameter("coperture", ImageTexture.create_from_image(img_coperture))
 	materiale.set_shader_parameter("zone_speciali", _texture_zone_speciali())

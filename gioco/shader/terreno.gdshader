@@ -18,6 +18,8 @@ uniform sampler2D rumore_secco : filter_linear, repeat_disable;
 uniform sampler2D rumore_verde : filter_linear, repeat_disable;
 // Gruppi di alberi visti da lontano: rumore unico per la mappa (nessun motivo ripetuto), macchie di decine di metri.
 uniform sampler2D rumore_bosco : filter_linear, repeat_disable;
+// Pozze e canneti delle paludi: rumore unico per la mappa più fine (circa 30 m), al posto di una texture ripetuta.
+uniform sampler2D rumore_palude : filter_linear, repeat_disable;
 // Boschi: copertura (0 o 1 per cella da 40 m) e due texture di foglie per la volta degli alberi.
 uniform sampler2D coperture : filter_linear, repeat_disable;
 // Zone speciali a celle da 40 m: R palude, G gessi. Lo shader ne ammorbidisce e frastaglia i bordi.
@@ -167,7 +169,7 @@ void fragment() {
 	float palude = smoothstep(0.42, 0.58, zs.r + (lobi - 0.5) * 0.4 + (m_vicina - 0.5) * 0.3);
 	float pozze = 0.0;
 	if (palude > 0.0) {
-		float n_p = n_zona * 0.6 + texture(macchie, ruota * pos_mondo.xz / 43.0 + vec2(0.5, 0.2)).r * 0.4;
+		float n_p = n_zona * 0.65 + texture(rumore_palude, UV).r * 0.35;
 		float dentro = smoothstep(0.55, 0.85, zs.r);
 		pozze = smoothstep(0.5, 0.56, n_p + dentro * 0.12 - 0.08) * palude;
 		float canneto = smoothstep(0.38, 0.5, n_p) * (1.0 - pozze);
