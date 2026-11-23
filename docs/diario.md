@@ -29,6 +29,7 @@ Voci più recenti in cima.
 - Stile degli asset: verosimile, anche nei colori; no allo stile "plastico" e agli alberi con pochi poligoni. Riferimento per l'aspetto: Age of Empires IV.
 - Luce: sole da sinistra, ombre lunghe proiettate verso destra sullo schermo.
 - Alberi, terreni, ombre, asset e acqua sono sistemi comuni a tutte le mappe, non lavoro sulla singola mappa.
+- Alberi e disboscamento: gli alberi sono dati di gioco, non decorazione. Un'area disboscata resta nei dati come "area disboscata" e il suo destino dipende da cosa la sostituisce: se è costruita il bosco è perso ma ne resta memoria; se è solo abbattuta può ricrescere. Conta soprattutto l'interazione con il gameplay.
 - Terreno: priorità alla resa del prato; niente texture ripetute nelle parti aride. Gli alberi veri andranno posati sulla mappa al posto della volta di chiome dipinta.
 - Seconda versione della prova di stile: direzione giusta. Da migliorare il prato (grossolano), il dettaglio a zoom ravvicinato e la forma e il riempimento delle chiome.
 
@@ -38,6 +39,7 @@ Voci più recenti in cima.
 - Fede: dare un parere sulla terza versione di alberi e prato (`docs/immagini/prova-stile-v3-*.jpg`); sul PC, avvicinare lo zoom al massimo vicino al terrazzo centrale, ruotare con Q/E e dire come appaiono ombre e luce (gli alberi si vedono nel gioco solo con `test/foto_asset.gd`, per ora non sono posati sulla mappa).
 - Claude, prossima sessione (rimandato da Fede alla prossima):
   - posare gli alberi veri sulla mappa al posto della volta di chiome dipinta: boschi e alberi sparsi, istanze multiple, versione leggera per la distanza, specie scelta in base al luogo;
+  - alberi come dati modificabili: abbattere o costruire su un'area boscata la segna come "area disboscata" (costruita: bosco perso ma ricordato; solo abbattuta: può ricrescere); il terreno sotto cambia (terra battuta, terra nuda, erba rada) con una mappa dell'uso del suolo aggiornabile durante il gioco; progettare l'interazione con il gameplay (proposte di Claude da discutere: legname, rischio di frane e piene più rapide, ricrescita per stadi da arbusti ad alberi);
   - acqua: corrente nel verso del fiume, rapide e cascate sui torrenti, paludi con acqua bassa e canne, livelli che cambiano con le piene;
   - alberi: carte viste di taglio ai bordi delle chiome;
   - texture di paglia e argilla delle case da rivedere per lo zoom ravvicinato;

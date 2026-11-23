@@ -45,6 +45,7 @@ Codice: `strumenti/blender/prova_stile_verosimile.py` (funzione `albero`). Regol
 - Chiome a lobi fatte di carte di foglie singole; normali sferiche per la luce sul volume; ombra interna calcolata.
 - Specie definite da pochi parametri (tabella `SPECIE`): quercia, carpino, pioppo, acero, arbusto. Una mappa con altro clima avrà altre specie con lo stesso generatore.
 - Da fare: posa sulla mappa con istanze multiple, una versione leggera per la distanza, scelta della specie in base al luogo (umidità, quota).
+- **Gli alberi sono dati di gioco (decisione di Fede, 23/11/2026).** Ogni albero o bosco sta nei dati, così si può abbattere, far ricrescere, ricordare. Un'area disboscata resta segnata come tale e il suo destino dipende da cosa la sostituisce: se è costruita il bosco è perso ma ne resta memoria; se è solo abbattuta può ricrescere. La cosa più importante è l'interazione con il gameplay. Il terreno sotto segue l'uso del suolo (sentiero, terra nuda, erba rada), con una mappa aggiornabile durante il gioco.
 
 ## Asset
 Regole, stile e catalogo: `docs/asset.md`. Ogni asset nasce da uno script, così si può rigenerare quando cambiano lo stile o le regole.
