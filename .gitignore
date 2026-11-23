@@ -1,0 +1,11 @@
+# Godot
+.godot/
+*.translation
+export_presets.cfg
+build/
+# Sistema
+.DS_Store
+Thumbs.db
+# Python
+__pycache__/
+*.pyc

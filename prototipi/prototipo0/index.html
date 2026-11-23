@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Villaggio pedecollinare</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Una tavola topografica a sinistra, il quadro di comando come legenda a destra */
+  --paper:#e7eae2;
+  --panel:#f3f4ef;
+  --ink:#1e2927;
+  --ink-soft:#56635f;
+  --rule:#c3c9bd;
+  --signal:#b4432d;
+  --water:#4c82a4;
+  --display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 18px;padding:16px 24px 12px;border-bottom:1px solid var(--rule)}
+h1{font-family:var(--display);font-weight:600;font-size:32px;line-height:1.05;margin:0;letter-spacing:.01em;text-wrap:balance}
+.sub{font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin:0}
+main{display:grid;grid-template-columns:minmax(300px,680px) minmax(300px,400px);gap:20px;padding:18px 24px 32px;justify-content:center;align-items:start}
+@media (max-width:1000px){main{grid-template-columns:minmax(0,1fr);padding:16px}}
+.leftcol{display:flex;flex-direction:column;gap:12px;min-width:0}
+.mapwrap{background:var(--panel);border:1px solid var(--rule);padding:12px;display:flex;flex-direction:column;gap:10px}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.bar .lab{font-family:var(--display);font-weight:600;font-size:15px;margin-right:4px;letter-spacing:.03em}
+.mapframe{position:relative}
+.zoom{display:inline-flex;gap:4px;margin-left:auto}
+.zoom button{min-width:30px}
+.toast{position:absolute;left:10px;top:10px;max-width:70%;background:var(--ink);color:var(--panel);font-size:13px;padding:6px 10px;border-radius:3px;opacity:0;transform:translateY(-4px);transition:opacity .2s,transform .2s;pointer-events:none}
+.toast.show{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+canvas#map.drag{cursor:grabbing}
+canvas#map{width:100%;height:auto;aspect-ratio:1/1;display:block;cursor:crosshair;border:1px solid var(--ink);background:#dfe4d6;touch-action:manipulation}
+.readout{font-family:var(--mono);font-size:12px;line-height:18px;color:var(--ink-soft);height:36px;overflow:hidden;font-variant-numeric:tabular-nums}
+.legend{display:flex;flex-wrap:wrap;align-content:flex-start;gap:6px 16px;font-size:12.5px;line-height:18px;color:var(--ink-soft);min-height:42px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:10px;display:inline-block;border:1px solid rgba(0,0,0,.25)}
+aside{display:flex;flex-direction:column;gap:12px}
+.card{background:var(--panel);border:1px solid var(--rule);padding:12px 14px}
+h2{font-family:var(--display);font-weight:600;font-size:19px;margin:0 0 8px;letter-spacing:.02em}
+.year{font-family:var(--mono);font-size:24px;font-variant-numeric:tabular-nums;margin-right:auto}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tile{background:var(--paper);border-left:3px solid var(--ink);padding:6px 8px 4px}
+.tile.warn{border-left-color:var(--signal)}
+.tile .k{font-size:12.5px;color:var(--ink-soft)}
+.tile .v{font-family:var(--mono);font-size:21px;font-variant-numeric:tabular-nums;line-height:1.2}
+.tile .v small{font-size:12px;color:var(--ink-soft)}
+.tile canvas{width:100%;height:26px;display:block}
+button{font-family:var(--body);font-size:13.5px;padding:6px 10px;border:1px solid var(--ink-soft);background:var(--panel);color:var(--ink);border-radius:3px;cursor:pointer;line-height:1.2}
+button:hover:not(:disabled){border-color:var(--ink);background:#fff}
+button[aria-pressed="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+.hint{font-size:13px;color:var(--ink-soft);margin:8px 0 0}
+.hint strong{color:var(--ink);font-weight:500}
+#stato,#actionhint{min-height:78px}
+#site{min-height:150px}
+#timehint{min-height:20px}
+.site dl{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:0;font-size:13.5px}
+.site dt{color:var(--ink-soft)}
+.site dd{margin:0}
+.site .bad{color:var(--signal)}
+.log{list-style:none;margin:0;padding:0;font-size:13px;height:220px;overflow:auto}
+.log li{padding:5px 0;border-bottom:1px dotted var(--rule);display:grid;grid-template-columns:76px 1fr;gap:8px}
+.log .yr{font-family:var(--mono);font-size:12px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.log li.alert span:last-child{color:var(--signal)}
+.log li.good span:last-child{color:#2f6b4f}
+.modal-bg{position:fixed;inset:0;background:rgba(30,41,39,.5);display:none;align-items:center;justify-content:center;padding:16px;z-index:10}
+.modal-bg.open{display:flex}
+.modal{background:var(--panel);border:1px solid var(--ink);max-width:480px;width:100%;padding:18px 20px;box-shadow:0 12px 32px rgba(0,0,0,.25);max-height:90vh;overflow:auto}
+.modal .kind{font-family:var(--mono);font-size:12px;color:var(--signal);margin:0 0 2px}
+.modal h3{font-family:var(--display);font-weight:600;font-size:24px;margin:0 0 8px;line-height:1.1;text-wrap:balance}
+.modal p{margin:0 0 10px}
+.opts{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.opts button{text-align:left;padding:9px 12px}
+.opts button small{display:block;color:var(--ink-soft);font-size:12.5px;margin-top:2px}
+.opts button:hover small{color:var(--ink-soft)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Villaggio pedecollinare</h1>
+  <p class="sub">Prototipo 0 · epoca del villaggio · 6000–5500 a.C. · mappa 1, archetipo pedecollinare</p>
+</header>
+<main>
+  <div class="leftcol">
+  <div class="mapwrap">
+    <div class="bar" role="group" aria-label="Mappe tematiche">
+      <span class="lab">Mappa</span>
+      <button id="m-terreno" aria-pressed="true">Terreno</button>
+      <button id="m-acqua" aria-pressed="false">Acqua</button>
+      <button id="m-suolo" aria-pressed="false">Fertilità</button>
+      <button id="m-piena" aria-pressed="false">Rischio piena</button>
+      <span class="zoom" role="group" aria-label="Zoom">
+        <button id="z-out" aria-label="Allontana">−</button>
+        <button id="z-in" aria-label="Avvicina">+</button>
+        <button id="z-home">Villaggio</button>
+        <button id="z-all">Territorio</button>
+      </span>
+    </div>
+    <div class="mapframe">
+      <canvas id="map" width="640" height="640" aria-label="Mappa del territorio: colline a sud, pianura a nord. Trascina per spostarti, rotella per lo zoom."></canvas>
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    </div>
+    <div id="readout" class="readout">Passa sulla mappa per leggere il terreno.</div>
+    <div id="legend" class="legend"></div>
+  </div>
+    <section class="card">
+      <h2>Cronaca</h2>
+      <ul id="log" class="log"></ul>
+    </section>
+  </div>
+  <aside>
+    <section class="card">
+      <div class="bar">
+        <span id="year" class="year">6000 a.C.</span>
+        <button id="t0" aria-pressed="true">Pausa</button>
+        <button id="t1" aria-pressed="false">1×</button>
+        <button id="t2" aria-pressed="false">2×</button>
+        <button id="t3" aria-pressed="false">3×</button>
+      </div>
+      <p id="timehint" class="hint">Il tempo si ferma da solo nei momenti decisivi.</p>
+    </section>
+    <section class="card">
+      <h2>Il villaggio</h2>
+      <div class="tiles">
+        <div class="tile" id="tile-pop"><div class="k">Popolazione</div><div class="v" id="v-pop">—</div><canvas id="s-pop" width="160" height="26"></canvas></div>
+        <div class="tile" id="tile-food"><div class="k">Cibo in scorta</div><div class="v" id="v-food">—</div><canvas id="s-food" width="160" height="26"></canvas></div>
+        <div class="tile" id="tile-health"><div class="k">Salute</div><div class="v" id="v-health">—</div><canvas id="s-health" width="160" height="26"></canvas></div>
+        <div class="tile" id="tile-legit"><div class="k">Legittimità degli anziani</div><div class="v" id="v-legit">—</div><canvas id="s-legit" width="160" height="26"></canvas></div>
+      </div>
+      <p id="stato" class="hint"></p>
+    </section>
+    <section class="card">
+      <h2>Azioni</h2>
+      <div class="bar" role="group" aria-label="Azioni">
+        <button id="a-fonda" aria-pressed="true">Fondare</button>
+        <button id="a-campi" aria-pressed="false" disabled>Campi</button>
+        <button id="a-sentiero" aria-pressed="false" disabled>Sentiero</button>
+        <button id="a-granaio" aria-pressed="false" disabled>Granaio · 30 cibo</button>
+      </div>
+      <div class="bar" role="group" aria-label="Usanza sul raccolto" style="margin-top:8px">
+        <span class="lab">Raccolto</span>
+        <button id="u-comune" aria-pressed="true" disabled>In comune</button>
+        <button id="u-famiglie" aria-pressed="false" disabled>Per famiglia</button>
+      </div>
+      <p id="actionhint" class="hint"></p>
+    </section>
+    <section class="card site">
+      <h2>Lettura del sito</h2>
+      <div id="site"><p class="hint" style="margin:0">Passa su una cella per valutarla come sito di fondazione.</p></div>
+    </section>
+  </aside>
+</main>
+<div id="modal-bg" class="modal-bg" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal">
+    <p id="modal-kind" class="kind"></p>
+    <h3 id="modal-title"></h3>
+    <div id="modal-body"></div>
+    <div id="modal-opts" class="opts"></div>
+  </div>
+</div>
+<script>
+(function(){
+"use strict";
+const N=64, CELL=10, W=N*CELL;
+const END_YEAR=-5500, START_YEAR=-6000;
+const idx=(x,y)=>y*N+x;
+const inside=(x,y)=>x>=0&&y>=0&&x<N&&y<N;
+const cheb=(a,b)=>Math.max(Math.abs(a%N-b%N),Math.abs(Math.floor(a/N)-Math.floor(b/N)));
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+/* ---------- Generazione della mappa (deterministica) ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const mapRng=mulberry32(1847);
+const LAT=72, lattice=new Float32Array(LAT*LAT);
+for(let i=0;i<lattice.length;i++) lattice[i]=mapRng();
+function vnoise(x,y){
+  const xi=Math.floor(x), yi=Math.floor(y), xf=x-xi, yf=y-yi;
+  const L=(i,j)=>lattice[(((j%LAT)+LAT)%LAT)*LAT+(((i%LAT)+LAT)%LAT)];
+  const s=t=>t*t*(3-2*t);
+  const a=L(xi,yi),b=L(xi+1,yi),c=L(xi,yi+1),d=L(xi+1,yi+1);
+  const u=s(xf),v=s(yf);
+  return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v;
+}
+function fbm(x,y){return 0.6*vnoise(x/8,y/8)+0.3*vnoise(x/4+17,y/4+9)+0.1*vnoise(x/2+31,y/2+5);}
+const rx=y=>9+3*Math.sin(y/7)+2*Math.sin(y/3.1);
+const tx=y=>33+2*Math.sin(y/5);
+const ex=y=>53+2.5*Math.sin(y/6+1);
+
+const T_LAND=0,T_RIVER=1,T_TORR=2,T_TORRE=3,T_MARSH=4;
+const ZONE_NAMES=["Bassa pianura","Alta pianura","Fascia pedecollinare","Colline"];
+const M={elev:new Float32Array(N*N),type:new Uint8Array(N*N),zone:new Uint8Array(N*N),fert:new Float32Array(N*N),
+  riskR:new Float32Array(N*N),riskT:new Float32Array(N*N),riskE:new Float32Array(N*N),flood:new Float32Array(N*N),
+  dRel:new Float32Array(N*N),dAny:new Float32Array(N*N),dMarsh:new Float32Array(N*N),forest:new Uint8Array(N*N),gessi:new Uint8Array(N*N)};
+const SPRINGS=[[17,46],[22,47],[30,46],[38,47],[43,46],[48,47]];
+const SITES=[
+  {n:1,name:"Terrazzo centrale",x:35,y:45},
+  {n:2,name:"Sbocco del fiume",x:15,y:47},
+  {n:3,name:"Sperone collinare",x:25,y:45},
+  {n:4,name:"Dosso nelle paludi",x:24,y:6},
+  {n:5,name:"Area dei gessi",x:48,y:53},
+  {n:6,name:"Pianura aperta",x:26,y:30}
+];
+(function genMap(){
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const i=idx(x,y), n=fbm(x,y);
+    let e, zone;
+    if(y<16){e=15+y/16*15+(n-.5)*6;zone=0;}
+    else if(y<44){e=30+(y-16)/28*30+(n-.5)*8;zone=1;}
+    else if(y<49){e=60+(y-44)/5*40+(n-.5)*10;zone=2;}
+    else{e=100+((y-49)/14)*300*(0.55+0.6*n)+(n-.5)*40;zone=3;}
+    const dS=Math.hypot(x-25,y-45);
+    if(dS<4.5){e+=55*(1-dS/4.5); if(dS<3) zone=3;}
+    const dR=Math.abs(x+.5-rx(y)), dT=Math.abs(x+.5-tx(y)), dE=Math.abs(x+.5-ex(y));
+    if(y>=44){
+      e-=Math.max(0,e-60)*Math.max(0,1-dR/7)*0.85;
+      e-=Math.max(0,e-70)*Math.max(0,1-dT/4)*0.6;
+      e-=Math.max(0,e-70)*Math.max(0,1-dE/4)*0.6;
+    }
+    const dD=Math.hypot(x-24,y-6);
+    if(dD<2.5) e+=3;
+    M.elev[i]=e; M.zone[i]=zone;
+    let t=T_LAND;
+    if(dR<=1.5) t=T_RIVER;
+    else if(y>=20 && x===Math.floor(tx(y))) t=T_TORR;
+    else if(y>=10 && x===Math.floor(ex(y))) t=T_TORRE;
+    else if(y<14 && fbm(x+40,y+40)>0.53 && dD>=2.5) t=T_MARSH;
+    M.type[i]=t;
+    if(t===T_LAND && x>=45&&x<=52&&y>=50&&y<=56) M.gessi[i]=1;
+    const fn=fbm(x+7,y+3);
+    if(t===T_LAND && !M.gessi[i]){
+      if(zone===3) M.forest[i]=fn>0.36?1:0;
+      else if(zone===0) M.forest[i]=fn>0.66?1:0;
+      else M.forest[i]=fn>0.63?1:0;
+    }
+    let f;
+    if(zone===0) f=1.0+(n-.5)*0.2;
+    else if(zone===1) f=0.62+(n-.5)*0.3;
+    else if(zone===2) f=0.8;
+    else f=0.4+(n-.5)*0.2;
+    if(M.gessi[i]) f=0.15;
+    if(y<49 && dR<=5) f=Math.max(f,1.05-dR*0.03);
+    M.fert[i]=t===T_LAND?clamp(f,0.05,1.2):0;
+    let r=0;
+    if(dR<=2.5) r=y>=49?0.6:0.85; else if(dR<=4.5 && y<49) r=0.55; else if(dR<=6.5 && y<30) r=0.3;
+    if(zone===0 && t===T_LAND) r=Math.max(r,0.25);
+    M.riskR[i]=r;
+    let rt=0;
+    if(y>=20){ if(dT<=1.5) rt=y>=49?0.4:0.55; else if(dT<=2.5 && y<49) rt=0.25; }
+    M.riskT[i]=rt;
+    let re=0;
+    if(y>=10){ if(dE<=1.5) re=0.5; else if(dE<=2.5) re=0.3; }
+    M.riskE[i]=re;
+    M.flood[i]=t===T_LAND?Math.max(r,rt,re):1;
+  }
+  function bfs(isSource,out){
+    out.fill(999); const q=[];
+    for(let i=0;i<N*N;i++) if(isSource(i)){out[i]=0;q.push(i);}
+    for(let h=0;h<q.length;h++){
+      const c=q[h], cx=c%N, cy=Math.floor(c/N);
+      for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+        const nx=cx+dx, ny=cy+dy; if(!inside(nx,ny)) continue;
+        const j=idx(nx,ny); if(out[j]>out[c]+1){out[j]=out[c]+1;q.push(j);}
+      }
+    }
+  }
+  const springSet=new Set(SPRINGS.map(([x,y])=>idx(x,y)));
+  bfs(i=>M.type[i]===T_RIVER||springSet.has(i),M.dRel);
+  bfs(i=>M.type[i]!==T_LAND||springSet.has(i),M.dAny);
+  bfs(i=>M.type[i]===T_MARSH,M.dMarsh);
+})();
+const waRel=i=>Math.max(0,1-M.dRel[i]/8);
+const waAny=i=>Math.max(0,1-M.dAny[i]/8);
+
+/* ---------- Stato ---------- */
+let rng=mulberry32((Date.now()%100000)|0);
+function freshState(){
+  return {year:START_YEAR,founded:false,ended:false,center:-1,pop:0,food:0,health:70,legit:60,legitBonus:0,
+    usanza:"comune",granaio:-1,fields:[],paths:[],pathParent:{},lastPath:-1,huts:[],ruins:[],children:[],memoria:40,rationing:0,
+    drought:0,droughtIn:-1,springLow:false,presagioVero:null,cometa:null,crowd:0,extraRadius:0,
+    flags:{firstBad:false,crowdAsked:false},lowLegitYears:0,
+    stats:{famine:0,floods:0,droughts:0,foundings:0,presagiLetti:0,presagiTotali:0,abbandoni:0},
+    hist:{pop:[],food:[],health:[],legit:[]},log:[],floodedThisYear:[]};
+}
+let S=freshState();
+let mode="fonda", mapMode="terreno", speed=0, hover=-1, acc=0;
+const modalQueue=[]; let modalOpen=false;
+
+/* ---------- Utilità di gioco ---------- */
+const fmtYear=y=>y<0?`${-y} a.C.`:`${y} d.C.`;
+function log(text,kind){S.log.unshift({y:S.year,text,kind:kind||""}); if(S.log.length>60) S.log.pop();}
+const isBuildable=i=>M.type[i]===T_LAND;
+function radius(){return 5+S.extraRadius;}
+function inReach(i){
+  if(S.center<0) return false;
+  if(cheb(i,S.center)<=radius()) return true;
+  for(const p of S.paths) if(cheb(i,p)<=2) return true;
+  return false;
+}
+function occupied(i){return S.huts.includes(i)||S.fields.includes(i)||i===S.granaio||i===S.center&&false;}
+
+function evalSite(i){
+  const x=i%N, y=Math.floor(i/N);
+  const out={};
+  const dr=M.dRel[i], da=M.dAny[i];
+  out.acqua=dr<=2?["abbondante e affidabile",0]:dr<=5?["affidabile ma a distanza",0]:da<=2?["solo stagionale (torrente)",1]:["scarsa",1];
+  let fs=0,fc=0,fl=0,eSum=0,eC=0,marshNear=0;
+  for(let dy=-5;dy<=5;dy++)for(let dx=-5;dx<=5;dx++){
+    const nx=x+dx, ny=y+dy; if(!inside(nx,ny)) continue; const j=idx(nx,ny);
+    if(M.type[j]===T_LAND){fs+=M.fert[j];fc++;}
+    if(Math.max(Math.abs(dx),Math.abs(dy))<=2) fl=Math.max(fl,M.type[j]===T_LAND?M.flood[j]:(M.type[j]===T_RIVER?0.6:M.type[j]===T_MARSH?0.3:0.35));
+    if(Math.max(Math.abs(dx),Math.abs(dy))<=4){eSum+=M.elev[j];eC++; if(M.type[j]===T_MARSH) marshNear++;}
+  }
+  const fm=fc?fs/fc:0;
+  out.fert=fm>0.85?["alta",0]:fm>0.65?["buona",0]:fm>0.45?["media",0]:["scarsa",1];
+  const fr=Math.max(fl,M.flood[i]);
+  out.piena=fr>0.5?["alto",1]:fr>0.25?["medio",1]:fr>0?["basso",0]:["nullo",0];
+  const rel=M.elev[i]-eSum/eC;
+  const def=rel/12+marshNear/25;
+  out.difesa=def>0.8?["buona",0]:def>0.3?["discreta",0]:["scarsa",1];
+  out.salute=M.dMarsh[i]<=3?["malsana, paludi vicine",1]:M.dMarsh[i]<=6?["paludi non lontane",1]:["aria salubre",0];
+  let site=null; for(const s of SITES) if(Math.max(Math.abs(s.x-x),Math.abs(s.y-y))<=2) site=s;
+  out.site=site;
+  return out;
+}
+
+/* ---------- Simulazione: un anno ---------- */
+function harvestOf(i){
+  const fert=M.fert[i];
+  let factor;
+  if(S.drought>0) factor=0.35+0.6*waRel(i);
+  else factor=S.climate*(0.85+0.15*waAny(i));
+  if(S.floodedThisYear.includes(i)) return 0;
+  return 12*fert*factor*(S.usanza==="famiglie"?1.12:1);
+}
+function floodEvent(src){
+  const arr=src==="R"?M.riskR:src==="T"?M.riskT:M.riskE;
+  const names={R:"Il fiume esce dal letto",T:"Piena improvvisa del torrente",E:"Il torrente orientale straripa"};
+  let hutsLost=0, fieldsLost=0;
+  const affected=[];
+  for(let i=0;i<N*N;i++) if(arr[i]>0 && rng()<arr[i]) affected.push(i);
+  const aff=new Set(affected);
+  S.huts=S.huts.filter(h=>{if(aff.has(h)){hutsLost++;return false;}return true;});
+  for(const f of S.fields) if(aff.has(f)){fieldsLost++; S.floodedThisYear.push(f);}
+  if(S.granaio>=0 && aff.has(S.granaio)){S.food*=0.6;}
+  const dead=Math.min(S.pop,hutsLost*2.5);
+  S.pop-=dead;
+  S.memoria=100;
+  S.stats.floods++;
+  if(hutsLost){
+    log(`${names[src]}: ${hutsLost} capanne distrutte, ${fieldsLost} campi allagati.`,"alert");
+    S.legitBonus-=Math.min(8,hutsLost);
+    queueModal({kind:"Evento locale",title:names[src],
+      body:`<p>L'acqua ha travolto <strong>${hutsLost}</strong> capanne e allagato <strong>${fieldsLost}</strong> campi: il loro raccolto di quest'anno è perso.</p><p>Il ricordo del pericolo torna vivo: per qualche generazione le nuove capanne si terranno lontane dall'acqua. Poi il ricordo sbiadirà.</p>`,
+      opts:[{t:"Continua"}]});
+  } else if(fieldsLost){
+    log(`${names[src]}: ${fieldsLost} campi allagati, raccolto perso.`,"alert");
+  } else {
+    log(`${names[src]}, ma il villaggio non è toccato.`);
+  }
+}
+function step(){
+  if(!S.founded||S.ended) return;
+  S.floodedThisYear=[];
+  S.climate=0.75+rng()*0.4;
+  // eventi: piene
+  if(rng()<0.02) floodEvent("R");
+  if(rng()<0.015) floodEvent("T");
+  if(rng()<0.01) floodEvent("E");
+  // siccità
+  if(S.drought>0){S.drought--; if(S.drought===0){S.springLow=false; log("Tornano le piogge. Le sorgenti si riempiono.","good");}}
+  if(S.droughtIn>0){S.droughtIn--; if(S.droughtIn===0){startDrought(); S.droughtIn=-1;}}
+  else if(S.drought===0 && S.droughtIn<0 && !S.presagioVero && rng()<0.007){startDrought();}
+  // presagi
+  if(S.drought===0 && S.droughtIn<0 && !S.cometa && rng()<0.012){
+    S.droughtIn=2+Math.floor(rng()*2); S.springLow=true; S.presagioVero={choice:null}; S.stats.presagiTotali++;
+    queueModal({kind:"Presagio",title:"Le sorgenti calano",
+      body:`<p>Le sorgenti danno meno acqua del solito e l'erba ingiallisce presto. Gli anziani chiedono di mettere da parte il raccolto.</p><p class="hint">Controlla la mappa dell'acqua: le sorgenti si leggono anche lì.</p>`,
+      opts:[{t:"Razionare e accumulare",s:"Per tre anni si mangia meno: salute e consenso calano un poco.",f:()=>{S.rationing=3;S.legitBonus-=3;S.presagioVero.choice="razionare";log("Gli anziani ordinano di razionare il cibo.");}},
+            {t:"Ignorare",s:"Nessun costo oggi.",f:()=>{S.presagioVero.choice="ignorare";log("Il villaggio non dà peso alle sorgenti basse.");}}]});
+  }
+  if(S.drought===0 && S.droughtIn<0 && !S.cometa && !S.presagioVero && rng()<0.008){
+    S.cometa={choice:null,years:3}; S.stats.presagiTotali++;
+    queueModal({kind:"Presagio",title:"Una cometa nel cielo",
+      body:`<p>Una cometa attraversa il cielo per molte notti. Il sacerdote annuncia una carestia e chiede offerte e digiuno.</p>`,
+      opts:[{t:"Offerte e digiuno",s:"Si sacrifica parte delle scorte e si raziona per due anni. Il sacerdote è soddisfatto.",f:()=>{S.cometa.choice="offerte";S.food*=0.8;S.rationing=Math.max(S.rationing,2);S.legitBonus+=4;log("Il villaggio offre parte del raccolto e digiuna.");}},
+            {t:"Ignorare il presagio",s:"Il sacerdote protesta e il consenso cala, almeno per ora.",f:()=>{S.cometa.choice="ignorare";S.legitBonus-=5;log("Gli anziani non danno ascolto al sacerdote.");}}]});
+  } else if(S.cometa){
+    S.cometa.years--;
+    if(S.cometa.years<=0){
+      if(S.cometa.choice==="ignorare"){S.legitBonus+=9;S.stats.presagiLetti++;log("Nessuna carestia dopo la cometa: gli anziani avevano visto giusto.","good");}
+      else if(S.cometa.choice==="offerte"){S.legitBonus-=3;log("Nessuna carestia dopo la cometa: il digiuno è stato inutile.");}
+      S.cometa=null;
+    }
+  }
+  // raccolto
+  const braccia=S.pop*0.55;
+  const workable=Math.floor(braccia/3);
+  const ordered=S.fields.slice().sort((a,b)=>M.fert[b]-M.fert[a]);
+  let harvest=0;
+  for(let k=0;k<ordered.length&&k<workable;k++) harvest+=harvestOf(ordered[k]);
+  S.lastHarvest=harvest; S.lastWorked=Math.min(workable,ordered.length);
+  const consumption=S.pop*(S.rationing>0?0.8:1);
+  S.food+=harvest-consumption;
+  if(S.rationing>0) S.rationing--;
+  let famine=0;
+  if(S.food<0){
+    famine=Math.min(1,-S.food/Math.max(1,consumption));
+    S.pop-=S.pop*famine*0.35; S.health-=famine*25; S.legit-=famine*30; S.food=0; S.stats.famine++;
+    log(`Carestia: manca il ${Math.round(famine*100)}% del cibo necessario.`,"alert");
+    if(famine>0.25) notify(`Carestia: manca il ${Math.round(famine*100)}% del cibo necessario.`);
+  } else {
+    S.food*=S.granaio>=0?0.9:0.75;
+  }
+  if(!S.flags.firstBad && harvest<consumption && S.year>START_YEAR+2){
+    S.flags.firstBad=true;
+    queueModal({kind:"Momento decisivo",title:"Il primo cattivo raccolto",
+      body:`<p>Il raccolto non basta a sfamare tutti: ${Math.round(harvest)} contro un bisogno di ${Math.round(consumption)}.</p>`,
+      opts:[{t:"Razionare per tre anni",s:"Si consuma meno; salute e consenso calano un poco.",f:()=>{S.rationing=3;S.legitBonus-=2;}},
+            {t:"Cacciare di più nei boschi",s:"Più cibo subito, ma i cacciatori rischiano e la selvaggina cala.",f:()=>{let forestNear=0;for(let i=0;i<N*N;i++) if(M.forest[i]&&cheb(i,S.center)<=8) forestNear++; const gain=Math.min(S.pop*0.6,forestNear*1.2); S.food+=gain; S.health-=3; log(`La caccia porta ${Math.round(gain)} unità di cibo.`);}},
+            {t:"Dissodare nuovi campi",s:"Torni alla mappa e aggiungi campi con l'azione Campi.",f:()=>{setMode("campi");}}]});
+  }
+  // drought aftermath for presagio vero handled in startDrought
+  // salute
+  const crowd=S.crowd;
+  const dm=M.dMarsh[S.center];
+  let target=72+15*waAny(S.center)-(dm<=3?25:dm<=6?10:0)-crowd*25-(S.rationing>0?5:0)-(S.food<S.pop*0.3?8:0);
+  S.health+= (clamp(target,5,95)-S.health)*0.15;
+  S.health=clamp(S.health,0,100);
+  // popolazione
+  if(famine===0 && S.food>S.pop*0.3){
+    const rate=0.007+0.008*(S.health-50)/50;
+    S.pop*=1+rate;
+  } else if(famine===0){ S.pop*=0.997; }
+  if(S.health<35) S.pop*=0.97;
+  // legittimità
+  let lt=55+(S.food>S.pop*0.5?10:-6)+(S.usanza==="comune"?8:-4);
+  S.legit+=(clamp(lt,0,100)-S.legit)*0.1+S.legitBonus*0.4;
+  S.legitBonus*=0.6; if(Math.abs(S.legitBonus)<0.2) S.legitBonus=0;
+  S.legit=clamp(S.legit,0,100);
+  // memoria del rischio
+  S.memoria=Math.max(0,S.memoria-1.5);
+  // capanne
+  placeHuts();
+  // affollamento
+  if(!S.flags.crowdAsked && S.pop>=150){
+    S.flags.crowdAsked=true;
+    queueModal({kind:"Momento decisivo",title:"Il villaggio è affollato",
+      body:`<p>Le famiglie sono ormai ${Math.round(S.pop/6)}. Le capanne si stringono e i campi più lontani sono faticosi da raggiungere.</p>`,
+      opts:[{t:"Allargarsi",s:"Il villaggio può crescere più lontano dal centro. Per qualche anno la salute ne risente.",f:()=>{S.extraRadius+=2;S.health-=5;log("Il villaggio si allarga.");}},
+            {t:"Fondare un villaggio figlio",s:"Un terzo delle famiglie parte per fondare un nuovo villaggio. Il consenso cresce.",f:()=>foundChild()}]});
+  }
+  // crisi
+  if(S.legit<=5) S.lowLegitYears++; else S.lowLegitYears=0;
+  if(S.lowLegitYears>=4){
+    S.pop*=0.6; S.legit=35; S.lowLegitYears=0;
+    log("Il villaggio si divide: molte famiglie se ne vanno.","alert");
+    queueModal({kind:"Crisi",title:"Il villaggio si divide",body:"<p>Gli anziani hanno perso ogni autorità. Molte famiglie lasciano il villaggio.</p>",opts:[{t:"Continua"}]});
+  }
+  if(S.pop<6){ abandon(); }
+  // storia
+  for(const k of ["pop","food","health","legit"]){S.hist[k].push(S[k]); if(S.hist[k].length>160) S.hist[k].shift();}
+  S.year++;
+  if(S.year>=END_YEAR) endGame();
+}
+function startDrought(){
+  S.drought=1+Math.floor(rng()*2); S.springLow=true; S.stats.droughts++;
+  let extra="";
+  if(S.presagioVero){
+    if(S.presagioVero.choice==="razionare"){S.legitBonus+=6;S.stats.presagiLetti++;extra="<p>Le scorte messe da parte ascoltando il presagio aiutano il villaggio. Gli anziani escono rafforzati.</p>";log("Arriva la siccità: le scorte accumulate ascoltando il presagio aiutano il villaggio.","good");}
+    else {S.legitBonus-=8;extra="<p>Il presagio era stato ignorato: il colpo è più duro e gli anziani ne pagano il prezzo.</p>";log("Arriva la siccità annunciata dalle sorgenti: averla ignorata costa caro agli anziani.","alert");}
+    S.presagioVero=null;
+  } else log("Siccità improvvisa.","alert");
+  notify(`Siccità per ${S.drought===1?"un anno":"due anni"}: rendono solo i campi vicini al fiume e alle sorgenti.`);
+}
+function placeHuts(){
+  const needed=Math.ceil(S.pop/8);
+  while(S.huts.length>needed){S.huts.pop();}
+  const R=2+Math.ceil(Math.sqrt(needed))+S.extraRadius;
+  const cx=S.center%N, cy=Math.floor(S.center/N);
+  const fear=S.memoria/100;
+  let guard=0;
+  while(S.huts.length<needed && guard++<200){
+    let best=-1,bs=-1e9;
+    for(let dy=-R;dy<=R;dy++)for(let dx=-R;dx<=R;dx++){
+      const x=cx+dx,y=cy+dy; if(!inside(x,y)) continue; const i=idx(x,y);
+      if(!isBuildable(i)||S.huts.includes(i)||S.fields.includes(i)||i===S.granaio||S.paths.includes(i)) continue;
+      const d=Math.max(Math.abs(dx),Math.abs(dy));
+      const sc=-d*1.2-M.flood[i]*fear*8+waAny(i)*1.0-(M.gessi[i]?1:0)+((i*2654435761>>>0)%100)/400;
+      if(sc>bs){bs=sc;best=i;}
+    }
+    if(best<0) break;
+    S.huts.push(best);
+  }
+  S.crowd=needed>0?clamp((needed-S.huts.length)/needed,0,1):0;
+}
+function foundChild(){
+  const cx=S.center%N, cy=Math.floor(S.center/N);
+  let best=-1,bs=-1e9;
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const i=idx(x,y); const d=Math.max(Math.abs(x-cx),Math.abs(y-cy));
+    if(!isBuildable(i)||d<9||d>16) continue;
+    const sc=M.fert[i]+waAny(i)-M.flood[i]+((i*40503)%97)/200;
+    if(sc>bs){bs=sc;best=i;}
+  }
+  S.pop*=0.67; S.legitBonus+=6;
+  if(best>=0) S.children.push(best);
+  log("Un terzo delle famiglie parte e fonda un villaggio figlio.","good");
+  placeHuts();
+}
+function abandon(){
+  S.stats.abbandoni++;
+  S.ruins.push(S.center,...S.huts);
+  log("Il villaggio è abbandonato. Le rovine restano nel terreno.","alert");
+  const keepYear=S.year;
+  S.founded=false; S.center=-1; S.huts=[]; S.fields=[]; S.paths=[]; S.granaio=-1; S.pop=0; S.food=0; S.extraRadius=0;
+  S.year=keepYear;
+  setSpeed(0); setMode("fonda");
+  queueModal({kind:"Fallimento",title:"Il villaggio è abbandonato",
+    body:"<p>Le ultime famiglie se ne vanno. Le capanne crollano e diventano uno strato nel terreno: un giorno qualcuno ci scaverà sopra.</p><p>Puoi fondare di nuovo, qui o altrove sulla mappa.</p>",opts:[{t:"Scegli un nuovo sito"}]});
+}
+function endGame(){
+  S.ended=true; setSpeed(0);
+  const st=S.stats;
+  queueModal({kind:"Fine del prototipo",title:`${fmtYear(S.year)}: cinque secoli dopo`,
+    body:`<p>Il villaggio conta <strong>${Math.round(S.pop)}</strong> abitanti${S.children.length?` e ha fondato ${S.children.length} villaggi figli`:""}.</p>
+      <ul style="margin:0 0 10px;padding-left:18px">
+      <li>Anni di carestia: ${st.famine}</li><li>Piene: ${st.floods}</li><li>Siccità: ${st.droughts}</li>
+      <li>Presagi letti correttamente: ${st.presagiLetti} su ${st.presagiTotali}</li><li>Fondazioni: ${st.foundings}${st.abbandoni?` (abbandoni: ${st.abbandoni})`:""}</li></ul>
+      <p>La domanda del prototipo: <strong>la scelta del sito ha pesato?</strong> Prova un'altra partita da un sito diverso e confronta.</p>`,
+    opts:[{t:"Nuova partita",f:()=>{S=freshState();rng=mulberry32((Date.now()%100000)|0);setMode("fonda");renderAll();}},{t:"Resta a guardare la mappa"}]});
+}
+
+/* ---------- Azioni ---------- */
+function found(i){
+  S.founded=true; S.center=i; S.pop=30; S.food=45; S.health=70; S.legit=60; S.stats.foundings++;
+  const ev=evalSite(i);
+  log(`Fondazione${ev.site?` presso il ${ev.site.name.toLowerCase()}`:""}. Acqua ${ev.acqua[0]}, rischio di piena ${ev.piena[0]}.`,"good");
+  placeHuts();
+  pulse(i);
+  zoomTo(3,(i%N)*CELL+5,Math.floor(i/N)*CELL+5);
+  setMode("campi");
+}
+function clickCell(i){
+  if(S.ended) return;
+  if(mode==="fonda"){
+    if(S.founded) return;
+    if(!isBuildable(i)){flash("Qui non si può fondare: è acqua o palude.");return;}
+    const ev=evalSite(i);
+    queueModal({kind:"Fondazione",title:ev.site?`Fondare presso il ${ev.site.name.toLowerCase()}?`:"Fondare qui?",
+      body:siteHTML(ev,i)+`<p class="hint">È la decisione più importante della partita: il sito condiziona tutti i secoli successivi.</p>`,
+      opts:[{t:"Fonda qui",f:()=>found(i)},{t:"Annulla"}]});
+    return;
+  }
+  if(!S.founded) return;
+  if(mode==="campi"){
+    const k=S.fields.indexOf(i);
+    if(k>=0){S.fields.splice(k,1);renderAll();return;}
+    if(!isBuildable(i)){flash("I campi vanno su terra asciutta, non su acqua o palude.");return;}
+    if(S.huts.includes(i)||i===S.granaio){flash("La cella è occupata da capanne o dal granaio.");return;}
+    if(!inReach(i)){flash("Troppo lontano dal villaggio. Un sentiero allunga il raggio dei campi.");return;}
+    S.fields.push(i); renderAll(); return;
+  }
+  if(mode==="granaio"){ buildGranaio(i); renderAll(); return; }
+  if(mode==="sentiero"){
+    if(!S.pathParent) S.pathParent={};
+    if(S.paths.includes(i)){
+      const cut=new Set([i]); let grew=true;
+      while(grew){grew=false; for(const p of S.paths){ if(!cut.has(p) && cut.has(S.pathParent[p])){cut.add(p);grew=true;} }}
+      S.paths=S.paths.filter(p=>!cut.has(p)); for(const p of cut) delete S.pathParent[p];
+      if(cut.has(S.lastPath)) S.lastPath=-1;
+      flash(cut.size>1?`Rimossi ${cut.size} tratti di sentiero.`:"Tratto di sentiero rimosso.",true);
+      renderAll(); return;
+    }
+    if(M.type[i]===T_RIVER||M.type[i]===T_MARSH){flash("Il sentiero non attraversa il fiume né la palude.");return;}
+    const adj=cheb(i,S.center)<=1||S.paths.some(p=>cheb(i,p)===1);
+    if(!adj){flash("Il sentiero deve partire dal villaggio o da un sentiero esistente.");return;}
+    if(S.paths.length>=40){flash("Per ora i sentieri sono al massimo 40 tratti.");return;}
+    const near=[S.center,...S.paths].filter(q=>q>=0&&cheb(i,q)===1);
+    const orth=q=>Math.abs(q%N-i%N)+Math.abs(Math.floor(q/N)-Math.floor(i/N))===1;
+    const parent=near.includes(S.lastPath)?S.lastPath:(near.find(orth)??near[0]);
+    S.paths.push(i); S.pathParent[i]=parent; S.lastPath=i;
+    if(S.huts.includes(i)){S.huts=S.huts.filter(h=>h!==i); placeHuts();}
+    pulse(i); renderAll(); return;
+  }
+}
+function granaioValid(i){
+  return S.founded&&S.granaio<0&&i>=0&&isBuildable(i)&&i!==S.center&&!S.fields.includes(i)&&!S.paths.includes(i)&&cheb(i,S.center)<=2;
+}
+function buildGranaio(i){
+  if(!S.founded||S.granaio>=0) return;
+  if(S.food<30){flash("Servono 30 unità di cibo in scorta per costruire il granaio.");return;}
+  if(!granaioValid(i)){flash("Il granaio va costruito su terra libera, entro due celle dal centro del villaggio.");return;}
+  S.huts=S.huts.filter(h=>h!==i);
+  S.granaio=i; S.food-=30; log("Costruito il granaio: le scorte si conservano meglio.","good");
+  placeHuts(); pulse(i); flash("Granaio costruito: le scorte si conserveranno meglio.",true);
+  setMode("campi");
+}
+function setUsanza(u){
+  if(!S.founded||S.usanza===u) return;
+  S.usanza=u; S.legitBonus-=4;
+  log(u==="comune"?"Il raccolto torna a essere diviso in comune.":"Ogni famiglia tiene il proprio raccolto.");
+  renderAll();
+}
+
+/* ---------- Modali ---------- */
+function queueModal(m){modalQueue.push(m); if(!modalOpen) nextModal();}
+function nextModal(){
+  const bg=document.getElementById("modal-bg");
+  if(!modalQueue.length){modalOpen=false;bg.classList.remove("open");renderAll();return;}
+  const m=modalQueue.shift(); modalOpen=true;
+  document.getElementById("modal-kind").textContent=m.kind||"";
+  document.getElementById("modal-title").textContent=m.title;
+  document.getElementById("modal-body").innerHTML=m.body||"";
+  const box=document.getElementById("modal-opts"); box.innerHTML="";
+  (m.opts||[{t:"Continua"}]).forEach((o,k)=>{
+    const b=document.createElement("button"); b.id="modal-opt-"+k;
+    b.innerHTML=o.t+(o.s?`<small>${o.s}</small>`:"");
+    b.addEventListener("click",()=>{ if(o.f) o.f(); nextModal(); });
+    box.appendChild(b);
+  });
+  bg.classList.add("open");
+  const first=box.querySelector("button"); if(first) first.focus();
+  renderAll();
+}
+let flashTimer=null;
+function flash(t){
+  const h=document.getElementById("actionhint"); h.innerHTML=`<strong>${t}</strong>`;
+  clearTimeout(flashTimer); flashTimer=setTimeout(()=>{renderHints();},3500);
+}
+let toastTimer=null;
+function notify(t){
+  const tt=document.getElementById("toast"); tt.textContent=t; tt.classList.add("show");
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>tt.classList.remove("show"),4000);
+}
+function pulse(i){pulses.push({i,t:performance.now()}); if(pulses.length>12) pulses.shift();}
+
+/* ---------- Disegno ---------- */
+const cv=document.getElementById("map"), ctx=cv.getContext("2d");
+let baseImg=null;
+const view={s:1,cx:W/2,cy:W/2};
+const pulses=[];
+function hypso(e){
+  const stops=[[15,[199,212,182]],[35,[206,214,178]],[60,[216,213,170]],[100,[214,196,150]],[200,[196,172,128]],[350,[174,150,112]],[500,[156,134,102]]];
+  for(let k=0;k<stops.length-1;k++){
+    const [e0,c0]=stops[k],[e1,c1]=stops[k+1];
+    if(e<=e1){const t=clamp((e-e0)/(e1-e0),0,1);return c0.map((v,j)=>v+(c1[j]-v)*t);}
+  }
+  return stops[stops.length-1][1];
+}
+function drawBase(){
+  const off=document.createElement("canvas"); off.width=W; off.height=W;
+  const c=off.getContext("2d");
+  if(!c) return null;
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const i=idx(x,y); let col=hypso(M.elev[i]);
+    const a=M.elev[idx(Math.max(0,x-1),Math.max(0,y-1))], b=M.elev[idx(Math.min(N-1,x+1),Math.min(N-1,y+1))];
+    const sh=clamp((a-b)/60,-0.25,0.25);
+    col=col.map(v=>clamp(v*(1+sh),0,255));
+    if(M.type[i]===T_MARSH) col=[170,196,186];
+    if(M.gessi[i]) col=[222,218,206];
+    c.fillStyle=`rgb(${col[0]|0},${col[1]|0},${col[2]|0})`;
+    c.fillRect(x*CELL,y*CELL,CELL,CELL);
+  }
+  return off;
+}
+const CONTOURS=[];
+(function(){
+  const band=e=>Math.floor(e/25);
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const i=idx(x,y);
+    if(x<N-1){const a=band(M.elev[i]),b=band(M.elev[idx(x+1,y)]); if(a!==b) CONTOURS.push([(x+1)*CELL,y*CELL,(x+1)*CELL,(y+1)*CELL,Math.max(a,b)%4===0]);}
+    if(y<N-1){const a=band(M.elev[i]),b=band(M.elev[idx(x,y+1)]); if(a!==b) CONTOURS.push([x*CELL,(y+1)*CELL,(x+1)*CELL,(y+1)*CELL,Math.max(a,b)%4===0]);}
+  }
+})();
+function clampView(){
+  view.s=clamp(view.s,1,6);
+  const h=W/2/view.s;
+  view.cx=clamp(view.cx,h,W-h); view.cy=clamp(view.cy,h,W-h);
+}
+function zoomTo(s,wx,wy){view.s=s; if(wx!==undefined){view.cx=wx;view.cy=wy;} clampView(); renderMap();}
+function overlay(i){
+  if(mapMode==="acqua"){ if(M.type[i]!==T_LAND) return null; const r=waRel(i), a=waAny(i); return `rgba(40,110,170,${(0.08+0.55*r+0.25*Math.max(0,a-r)).toFixed(3)})`; }
+  if(mapMode==="suolo"){ if(M.type[i]!==T_LAND) return "rgba(255,255,255,.5)"; const f=M.fert[i]/1.1; return `rgba(${Math.round(150-110*f)},${Math.round(110+30*f)},${Math.round(40)},${(0.25+0.5*f).toFixed(3)})`; }
+  if(mapMode==="piena"){ if(M.type[i]!==T_LAND) return null; const r=M.flood[i]; return r>0?`rgba(180,60,40,${(0.15+0.6*r).toFixed(3)})`:"rgba(255,255,255,.35)"; }
+  return null;
+}
+function pathValid(i){
+  if(!S.founded||i<0||i===S.center||S.paths.includes(i)) return false;
+  if(M.type[i]===T_RIVER||M.type[i]===T_MARSH) return false;
+  if(S.paths.length>=40) return false;
+  return cheb(i,S.center)<=1||S.paths.some(p=>cheb(i,p)===1);
+}
+function fieldValid(i){
+  return S.founded&&i>=0&&isBuildable(i)&&!S.huts.includes(i)&&i!==S.granaio&&!S.fields.includes(i)&&inReach(i);
+}
+function polyline(c,fx,y0,y1){c.beginPath(); for(let y=y0;y<=y1;y++){const X=fx(y); if(y===y0)c.moveTo(X,y*CELL); else c.lineTo(X,y*CELL);} c.stroke();}
+function renderMap(){
+  if(!ctx) return;
+  if(!baseImg) baseImg=drawBase();
+  const s=view.s, ox=view.cx-W/2/s, oy=view.cy-W/2/s, px=n=>n/s;
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.fillStyle="#dfe4d6"; ctx.fillRect(0,0,W,W);
+  ctx.setTransform(s,0,0,s,-ox*s,-oy*s);
+  ctx.imageSmoothingEnabled=true;
+  if(baseImg) ctx.drawImage(baseImg,0,0);
+  const x0=Math.max(0,Math.floor(ox/CELL)-1), x1=Math.min(N-1,Math.ceil((ox+W/s)/CELL)+1);
+  const y0=Math.max(0,Math.floor(oy/CELL)-1), y1=Math.min(N-1,Math.ceil((oy+W/s)/CELL)+1);
+  // simboli del terreno
+  ctx.lineWidth=px(1);
+  for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){
+    const i=idx(x,y), X=x*CELL, Y=y*CELL;
+    if(M.type[i]===T_MARSH){ctx.strokeStyle="rgba(60,110,100,.55)";ctx.beginPath();ctx.moveTo(X+2,Y+4);ctx.lineTo(X+7,Y+4);ctx.moveTo(X+4,Y+7.5);ctx.lineTo(X+9,Y+7.5);ctx.stroke();}
+    else if(M.gessi[i]){ if((x+y)%2===0){ctx.fillStyle="rgba(120,110,95,.5)";ctx.fillRect(X+4,Y+4,2,2);} }
+    else if(M.forest[i]){
+      ctx.fillStyle="rgba(70,100,60,.55)"; ctx.beginPath();
+      ctx.arc(X+3,Y+3.5,1.8,0,7); ctx.arc(X+7,Y+7,1.8,0,7);
+      if(s>=2.5){ctx.arc(X+7.5,Y+2.5,1.3,0,7); ctx.arc(X+2.5,Y+7.5,1.3,0,7);}
+      ctx.fill();
+    }
+  }
+  // isoipse
+  ctx.strokeStyle="rgba(90,70,45,.35)";
+  for(const major of [false,true]){
+    ctx.lineWidth=px(major?1.4:0.8); ctx.beginPath();
+    for(const [a,b,c,d,mj] of CONTOURS){ if(mj!==major) continue; ctx.moveTo(a,b); ctx.lineTo(c,d); }
+    ctx.stroke();
+  }
+  // acque
+  ctx.strokeStyle="#4c82a4"; ctx.lineCap="round"; ctx.lineJoin="round";
+  ctx.lineWidth=24; ctx.globalAlpha=.35; polyline(ctx,y=>rx(y)*CELL,0,N); ctx.globalAlpha=1; ctx.lineWidth=14; polyline(ctx,y=>rx(y)*CELL,0,N);
+  ctx.lineWidth=Math.max(1.6,px(2.5)); ctx.setLineDash([Math.max(6,px(8)),Math.max(4,px(5))]); polyline(ctx,y=>(Math.floor(tx(y))+.5)*CELL,20,N);
+  ctx.setLineDash([]); ctx.lineWidth=Math.max(2.2,px(3)); polyline(ctx,y=>(Math.floor(ex(y))+.5)*CELL,10,N);
+  // mappa tematica
+  if(mapMode!=="terreno"){
+    for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const o=overlay(idx(x,y)); if(o){ctx.fillStyle=o;ctx.fillRect(x*CELL,y*CELL,CELL,CELL);}}
+  }
+  // sorgenti
+  for(const [x,y] of SPRINGS){
+    const r=S.springLow?2.2:(mapMode==="acqua"?5:3.5);
+    ctx.fillStyle="#2f6f9c"; ctx.strokeStyle="#fff"; ctx.lineWidth=px(1.2);
+    ctx.beginPath(); ctx.arc(x*CELL+5,y*CELL+5,r,0,7); ctx.fill(); ctx.stroke();
+  }
+  // rovine
+  ctx.strokeStyle="rgba(60,50,45,.75)"; ctx.lineWidth=0.9;
+  for(const r of S.ruins){const X=(r%N)*CELL,Y=Math.floor(r/N)*CELL; ctx.beginPath();ctx.moveTo(X+2,Y+2);ctx.lineTo(X+8,Y+8);ctx.moveTo(X+8,Y+2);ctx.lineTo(X+2,Y+8);ctx.stroke();}
+  // campi
+  const workedSet=new Set(S.fields.slice().sort((a,b)=>M.fert[b]-M.fert[a]).slice(0,Math.floor(S.pop*0.55/3)));
+  for(const f of S.fields){
+    const X=(f%N)*CELL,Y=Math.floor(f/N)*CELL;
+    ctx.fillStyle=workedSet.has(f)?"rgba(214,170,60,.92)":"rgba(214,170,60,.38)";
+    ctx.fillRect(X+0.4,Y+0.4,CELL-0.8,CELL-0.8);
+    ctx.strokeStyle="rgba(120,85,20,.55)"; ctx.lineWidth=Math.min(0.6,px(1)); ctx.beginPath();
+    const step=s>=2.5?1.25:2.5;
+    for(let k=step;k<CELL;k+=step){ctx.moveTo(X+k,Y+0.8);ctx.lineTo(X+k,Y+CELL-0.8);} ctx.stroke();
+    if(S.floodedThisYear.includes(f)){ctx.fillStyle="rgba(76,130,164,.6)";ctx.fillRect(X,Y,CELL,CELL);}
+  }
+  // sentieri
+  if(S.paths.length){
+    const segs=[]; const par=S.pathParent||{};
+    for(const p of S.paths){
+      let q=par[p];
+      if(q===undefined){ q=[S.center,...S.paths].find(r=>r>=0&&r!==p&&cheb(p,r)===1); }
+      if(q!==undefined&&q>=0) segs.push([p,q]);
+    }
+    const cxy=i=>[(i%N)*CELL+5,Math.floor(i/N)*CELL+5];
+    for(const [w,col] of [[2.2,"#7a5332"],[0.9,"#d8b98c"]]){
+      ctx.strokeStyle=col; ctx.lineWidth=Math.max(w,px(w===2.2?3:1.2)); ctx.beginPath();
+      for(const [p,q] of segs){const [a,b]=cxy(p),[c,d]=cxy(q); ctx.moveTo(a,b); ctx.lineTo(c,d);}
+      ctx.stroke();
+    }
+  }
+  // capanne
+  const HOUSES=[[2.6,2.8],[7.0,4.2],[3.8,7.3]];
+  for(const h of S.huts){
+    const X=(h%N)*CELL,Y=Math.floor(h/N)*CELL;
+    HOUSES.forEach(([hx,hy],k)=>{
+      const vert=((h*7+k*3)%5)<2, L=3.6, Wd=2.1;
+      const w=vert?Wd:L, hh=vert?L:Wd, x=X+hx-w/2, y=Y+hy-hh/2;
+      ctx.fillStyle="rgba(40,30,20,.28)"; ctx.fillRect(x+0.45,y+0.45,w,hh);
+      ctx.fillStyle="#b08a55"; ctx.fillRect(x,y,w,hh);
+      ctx.fillStyle="#7d5f38"; if(vert) ctx.fillRect(x+w/2,y,w/2,hh); else ctx.fillRect(x,y+hh/2,w,hh/2);
+      ctx.strokeStyle="#3a2c22"; ctx.lineWidth=Math.min(0.35,px(1)); ctx.strokeRect(x,y,w,hh);
+      ctx.beginPath(); if(vert){ctx.moveTo(x+w/2,y);ctx.lineTo(x+w/2,y+hh);} else {ctx.moveTo(x,y+hh/2);ctx.lineTo(x+w,y+hh/2);} ctx.stroke();
+    });
+  }
+  // granaio
+  if(S.granaio>=0){
+    const X=(S.granaio%N)*CELL,Y=Math.floor(S.granaio/N)*CELL;
+    ctx.fillStyle="rgba(40,30,20,.3)"; ctx.fillRect(X+2,Y+2.6,7,7);
+    ctx.fillStyle="#efe3c4"; ctx.fillRect(X+1.4,Y+1.6,7,7);
+    ctx.strokeStyle="#3a2c22"; ctx.lineWidth=Math.max(0.6,px(1.5)); ctx.strokeRect(X+1.4,Y+1.6,7,7);
+    ctx.beginPath(); ctx.moveTo(X+1.4,Y+1.6); ctx.lineTo(X+8.4,Y+8.6); ctx.moveTo(X+8.4,Y+1.6); ctx.lineTo(X+1.4,Y+8.6); ctx.stroke();
+  }
+  // villaggi figli
+  for(const c of S.children){const X=(c%N)*CELL+5,Y=Math.floor(c/N)*CELL+5; ctx.strokeStyle="#b4432d"; ctx.lineWidth=px(1.5); ctx.beginPath(); ctx.arc(X,Y,4,0,7); ctx.stroke();}
+  // centro
+  if(S.center>=0){const X=(S.center%N)*CELL+5,Y=Math.floor(S.center/N)*CELL+5; ctx.strokeStyle="#b4432d"; ctx.lineWidth=px(2.5); ctx.beginPath(); ctx.arc(X,Y,6.5,0,7); ctx.stroke(); ctx.fillStyle="#b4432d"; ctx.beginPath(); ctx.arc(X,Y,1.6,0,7); ctx.fill();}
+  // guida all'azione
+  if(S.founded && !S.ended){
+    if(mode==="campi"||mode==="sentiero"){
+      const R=radius(); const cx=S.center%N, cy=Math.floor(S.center/N);
+      ctx.strokeStyle="rgba(180,67,45,.8)"; ctx.lineWidth=px(1.2); ctx.setLineDash([px(5),px(4)]);
+      ctx.strokeRect((cx-R)*CELL,(cy-R)*CELL,(2*R+1)*CELL,(2*R+1)*CELL);
+      ctx.strokeStyle="rgba(180,67,45,.35)";
+      for(const p of S.paths){const qx=p%N,qy=Math.floor(p/N); ctx.strokeRect((qx-2)*CELL,(qy-2)*CELL,5*CELL,5*CELL);}
+      ctx.setLineDash([]);
+    }
+    if(mode==="granaio"){
+      const cx=S.center%N, cy=Math.floor(S.center/N);
+      ctx.strokeStyle="rgba(47,107,79,.85)"; ctx.lineWidth=px(1.5);
+      for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){const x=cx+dx,y=cy+dy; if(!inside(x,y)) continue; const i=idx(x,y); if(granaioValid(i)) ctx.strokeRect(x*CELL+1.5,y*CELL+1.5,CELL-3,CELL-3);}
+    }
+    if(mode==="sentiero"){
+      ctx.fillStyle="rgba(122,83,50,.75)";
+      const cand=new Set();
+      for(const a of [S.center,...S.paths]){const ax=a%N,ay=Math.floor(a/N); for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const nx=ax+dx,ny=ay+dy; if(inside(nx,ny)) cand.add(idx(nx,ny));}}
+      for(const i of cand) if(pathValid(i)){ctx.beginPath(); ctx.arc((i%N)*CELL+5,Math.floor(i/N)*CELL+5,1.4,0,7); ctx.fill();}
+    }
+  }
+  // impulsi di conferma
+  const now=performance.now();
+  for(const p of pulses){
+    const age=(now-p.t)/1400; if(age>1) continue;
+    ctx.strokeStyle=`rgba(180,67,45,${(1-age).toFixed(3)})`; ctx.lineWidth=px(2.5);
+    ctx.beginPath(); ctx.arc((p.i%N)*CELL+5,Math.floor(p.i/N)*CELL+5,5+age*14,0,7); ctx.stroke();
+  }
+  // siti suggeriti
+  if(!S.founded){
+    ctx.font=`600 ${13/s}px 'Barlow Condensed', 'Arial Narrow', sans-serif`; ctx.textAlign="center"; ctx.textBaseline="middle";
+    for(const st of SITES){const X=st.x*CELL+5,Y=st.y*CELL+5; ctx.fillStyle="rgba(243,244,239,.92)"; ctx.strokeStyle="#1e2927"; ctx.lineWidth=px(1); ctx.beginPath(); ctx.arc(X,Y,px(8),0,7); ctx.fill(); ctx.stroke(); ctx.fillStyle="#1e2927"; ctx.fillText(String(st.n),X,Y+px(0.5));}
+  }
+  // cella sotto il puntatore
+  if(hover>=0){
+    let col="#1e2927";
+    if(mode==="campi"&&S.founded) col=(S.fields.includes(hover)||fieldValid(hover))?"#2f6b4f":"#b4432d";
+    else if(mode==="sentiero"&&S.founded) col=(S.paths.includes(hover)||pathValid(hover))?"#2f6b4f":"#b4432d";
+    else if(mode==="granaio"&&S.founded) col=granaioValid(hover)?"#2f6b4f":"#b4432d";
+    else if(mode==="fonda"&&!S.founded) col=isBuildable(hover)?"#1e2927":"#b4432d";
+    ctx.strokeStyle=col; ctx.lineWidth=px(2); ctx.strokeRect((hover%N)*CELL+px(1),Math.floor(hover/N)*CELL+px(1),CELL-px(2),CELL-px(2));
+  }
+  // elementi fissi sullo schermo
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.fillStyle="#1e2927"; ctx.font="600 14px 'Barlow Condensed', 'Arial Narrow', sans-serif"; ctx.textAlign="center"; ctx.textBaseline="alphabetic";
+  ctx.fillText("N",W-18,24); ctx.beginPath(); ctx.moveTo(W-18,28); ctx.lineTo(W-23,40); ctx.lineTo(W-13,40); ctx.closePath(); ctx.fill();
+  const kmPx=62.5*s; let len=kmPx, lab="1 km";
+  if(kmPx>180){len=kmPx/4; lab="250 m";} else if(kmPx>90){len=kmPx/2; lab="500 m";}
+  ctx.fillRect(16,W-20,len,3); ctx.font="500 11px 'IBM Plex Mono', monospace"; ctx.textAlign="left"; ctx.fillText(lab,16,W-26);
+}
+function spark(id,arr,max,color){
+  const c=document.getElementById(id); const g=c.getContext&&c.getContext("2d"); if(!g) return;
+  g.clearRect(0,0,c.width,c.height);
+  if(arr.length<2) return;
+  const n=arr.length, w=c.width, h=c.height;
+  g.beginPath();
+  arr.forEach((v,k)=>{const X=k/(n-1)*w, Y=h-2-(clamp(v,0,max)/max)*(h-4); if(k===0) g.moveTo(X,Y); else g.lineTo(X,Y);});
+  g.strokeStyle=color; g.lineWidth=1.4; g.stroke();
+  g.lineTo(w,h); g.lineTo(0,h); g.closePath(); g.fillStyle=color+"22"; g.fill();
+  const lv=arr[n-1]; g.fillStyle=color; g.beginPath(); g.arc(w-2,h-2-(clamp(lv,0,max)/max)*(h-4),2,0,7); g.fill();
+}
+function siteHTML(ev,i){
+  const row=(k,v)=>`<dt>${k}</dt><dd class="${v[1]?"bad":""}">${v[0]}</dd>`;
+  return `${ev.site?`<p style="margin:0 0 6px"><strong>Sito ${ev.site.n} · ${ev.site.name}</strong></p>`:""}<dl>${row("Acqua",ev.acqua)}${row("Fertilità intorno",ev.fert)}${row("Rischio di piena",ev.piena)}${row("Difesa",ev.difesa)}${row("Aria",ev.salute)}</dl>`;
+}
+function renderHints(){
+  const h=document.getElementById("actionhint");
+  if(S.ended){h.textContent="La partita è finita. Puoi iniziarne una nuova dalla finestra di riepilogo.";return;}
+  if(!S.founded){h.innerHTML="Leggi la mappa, poi <strong>clicca dove fondare</strong>. I numeri sono sei siti possibili, ma puoi fondare su qualunque terra asciutta. Rotella o pulsanti + e − per lo zoom, trascina per spostarti.";return;}
+  const worked=Math.min(S.fields.length,Math.floor(S.pop*0.55/3));
+  if(mode==="campi") h.innerHTML=`<strong>Campi:</strong> clicca le celle entro il riquadro per dissodarle, clicca di nuovo per abbandonarle. Lavorati ${worked} su ${S.fields.length}: le braccia bastano per ${Math.floor(S.pop*0.55/3)} campi.`;
+  else if(mode==="granaio") h.innerHTML=S.food<30?"<strong>Granaio:</strong> servono 30 unità di cibo in scorta. Aspetta un buon raccolto.":"<strong>Granaio:</strong> scegli dove costruirlo tra le celle segnate in verde, vicino al centro. Costa 30 unità di cibo e riduce le perdite delle scorte.";
+  else if(mode==="sentiero") h.innerHTML="<strong>Sentiero:</strong> i puntini marroni sono le celle dove puoi proseguire, a partire dal villaggio. Ogni tratto permette di coltivare fino a due celle di distanza. Clicca un tratto per toglierlo insieme ai tratti che ne dipendono.";
+  else h.textContent="";
+}
+function renderAll(){
+  renderMap();
+  document.getElementById("year").textContent=fmtYear(S.year);
+  const on=S.founded;
+  const set=(id,v,warn)=>{document.getElementById("v-"+id).innerHTML=on?v:"—"; document.getElementById("tile-"+id).classList.toggle("warn",!!(on&&warn));};
+  set("pop",`${Math.round(S.pop)}`,S.pop<20);
+  set("food",`${Math.round(S.food)} <small>/ ${Math.round(S.pop)} l'anno</small>`,S.food<S.pop*0.3);
+  set("health",`${Math.round(S.health)}`,S.health<45);
+  set("legit",`${Math.round(S.legit)}`,S.legit<30);
+  spark("s-pop",S.hist.pop,Math.max(60,...S.hist.pop),"#1e2927");
+  spark("s-food",S.hist.food,Math.max(60,...S.hist.food),"#9a7420");
+  spark("s-health",S.hist.health,100,"#2f6b4f");
+  spark("s-legit",S.hist.legit,100,"#b4432d");
+  const st=document.getElementById("stato");
+  if(on){
+    const parts=[];
+    parts.push(`Ultimo raccolto ${Math.round(S.lastHarvest||0)} da ${S.lastWorked||0} campi lavorati.`);
+    if(S.drought>0) parts.push("<strong>Siccità in corso.</strong>");
+    if(S.rationing>0) parts.push(`Razionamento ancora per ${S.rationing} ${S.rationing===1?"anno":"anni"}.`);
+    if(S.crowd>0.05) parts.push("<strong>Le capanne non trovano più spazio.</strong>");
+    parts.push(`Memoria del rischio di piena: ${Math.round(S.memoria)}.`);
+    st.innerHTML=parts.join(" ");
+  } else st.textContent=S.ruins.length?"Nessun villaggio attivo. Le rovine del precedente restano sulla mappa.":"Nessun villaggio ancora: scegli dove fondare.";
+  // pulsanti
+  const b=id=>document.getElementById(id);
+  b("a-fonda").disabled=S.founded||S.ended; b("a-fonda").setAttribute("aria-pressed",String(mode==="fonda"));
+  b("a-campi").disabled=!S.founded||S.ended; b("a-campi").setAttribute("aria-pressed",String(mode==="campi"));
+  b("a-sentiero").disabled=!S.founded||S.ended; b("a-sentiero").setAttribute("aria-pressed",String(mode==="sentiero"));
+  b("a-granaio").disabled=!S.founded||S.granaio>=0||S.ended; b("a-granaio").setAttribute("aria-pressed",String(mode==="granaio"));
+  b("a-granaio").textContent=S.granaio>=0?"Granaio costruito":"Granaio · 30 cibo";
+  b("u-comune").disabled=!S.founded||S.ended; b("u-famiglie").disabled=!S.founded||S.ended;
+  b("u-comune").setAttribute("aria-pressed",String(S.usanza==="comune")); b("u-famiglie").setAttribute("aria-pressed",String(S.usanza==="famiglie"));
+  for(let k=0;k<4;k++){b("t"+k).setAttribute("aria-pressed",String(speed===k)); b("t"+k).disabled=(!S.founded||S.ended)&&k>0;}
+  document.getElementById("timehint").textContent=!S.founded?"Il tempo parte dopo la fondazione.":speed===0?"In pausa. Il tempo si ferma da solo nei momenti decisivi.":`Scorrono ${[0,2,6,15][speed]} anni al secondo.`;
+  renderHints();
+  renderSite();
+  const ul=document.getElementById("log"); ul.innerHTML="";
+  for(const e of S.log.slice(0,30)){const li=document.createElement("li"); if(e.kind) li.className=e.kind; li.innerHTML=`<span class="yr">${fmtYear(e.y)}</span><span>${e.text}</span>`; ul.appendChild(li);}
+  const lg=document.getElementById("legend");
+  const L={terreno:[["#c7d4b6","Bassa pianura"],["#d8d5aa","Pedecollina"],["#c4ac80","Colline"],["#aac4ba","Palude"],["#dedace","Gessi"],["#4c82a4","Acqua"],["#d6aa3c","Campi"]],
+    acqua:[["rgba(40,110,170,.65)","Acqua affidabile (fiume, sorgenti)"],["rgba(40,110,170,.3)","Solo stagionale (torrenti)"],["rgba(40,110,170,.08)","Lontana dall'acqua"]],
+    suolo:[["rgba(45,138,40,.75)","Fertile"],["rgba(105,123,40,.5)","Media"],["rgba(140,113,40,.3)","Povera"]],
+    piena:[["rgba(180,60,40,.66)","Rischio alto"],["rgba(180,60,40,.35)","Rischio medio"],["rgba(255,255,255,.5)","Nessun rischio"]]}[mapMode];
+  lg.innerHTML=L.map(([c,t])=>`<span><i class="sw" style="background:${c}"></i>${t}</span>`).join("");
+}
+function renderSite(){
+  const el=document.getElementById("site");
+  const i=hover>=0?hover:(S.center>=0?S.center:-1);
+  if(i<0){el.innerHTML=`<p class="hint" style="margin:0">Passa su una cella per valutarla come sito di fondazione.</p>`;return;}
+  if(!isBuildable(i)){el.innerHTML=`<p class="hint" style="margin:0">${["","Fiume","Torrente","Torrente","Palude"][M.type[i]]}: non si costruisce.</p>`;return;}
+  el.innerHTML=(hover<0&&S.center>=0?`<p class="hint" style="margin:0 0 6px">Il sito del villaggio:</p>`:"")+siteHTML(evalSite(i),i);
+}
+function readout(i){
+  const r=document.getElementById("readout");
+  if(i<0){r.textContent="Passa sulla mappa per leggere il terreno.";return;}
+  const t=M.type[i];
+  const name=t===T_RIVER?"Fiume":t===T_TORR?"Torrente stagionale":t===T_TORRE?"Torrente":t===T_MARSH?"Palude":(M.gessi[i]?"Gessi":ZONE_NAMES[M.zone[i]]);
+  const fr=M.flood[i];
+  r.textContent=`${name} · quota ${Math.round(M.elev[i])} m`+(t===T_LAND?` · fertilità ${M.fert[i].toFixed(2).replace(".",",")} · piena ${fr>0.5?"alto":fr>0.25?"medio":fr>0?"basso":"nullo"} · acqua a ${M.dAny[i]} celle`:"")+(M.forest[i]?" · bosco":"");
+}
+
+/* ---------- Tempo ---------- */
+function setSpeed(k){speed=k; renderAll();}
+function setMode(m){mode=m; renderAll();}
+let last=null;
+function loop(t){
+  if(last===null) last=t;
+  const dt=Math.min(0.25,(t-last)/1000); last=t;
+  if(speed>0 && !modalOpen && S.founded && !S.ended){
+    acc+=dt*[0,2,6,15][speed];
+    let n=0;
+    while(acc>=1 && n<20 && !modalOpen && S.founded && !S.ended){step(); acc-=1; n++;}
+    if(n) renderAll();
+  } else acc=0;
+  if(pulses.length){ const now=performance.now(); while(pulses.length && now-pulses[0].t>1400) pulses.shift(); renderMap(); }
+  requestAnimationFrame(loop);
+}
+
+/* ---------- Eventi dell'interfaccia ---------- */
+function canvasXY(ev){const r=cv.getBoundingClientRect(); return [(ev.clientX-r.left)/r.width*W,(ev.clientY-r.top)/r.height*W];}
+function worldXY(sx,sy){return [sx/view.s+view.cx-W/2/view.s, sy/view.s+view.cy-W/2/view.s];}
+function cellFromEvent(ev){
+  const [wx,wy]=worldXY(...canvasXY(ev));
+  const x=Math.floor(wx/CELL), y=Math.floor(wy/CELL);
+  return inside(x,y)?idx(x,y):-1;
+}
+let drag=null;
+cv.addEventListener("pointerdown",ev=>{const [sx,sy]=canvasXY(ev); drag={sx,sy,cx:view.cx,cy:view.cy,moved:false,id:ev.pointerId};});
+cv.addEventListener("pointermove",ev=>{
+  if(drag){
+    const [sx,sy]=canvasXY(ev); const dx=sx-drag.sx, dy=sy-drag.sy;
+    if(!drag.moved && Math.hypot(dx,dy)>5 && view.s>1){drag.moved=true; cv.classList.add("drag"); try{cv.setPointerCapture(drag.id);}catch(e){}}
+    if(drag.moved){view.cx=drag.cx-dx/view.s; view.cy=drag.cy-dy/view.s; clampView(); renderMap(); return;}
+  }
+  const i=cellFromEvent(ev); if(i!==hover){hover=i; readout(i); renderMap(); renderSite();}
+});
+cv.addEventListener("pointerup",ev=>{
+  const d=drag; drag=null; cv.classList.remove("drag");
+  if(d && !d.moved){const i=cellFromEvent(ev); if(i>=0 && !modalOpen) clickCell(i);}
+});
+cv.addEventListener("pointerleave",()=>{if(!drag){hover=-1; readout(-1); renderMap(); renderSite();}});
+cv.addEventListener("wheel",ev=>{
+  ev.preventDefault();
+  const [sx,sy]=canvasXY(ev); const [wx,wy]=worldXY(sx,sy);
+  const ns=clamp(view.s*(ev.deltaY<0?1.2:1/1.2),1,6);
+  view.s=ns; view.cx=wx-(sx-W/2)/ns; view.cy=wy-(sy-W/2)/ns; clampView(); renderMap();
+},{passive:false});
+document.getElementById("z-in").addEventListener("click",()=>zoomTo(view.s*1.5));
+document.getElementById("z-out").addEventListener("click",()=>zoomTo(view.s/1.5));
+document.getElementById("z-all").addEventListener("click",()=>zoomTo(1,W/2,W/2));
+document.getElementById("z-home").addEventListener("click",()=>{ if(S.center>=0) zoomTo(Math.max(3,view.s),(S.center%N)*CELL+5,Math.floor(S.center/N)*CELL+5); });
+["terreno","acqua","suolo","piena"].forEach(m=>document.getElementById("m-"+m).addEventListener("click",()=>{mapMode=m;["terreno","acqua","suolo","piena"].forEach(q=>document.getElementById("m-"+q).setAttribute("aria-pressed",String(q===m)));renderAll();}));
+[0,1,2,3].forEach(k=>document.getElementById("t"+k).addEventListener("click",()=>setSpeed(k)));
+document.getElementById("a-fonda").addEventListener("click",()=>setMode("fonda"));
+document.getElementById("a-campi").addEventListener("click",()=>setMode("campi"));
+document.getElementById("a-sentiero").addEventListener("click",()=>setMode("sentiero"));
+document.getElementById("a-granaio").addEventListener("click",()=>{ setMode("granaio"); if(view.s<2.5 && S.center>=0) zoomTo(3,(S.center%N)*CELL+5,Math.floor(S.center/N)*CELL+5); });
+document.getElementById("u-comune").addEventListener("click",()=>setUsanza("comune"));
+document.getElementById("u-famiglie").addEventListener("click",()=>setUsanza("famiglie"));
+document.addEventListener("keyup",ev=>{ if(ev.key===" "&&!modalOpen) ev.preventDefault(); });
+document.addEventListener("keydown",ev=>{
+  if(modalOpen||ev.target.tagName==="INPUT") return;
+  if(ev.key===" "){ev.preventDefault(); if(document.activeElement&&document.activeElement.blur) document.activeElement.blur(); if(S.founded&&!S.ended) setSpeed(speed===0?1:0);}
+  else if(["1","2","3"].includes(ev.key) && S.founded && !S.ended) setSpeed(+ev.key);
+  else if(ev.key==="+"||ev.key==="=") zoomTo(view.s*1.5);
+  else if(ev.key==="-") zoomTo(view.s/1.5);
+});
+
+/* ---------- Avvio ---------- */
+function start(data){
+  if(data && data.S){ S=data.S; mode=data.mode||"campi"; mapMode=data.mapMode||"terreno"; if(data.view){view.s=data.view.s;view.cx=data.view.cx;view.cy=data.view.cy;clampView();} }
+  if(!S.pathParent) S.pathParent={}; if(S.lastPath===undefined) S.lastPath=-1;
+  if(!S.log.length) log("Il territorio è disabitato. Scegli dove fondare il primo villaggio.");
+  ["terreno","acqua","suolo","piena"].forEach(q=>document.getElementById("m-"+q).setAttribute("aria-pressed",String(q===mapMode)));
+  renderAll();
+  requestAnimationFrame(loop);
+}
+try{ window.claude?.hot?.snapshot?.(()=>({S,mode,mapMode,view:{s:view.s,cx:view.cx,cy:view.cy}})); }catch(e){}
+const hot=window.claude&&window.claude.hot;
+if(hot && hot.ready) hot.ready(start); else start((hot&&hot.data)||{});
+window.__proto0={get S(){return S;},step,inReach,clickCell,found,buildGranaio,setUsanza,M,SITES,idx,evalSite,modalQueue,isOpen:()=>modalOpen,closeModal:()=>{const b=document.querySelector("#modal-opts button"); if(b) b.click();},clickOpt:k=>{const b=document.getElementById("modal-opt-"+k); if(b) b.click();}};
+})();
+</script>
+</body>
+</html>
