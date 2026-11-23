@@ -54,3 +54,8 @@ Altimetria, pendenze, acqua (fiumi, sorgenti, profondità della falda), fertilit
 
 ## Produzione
 Per il Prototipo 0 la mappa delle altezze è generata da codice a partire da questa descrizione, senza scaricare dati. I dati altimetrici reali (SRTM, Copernicus DEM) servono per la versione in Godot.
+
+## Note sui dati del gioco (23/11/2026)
+- L'area dei gessi è una macchia irregolare attorno al sito 5 (prima era un rettangolo segnaposto); la fertilità scende gradualmente verso il suo interno.
+- Vicinanza all'acqua misurata in linea d'aria, con portata di 9 celle invece di 8: il cerchio copre la stessa area del vecchio quadrato, quindi i siti restano vicini o lontani dall'acqua come nel Prototipo 0.
+- Fasce di fertilità e di rischio di piena con passaggi graduali ai confini.

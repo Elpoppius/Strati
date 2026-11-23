@@ -17,6 +17,13 @@ Voci più recenti in cima.
 - **Prato senza ripetizioni:** verde, ingiallito e secco distribuiti da rumori unici per tutta la mappa e dai dati del luogo (acqua, fertilità), bordi morbidi senza scalini, variazione di tono minuta da vicino.
 - **Acqua:** profondità che sfuma dalla riva al centro, increspature animate senza motivo ripetuto, riflessi del cielo, schiuma lungo la riva, sponda bagnata; risolte le fasce a gradini (distanza dalla riva ora in virgola mobile). Nuovo documento `docs/resa-grafica.md` sui sistemi grafici comuni a tutte le mappe.
 - **Prima prova di Fede sul portatile** (sera): Godot 4.7.2 confermato, il progetto si apre e funziona senza errori. Pareri di Fede: non gli piace la resa puntinata del terreno; non vuole le isoipse sulla mappa; l'acqua è ancora un po' piatta; l'area dei gessi è quadrata; le mappe tematiche sono squadrettate. L'area dei gessi è quadrata perché il generatore della mappa la definisce come un rettangolo (`strumenti/mappe/genera_pedecollinare.py`): è un segnaposto.
+- **Correzioni dopo la prova sul portatile** (sera), immagine in `docs/immagini/correzioni-portatile-23-11.jpg`:
+  - isoipse spente di serie, attivabili con il tasto I o con la casella nel pannello; il rilievo ora si legge dall'ombreggiatura dei pendii rispetto al sole;
+  - resa puntinata: la causa era che le texture erano importate senza mipmap; ora le hanno tutte, e lo shader attenua i dettagli minuti da lontano; boschi con margini senza gradini e, da lontano, gruppi di alberi senza trama ripetuta;
+  - area dei gessi: macchia irregolare al posto del rettangolo, colore meno bianco;
+  - mappe tematiche: passaggi graduali tra le fasce di fertilità e di rischio di piena, vicinanza all'acqua in linea d'aria (portata 9 celle, stessa area di prima);
+  - acqua: sponde modellate dalla luce, ombra dell'argine sull'acqua, tre toni di profondità, fondale che traspare, chiazze di vento visibili anche da lontano.
+  Verifiche senza grafica superate (base e asset). Godot sul portatile reimporterà le texture alla prima apertura.
 - Strumenti nell'ambiente di Claude: Godot 4.7.2 senza grafica e Blender 5.3 come modulo Python; catena Blender → glTF → Godot provata con una casa lunga neolitica.
 
 **Decisioni (Fede)**
@@ -32,6 +39,7 @@ Voci più recenti in cima.
 - Alberi, terreni, ombre, asset e acqua sono sistemi comuni a tutte le mappe, non lavoro sulla singola mappa.
 - Alberi e disboscamento: gli alberi sono dati di gioco, non decorazione. Un'area disboscata resta nei dati come "area disboscata" e il suo destino dipende da cosa la sostituisce: se è costruita il bosco è perso ma ne resta memoria; se è solo abbattuta può ricrescere. Conta soprattutto l'interazione con il gameplay.
 - Terreno: priorità alla resa del prato; niente texture ripetute nelle parti aride. Gli alberi veri andranno posati sulla mappa al posto della volta di chiome dipinta.
+- Isoipse: tolte dalla vista normale; il rilievo si legge con luce e ombre; isoipse attivabili con un tasto.
 - Seconda versione della prova di stile: direzione giusta. Da migliorare il prato (grossolano), il dettaglio a zoom ravvicinato e la forma e il riempimento delle chiome.
 
 **Prossimo passo**
@@ -46,5 +54,5 @@ Voci più recenti in cima.
   - texture di paglia e argilla delle case da rivedere per lo zoom ravvicinato;
   - poi completare il lotto del villaggio nello stile scelto;
   - portare in Godot il Prototipo 0 (ciclo del villaggio: fondazione, campi, case, sentieri, granaio, stagioni) sulla mappa vera, con la simulazione separata dalla grafica e verificabile senza grafica (proposta di Claude, da confermare con Fede).
-  - correzioni dopo la prova di Fede sul portatile: togliere la resa puntinata del terreno; togliere le isoipse dalla mappa normale (proposta di Claude, da confermare: tenerle solo in una mappa tematica del rilievo); dare forma naturale all'area dei gessi; ammorbidire le mappe tematiche; acqua meno piatta.
+- Fede: Fetch e Pull in GitHub Desktop, riaprire il gioco sul portatile e dire se puntinato, isoipse, gessi, mappe tematiche e acqua ora vanno bene.
 - In sospeso: recinto come primo strumento di regolazione nel Prototipo 0.

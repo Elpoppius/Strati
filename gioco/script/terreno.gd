@@ -12,7 +12,8 @@ const TINTE := [
 	[500.0, Color8(156, 134, 102)],
 ]
 const COLORE_PALUDE := Color8(170, 196, 186)
-const COLORE_GESSI := Color8(222, 218, 206)
+## Gessi: roccia chiara grigio-calda che affiora tra l'erba rada (non più una macchia bianca piena).
+const COLORE_GESSI := Color8(204, 199, 184)
 
 var dati: MappaDati
 var esagerazione := 1.5
@@ -78,6 +79,7 @@ func costruisci(d: MappaDati, esag: float = 1.5) -> void:
 	materiale.set_shader_parameter("macchie", load("res://asset/texture/macchie.png"))
 	materiale.set_shader_parameter("rumore_secco", _rumore_mappa(1847, 1.0 / 90.0))
 	materiale.set_shader_parameter("rumore_verde", _rumore_mappa(1848, 1.0 / 60.0))
+	materiale.set_shader_parameter("rumore_bosco", _rumore_mappa(1849, 1.0 / 6.0))
 	var img_coperture := Image.create_from_data(d.lato, d.lato, false, Image.FORMAT_L8, d.copertura)
 	materiale.set_shader_parameter("coperture", ImageTexture.create_from_image(img_coperture))
 	materiale.set_shader_parameter("chioma_a", load("res://asset/texture/foglie_quercia.png"))
@@ -91,7 +93,7 @@ func _colore(i: int) -> Color:
 	if t == MappaDati.PALUDE:
 		return Color(COLORE_PALUDE, 0.3)
 	if t == MappaDati.GESSI:
-		return Color(COLORE_GESSI, 0.2)
+		return Color(COLORE_GESSI, 0.45)
 	var q := dati.altezze[i]
 	var c: Color = TINTE[-1][1]
 	for j in TINTE.size() - 1:

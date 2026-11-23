@@ -24,10 +24,10 @@ Produce nella cartella indicata:
 import json
 import os
 import sys
-from collections import deque
 
 import numpy as np
 from PIL import Image
+from scipy.ndimage import distance_transform_edt
 
 CELLE = 64            # celle del prototipo
 SCALA = 4             # pixel per cella
@@ -73,19 +73,19 @@ SITI = [
     (4, "Dosso nelle paludi", 24, 6), (5, "Area dei gessi", 48, 53), (6, "Pianura aperta", 26, 30),
 ]
 
-def bfs_chebyshev(sorgenti_mask):
-    dist = np.full(sorgenti_mask.shape, 10**6, dtype=np.int32)
-    q = deque()
-    for (y, x) in zip(*np.nonzero(sorgenti_mask)):
-        dist[y, x] = 0; q.append((y, x))
-    while q:
-        y, x = q.popleft(); d = dist[y, x] + 1
-        for dy in (-1, 0, 1):
-            for dx in (-1, 0, 1):
-                ny, nx = y + dy, x + dx
-                if 0 <= ny < LATO and 0 <= nx < LATO and dist[ny, nx] > d:
-                    dist[ny, nx] = d; q.append((ny, nx))
-    return dist
+def morbido(a, b, t):
+    """Passaggio graduale tra a e b: 0 sotto a, 1 sopra b (come smoothstep)."""
+    k = np.clip((t - a) / (b - a), 0, 1)
+    return k * k * (3 - 2 * k)
+
+def fasce(d, nodi):
+    """Valore che scende per fasce di distanza, con passaggi graduali invece di gradini.
+    nodi: coppie (distanza in celle, valore)."""
+    return np.interp(d, [a for a, _ in nodi], [v for _, v in nodi])
+
+def distanza_euclidea(sorgenti_mask):
+    """Distanza in pixel dalla sorgente più vicina, in linea d'aria: dà cerchi, non quadrati."""
+    return distance_transform_edt(~sorgenti_mask)
 
 def genera(uscita):
     py, px = np.mgrid[0:LATO, 0:LATO].astype(np.float64)
@@ -115,24 +115,42 @@ def genera(uscita):
     tipo[(y >= 10) & (dE <= 0.3)] = 3
     tipo[(y >= 20) & (dT <= 0.3)] = 2
     tipo[dR <= 1.5] = 1
-    gessi = (tipo == 0) & (x >= 45) & (x < 53) & (y >= 50) & (y < 57)
+    # Affioramento dei gessi: una macchia irregolare (prima era un rettangolo segnaposto).
+    # forza_gessi va da 0 (fuori) a 1 (pieno affioramento), con un bordo frastagliato dal rumore.
+    dG = np.hypot((x - 49.0) / 4.3, (y - 53.6) / 3.3) + (fbm(x * 2.3 + 11, y * 2.3 + 5) - 0.5) * 0.9
+    forza_gessi = 1 - morbido(0.75, 1.15, dG)
+    gessi = (tipo == 0) & (dG < 1.0)
     tipo[gessi] = 5
     terra = (tipo == 0) | (tipo == 5)
 
     fn = fbm(x + 7, y + 3)
     bosco = np.where(zona == 3, fn > 0.36, np.where(zona == 0, fn > 0.66, fn > 0.63)) & (tipo == 0)
 
-    f = np.select([zona == 0, zona == 1, zona == 2], [1.0 + (n - .5) * 0.2, 0.62 + (n - .5) * 0.3, np.full_like(n, 0.8)],
-                  0.4 + (n - .5) * 0.2)
-    f = np.where(gessi, 0.15, f)
+    # Fertilità per fascia, con passaggi graduali di circa una cella (160 m) ai confini:
+    # prima i confini erano linee nette e le mappe tematiche risultavano squadrettate.
+    f_bassa = 1.0 + (n - .5) * 0.2
+    f_alta = 0.62 + (n - .5) * 0.3
+    f_pede = np.full_like(n, 0.8)
+    f_coll = 0.4 + (n - .5) * 0.2
+    f = f_bassa + (f_alta - f_bassa) * morbido(15.5, 16.5, y)
+    f = f + (f_pede - f) * morbido(43.5, 44.5, y)
+    f = f + (f_coll - f) * morbido(48.5, 49.5, y)
+    f = f + (f_coll - f) * (1 - morbido(2.5, 3.5, dS))     # sperone collinare
+    f = f + (0.15 - f) * forza_gessi
     f = np.where((y < 49) & (dR <= 5), np.maximum(f, 1.05 - dR * 0.03), f)
     fert = np.where(terra, np.clip(f, 0.05, 1.2), 0)
 
-    r = np.where(dR <= 2.5, np.where(y >= 49, 0.6, 0.85),
-        np.where((dR <= 4.5) & (y < 49), 0.55, np.where((dR <= 6.5) & (y < 30), 0.3, 0)))
-    r = np.where((zona == 0) & terra, np.maximum(r, 0.25), r)
-    rt = np.where(y >= 20, np.where(dT <= 1.5, np.where(y >= 49, 0.4, 0.55), np.where((dT <= 2.5) & (y < 49), 0.25, 0)), 0)
-    re = np.where(y >= 10, np.where(dE <= 1.5, 0.5, np.where(dE <= 2.5, 0.3, 0)), 0)
+    # Rischio di piena: stesse fasce di prima, ma con passaggi graduali sia lungo la distanza
+    # dal corso d'acqua sia tra pianura, fascia pedecollinare e valli (niente gradini).
+    r_pianura = fasce(dR, [(2.0, 0.85), (3.0, 0.55), (4.0, 0.55), (5.0, 0.3), (6.0, 0.3), (7.0, 0.0)])
+    r_alta = fasce(dR, [(2.0, 0.85), (3.0, 0.55), (4.0, 0.55), (5.0, 0.0)])
+    r_valle = fasce(dR, [(2.0, 0.6), (3.0, 0.0)])
+    r = r_pianura + (r_alta - r_pianura) * morbido(29, 31, y)
+    r = r + (r_valle - r) * morbido(48, 50, y)
+    r = np.where(terra, np.maximum(r, 0.25 * (1 - morbido(15, 17, y))), r)
+    rt = (fasce(dT, [(1.0, 0.55), (2.0, 0.25), (3.0, 0.0)]) * (1 - morbido(48, 50, y))
+          + fasce(dT, [(1.0, 0.4), (2.0, 0.0)]) * morbido(48, 50, y)) * morbido(19, 21, y)
+    re = fasce(dE, [(1.0, 0.5), (2.0, 0.3), (3.0, 0.0)]) * morbido(9, 11, y)
     piena = np.where(terra, np.maximum(np.maximum(r, rt), re), 1.0)
 
     sorg = np.zeros((LATO, LATO), dtype=bool)
@@ -141,10 +159,13 @@ def genera(uscita):
         cx, cy = int((sx + 0.5) * SCALA), int((sy + 0.5) * SCALA)
         sorg[cy - 1:cy + 1, cx - 1:cx + 1] = True
         sorgenti_px.append([cx, cy])
-    d_aff = bfs_chebyshev((tipo == 1) | sorg) / SCALA
-    d_tutte = bfs_chebyshev((~terra) | sorg) / SCALA
-    acqua = np.clip(1 - d_aff / 8, 0, 1)
-    acqua_st = np.clip(1 - d_tutte / 8, 0, 1)
+    # Distanze in linea d'aria (prima a scacchiera: attorno alle sorgenti venivano quadrati).
+    d_aff = distanza_euclidea((tipo == 1) | sorg) / SCALA
+    d_tutte = distanza_euclidea((~terra) | sorg) / SCALA
+    # Portata 9 celle invece di 8: il cerchio copre la stessa area del vecchio quadrato,
+    # così la vicinanza all'acqua dei siti resta quella del Prototipo 0.
+    acqua = np.clip(1 - d_aff / 9, 0, 1)
+    acqua_st = np.clip(1 - d_tutte / 9, 0, 1)
 
     # Distanza in metri dal bordo dell'acqua (negativa dentro l'alveo), calcolata dalle funzioni
     # continue a risoluzione quadrupla (1024 x 1024, 10 m), per bordi morbidi a ogni zoom.

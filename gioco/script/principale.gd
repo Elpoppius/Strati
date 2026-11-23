@@ -19,12 +19,15 @@ var cam: CameraIsometrica
 var sole: DirectionalLight3D
 var modo := 0
 var griglia_attiva := true
+## Isoipse spente di serie (scelta di Fede): il rilievo si legge da luce e ombre; tasto I.
+var isoipse_attive := false
 var lotto_corrente := Vector2i(-1, -1)
 var punto_corrente: Variant = null
 
 var _lettura: Label
 var _pulsanti_modo: Array[Button] = []
 var _casella_griglia: CheckBox
+var _casella_isoipse: CheckBox
 var _trascinando := false
 
 
@@ -118,8 +121,13 @@ func _crea_interfaccia() -> void:
 	_casella_griglia.button_pressed = griglia_attiva
 	_casella_griglia.toggled.connect(func(v: bool) -> void: griglia_attiva = v)
 	colonna.add_child(_casella_griglia)
+	_casella_isoipse = CheckBox.new()
+	_casella_isoipse.text = "Isoipse (ogni 25 m)"
+	_casella_isoipse.button_pressed = isoipse_attive
+	_casella_isoipse.toggled.connect(func(v: bool) -> void: isoipse_attive = v)
+	colonna.add_child(_casella_isoipse)
 	var aiuto := Label.new()
-	aiuto.text = "Tasto destro o WASD: sposta · Rotella: zoom · Q / E: ruota di 90°\nG: griglia · 1–4: mappe · Home: torna al terrazzo centrale"
+	aiuto.text = "Tasto destro o WASD: sposta · Rotella: zoom · Q / E: ruota di 90°\nG: griglia · I: isoipse · 1–4: mappe · Home: torna al terrazzo centrale"
 	aiuto.add_theme_font_size_override("font_size", 13)
 	colonna.add_child(aiuto)
 	_lettura = Label.new()
@@ -158,12 +166,15 @@ func _process(_delta: float) -> void:
 	if griglia_attiva:
 		alfa = clampf(remap(cam.dimensione, 900.0, 400.0, 0.0, 0.45), 0.0, 0.45)
 	terreno.materiale.set_shader_parameter("alfa_griglia", alfa)
+	terreno.materiale.set_shader_parameter("alfa_isoipse", 0.35 if isoipse_attive else 0.0)
 	if sole and cam.camera:
 		sole.directional_shadow_max_distance = cam.camera.far
 		# Il sole gira con la camera: illumina gli oggetti di lato e da dietro, così le ombre
 		# cadono verso chi guarda e si vedono a ogni rotazione (con il sole alle spalle
 		# della camera restavano nascoste dietro gli oggetti e tutto sembrava piatto).
 		sole.rotation_degrees = Vector3(-ALTEZZA_SOLE, cam.yaw + AZIMUT_SOLE, 0.0)
+		# Direzione verso il sole, per l'ombreggiatura del rilievo nello shader del terreno.
+		terreno.materiale.set_shader_parameter("verso_sole", sole.global_transform.basis.z)
 
 
 func _unhandled_input(ev: InputEvent) -> void:
@@ -191,6 +202,9 @@ func _unhandled_input(ev: InputEvent) -> void:
 			KEY_G:
 				griglia_attiva = not griglia_attiva
 				_casella_griglia.button_pressed = griglia_attiva
+			KEY_I:
+				isoipse_attive = not isoipse_attive
+				_casella_isoipse.button_pressed = isoipse_attive
 			KEY_1, KEY_2, KEY_3, KEY_4:
 				imposta_modo((ev as InputEventKey).keycode - KEY_1)
 			KEY_HOME:

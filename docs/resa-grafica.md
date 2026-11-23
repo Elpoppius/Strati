@@ -23,7 +23,9 @@ Codice: `gioco/shader/terreno.gdshader`, `gioco/script/terreno.gd`.
 - **Erba:** texture a fili sottili (`erba.png`), letta due volte con orientamenti diversi per spezzarne la ripetizione; variazione minuta di tono da vicino.
 - **Verde, ingiallito, secco:** distribuiti da due rumori unici per tutta la mappa, generati all'avvio con `FastNoiseLite`, e dai dati del luogo: più secco lontano dall'acqua e sui terreni poco fertili. Nessuna ripetizione a nessuno zoom; i dati a celle sono ammorbiditi, così i bordi non fanno scalini. Richiesta di Fede: niente texture ripetute nelle parti aride; la priorità è la resa del prato.
 - **Pendii ripidi:** l'erba si dirada e affiora la terra.
-- **Boschi:** bordi irregolari e una volta di chiome dipinta, dalla copertura. È un segnaposto: **andranno posati alberi veri** (decisione di Fede).
+- **Rilievo (decisione di Fede, 23/11/2026):** niente isoipse nella vista normale; il rilievo si legge da luce e ombre. Lo shader schiarisce i pendii rivolti al sole e scurisce quelli in ombra, in proporzione alla luce di un terreno piano (`forza_rilievo`; la direzione del sole arriva da `principale.gd` in `verso_sole`). Le isoipse ogni 25 m si accendono con il tasto **I** o con la casella nel pannello.
+- **Niente puntinato da lontano:** tutte le texture in `asset/texture/` sono importate con le mipmap (versioni ridotte per la distanza); senza, da lontano l'erba e le foglie si riducevano a puntini. Lo shader calcola anche quanti metri copre un pixel (`mpx`) e da lontano attenua i dettagli minuti.
+- **Boschi:** bordi irregolari e una volta di chiome dipinta, dalla copertura. Il margine legge la copertura in otto punti attorno e la muove con rumori a più scale, così non segue i gradini da 40 m. Da lontano le foglie si fondono in un tono medio con gruppi di alberi più chiari e più scuri presi da un rumore unico per la mappa (`rumore_bosco`): una texture ripetuta formava una trama regolare. È un segnaposto: **andranno posati alberi veri** (decisione di Fede).
 - **Texture:** generate da `strumenti/blender/texture_procedurali.py`.
 
 ## Acqua
@@ -32,7 +34,11 @@ Codice: in fondo a `gioco/shader/terreno.gdshader`. Dati: la distanza dalla riva
 - Increspature che scorrono nel tempo: tre strati a scale e orientamenti diversi, su coordinate deformate da un rumore più ampio, più un'ondulazione lenta unica per tutta la mappa. Così non si vede un motivo ripetuto (segnalato da Fede); riflessi del cielo sulle creste e un poco di luce propria, così l'acqua non diventa scura in ombra.
 - Superficie liscia e riflettente (il terreno no).
 - Schiuma sottile lungo la riva, sponda bagnata più scura e un velo di limo.
+- **Sponde in rilievo** (dopo la prova di Fede, "acqua piatta"): dal campo di distanza lo shader ricava il verso della riva e inclina la normale del terreno negli ultimi metri, così la luce modella l'argine; dalla parte del sole l'argine fa ombra sull'acqua. Tre toni di profondità (bassa, media, fonda), fondale chiaro che traspare dove l'acqua è bassa, chiazze larghe di vento e cielo riflesso visibili anche da lontano.
 - Da fare: corrente nel verso del fiume, cascate e rapide sui torrenti, paludi con acqua bassa e canne, livelli che cambiano con le piene.
+
+## Mappe tematiche
+I dati tematici non hanno più gradini: le fasce di fertilità e di rischio di piena passano gradualmente da una all'altra (circa 160 m) e la vicinanza all'acqua si misura in linea d'aria, non più a scacchiera (attorno alle sorgenti venivano quadrati). Lo shader le legge ammorbidite. Codice: `strumenti/mappe/genera_pedecollinare.py`.
 
 ## Luce e ombre
 Codice: `gioco/script/principale.gd` (sole e ambiente), `gioco/script/camera_isometrica.gd` (distanza e piani di taglio).
