@@ -74,9 +74,20 @@ Gli alberi sono della terza versione; le facce delle chiome contano fronte e ret
 
 **Note storiche:** forme plausibili per l'Europa neolitica senza riferirsi a una cultura precisa. Le case lunghe a pianta rettangolare sono tipiche del Neolitico europeo; capanne tonde e ovali sono diffuse nell'area mediterranea. Il granaio su pali è una scelta di leggibilità: nel Neolitico erano comuni anche i silos scavati nel terreno.
 
+### Alberi della mappa (23/11/2026)
+Generati da `strumenti/blender/alberi_mappa.py` in `gioco/asset/alberi/`, ognuno in versione completa e leggera (`_leggero`, per la media distanza: poche carte grandi, nessun ramo).
+
+| Modello | Altezza (m) | Facce (completo / leggero) |
+|---|---|---|
+| quercia_1, _2, _3 | 12,3 · 14,7 · 10,9 | 475–533 / 71–79 |
+| carpino_1, _2 | 10,3 · 12,1 | 359 / 55 |
+| pioppo_1, _2 | 16,8 · 19,4 | 417–475 / 63–71 |
+| cespuglio_1, _2 | 3,3 · 3,9 | 185–263 / 54 |
+
+Nel gioco ogni albero è scalato tra 0,95 e 1,35 (bosco maturo) e ruotato a caso; gli arbusti tra 0,75 e 1,25.
+
 ### Da fare
 - **Da verificare nella terza versione:** ombre e prestazioni sui PC di Fede; carte viste di taglio che a volte si vedono come strisce ai bordi delle chiome; la casa lunga e le capanne viste a 35 m (le texture di paglia e argilla sono nate per viste più lontane).
-- **Alberi in quantità:** per i boschi servirà una versione più leggera (meno carte) da usare da lontano, e la posa di molti alberi con istanze multiple (`MultiMeshInstance3D`).
 - **Villaggio:** completare il lotto nello stile scelto (case lunghe piccola e grande, palizzata e varco, luogo sacro, canneto, rocce, arbusti, fosse-silos, focolare, recinto per animali) e varianti per evitare ripetizioni.
 - **Terreno:** texture distinte per campo coltivato, bosco, palude, roccia; alberi veri al posto della volta di chiome dipinta sul terreno, che da circa 150 m mostra ancora una trama ripetuta.
 - **Abitato protourbano:** terrapieno e fossato modulari, villaggio arginato ispirato alle terramare dell'età del Bronzo, tipiche della pianura emiliana.

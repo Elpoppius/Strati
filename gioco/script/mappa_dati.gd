@@ -28,7 +28,10 @@ const NOMI_ZONA := ["Bassa pianura", "Alta pianura", "Fascia pedecollinare", "Co
 @export var copertura: PackedByteArray
 ## Distanza dal bordo dell'acqua: 128 = riva, 2 m per unità, sotto 128 si è in acqua.
 @export var distanza_acqua: PackedByteArray
-## Lato della griglia di distanza_acqua (più fine di quella del terreno).
+## Bosco a 10 m (stessa griglia di distanza_acqua): 128 = margine, sopra è bosco.
+## Lo usano lo shader del terreno e la posa degli alberi (Alberi).
+@export var bosco_fine: PackedByteArray
+## Lato della griglia di distanza_acqua e bosco_fine (più fine di quella del terreno).
 @export var lato_acqua: int = 0
 @export var sorgenti: PackedVector2Array
 ## Ogni sito è un Dictionary { "n": int, "nome": String, "px": Vector2 }.

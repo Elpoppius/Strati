@@ -26,6 +26,12 @@ Voci più recenti in cima.
   Verifiche senza grafica superate (base e asset). Godot sul portatile reimporterà le texture alla prima apertura.
 - **Seconda prova di Fede** (dopo il Pull): meglio. Chiesti l'ombreggiatura dei rilievi anche sull'acqua e paludi senza quadretti. Fatto: l'acqua prende l'ombreggiatura del versante; paludi e gessi disegnati dallo shader (texture `zone_speciali`) con bordi irregolari; paludi con erba umida, canneti e pozze d'acqua ferma; gessi a chiazze che da lontano si fondono. Immagine: `docs/immagini/paludi-gessi-acqua-23-11.jpg`.
 - Paludi: Fede ha notato la ripetizione della texture in pozze e canneti. Ora sono disegnati da un rumore unico per la mappa (`rumore_palude`, circa 30 m) insieme a `rumore_bosco`: nessun motivo ripetuto. Immagine: `docs/immagini/paludi-senza-ripetizioni-23-11.jpg`.
+- **Alberi veri sulla mappa** (richiesta di Fede, sera): immagine `docs/immagini/alberi-in-mappa-23-11.jpg`.
+  - Modelli: 9 varianti (3 querce, 2 carpini, 2 pioppi, 2 arbusti) in versione completa e leggera, da `strumenti/blender/alberi_mappa.py`.
+  - Dati: `script/alberi.gd`, circa 600 000 alberi calcolati per blocchi di 320 m dal nuovo campo `bosco_fine` (10 m) generato con la mappa; lo stesso campo disegna il bordo del bosco nello shader, quindi alberi e volta dipinta coincidono. Specie secondo il luogo e alberi sparsi fuori dal bosco (proposte di Claude, da confermare).
+  - Vista: `script/vista_alberi.gd`, MultiMesh per blocco; alberi completi sotto 220 m di vista, leggeri fino a 700 m, oltre la volta dipinta, ritarata sul colore medio degli alberi. Sottobosco dipinto sotto gli alberi. Il pannello mostra fotogrammi al secondo e alberi disegnati.
+  - Corretto anche: sulle colline la volta dipinta prendeva la tinta gialla della quota.
+  - Verifiche senza grafica superate (base, asset, alberi: niente alberi nell'acqua, posa deterministica, livelli di dettaglio). Le prestazioni vere vanno provate sui PC di Fede.
 - Conflitto in GitHub Desktop sul portatile: Godot riscriveva da solo i file `.import` delle texture quando le rilevava in 3D. Disattivato (`detect_3d/compress_to=0` in tutti i file `.import`).
 - Nel pannello Output di Fede, all'apertura dell'editor: quattro errori `core/io/file_access.cpp:967`. Probabilmente file di cache dell'editor mancanti alla prima apertura (non verificato): da ricontrollare se si ripetono.
 - Strumenti nell'ambiente di Claude: Godot 4.7.2 senza grafica e Blender 5.3 come modulo Python; catena Blender → glTF → Godot provata con una casa lunga neolitica.
@@ -51,12 +57,12 @@ Voci più recenti in cima.
 - Fede: aprire `gioco/project.godot` con Godot 4.7.2 sul PC dedicato, premere F5 e riportare cosa si vede e come risponde (vedi `docs/setup-pc.md`).
 - Fede: dare un parere sulla terza versione di alberi e prato (`docs/immagini/prova-stile-v3-*.jpg`); sul PC, avvicinare lo zoom al massimo vicino al terrazzo centrale, ruotare con Q/E e dire come appaiono ombre e luce (gli alberi si vedono nel gioco solo con `test/foto_asset.gd`, per ora non sono posati sulla mappa).
 - Claude, prossima sessione (rimandato da Fede alla prossima):
-  - posare gli alberi veri sulla mappa al posto della volta di chiome dipinta: boschi e alberi sparsi, istanze multiple, versione leggera per la distanza, specie scelta in base al luogo;
+  - alberi sulla mappa: tarare livelli di dettaglio e densità sulle prestazioni dei PC di Fede; confermare con Fede la scelta delle specie;
   - alberi come dati modificabili: abbattere o costruire su un'area boscata la segna come "area disboscata" (costruita: bosco perso ma ricordato; solo abbattuta: può ricrescere); il terreno sotto cambia (terra battuta, terra nuda, erba rada) con una mappa dell'uso del suolo aggiornabile durante il gioco; progettare l'interazione con il gameplay (proposte di Claude da discutere: legname, rischio di frane e piene più rapide, ricrescita per stadi da arbusti ad alberi);
   - acqua: corrente nel verso del fiume, rapide e cascate sui torrenti, paludi con acqua bassa e canne, livelli che cambiano con le piene;
   - alberi: carte viste di taglio ai bordi delle chiome;
   - texture di paglia e argilla delle case da rivedere per lo zoom ravvicinato;
   - poi completare il lotto del villaggio nello stile scelto;
   - portare in Godot il Prototipo 0 (ciclo del villaggio: fondazione, campi, case, sentieri, granaio, stagioni) sulla mappa vera, con la simulazione separata dalla grafica e verificabile senza grafica (proposta di Claude, da confermare con Fede).
-- Fede: Fetch e Pull in GitHub Desktop, riaprire il gioco sul portatile e dire se puntinato, isoipse, gessi, mappe tematiche e acqua ora vanno bene.
+- Fede: provare gli alberi sul portatile (e poi sugli altri PC): zoomare fino agli alberi completi (vista sotto 220 m) e leggeri (sotto 700 m), dire i fotogrammi al secondo mostrati nel pannello, se ci sono scatti scorrendo la mappa e come appaiono specie, densità e passaggio tra i livelli.
 - In sospeso: recinto come primo strumento di regolazione nel Prototipo 0.

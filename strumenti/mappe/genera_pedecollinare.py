@@ -15,6 +15,9 @@ Produce nella cartella indicata:
   grezzi/acqua.u8            vicinanza ad acqua affidabile (fiume, sorgenti), 0-255
   grezzi/acqua_stagionale.u8 vicinanza a qualunque acqua (anche torrenti e paludi), 0-255
   grezzi/copertura.u8        255 bosco, 0 aperto
+  grezzi/bosco_fine.u8       (1024 x 1024, 10 m) quanto un punto è dentro il bosco: 128 = margine,
+                             sopra è bosco. Lo usano sia lo shader (volta dipinta, sottobosco) sia
+                             la posa degli alberi, così il bordo dipinto e gli alberi coincidono.
   grezzi/distanza_acqua.u8   (1024 x 1024) distanza dal bordo del corso d'acqua più vicino: 128 = riva,
                              ogni unità vale 2 m (sotto 128 si è in acqua). Serve a disegnare
                              fiumi e torrenti con bordi morbidi a qualunque zoom.
@@ -27,7 +30,7 @@ import sys
 
 import numpy as np
 from PIL import Image
-from scipy.ndimage import distance_transform_edt
+from scipy.ndimage import distance_transform_edt, gaussian_filter, map_coordinates
 
 CELLE = 64            # celle del prototipo
 SCALA = 4             # pixel per cella
@@ -182,8 +185,17 @@ def genera(uscita):
     dist_acqua = np.minimum(np.minimum(d_fiume, d_torr), d_torr_e)
     dist_u8 = np.clip(128 + dist_acqua / 2.0, 0, 255).round().astype(np.uint8)
 
+    # Bosco a 10 m: la copertura a celle da 40 m, ammorbidita e frastagliata da rumori a 80 e 27 m.
+    # Valore 0,5 = margine del bosco; niente bosco nell'acqua e a meno di 4 m dalla riva.
+    cop = map_coordinates(bosco.astype(np.float64), [PY, PX], order=1, mode="nearest")
+    cop = gaussian_filter(cop, 1.6)
+    v_bosco = cop + (vnoise(xcf * 2.0 + 13, yqf * 2.0 + 7) - 0.5) * 0.38 + (vnoise(xcf * 6.0 + 3, yqf * 6.0 + 29) - 0.5) * 0.2
+    v_bosco = np.where(dist_acqua < 4.0, np.minimum(v_bosco, 0.3), v_bosco)
+    bosco_u8 = (np.clip(v_bosco, 0, 1) * 255).round().astype(np.uint8)
+
     g = os.path.join(uscita, "grezzi"); os.makedirs(g, exist_ok=True)
     dist_u8.tofile(os.path.join(g, "distanza_acqua.u8"))
+    bosco_u8.tofile(os.path.join(g, "bosco_fine.u8"))
     e.astype("<f4").tofile(os.path.join(g, "altezze.f32"))
     tipo.tofile(os.path.join(g, "tipo.u8"))
     zona.tofile(os.path.join(g, "zona.u8"))

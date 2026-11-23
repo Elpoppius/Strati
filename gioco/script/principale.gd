@@ -17,6 +17,8 @@ var dati: MappaDati
 var terreno: Terreno
 var cam: CameraIsometrica
 var sole: DirectionalLight3D
+var alberi: Alberi
+var vista_alberi: VistaAlberi
 var modo := 0
 var griglia_attiva := true
 ## Isoipse spente di serie (scelta di Fede): il rilievo si legge da luce e ombre; tasto I.
@@ -28,6 +30,8 @@ var _lettura: Label
 var _pulsanti_modo: Array[Button] = []
 var _casella_griglia: CheckBox
 var _casella_isoipse: CheckBox
+var _prestazioni: Label
+var _tempo_prestazioni := 0.0
 var _trascinando := false
 
 
@@ -49,6 +53,12 @@ func _ready() -> void:
 	cam.limiti = Rect2(0.0, 0.0, dati.lato_metri(), dati.lato_metri())
 	cam.funzione_quota = terreno.quota_mondo
 	torna_al_sito()
+	# Alberi veri sulla mappa (dati in Alberi, disegno in VistaAlberi).
+	alberi = Alberi.new(dati)
+	vista_alberi = VistaAlberi.new()
+	vista_alberi.name = "Alberi"
+	add_child(vista_alberi)
+	vista_alberi.prepara(alberi, terreno, cam)
 	_crea_interfaccia()
 	imposta_modo(0)
 
@@ -130,6 +140,10 @@ func _crea_interfaccia() -> void:
 	aiuto.text = "Tasto destro o WASD: sposta · Rotella: zoom · Q / E: ruota di 90°\nG: griglia · I: isoipse · 1–4: mappe · Home: torna al terrazzo centrale"
 	aiuto.add_theme_font_size_override("font_size", 13)
 	colonna.add_child(aiuto)
+	# Prestazioni: utile per le prove sui tre PC di Fede.
+	_prestazioni = Label.new()
+	_prestazioni.add_theme_font_size_override("font_size", 13)
+	colonna.add_child(_prestazioni)
 	_lettura = Label.new()
 	_lettura.add_theme_font_size_override("font_size", 15)
 	_lettura.anchor_top = 1.0
@@ -158,9 +172,14 @@ func torna_al_sito() -> void:
 			cam.vai_a(p.x, p.y, 1500.0)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if terreno == null:
 		return
+	_tempo_prestazioni += delta
+	if _prestazioni and _tempo_prestazioni > 0.5:
+		_tempo_prestazioni = 0.0
+		var liv: String = ["volta dipinta", "alberi leggeri", "alberi completi"][vista_alberi.livello] if vista_alberi else ""
+		_prestazioni.text = "%d fotogrammi al secondo · %d alberi (%s)" % [Engine.get_frames_per_second(), vista_alberi.alberi_visibili if vista_alberi else 0, liv]
 	# La griglia compare quando la vista è abbastanza vicina da distinguere i lotti.
 	var alfa := 0.0
 	if griglia_attiva:

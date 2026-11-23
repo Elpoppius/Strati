@@ -30,6 +30,7 @@ func _init() -> void:
 	d.acqua_stagionale = FileAccess.get_file_as_bytes(base + "/grezzi/acqua_stagionale.u8")
 	d.copertura = FileAccess.get_file_as_bytes(base + "/grezzi/copertura.u8")
 	d.distanza_acqua = FileAccess.get_file_as_bytes(base + "/grezzi/distanza_acqua.u8")
+	d.bosco_fine = FileAccess.get_file_as_bytes(base + "/grezzi/bosco_fine.u8")
 	d.lato_acqua = int(meta.get("lato_acqua_px", d.lato))
 	var sorgenti := PackedVector2Array()
 	for s in meta["sorgenti_px"]:
@@ -45,8 +46,8 @@ func _init() -> void:
 			push_error("Lo strato %s ha %d valori invece di %d" % [campo, d.get(campo).size(), n])
 			quit(1)
 			return
-	if d.distanza_acqua.size() != d.lato_acqua * d.lato_acqua:
-		push_error("Lo strato distanza_acqua ha una dimensione inattesa")
+	if d.distanza_acqua.size() != d.lato_acqua * d.lato_acqua or d.bosco_fine.size() != d.lato_acqua * d.lato_acqua:
+		push_error("Gli strati distanza_acqua o bosco_fine hanno una dimensione inattesa")
 		quit(1)
 		return
 	var esito := ResourceSaver.save(d, base + "/mappa.res")

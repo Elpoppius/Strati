@@ -20,8 +20,11 @@ uniform sampler2D rumore_verde : filter_linear, repeat_disable;
 uniform sampler2D rumore_bosco : filter_linear, repeat_disable;
 // Pozze e canneti delle paludi: rumore unico per la mappa più fine (circa 30 m), al posto di una texture ripetuta.
 uniform sampler2D rumore_palude : filter_linear, repeat_disable;
-// Boschi: copertura (0 o 1 per cella da 40 m) e due texture di foglie per la volta degli alberi.
-uniform sampler2D coperture : filter_linear, repeat_disable;
+// Boschi: campo a 10 m generato con la mappa (0,5 = margine) e due texture di foglie per la volta.
+// È lo stesso campo da cui Alberi posa gli alberi veri: bordo dipinto e alberi coincidono.
+uniform sampler2D bosco_fine : filter_linear, repeat_disable;
+// 1 quando gli alberi veri sono visibili (vista vicina): sotto il bosco si dipinge il sottobosco.
+uniform float sottobosco = 0.0;
 // Zone speciali a celle da 40 m: R palude, G gessi. Lo shader ne ammorbidisce e frastaglia i bordi.
 uniform sampler2D zone_speciali : filter_linear, repeat_disable;
 uniform sampler2D chioma_a : source_color, filter_linear_mipmap, repeat_enable;
@@ -108,38 +111,25 @@ void fragment() {
 	verosimile = mix(verosimile, terra, ripido * 0.8);
 	// Boschi: bordo irregolare (la copertura a celle viene mossa dalla maschera) e una volta
 	// di chiome fatta da due strati di foglie, con macchie di luce e d'ombra grandi come alberi.
-	// La copertura è a celle da 40 m: letta in otto punti attorno e mossa da rumori a più scale,
-	// così il margine del bosco non segue i gradini della griglia.
-	vec2 pc = 1.1 / vec2(textureSize(coperture, 0));
-	float cop = 0.0;
-	for (int i = 0; i < 8; i++) {
-		float a = float(i) * 0.785398 + 0.3;
-		cop += texture(coperture, UV + pc * vec2(cos(a), sin(a))).r;
-	}
-	cop = cop / 8.0 * 0.7 + texture(coperture, UV).r * 0.3;
 	float lobi = texture(macchie, ruota * pos_mondo.xz / 157.0 + vec2(0.21, 0.67)).r;
-	float bosco = smoothstep(0.47, 0.53, cop + (lobi - 0.5) * 0.45 + (m_vicina - 0.5) * 0.35 + (texture(macchie, pos_mondo.xz / 19.0).r - 0.5) * 0.2 * (1.0 - lontano));
-	if (bosco > 0.0) {
-		// Coordinate deformate dalla maschera: rompono la griglia regolare delle ripetizioni.
-		vec2 storta = pos_mondo.xz + vec2(texture(macchie, pos_mondo.xz / 31.0).r, texture(macchie, pos_mondo.xz / 29.0 + 0.5).r) * 9.0;
-		vec4 fa = texture(chioma_a, storta / 6.1);
-		vec4 fb = texture(chioma_b, ruota * storta / 4.7 + vec2(0.4, 0.2));
-		vec4 fc = texture(chioma_a, ruota * ruota * storta / 5.3 + vec2(0.7, 0.9));
-		// Soglia morbida sulle foglie, più larga quando un pixel copre più metri: niente puntini.
-		float w = clamp(mpx * 0.12, 0.04, 0.5);
-		vec3 volta = vec3(0.10, 0.13, 0.07);
-		volta = mix(volta, fb.rgb * 0.75, smoothstep(0.5 - w, 0.5 + w, fb.a));
-		volta = mix(volta, fa.rgb, smoothstep(0.5 - w, 0.5 + w, fa.a));
-		volta = mix(volta, fc.rgb * 1.05, smoothstep(0.5 - w, 0.5 + w, fc.a) * 0.8);
-		// Da lontano le foglie si fondono in un tono medio della volta.
-		volta = mix(volta, vec3(0.3, 0.4, 0.15), lontano);
-		// Chiome: macchie di circa 8 m, chiare in cima e scure negli interstizi.
-		float chiome = texture(macchie, pos_mondo.xz / 9.0).r * 0.6 + texture(macchie, ruota * pos_mondo.xz / 23.0).r * 0.4;
-		volta *= mix(mix(0.3, 1.1, smoothstep(0.32, 0.68, chiome)), 0.8, lontano);
-		// Da lontano: gruppi di alberi di qualche decina di metri, più chiari e più scuri,
-		// abbastanza grandi da non diventare puntini. Una texture ripetuta qui formava una trama regolare.
+	float bosco = smoothstep(0.47, 0.53, texture(bosco_fine, UV).r + (texture(macchie, pos_mondo.xz / 19.0).r - 0.5) * 0.04 * (1.0 - lontano));
+	if (bosco > 0.0 && sottobosco > 0.5) {
+		// Sottobosco: terra con foglie secche ed erba rada, in ombra sotto le chiome.
+		vec3 lettiera = mix(vec3(0.13, 0.12, 0.06), vec3(0.19, 0.17, 0.09), smoothstep(0.3, 0.7, m_fine));
+		vec3 rada = verosimile * vec3(0.7, 0.75, 0.6);
+		vec3 suolo_bosco = mix(lettiera, rada, smoothstep(0.35, 0.75, m_vicina * 0.7 + m_fine * 0.3) * 0.6);
+		verosimile = mix(verosimile, suolo_bosco * 0.7, bosco);
+	} else if (bosco > 0.0) {
+		// Volta delle chiome dipinta: si vede solo quando gli alberi veri non sono disegnati
+		// (vista più larga di VistaAlberi.DIM_LEGGERI). Il tono è tarato sul colore medio degli
+		// alberi veri, così al cambio di zoom il bosco non cambia colore.
+		vec3 volta = vec3(0.36, 0.48, 0.24);
+		// Chiome di circa 10 m, appena accennate (una texture ripetuta, quindi a basso contrasto),
+		// e gruppi di alberi di decine di metri da un rumore unico per la mappa.
+		float chiome = texture(macchie, pos_mondo.xz / 11.0).r * 0.5 + texture(macchie, ruota * pos_mondo.xz / 17.0 + 0.3).r * 0.5;
+		volta *= mix(mix(0.86, 1.1, smoothstep(0.3, 0.7, chiome)), 1.0, lontano);
 		float gruppi = texture(rumore_bosco, UV).r;
-		volta *= mix(1.0, mix(0.8, 1.12, smoothstep(0.3, 0.7, gruppi)), lontano);
+		volta *= mix(0.88, 1.08, smoothstep(0.3, 0.7, gruppi));
 		// Al margine il bosco si dirada.
 		volta *= mix(0.8, 1.0, smoothstep(0.0, 0.6, bosco));
 		verosimile = mix(verosimile, volta * 0.6, bosco);
@@ -177,7 +167,8 @@ void fragment() {
 		vec3 canne = vec3(0.5, 0.47, 0.25) * (0.85 + 0.3 * mix(m_fine, 0.5, lontano));
 		verosimile = mix(verosimile, mix(umida, canne, canneto * 0.75), palude);
 	}
-	base = mix(base, verosimile, realismo * COLOR.a);
+	// Sulle colline il suolo prende un po' della tinta della quota (COLOR.a < 1); i boschi no.
+	base = mix(base, verosimile, realismo * max(COLOR.a, bosco));
 	// Rilievo: i pendii rivolti al sole si schiariscono, quelli in ombra si scuriscono, in proporzione
 	// alla luce che riceverebbe un terreno piano. Sostituisce le isoipse nella vista normale.
 	vec3 ls = normalize(verso_sole);

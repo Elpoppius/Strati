@@ -274,11 +274,12 @@ def punto_sfera(rnd, z_min=-1.0):
             return d.normalized()
 
 
-def chioma(nome, lobi, centro, rx, rz, rnd, mat):
+def chioma(nome, lobi, centro, rx, rz, rnd, mat, leggero=False):
     """Fogliame fatto di carte rivolte verso l'esterno dei lobi, ognuna in due facce (fronte e retro).
 
     Le normali non sono quelle delle carte ma quelle di una sfera attorno alla chioma:
     la luce scorre sul volume intero, chiara in alto e verso il sole, scura sotto.
+    leggero: versione per la distanza, con poche carte grandi e senza riempimento interno.
     """
     bm = bmesh.new()
     uvl = bm.loops.layers.uv.new("UVMap")
@@ -310,12 +311,17 @@ def chioma(nome, lobi, centro, rx, rz, rnd, mat):
         dim_media = max(r_l * 1.3, 1.2)
         area = 4 * math.pi * r_l * r_l
         n = int(min(70, max(12, area / (dim_media * dim_media * 0.33))))
+        if leggero:
+            # Poche carte grandi: da lontano la chioma resta piena con un quinto delle facce.
+            dim_media *= 1.9
+            n = max(4, int(n * 0.17))
         for _ in range(n):
             d = punto_sfera(rnd, -0.75)
-            p = lobo_c + d * r_l * rnd.uniform(0.6, 1.0)
+            # Le carte grandi della versione leggera stanno più dentro, per tenere la stessa sagoma.
+            p = lobo_c + d * r_l * (rnd.uniform(0.3, 0.65) if leggero else rnd.uniform(0.6, 1.0))
             carta(p, d, dim_media * rnd.uniform(0.85, 1.2), lobo_c)
         # Riempimento interno: chiude i buchi tra una carta e l'altra (l'occlusione lo scurisce).
-        for _ in range(max(3, n // 8)):
+        for _ in range(0 if leggero else max(3, n // 8)):
             d = punto_sfera(rnd)
             carta(lobo_c + d * r_l * rnd.uniform(0.0, 0.4), d, dim_media * 1.2, lobo_c)
     me = bpy.data.meshes.new(nome)
@@ -326,7 +332,7 @@ def chioma(nome, lobi, centro, rx, rz, rnd, mat):
     return collega(ob, mat)
 
 
-def albero(nome, seme, alta, specie):
+def albero(nome, seme, alta, specie, leggero=False):
     """Albero o arbusto: tronco, rami verso i lobi della chioma, fogliame a carte."""
     m = M()
     s = SPECIE[specie]
@@ -358,8 +364,8 @@ def albero(nome, seme, alta, specie):
         r_t = alta * s["r_tronco"]
         h_t = alta * s["tronco"]
         cima = alta * 0.85 if specie == "pioppo" else centro.z
-        parti.append(cilindro_tra("tronco", (0, 0, -0.25), (centro.x * 0.5, centro.y * 0.5, cima), r_t, r_t * 0.35, m["corteccia"], lati=9))
-        for lobo_c, r_l in lobi:
+        parti.append(cilindro_tra("tronco", (0, 0, -0.25), (centro.x * 0.5, centro.y * 0.5, cima), r_t, r_t * 0.35, m["corteccia"], lati=5 if leggero else 9))
+        for lobo_c, r_l in ([] if leggero else lobi):
             if lobo_c.z < h_t:
                 continue
             p0 = Vector((centro.x * 0.3, centro.y * 0.3, rnd.uniform(h_t * 0.9, min(lobo_c.z, centro.z) * 0.95)))
@@ -367,11 +373,11 @@ def albero(nome, seme, alta, specie):
             parti.append(cilindro_tra("ramo", p0, p1, r_t * 0.45, r_t * 0.15, m["corteccia"], lati=6))
     else:
         # Arbusto: alcuni fusti sottili dal suolo.
-        for k in range(5):
+        for k in range(2 if leggero else 5):
             a = rnd.uniform(0, 2 * math.pi)
             p1 = centro + Vector((math.cos(a) * rx * 0.4, math.sin(a) * rx * 0.4, rnd.uniform(-0.2, 0.3) * rz))
             parti.append(cilindro_tra("fusto", (0, 0, -0.1), p1, 0.05, 0.025, m["corteccia"], lati=5))
-    parti.append(chioma("chioma", lobi, centro, rx, rz, rnd, m[s["foglie"]]))
+    parti.append(chioma("chioma", lobi, centro, rx, rz, rnd, m[s["foglie"]], leggero))
     ob = unisci(nome, parti)
     # Servono a calcolare l'ombra interna della chioma (vedi occlusione_chioma).
     ob["chioma"] = (centro.x, centro.y, centro.z, rx, rz)
@@ -528,4 +534,5 @@ def main():
     print("Tavola salvata:", TAVOLA)
 
 
-main()
+if __name__ == "__main__":
+    main()

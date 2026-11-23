@@ -32,7 +32,7 @@ Aggiungi in cima a `docs/diario.md` una voce con data, cosa è stato fatto, deci
 ## Comandi utili (ambiente di Claude)
 Dopo `sh scripts/setup_strumenti.sh`, aggiungi i comandi al percorso: `export PATH=$HOME/bin:$PATH`.
 - `godot --headless --path gioco --import` importa le risorse del progetto (da rifare dopo ogni modifica a script o risorse).
-- `godot --headless --path gioco -s res://test/verifica_base.gd` esegue le verifiche della base. Devono passare tutte prima di ogni push.
+- `godot --headless --path gioco -s res://test/verifica_base.gd` esegue le verifiche della base. Devono passare tutte prima di ogni push, insieme a `verifica_asset.gd` e `verifica_alberi.gd`.
 - `python3 strumenti/mappe/genera_pedecollinare.py gioco/mappe/pedecollinare` rigenera i dati della mappa; poi `godot --headless --path gioco -s res://strumenti/importa_mappa.gd -- pedecollinare` li converte in `mappa.res`.
 - `xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto.gd -- /tmp/foto.png [modo] [dimensione_vista] [rotazioni]` salva un'immagine reale della scena (schermo virtuale, rendering software). Serve a controllare shader e aspetto; non sostituisce le prove di Fede.
 - `python3 strumenti/blender/texture_procedurali.py gioco/asset/texture` rigenera le texture; `blender-py strumenti/blender/prova_stile_verosimile.py gioco/asset/prove_stile /tmp/tavola.png vicino` rigenera gli asset della prova di stile con un'anteprima; poi `godot --headless --path gioco --import` e `godot --headless --path gioco -s res://test/verifica_asset.gd`. Per vederli nel gioco: `test/foto_asset.gd` (stessa riga di comando di `foto.gd`, argomenti: uscita, cartella degli asset, dimensione della vista). Regole e stile: `docs/asset.md`.
@@ -41,6 +41,7 @@ Dopo `sh scripts/setup_strumenti.sh`, aggiungi i comandi al percorso: `export PA
 - Scena principale: `gioco/scene/principale.tscn` con `script/principale.gd`, che costruisce tutto da codice.
 - Mappa: `gioco/mappe/pedecollinare/` (dati grezzi generati in Python, convertiti in `mappa.res`, classe `MappaDati`). Griglia di 256 x 256 punti da 40 m; acque disegnate da un campo di distanza a 1024 x 1024.
 - Coordinate: 1 unità = 1 metro; x verso est, z verso sud; quote con esagerazione verticale 1,5.
+- Alberi: dati in `script/alberi.gd` (posa deterministica per blocchi dal campo `bosco_fine` della mappa), disegno in `script/vista_alberi.gd` (MultiMesh per blocco, livelli completo/leggero/volta dipinta secondo lo zoom). Modelli da `blender-py strumenti/blender/alberi_mappa.py gioco/asset/alberi`. Dopo una nuova importazione, nei file `.import` delle texture tenere `detect_3d/compress_to=0` e le mipmap attive, altrimenti Godot riscrive i file sui PC di Fede.
 - Asset: caricarli sempre con `Asset.istanzia(percorso)` (`script/asset.gd`), che attiva l'occlusione cotta nei colori dei vertici.
-- Resa grafica (terreno, prato, acqua, luce e ombre, alberi): sistemi comuni a tutte le mappe, descritti in `docs/resa-grafica.md`. Foto di controllo: `test/foto.gd`, `test/foto_asset.gd`, `test/foto_luogo.gd -- dimensione bosco|acqua`.
+- Resa grafica (terreno, prato, acqua, luce e ombre, alberi): sistemi comuni a tutte le mappe, descritti in `docs/resa-grafica.md`. Foto di controllo: `test/foto.gd`, `test/foto_asset.gd`, `test/foto_luogo.gd -- dimensione bosco|acqua|palude|gessi`.
 - Lotti: griglia di 20 m disegnata dallo shader del terreno; il lotto sotto il puntatore si calcola intersecando il raggio della camera con il terreno (niente fisica).
