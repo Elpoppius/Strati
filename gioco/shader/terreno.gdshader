@@ -145,28 +145,32 @@ void fragment() {
 	float limo = (1.0 - smoothstep(2.0, 7.0 + bordo, d_acqua)) * (1.0 - in_acqua) * (1.0 - bagnato);
 	col = mix(col, pow(vec3(0.46, 0.42, 0.32), vec3(2.2)), limo * 0.35);
 	col = mix(col, col * vec3(0.5, 0.48, 0.44), bagnato * 0.85);
-	// Increspature: due strati della maschera che scorrono in versi diversi.
+	// Increspature. Le coordinate sono deformate da un rumore più ampio e gli strati hanno scale
+	// e orientamenti non multipli tra loro: così la piccola texture non forma un motivo regolare.
 	vec2 pa = pos_mondo.xz;
-	float o1 = texture(macchie, pa / 4.3 + vec2(TIME * 0.03, TIME * 0.017)).r;
-	float o2 = texture(macchie, ruota * pa / 2.9 - vec2(TIME * 0.022, -TIME * 0.031)).r;
-	// Ondulazione lenta e larga: alterna tratti più lisci e più mossi.
-	float o3 = texture(macchie, pa / 37.0 + vec2(TIME * 0.004, 0.0)).r;
-	float onde = (o1 + o2 - 1.0) * (0.5 + o3);
+	vec2 deforma = vec2(texture(macchie, pa / 23.0 + vec2(TIME * 0.003, 0.0)).r, texture(macchie, ruota * pa / 19.0 + vec2(0.3, TIME * 0.002)).r) - 0.5;
+	vec2 pd = pa + deforma * 9.0;
+	float o1 = texture(macchie, pd / 4.3 + vec2(TIME * 0.03, TIME * 0.017)).r;
+	float o2 = texture(macchie, ruota * pd / 2.9 - vec2(TIME * 0.022, -TIME * 0.031)).r;
+	float o4 = texture(macchie, ruota * ruota * pd / 6.7 + vec2(0.17, 0.61) + vec2(-TIME * 0.012, TIME * 0.02)).r;
+	// Ondulazione lenta e larga, unica per tutta la mappa: alterna tratti più lisci e più mossi.
+	float o3 = texture(rumore_verde, UV + vec2(TIME * 0.00002, 0.0)).r;
+	float onde = ((o1 + o2 + o4) / 1.5 - 1.0) * (0.35 + o3);
 	// Profondità: bassa e verdastra vicino alla riva, scura al centro dei fiumi.
 	float prof = smoothstep(0.0, 14.0, -d_acqua + onde * 3.0);
 	vec3 bassa = pow(vec3(0.48, 0.56, 0.44), vec3(2.2));
 	vec3 fonda = pow(vec3(0.27, 0.46, 0.49), vec3(2.2));
 	vec3 acqua = mix(bassa, fonda, prof);
 	// Riflessi del cielo sulle creste delle increspature.
-	float cresta = smoothstep(0.15, 0.45, onde);
-	acqua = mix(acqua, pow(vec3(0.66, 0.78, 0.82), vec3(2.2)), cresta * 0.18);
+	float cresta = smoothstep(0.2, 0.55, onde);
+	acqua = mix(acqua, pow(vec3(0.66, 0.78, 0.82), vec3(2.2)), cresta * 0.12);
 	acqua *= 0.93 + 0.14 * smoothstep(-0.4, 0.4, onde) + 0.06 * (o3 - 0.5);
 	// Schiuma sottile lungo la riva, spezzata dalle increspature.
-	float schiuma = (1.0 - smoothstep(0.3, 1.6 + bordo, abs(d_acqua + 1.0))) * smoothstep(0.45, 0.6, o1 * 0.7 + o2 * 0.3);
+	float schiuma = (1.0 - smoothstep(0.3, 1.6 + bordo, abs(d_acqua + 1.0 + deforma.x * 1.5))) * smoothstep(0.45, 0.6, o1 * 0.5 + o4 * 0.5);
 	acqua = mix(acqua, pow(vec3(0.85, 0.86, 0.82), vec3(2.2)), schiuma * 0.45);
 	col = mix(col, acqua, in_acqua);
 	// Luce: l'acqua è liscia e riflette, il terreno no. Le increspature inclinano la normale.
-	vec3 n_acqua = normalize(vec3((o1 - 0.5) * 0.25, 1.0, (o2 - 0.5) * 0.25));
+	vec3 n_acqua = normalize(vec3((o1 - o4) * 0.25, 1.0, (o2 - 0.5) * 0.25));
 	NORMAL = normalize(mix(NORMAL, (VIEW_MATRIX * vec4(n_acqua, 0.0)).xyz, in_acqua));
 	SPECULAR = 0.5 * in_acqua;
 	// Il cielo riflesso: un poco di luce propria, così l'acqua non diventa scura in ombra.

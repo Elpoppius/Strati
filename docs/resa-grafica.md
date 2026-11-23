@@ -29,7 +29,7 @@ Codice: `gioco/shader/terreno.gdshader`, `gioco/script/terreno.gd`.
 ## Acqua
 Codice: in fondo a `gioco/shader/terreno.gdshader`. Dati: la distanza dalla riva, che `terreno.gd` converte in virgola mobile (in 8 bit faceva fasce a gradini).
 - Profondità che sfuma dalla riva (bassa e verdastra) al centro (verde-azzurro più scuro).
-- Increspature che scorrono nel tempo, in due strati più un'ondulazione lenta; riflessi del cielo sulle creste e un poco di luce propria, così l'acqua non diventa scura in ombra.
+- Increspature che scorrono nel tempo: tre strati a scale e orientamenti diversi, su coordinate deformate da un rumore più ampio, più un'ondulazione lenta unica per tutta la mappa. Così non si vede un motivo ripetuto (segnalato da Fede); riflessi del cielo sulle creste e un poco di luce propria, così l'acqua non diventa scura in ombra.
 - Superficie liscia e riflettente (il terreno no).
 - Schiuma sottile lungo la riva, sponda bagnata più scura e un velo di limo.
 - Da fare: corrente nel verso del fiume, cascate e rapide sui torrenti, paludi con acqua bassa e canne, livelli che cambiano con le piene.
