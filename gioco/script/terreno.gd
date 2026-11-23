@@ -69,6 +69,8 @@ func costruisci(d: MappaDati, esag: float = 1.5) -> void:
 	materiale.shader = SHADER
 	materiale.set_shader_parameter("tematici", _texture_tematica())
 	var img_acque := Image.create_from_data(d.lato_acqua, d.lato_acqua, false, Image.FORMAT_L8, d.distanza_acqua)
+	# In virgola mobile (16 bit): interpolata in 8 bit, la distanza dalla riva faceva fasce a gradini.
+	img_acque.convert(Image.FORMAT_RH)
 	materiale.set_shader_parameter("acque", ImageTexture.create_from_image(img_acque))
 	materiale.set_shader_parameter("esagerazione", esag)
 	materiale.set_shader_parameter("suolo", load("res://asset/texture/erba.png"))

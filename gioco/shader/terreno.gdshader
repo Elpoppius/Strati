@@ -1,5 +1,5 @@
 shader_type spatial;
-render_mode cull_back, diffuse_lambert, specular_disabled;
+render_mode cull_back, diffuse_lambert, specular_schlick_ggx;
 
 // Strati tematici: R fertilità, G rischio di piena, B acqua affidabile, A acqua stagionale.
 uniform sampler2D tematici : filter_linear, repeat_disable;
@@ -136,11 +136,41 @@ void fragment() {
 		col = mix(col, pow(vec3(0.71, 0.26, 0.18), vec3(2.2)), 0.55);
 	}
 	// Acqua disegnata dal campo di distanza: bordi morbidi a qualunque zoom.
+	// d_acqua è la distanza dalla riva in metri: negativa dentro l'acqua, positiva fuori.
 	float d_acqua = (texture(acque, UV).r * 255.0 - 128.0) * 2.0;
 	float bordo = max(fwidth(d_acqua), 0.5);
 	float in_acqua = 1.0 - smoothstep(-bordo, bordo, d_acqua);
-	float riva = (1.0 - smoothstep(0.0, 6.0 + bordo, d_acqua)) * (1.0 - in_acqua);
-	col = mix(col, pow(vec3(0.42, 0.38, 0.28), vec3(2.2)), riva * 0.35);
-	col = mix(col, pow(vec3(0.30, 0.51, 0.64), vec3(2.2)), in_acqua);
+	// Riva: terra bagnata e scura per qualche metro, poi un velo più chiaro di sabbia e limo.
+	float bagnato = (1.0 - smoothstep(0.0, 3.0 + bordo, d_acqua)) * (1.0 - in_acqua);
+	float limo = (1.0 - smoothstep(2.0, 7.0 + bordo, d_acqua)) * (1.0 - in_acqua) * (1.0 - bagnato);
+	col = mix(col, pow(vec3(0.46, 0.42, 0.32), vec3(2.2)), limo * 0.35);
+	col = mix(col, col * vec3(0.5, 0.48, 0.44), bagnato * 0.85);
+	// Increspature: due strati della maschera che scorrono in versi diversi.
+	vec2 pa = pos_mondo.xz;
+	float o1 = texture(macchie, pa / 4.3 + vec2(TIME * 0.03, TIME * 0.017)).r;
+	float o2 = texture(macchie, ruota * pa / 2.9 - vec2(TIME * 0.022, -TIME * 0.031)).r;
+	// Ondulazione lenta e larga: alterna tratti più lisci e più mossi.
+	float o3 = texture(macchie, pa / 37.0 + vec2(TIME * 0.004, 0.0)).r;
+	float onde = (o1 + o2 - 1.0) * (0.5 + o3);
+	// Profondità: bassa e verdastra vicino alla riva, scura al centro dei fiumi.
+	float prof = smoothstep(0.0, 14.0, -d_acqua + onde * 3.0);
+	vec3 bassa = pow(vec3(0.48, 0.56, 0.44), vec3(2.2));
+	vec3 fonda = pow(vec3(0.27, 0.46, 0.49), vec3(2.2));
+	vec3 acqua = mix(bassa, fonda, prof);
+	// Riflessi del cielo sulle creste delle increspature.
+	float cresta = smoothstep(0.15, 0.45, onde);
+	acqua = mix(acqua, pow(vec3(0.66, 0.78, 0.82), vec3(2.2)), cresta * 0.18);
+	acqua *= 0.93 + 0.14 * smoothstep(-0.4, 0.4, onde) + 0.06 * (o3 - 0.5);
+	// Schiuma sottile lungo la riva, spezzata dalle increspature.
+	float schiuma = (1.0 - smoothstep(0.3, 1.6 + bordo, abs(d_acqua + 1.0))) * smoothstep(0.45, 0.6, o1 * 0.7 + o2 * 0.3);
+	acqua = mix(acqua, pow(vec3(0.85, 0.86, 0.82), vec3(2.2)), schiuma * 0.45);
+	col = mix(col, acqua, in_acqua);
+	// Luce: l'acqua è liscia e riflette, il terreno no. Le increspature inclinano la normale.
+	vec3 n_acqua = normalize(vec3((o1 - 0.5) * 0.25, 1.0, (o2 - 0.5) * 0.25));
+	NORMAL = normalize(mix(NORMAL, (VIEW_MATRIX * vec4(n_acqua, 0.0)).xyz, in_acqua));
+	SPECULAR = 0.5 * in_acqua;
+	// Il cielo riflesso: un poco di luce propria, così l'acqua non diventa scura in ombra.
+	EMISSION = pow(vec3(0.55, 0.68, 0.78), vec3(2.2)) * (0.12 + 0.12 * cresta) * in_acqua;
+	ROUGHNESS = mix(1.0, 0.12, in_acqua);
 	ALBEDO = col;
 }
