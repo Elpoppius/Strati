@@ -9,8 +9,9 @@ const NOMI_MODI := ["Terreno", "Acqua", "Fertilità", "Rischio piena"]
 const SITO_INIZIALE := 1
 
 ## Sole: altezza sull'orizzonte e angolo rispetto alla direzione in cui guarda la camera (gradi).
+## 270 = sole da sinistra, ombre verso destra sullo schermo (scelta di Fede); l'altezza bassa le tiene lunghe.
 const ALTEZZA_SOLE := 42.0
-const AZIMUT_SOLE := 220.0
+const AZIMUT_SOLE := 270.0
 
 var dati: MappaDati
 var terreno: Terreno
