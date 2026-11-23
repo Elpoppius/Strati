@@ -16,6 +16,7 @@ Voci più recenti in cima.
 - **Terreno migliorato:** boschi con bordi irregolari (non più a gradini da 40 m) e una volta di chiome dipinta, in attesa degli alberi veri; terra che affiora sui pendii ripidi.
 - **Prato senza ripetizioni:** verde, ingiallito e secco distribuiti da rumori unici per tutta la mappa e dai dati del luogo (acqua, fertilità), bordi morbidi senza scalini, variazione di tono minuta da vicino.
 - **Acqua:** profondità che sfuma dalla riva al centro, increspature animate senza motivo ripetuto, riflessi del cielo, schiuma lungo la riva, sponda bagnata; risolte le fasce a gradini (distanza dalla riva ora in virgola mobile). Nuovo documento `docs/resa-grafica.md` sui sistemi grafici comuni a tutte le mappe.
+- **Prima prova di Fede sul portatile** (sera): Godot 4.7.2 confermato, il progetto si apre e funziona senza errori. Pareri di Fede: non gli piace la resa puntinata del terreno; non vuole le isoipse sulla mappa; l'acqua è ancora un po' piatta; l'area dei gessi è quadrata; le mappe tematiche sono squadrettate. L'area dei gessi è quadrata perché il generatore della mappa la definisce come un rettangolo (`strumenti/mappe/genera_pedecollinare.py`): è un segnaposto.
 - Strumenti nell'ambiente di Claude: Godot 4.7.2 senza grafica e Blender 5.3 come modulo Python; catena Blender → glTF → Godot provata con una casa lunga neolitica.
 
 **Decisioni (Fede)**
@@ -45,4 +46,5 @@ Voci più recenti in cima.
   - texture di paglia e argilla delle case da rivedere per lo zoom ravvicinato;
   - poi completare il lotto del villaggio nello stile scelto;
   - portare in Godot il Prototipo 0 (ciclo del villaggio: fondazione, campi, case, sentieri, granaio, stagioni) sulla mappa vera, con la simulazione separata dalla grafica e verificabile senza grafica (proposta di Claude, da confermare con Fede).
+  - correzioni dopo la prova di Fede sul portatile: togliere la resa puntinata del terreno; togliere le isoipse dalla mappa normale (proposta di Claude, da confermare: tenerle solo in una mappa tematica del rilievo); dare forma naturale all'area dei gessi; ammorbidire le mappe tematiche; acqua meno piatta.
 - In sospeso: recinto come primo strumento di regolazione nel Prototipo 0.
