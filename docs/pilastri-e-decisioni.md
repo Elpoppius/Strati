@@ -27,7 +27,7 @@ Gestionale urbanistico-politico. Il giocatore governa una città europea verosim
 - **Struttura:** sandbox con indicatori. Si può scegliere l'epoca iniziale (come in Civilization o Age of Empires), ma il gioco è pensato per la progressione dall'inizio.
 - **Tempo:** cronologia scandita da eventi storici reali (vedi Eventi). Tempo continuo con pausa e velocità regolabili (impostazione di partenza, modificabile); la simulazione avanza per anni e si ferma da sola nei momenti decisivi.
 - **Le epoche fanno da tutorial:** i sistemi si sbloccano progressivamente.
-- **Produzione:** Fede + Claude, budget zero. Godot 4.7.2 (renderer Compatibilità), Blender 5.3, asset CC0 (es. Kenney), Git/GitHub.
+- **Produzione:** Fede + Claude, budget zero. Godot 4.7.2 (renderer Compatibilità), Blender 5.3, asset creati da script o con licenza CC0 (stile verosimile: vedi `asset.md`), Git/GitHub.
 
 ## Epoche
 Struttura simmetrica: **6 macro-ere × 2 epoche**. Il passaggio di macro-era sblocca nuovi sistemi; il passaggio di epoca cambia la sensibilità dominante. Le epoche prendono il nome dal tipo di città che producono, non da un popolo.

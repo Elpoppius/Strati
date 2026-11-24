@@ -33,6 +33,10 @@ var _casella_isoipse: CheckBox
 var _prestazioni: Label
 var _tempo_prestazioni := 0.0
 var _trascinando := false
+## Stato degli alberi mostrato nel pannello: da dove vengono e quanto ci hanno messo.
+var _stato_alberi := ""
+var _inizio_calcolo_alberi := -1
+var _salvataggio_alberi := -1
 
 
 func _ready() -> void:
@@ -59,7 +63,15 @@ func _ready() -> void:
 	vista_alberi.name = "Alberi"
 	add_child(vista_alberi)
 	vista_alberi.prepara(alberi, terreno, cam)
-	alberi.calcola_in_sottofondo(cam.bersaglio.x, cam.bersaglio.z)
+	# Dal secondo avvio gli alberi si caricano dalla cache; la prima volta si calcolano in
+	# sottofondo su tutti i processori e poi si salvano (vedi Alberi).
+	var t0 := Time.get_ticks_msec()
+	if alberi.carica_cache():
+		_stato_alberi = "alberi dalla cache in %d ms" % (Time.get_ticks_msec() - t0)
+	else:
+		_inizio_calcolo_alberi = t0
+		_stato_alberi = "calcolo degli alberi in corso"
+		alberi.calcola_in_sottofondo(cam.bersaglio.x, cam.bersaglio.z)
 	_crea_interfaccia()
 	imposta_modo(0)
 
@@ -176,11 +188,16 @@ func torna_al_sito() -> void:
 func _process(delta: float) -> void:
 	if terreno == null:
 		return
+	if _inizio_calcolo_alberi >= 0 and alberi.tutto_pronto():
+		alberi.aspetta()
+		_stato_alberi = "alberi calcolati in %.1f s" % ((Time.get_ticks_msec() - _inizio_calcolo_alberi) / 1000.0)
+		_inizio_calcolo_alberi = -1
+		_salvataggio_alberi = WorkerThreadPool.add_task(alberi.salva_cache, false, "Cache degli alberi")
 	_tempo_prestazioni += delta
 	if _prestazioni and _tempo_prestazioni > 0.5:
 		_tempo_prestazioni = 0.0
 		var liv: String = VistaAlberi.NOMI_LIVELLI[vista_alberi.livello] if vista_alberi else ""
-		_prestazioni.text = "%d fotogrammi al secondo · %d alberi (%s)" % [Engine.get_frames_per_second(), vista_alberi.alberi_visibili if vista_alberi else 0, liv]
+		_prestazioni.text = "%d fotogrammi al secondo · %d alberi (%s)\n%s" % [Engine.get_frames_per_second(), vista_alberi.alberi_visibili if vista_alberi else 0, liv, _stato_alberi]
 	# La griglia compare quando la vista è abbastanza vicina da distinguere i lotti.
 	var alfa := 0.0
 	if griglia_attiva:
@@ -272,4 +289,6 @@ func _exit_tree() -> void:
 	if vista_alberi:
 		vista_alberi.aspetta()
 	if alberi:
-		alberi.aspetta()
+		alberi.interrompi()
+	if _salvataggio_alberi >= 0:
+		WorkerThreadPool.wait_for_task_completion(_salvataggio_alberi)

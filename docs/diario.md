@@ -2,6 +2,36 @@
 
 Voci più recenti in cima.
 
+## 24/11/2026
+**Fatto**
+- **Verifica del lavoro del 23/11** (fatto con l'altro account): l'importazione in Godot è pulita e non modifica i file `.import`; verifiche base, asset e alberi superate; la mappa rigenerata dagli script è identica byte per byte (dati grezzi e `mappa.res`); foto della scena a 600 m e a 4 km senza errori (a parte l'audio, che manca nell'ambiente di Claude); il Prototipo 0 non ha errori di sintassi. I quattro errori `file_access.cpp:967` visti nell'editor di Fede non si riproducono aprendo il progetto da zero senza grafica: da ricontrollare se compaiono ancora.
+- **Documenti allineati:** `produzione-e-collaborazione.md` (asset nello stile verosimile al posto del "plastico", terreno generato da codice, percorso aggiornato), `pilastri-e-decisioni.md` (riga sugli asset), `resa-grafica.md` (alberi: numeri e prestazioni), `CLAUDE.md` (nuove verifiche e cache). Allineati al repository anche i documenti del Progetto Claude dell'account usato oggi, che erano fermi a prima del repository (Godot 4.3, nome del repository sbagliato).
+- **Regola comune ai due account** (data da Fede): all'inizio di ogni conversazione aprire il repository `Elpoppius/Strati`, leggere `CLAUDE.md` e `docs/diario.md` e seguire `CLAUDE.md`; alla fine aggiornare il diario e caricare le modifiche.
+- **Alberi più rapidi da caricare.** Segnalazione di Fede: sul PC di casa (GTX 1050 mobile) la mappa impiegava 5–6 s a riempirsi di alberi.
+  - Calcolo più veloce con risultato identico albero per albero (impronta dei dati di tutta la mappa uguale prima e dopo): si saltano in blocco i riquadri dove di sicuro non cresce nulla e si evitano oggetti temporanei nei calcoli ripetuti. Su un processore: da 19 a 10 s nell'ambiente di Claude (che è lento e ha in pratica un solo processore).
+  - Calcolo in sottofondo su tutti i processori meno uno, ciascuno con una copia propria dei dati della mappa. Prima girava su un solo thread a bassa priorità. Il guadagno vero si vedrà sui PC di Fede.
+  - **Cache su disco:** finito il primo calcolo, gli alberi si salvano in `user://cache/` (circa 20 MB nella cartella dei dati dell'utente, fuori dal repository). Dagli avvii successivi si caricano in circa 0,13 s, prima che la mappa compaia. La cache si scarta da sola se cambiano la mappa o `alberi.gd`.
+  - Il pannello ora dice da dove vengono gli alberi e quanto ci hanno messo ("alberi calcolati in … s" oppure "alberi dalla cache in … ms").
+  - Nuovi test: `test/verifica_cache_alberi.gd` (salvataggio, caricamento, scarto di una cache non valida o rovinata) e `test/misura_alberi.gd` (tempi e impronta dei dati). Tutte le verifiche superate.
+
+**Decisioni**
+- Fede: il caricamento degli alberi va reso più rapido, ottimizzando o precaricando. Scelta di Claude: entrambe le cose, cioè calcolo ottimizzato e parallelo la prima volta, cache su disco precaricata all'avvio dalle volte successive.
+
+**Prossimo passo**
+- Fede, sul PC di casa: fare Pull, aprire il gioco due volte e riportare i tempi del pannello. La prima volta "alberi calcolati in … s", la seconda "alberi dalla cache in … ms". Dire anche se all'avvio ci sono scatti.
+- Fede: dire i fotogrammi al secondo mostrati nel pannello a circa 150, 600, 2000 e 6000 m di vista, se ci sono scatti scorrendo la mappa, come appaiono specie, densità, canneti, acqua e passaggio tra i livelli di dettaglio.
+- Fede: preparare il PC dedicato (Godot 4.7.2, Blender 5.3, GitHub Desktop: vedi `docs/setup-pc.md`); continuare a provare il Prototipo 0.
+- Claude, prossime sessioni:
+  - alberi sulla mappa: tarare livelli di dettaglio e densità sulle prestazioni dei PC di Fede; confermare con Fede la scelta delle specie (proposta di Claude);
+  - prato da vicino: valutare ciuffi d'erba, fiori e sassi in 3D posati come gli alberi (proposta di Claude), se a zoom stretto il terreno sembra ancora piatto;
+  - alberi come dati modificabili: abbattere o costruire su un'area boscata la segna come "area disboscata" (costruita: bosco perso ma ricordato; solo abbattuta: può ricrescere); il terreno sotto cambia (terra battuta, terra nuda, erba rada) con una mappa dell'uso del suolo aggiornabile durante il gioco; progettare l'interazione con il gameplay (proposte di Claude da discutere: legname, rischio di frane e piene più rapide, ricrescita per stadi da arbusti ad alberi). La cache degli alberi resta lo strato di partenza, le modifiche della partita si terranno a parte;
+  - acqua: rapide e cascate sui torrenti, livelli che cambiano con le piene;
+  - alberi: carte viste di taglio ai bordi delle chiome;
+  - texture di paglia e argilla delle case da rivedere per lo zoom ravvicinato;
+  - poi completare il lotto del villaggio nello stile scelto;
+  - portare in Godot il Prototipo 0 (ciclo del villaggio: fondazione, campi, case, sentieri, granaio, stagioni) sulla mappa vera, con la simulazione separata dalla grafica e verificabile senza grafica (proposta di Claude, da confermare con Fede).
+- In sospeso: recinto come primo strumento di regolazione nel Prototipo 0.
+
 ## 23/11/2026
 **Fatto**
 - Definite le basi di design: concept, sette pilastri, epoche (6 macro-ere × 2 epoche), eventi soglia con presagi, indicatori a due livelli, culture emergenti, futuro, scala della città (lotto, comparto, isolato, quartiere), topografia e archetipi, ciclo di gioco del villaggio. Vedi i documenti in `docs/`.
@@ -68,17 +98,4 @@ Voci più recenti in cima.
 - Seconda versione della prova di stile: direzione giusta. Da migliorare il prato (grossolano), il dettaglio a zoom ravvicinato e la forma e il riempimento delle chiome.
 
 **Prossimo passo**
-- Fede: preparare il PC dedicato (Godot 4.7.2, Blender 5.3, GitHub Desktop: vedi `docs/setup-pc.md`); continuare a provare il Prototipo 0.
-- Fede: aprire `gioco/project.godot` con Godot 4.7.2 sul PC dedicato, premere F5 e riportare cosa si vede e come risponde (vedi `docs/setup-pc.md`).
-- Fede: dare un parere sulla terza versione di alberi e prato (`docs/immagini/prova-stile-v3-*.jpg`); sul PC, avvicinare lo zoom al massimo vicino al terrazzo centrale, ruotare con Q/E e dire come appaiono ombre e luce (gli alberi si vedono nel gioco solo con `test/foto_asset.gd`, per ora non sono posati sulla mappa).
-- Claude, prossima sessione (rimandato da Fede alla prossima):
-  - alberi sulla mappa: tarare livelli di dettaglio e densità sulle prestazioni dei PC di Fede; confermare con Fede la scelta delle specie;
-  - prato da vicino: valutare ciuffi d'erba, fiori e sassi in 3D posati come gli alberi (proposta di Claude), se a zoom stretto il terreno sembra ancora piatto;
-  - alberi come dati modificabili: abbattere o costruire su un'area boscata la segna come "area disboscata" (costruita: bosco perso ma ricordato; solo abbattuta: può ricrescere); il terreno sotto cambia (terra battuta, terra nuda, erba rada) con una mappa dell'uso del suolo aggiornabile durante il gioco; progettare l'interazione con il gameplay (proposte di Claude da discutere: legname, rischio di frane e piene più rapide, ricrescita per stadi da arbusti ad alberi);
-  - acqua: corrente nel verso del fiume, rapide e cascate sui torrenti, paludi con acqua bassa e canne, livelli che cambiano con le piene;
-  - alberi: carte viste di taglio ai bordi delle chiome;
-  - texture di paglia e argilla delle case da rivedere per lo zoom ravvicinato;
-  - poi completare il lotto del villaggio nello stile scelto;
-  - portare in Godot il Prototipo 0 (ciclo del villaggio: fondazione, campi, case, sentieri, granaio, stagioni) sulla mappa vera, con la simulazione separata dalla grafica e verificabile senza grafica (proposta di Claude, da confermare con Fede).
-- Fede: provare sul portatile (e poi sugli altri PC) alberi, paludi, acqua e prato: dire i fotogrammi al secondo mostrati nel pannello a circa 150, 600, 2000 e 6000 m di vista, se ci sono scatti scorrendo la mappa, come appaiono specie, densità, canneti, acqua e passaggio tra i livelli.
-- In sospeso: recinto come primo strumento di regolazione nel Prototipo 0.
+- Superato dalla voce del 24/11/2026, che contiene la lista aggiornata.

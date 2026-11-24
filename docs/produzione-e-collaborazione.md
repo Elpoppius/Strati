@@ -25,7 +25,7 @@ Claude non ha bisogno di un proprio account. Per ogni account Claude serve:
 | Cosa | Strumento |
 |---|---|
 | Motore | Godot 4.7.2 standard, renderer Compatibilità |
-| Terreno | Da valutare: mesh generata da codice o Terrain3D (componente aggiuntivo, licenza libera) |
+| Terreno | Mesh generata da codice (`gioco/script/terreno.gd`); Terrain3D (componente aggiuntivo, licenza libera) resta un'alternativa da valutare se servirà |
 | Modelli 3D | Blender 5.3 |
 | Dati altimetrici | QGIS |
 | Grafica 2D e interfaccia | Krita o GIMP |
@@ -47,9 +47,10 @@ Guida all'installazione sui PC di Fede: `setup-pc.md`.
 Valutato e scartato. Cities: Skylines è a pagamento, centrato sul traffico moderno, senza epoche, stratificazione o lotti di proprietà; un mod si distribuisce solo a chi possiede il gioco. Caesar III (via Augustus) è limitato all'epoca romana. I sistemi distintivi del progetto sono proprio quelli che un mod non può aggiungere.
 
 ## Asset
-- **Edifici procedurali** generati dalla forma del lotto (pianta, piani, tetto, materiali secondo l'epoca). Stile "plastico architettonico".
-- **Monumenti fatti a mano**, pochi (tempio, cattedrale, palazzo, stazione).
-- **Elementi minori da pacchetti CC0** (alberi, rocce, oggetti): Kenney, Quaternius, KayKit; texture da Poly Haven.
+- **Stile verosimile, anche nei colori** (decisione di Fede, 23/11/2026); riferimento per l'aspetto: Age of Empires IV. Lo stile "plastico architettonico" e gli alberi con pochi poligoni sono scartati. Guida completa: `asset.md`.
+- **Edifici procedurali** generati dalla forma del lotto (pianta, piani, tetto, materiali secondo l'epoca), soprattutto dalle epoche urbane in poi.
+- **Pochi pezzi fatti a mano**: monumenti e tipologie riconoscibili di ogni epoca (casa lunga, granaio, tempio, cattedrale, palazzo, stazione…).
+- **Modelli e texture creati da script** (Blender e texture procedurali): alberi, canne, case, materiali. Pacchetti con licenza CC0 solo dove servono e se coerenti con lo stile: quelli a pochi poligoni (Kenney, Quaternius, KayKit) non lo sono; per le texture si può attingere a Poly Haven.
 
 ## Stima
 | Fase | Contenuto | Tempo indicativo |
@@ -64,8 +65,10 @@ Fede può lavorarci ogni giorno. Il gioco completo è un progetto di più anni; 
 ## Percorso
 1. Mappa pedecollinare (fatto: vedi `mappa-pedecollinare.md`).
 2. Prototipo 0 come pagina web giocabile (`prototipi/prototipo0/index.html`; versione pubblicata: https://claude.ai/artifact/CkFtLeu96dPjqCL5vGJYSo). In prova da parte di Fede.
-3. Repository GitHub creato e collegato (fatto). Fede prepara un PC dedicato con Godot 4.7.2, Blender 5.3 e GitHub Desktop.
-4. Base del progetto Godot: terreno della mappa pedecollinare, camera isometrica ruotabile, griglia dei lotti.
+3. Repository GitHub creato e collegato a entrambi gli account Claude (fatto). Fede prepara un PC dedicato con Godot 4.7.2, Blender 5.3 e GitHub Desktop.
+4. Base del progetto Godot (fatto, 23/11/2026): terreno della mappa pedecollinare, camera isometrica ruotabile, mappe tematiche, griglia dei lotti. Provata da Fede sui suoi PC.
+5. Resa grafica comune a tutte le mappe (in corso): prova di stile verosimile, prato, acqua, paludi con canneti, alberi veri sulla mappa con livelli di dettaglio. Vedi `asset.md` e `resa-grafica.md`.
+6. Prossimo: completare il lotto del villaggio nello stile scelto e portare in Godot il ciclo del Prototipo 0 sulla mappa vera (proposta di Claude, da confermare con Fede).
 
 ## Prototipo 0 — stato
 **Contenuto:** mappa pedecollinare generata da codice (64 × 64 celle da circa 160 m), mappe tematiche Terreno, Acqua, Fertilità, Rischio piena; zoom (1–6×) e spostamento della mappa; azioni Fondare, Campi, Sentiero, Granaio (da posizionare), usanza sul raccolto; indicatori popolazione, cibo, salute, legittimità; tempo continuo (2, 6 o 15 anni al secondo) con pausa automatica nei momenti decisivi; siccità con presagio vero (sorgenti che calano), cometa come presagio falso, piene di fiume e torrenti; memoria del rischio; affollamento (allargarsi o villaggio figlio); fallimento come strato (rovine e rifondazione); partita di 500 anni (6000–5500 a.C.) con riepilogo finale.
