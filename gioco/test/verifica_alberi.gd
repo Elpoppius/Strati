@@ -30,6 +30,18 @@ func _process(_d: float) -> bool:
 		for m in v._mesh[liv]:
 			tutti = tutti and m != null
 		controlla(tutti, "modelli del livello %d caricati (%d)" % [liv, v._mesh[liv].size()])
+	# Foglie: shader che fa svanire le carte viste di taglio (24/11/2026).
+	var foglie := 0
+	var con_shader := 0
+	for liv in [VistaAlberi.LEGGERI, VistaAlberi.COMPLETI]:
+		for m in v._mesh[liv]:
+			for i in (m as Mesh).get_surface_count():
+				var mat := (m as Mesh).surface_get_material(i)
+				if mat and mat.resource_name.begins_with("foglie"):
+					foglie += 1
+					if mat is ShaderMaterial and (mat as ShaderMaterial).shader == Asset.SHADER_FOGLIE:
+						con_shader += 1
+	controlla(foglie > 0 and con_shader == foglie, "le foglie usano lo shader delle carte di taglio (%d superfici su %d)" % [con_shader, foglie])
 	# Blocchi su tutta la mappa: conta, tempo, niente alberi nell'acqua.
 	var d: MappaDati = _s.dati
 	var nb := int(ceil(d.lato_metri() / Alberi.LATO_BLOCCO))
