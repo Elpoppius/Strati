@@ -58,6 +58,10 @@ uniform vec2 lotto_evidenziato = vec2(-1.0, -1.0);
 // Strumento dell'HUD: cerchio (x, z, raggio; raggio negativo = spento) e suo colore.
 uniform vec3 pennello = vec3(0.0, 0.0, -1.0);
 uniform vec3 colore_pennello : source_color = vec3(1.0);
+// Mentre si piazzano i campi: lato in metri dei quadrati della simulazione (celle da 40 m centrate
+// sui punti della mappa), disegnati solo dentro e attorno al cerchio. 0 = spenta. Fuori da questo
+// momento i campi restano parcelle irregolari (scelta di Fede: i quadrati servono solo a porre).
+uniform float griglia_campi = 0.0;
 
 varying vec3 pos_mondo;
 varying vec3 normale_mondo;
@@ -321,6 +325,13 @@ void fragment() {
 		float anello = 1.0 - smoothstep(fw * 0.5, fw * 2.0, abs(dp - pennello.z));
 		col = mix(col, colore_pennello, anello * 0.9);
 		col = mix(col, colore_pennello, (1.0 - step(pennello.z, dp)) * 0.08);
+		if (griglia_campi > 0.0) {
+			vec2 gc = (pos_mondo.xz + griglia_campi * 0.5) / griglia_campi;
+			vec2 fwc = max(fwidth(gc), vec2(1e-4));
+			vec2 lc = 1.0 - smoothstep(vec2(0.0), fwc * 1.5, abs(fract(gc + 0.5) - 0.5));
+			float dentro = 1.0 - smoothstep(pennello.z * 0.85, pennello.z * 1.15, dp);
+			col = mix(col, colore_pennello, max(lc.x, lc.y) * dentro * 0.55);
+		}
 	}
 	// Acqua disegnata dal campo di distanza (d_acqua, calcolato all'inizio): bordi morbidi a qualunque zoom.
 	float bordo = max(fwidth(d_acqua), 0.5);

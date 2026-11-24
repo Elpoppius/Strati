@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="miter">
+<!-- Granaio: la casa delle scorte alzata su pali -->
+<polyline points="4,14 16,5 28,14"/>
+<rect x="8" y="14" width="16" height="9" fill="#ffffff" stroke="none"/>
+<line x1="10" y1="23" x2="10" y2="28"/>
+<line x1="22" y1="23" x2="22" y2="28"/>
+</svg>

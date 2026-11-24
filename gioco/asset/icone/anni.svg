@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="miter">
+<!-- Far passare il tempo: la clessidra -->
+<line x1="6" y1="4" x2="26" y2="4"/>
+<line x1="6" y1="28" x2="26" y2="28"/>
+<polyline points="9,4 9,7 16,16 9,25 9,28" stroke-width="2"/>
+<polyline points="23,4 23,7 16,16 23,25 23,28" stroke-width="2"/>
+<polygon points="11,25 21,25 16,19" fill="#ffffff" stroke="none"/>
+</svg>

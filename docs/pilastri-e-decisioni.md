@@ -80,7 +80,7 @@ Struttura simmetrica: **6 macro-ere × 2 epoche**. Il passaggio di macro-era sbl
   - *Fondare:* scegliere il sito, la decisione più importante della partita.
   - *Destinare il territorio:* campi, pascolo, bosco, riserva.
   - *Costruire:* granaio, recinto, luogo sacro, sentiero. Le capanne non si piazzano: crescono da sole vicino a campi, acqua e sentieri. Il giocatore orienta la crescita.
-  - *Usanze:* divisione del raccolto (in comune: più coesione; per famiglia: più prosperità e più disuguaglianza), accoglienza degli stranieri.
+  - *Politiche (le usanze):* divisione del raccolto (in comune: più coesione; per famiglia: più prosperità e più disuguaglianza), accoglienza degli stranieri. **Decisione di Fede (24/11/2026):** le usanze non sono oggetti da costruire ma politiche, regole che valgono finché non si cambiano; stanno in un pannello a parte, non tra i menù delle costruzioni, e da qui si comincia a introdurre questo genere di scelte.
 - **Simulare (ogni anno):** raccolto = suolo × campi × clima dell'anno × braccia; consumo e scorte; crescita o calo della popolazione; salute legata ad acqua e affollamento; legittimità degli anziani legata al cibo e al rispetto delle usanze.
 - **Conseguenze:** eventi locali (siccità, piena, scorrerie), presagi veri o falsi, variazione degli indicatori.
 - **Risorse:** cibo (scorte), legna, braccia, legittimità. Niente denaro: arriva in epoche successive.

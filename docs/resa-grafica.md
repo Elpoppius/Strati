@@ -33,6 +33,11 @@ Codice: `gioco/shader/terreno.gdshader`, `gioco/script/terreno.gd`.
 - **Boschi:** bordi irregolari e una volta di chiome dipinta, dalla copertura. Il margine legge la copertura in otto punti attorno e la muove con rumori a più scale, così non segue i gradini da 40 m. Da lontano le foglie si fondono in un tono medio con gruppi di alberi più chiari e più scuri presi da un rumore unico per la mappa (`rumore_bosco`): una texture ripetuta formava una trama regolare. È un segnaposto: **andranno posati alberi veri** (decisione di Fede).
 - **Texture:** generate da `strumenti/blender/texture_procedurali.py`.
 
+## Sentieri e guida dei campi
+Codice: `gioco/script/vista_villaggio.gd` (`_disegna_nastri`), `gioco/shader/sentiero.gdshader`, `gioco/shader/terreno.gdshader` (`griglia_campi`).
+- **Sentieri (24/11/2026, Fede: la versione a celle non convinceva):** nastro di 3,5 m posato 35 cm sopra il terreno lungo la linea vera del tracciato, campionato ogni 4 m e fatto serpeggiare di qualche metro con un'onda fissa per tratto. Terra battuta con grana, due solchi più scuri e bordi sfrangiati che sfumano nell'erba; la normale è sempre verso l'alto (con le facce rovesciate il nastro era illuminato da sotto e sembrava una riga nera). Sotto il nastro l'uso del suolo segna le celle come costruite (niente alberi) ma non le dipinge (`UsoSuolo.NON_DIPINTA`). Ai guadi dei torrenti il nastro si interrompe.
+- **Guida dei campi:** con lo strumento Campi lo shader del terreno disegna, solo dentro e attorno al cerchio, le linee dei quadrati da 40 m su cui ragiona la simulazione (`griglia_campi` = lato in metri, 0 spenta).
+
 ## Acqua
 Codice: in fondo a `gioco/shader/terreno.gdshader`. Dati: la distanza dalla riva, che `terreno.gd` converte in virgola mobile (in 8 bit faceva fasce a gradini).
 - **Rifinita il 23/11 sera** (parere di Fede: l'acqua stonava con gli alberi): colore di fiume di pianura, torbido verde-grigio, più scuro dove è fondo, fondale bruno vicino alla riva (prima era un azzurro saturo); riflesso del cielo più chiaro dove l'acqua è liscia; la riva lontana dalla camera, con i suoi alberi, si specchia scura nei metri d'acqua vicino a lei; increspature allungate che scorrono nel verso della corrente e scie chiare sottili; qualche scintillio del sole sulle creste. Nelle pozze l'acqua è ferma.

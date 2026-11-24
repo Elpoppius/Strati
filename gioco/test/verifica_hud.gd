@@ -54,7 +54,23 @@ func _process(_d: float) -> bool:
 	controlla(h._messaggio.text.contains("non si demoliscono"), "fiumi e paludi non si demoliscono: " + h._messaggio.text)
 	_s.punto_corrente = punto
 	# Menù logici e strumenti trasversali.
-	controlla(h._menu.has("insediamento") and h._menu.has("territorio") and h._menu.has("vie") and h._menu.has("edifici") and h._menu.has("usanze"), "menù logici: Insediamento, Territorio, Vie, Edifici, Usanze")
+	controlla(h._menu.has("insediamento") and h._menu.has("territorio") and h._menu.has("vie") and h._menu.has("edifici"), "menù logici: Insediamento, Territorio, Vie, Edifici")
+	# Le politiche non sono costruzioni: nessun menù Usanze, un pannello a parte.
+	controlla((h._righe_comandi["campi"] as Button).has_node("Icona") and (h._righe_azioni["politiche"] as Button).has_node("Icona"), "i tasti dei comandi hanno il loro pittogramma")
+	controlla(not h._menu.has("usanze") and not h._menu_di.has("comune"), "le politiche non stanno tra i menù delle costruzioni")
+	var sim: SimVillaggio = _s.partita.sim
+	controlla(not h.politiche_aperte(), "il pannello delle politiche parte chiuso")
+	(h._righe_azioni["politiche"] as Button).emit_signal("pressed")
+	controlla(h.politiche_aperte(), "il tasto Politiche apre il pannello")
+	controlla(h.politica("raccolto") == sim.politica("raccolto") and h.politica("stranieri") == sim.politica("stranieri"), "il pannello mostra le politiche in vigore")
+	(h._politiche["raccolto"]["opzioni"]["famiglie"] as Button).emit_signal("pressed")
+	controlla(sim.politica("raccolto") == "famiglie" and h.politica("raccolto") == "famiglie", "scegliere un'opzione nel pannello cambia la politica")
+	controlla(String((h._politiche["raccolto"]["nota"] as Label).text).contains("di più"), "sotto le opzioni c'è cosa comporta quella in vigore")
+	var ev := InputEventKey.new()
+	ev.keycode = KEY_P
+	ev.pressed = true
+	_s._unhandled_input(ev)
+	controlla(not h.politiche_aperte(), "il tasto P chiude il pannello")
 	controlla(not h._menu_di.has("demolisci") and h._righe_comandi.has("demolisci"), "Demolisci è uno strumento trasversale, fuori dai menù delle costruzioni")
 	h.seleziona_comando("sentiero")
 	controlla(h.menu_aperto() == "vie" and (h._menu["vie"]["pagina"] as Control).visible and not (h._menu["territorio"]["pagina"] as Control).visible, "scegliere uno strumento (anche da tastiera) apre il suo menù")

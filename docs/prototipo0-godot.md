@@ -18,10 +18,12 @@ Il prototipo ragionava a celle da 160 m. Qui:
 ## Regole (come nel prototipo, con le decisioni di Fede)
 - **Fondare:** si clicca dove fondare; la finestra mostra la valutazione del sito (acqua, fertilità attorno, rischio di piena, difesa, aria). Il cerchio dello strumento mostra fin dove arriveranno i campi.
 - **Abitato spontaneo** (decisione di Fede del 24/11: niente recinto per ora): le case nascono da sole vicino al centro e all'acqua, lontano dalle zone di piena finché la memoria del rischio è viva, mai su campi o sentieri. Il giocatore orienta la crescita con campi, sentieri e granaio.
-- **Campi:** un clic dissoda la terra libera dentro il cerchio; un clic su un campo abbandona i campi nel cerchio.
-- **Sentiero:** un clic prolunga la rete in linea retta dal punto più vicino (centro o sentiero); non attraversa il fiume né la palude.
+- **Campi:** un clic dissoda la terra libera dentro il cerchio; un clic su un campo abbandona i campi nel cerchio. Mentre lo strumento è attivo, dentro il cerchio si vedono i quadrati da 40 m della simulazione.
+- **Sentiero:** un clic prolunga la rete in linea retta dal punto più vicino (centro o sentiero); non attraversa il fiume né la palude. Si disegna come un nastro di terra battuta largo 3,5 m posato sul terreno, che serpeggia di qualche metro, con due solchi e bordi sfrangiati; si interrompe dove guada i torrenti (prima era fatto di celle di terra battuta e sembrava una fascia scura a gradini).
 - **Granaio:** 30 di cibo, vicino al centro; le scorte si conservano meglio.
-- **Usanza sul raccolto:** in comune (più legittimità) o per famiglia (più raccolto).
+- **Politiche** (decisione di Fede del 24/11: le usanze sono politiche, non costruzioni; pannello a parte, tasto P). Cambiarne una dopo la fondazione costa un po' di consenso.
+  - *Divisione del raccolto:* in comune (più legittimità) o alle famiglie (più raccolto).
+  - *Accoglienza degli stranieri* (proposta di Claude, numeri da tarare): in media ogni 40 anni arriva un gruppo di 6–18 persone. Aperta: restano sempre; chiusa: vengono mandati via (il villaggio resta unito, un po' di consenso in più); caso per caso (all'inizio): il tempo si ferma e si decide. Accolti: più braccia, tecniche nuove (campi più fertili dell'8% per 15 anni), qualche malattia (salute −3) e un po' di attrito. Gli arrivi usano un generatore a parte, così le altre vicende restano le stesse a parità di seme.
 - **Demolisci** (X, decisione di Fede): toglie nel cerchio alberi (legname), case, campi, sentieri e granaio; il focolare al centro resta. Sul lotto di una casa demolita non rinasce una casa per 20 anni (macerie): Fede ha approvato la regola e ha precisato che vale **solo per l'abitato spontaneo**; per gli edifici voluti dal giocatore (come il granaio) non c'è attesa. Fiumi e paludi non si demoliscono.
 - **Eventi e presagi:** piene dal rischio della mappa, siccità con presagio vero (le sorgenti calano), cometa come presagio falso, primo cattivo raccolto, affollamento (allargarsi o villaggio figlio), crisi di legittimità, abbandono (le rovine restano e si può rifondare), fine dopo 500 anni con il riepilogo.
 

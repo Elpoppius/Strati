@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="miter">
+<!-- Demolisci: una costruzione cancellata -->
+<rect x="8" y="8" width="16" height="16" stroke-width="1.6"/>
+<line x1="5" y1="5" x2="27" y2="27" stroke-width="3"/>
+<line x1="27" y1="5" x2="5" y2="27" stroke-width="3"/>
+</svg>

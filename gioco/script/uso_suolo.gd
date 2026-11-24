@@ -56,6 +56,9 @@ const NOMI_STATO := ["naturale", "libero", "coltivato", "costruito", "costruito"
 ## Bit di memoria: la cella era un bosco (resta anche quando il bosco ricresce o è sigillato).
 const MEMORIA_BOSCO := 0x80
 const MASCHERA_STATO := 0x0f
+## Bit: costruzione che non si dipinge sul terreno (la disegna un oggetto a parte, come i
+## sentieri): conta per gli alberi e per la ricrescita, ma lo shader non mette terra battuta.
+const NON_DIPINTA := 0x40
 
 const ANNI_ERBA := 6
 const ANNI_SEME := 15
@@ -168,20 +171,23 @@ static func invasiva(costruzione: String) -> bool:
 
 ## Costruisce sulle celle: se la costruzione è invasiva (per i suoi materiali) il suolo resta
 ## sigillato per sempre, altrimenti tornerà libero quando la costruzione sarà tolta.
-func costruisci(lista: Array[Vector2i], costruzione: String) -> int:
-	return edifica(lista, invasiva(costruzione))
+func costruisci(lista: Array[Vector2i], costruzione: String, dipinta := true) -> int:
+	return edifica(lista, invasiva(costruzione), dipinta)
 
 
 ## Edifica: con materiali invasivi la cella è sigillata per sempre; altrimenti è costruita ma
 ## può tornare libera. In entrambi i casi gli alberi spariscono e la memoria del bosco resta.
 ## Da fuori si usa costruisci(), che ricava l'invasività dai materiali.
-func edifica(lista: Array[Vector2i], invasivo: bool) -> int:
+func edifica(lista: Array[Vector2i], invasivo: bool, dipinta := true) -> int:
 	var tagliati := _conta_alberi_in_piedi(lista)
 	for c in lista:
 		var i := c.y * n + c.x
 		if celle[i] & MASCHERA_STATO == SIGILLATO:
 			continue
+		var era_dipinta := celle[i] & MASCHERA_STATO == COSTRUITO and celle[i] & NON_DIPINTA == 0
 		_imposta(c, SIGILLATO if invasivo else COSTRUITO, true)
+		if not dipinta and not era_dipinta:
+			celle[i] |= NON_DIPINTA
 	_aggiorna_immagine(lista)
 	return tagliati
 
@@ -305,6 +311,7 @@ func _imposta(c: Vector2i, nuovo: int, taglio: bool) -> void:
 	# Un bosco in ricrescita tagliato di nuovo ha già la memoria: riparte da zero anni.
 	celle[i] = nuovo | memoria
 	anni[i] = 0
+	# (NON_DIPINTA si azzera qui: lo rimette edifica() quando serve.)
 	if nuovo == LIBERO and memoria != 0:
 		_in_ricrescita[c] = true
 	else:
@@ -363,7 +370,7 @@ func _aggiorna_immagine(lista: Array[Vector2i]) -> void:
 				campo = 1.0
 			COSTRUITO:
 				bosco = 0.0
-				nuda = 1.0
+				nuda = 0.0 if v & NON_DIPINTA else 1.0
 			SIGILLATO:
 				bosco = 0.0
 				sigillo = 1.0

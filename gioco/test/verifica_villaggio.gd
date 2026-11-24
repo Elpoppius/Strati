@@ -78,6 +78,24 @@ func _initialize() -> void:
 	controlla(sentiero == "" and t.sentieri.size() == 30, "un sentiero di 1,2 km verso nord (%s)" % sentiero)
 	controlla(t.motivo_campo(c + Vector2i(5, -28)) == "", "il sentiero allunga il raggio dei campi")
 	controlla(t.motivo_granaio(t.mondo_di_px(c) + Vector2(60, 0)) == "" and t.motivo_granaio(t.mondo_di_px(c) + Vector2(900, 0)) != "", "il granaio va vicino al centro (con %d di cibo si può)" % roundi(t.cibo))
+	# Politiche: cambiarle costa consenso, gli stranieri seguono la regola in vigore.
+	controlla(t.politica("raccolto") == "comune" and t.politica("stranieri") == "caso", "politiche iniziali: raccolto in comune, stranieri caso per caso")
+	var b0 := t.bonus
+	controlla(t.imposta_politica("raccolto", "famiglie") and t.bonus < b0, "cambiare una politica costa un po' di consenso")
+	controlla(not t.imposta_politica("raccolto", "famiglie") and not t.imposta_politica("stranieri", "boh"), "valori uguali o sconosciuti non cambiano nulla")
+	var p0 := t.pop
+	t.imposta_politica("stranieri", "aperta")
+	t._arrivo_stranieri()
+	controlla(t.pop > p0 and t.anni_sapere > 0 and not t.in_attesa(), "accoglienza aperta: gli stranieri restano senza fermare il tempo")
+	p0 = t.pop
+	t.imposta_politica("stranieri", "chiusa")
+	t._arrivo_stranieri()
+	controlla(t.pop == p0 and not t.in_attesa(), "accoglienza chiusa: vengono mandati via")
+	t.imposta_politica("stranieri", "caso")
+	t._arrivo_stranieri()
+	controlla(t.in_attesa() and t.decisioni[0]["tipo"] == "stranieri", "caso per caso: il tempo si ferma e si decide")
+	t.scegli(t.decisioni[0]["id"], "accogliere")
+	controlla(t.pop > p0 and not t.in_attesa(), "accolti dopo la decisione")
 	# Partite intere.
 	var sopravvissuti := 0
 	for s in d.siti:

@@ -16,7 +16,9 @@ var uso: UsoSuolo
 var terreno: Terreno
 var _case := {}  # lotto -> nodo
 var _campi := {}  # indice del pixel -> true
-var _sentieri := {}
+var _celle_sentieri := {}
+var _firma_sentieri := ""
+var _nastri: MeshInstance3D
 var _granaio: Node3D
 var _granaio_pos := Vector2(-1, -1)
 var _focolare: Node3D
@@ -107,41 +109,106 @@ func _sincronizza_campi() -> void:
 	_campi = ora
 
 
+## Sentieri (rifatti il 24/11/2026: prima erano celle di terra battuta da 10 m, una fascia scura
+## e frastagliata che Fede ha bocciato). Ora ogni tratto è un nastro di terra largo 3 m posato
+## sul terreno lungo la sua linea vera; dove attraversa un torrente il nastro si interrompe (guado).
+## Sotto il nastro le celle contano come costruite (niente alberi), ma non si dipingono.
+const LARGHEZZA_SENTIERO := 3.5
+const PASSO_SENTIERO := 4.0
+
 func _sincronizza_sentieri() -> void:
-	var nuovi: Array[Vector2i] = []
-	var ora := {}
-	for k in sim.sentieri.size():
-		var i: int = sim.sentieri[k]
-		ora[i] = true
-		if _sentieri.has(i):
-			continue
-		# Striscia di terra battuta dal centro del pixel verso il vicino precedente.
-		var p := sim.px_di(i)
-		var da := p
-		for j in range(k - 1, -1, -1):
-			if SimVillaggio.cheb(sim.px_di(sim.sentieri[j]), p) == 1:
-				da = sim.px_di(sim.sentieri[j])
-				break
-		if da == p and SimVillaggio.cheb(p, sim.centro) <= 1:
-			da = sim.centro
-		var a := sim.mondo_di_px(da)
-		var b := sim.mondo_di_px(p)
-		# Celle contigue anche in diagonale: senza le vicine il sentiero sembrava tratteggiato.
-		for t in 17:
-			var q := a.lerp(b, t / 16.0)
-			nuovi.append(uso.cella(q.x, q.y))
-			nuovi.append(uso.cella(q.x + 4.0, q.y))
-			nuovi.append(uso.cella(q.x, q.y + 4.0))
-	if not nuovi.is_empty():
-		uso.costruisci(nuovi, "sentiero")
+	var firma := "%d|%d" % [sim.sentieri.size(), sim.tratti_sentiero.size()]
+	if firma == _firma_sentieri:
+		return
+	_firma_sentieri = firma
+	var presenti := {}
+	for i in sim.sentieri:
+		presenti[i] = true
+	var celle_ora := {}
+	var pezzi: Array = []  # liste di punti (Vector2) consecutivi da disegnare
+	for t in sim.tratti_sentiero:
+		var a := sim.mondo_di_px(t[0])
+		var b := sim.mondo_di_px(t[1])
+		var passi := maxi(1, ceili(a.distance_to(b) / PASSO_SENTIERO))
+		var pezzo: Array[Vector2] = []
+		# Un sentiero battuto a piedi non è mai dritto: lo si fa serpeggiare di qualche metro con
+		# un'onda fissa per ogni tratto (stesso disegno a ogni avvio), nulla agli estremi.
+		var normale := (b - a).normalized().orthogonal()
+		var fase := float(hash(t) % 1000) * 0.0063
+		for k in passi + 1:
+			var f := float(k) / passi
+			var s_m := f * a.distance_to(b)
+			var onda := sin(PI * f) * (4.0 * sin(s_m / 41.0 + fase) + 1.5 * sin(s_m / 13.0 + fase * 2.7))
+			var q := a.lerp(b, f) + normale * onda
+			var pxq := sim.px_da_mondo(q.x, q.y)
+			# Il pixel del punto o uno vicino è sentiero: la linea dritta e i pixel a scalini non
+			# coincidono sempre, e senza questa tolleranza il nastro veniva tratteggiato.
+			var su_sentiero := SimVillaggio.cheb(pxq, sim.centro) <= 1
+			for oy in [-1, 0, 1]:
+				for ox in [-1, 0, 1]:
+					if presenti.has(sim.px(pxq + Vector2i(ox, oy))):
+						su_sentiero = true
+			var buono := su_sentiero and uso.alberi.distanza_acqua(q.x, q.y) > 1.0
+			if buono:
+				pezzo.append(q)
+				celle_ora[uso.cella(q.x, q.y)] = true
+			elif pezzo.size() > 1:
+				pezzi.append(pezzo)
+				pezzo = []
+			else:
+				pezzo = []
+		if pezzo.size() > 1:
+			pezzi.append(pezzo)
+	var nuove: Array[Vector2i] = []
+	for c in celle_ora:
+		if not _celle_sentieri.has(c):
+			nuove.append(c)
+	if not nuove.is_empty():
+		uso.costruisci(nuove, "sentiero", false)
 	var tolte: Array[Vector2i] = []
-	for i in _sentieri.keys():
-		if not ora.has(i):
-			var c := sim.mondo_di_px(sim.px_di(i))
-			tolte.append(uso.cella(c.x, c.y))
+	for c in _celle_sentieri:
+		if not celle_ora.has(c):
+			tolte.append(c)
 	if not tolte.is_empty():
 		uso.libera(tolte)
-	_sentieri = ora
+	_celle_sentieri = celle_ora
+	_disegna_nastri(pezzi)
+
+
+func _disegna_nastri(pezzi: Array) -> void:
+	if _nastri:
+		_nastri.queue_free()
+		_nastri = null
+	if pezzi.is_empty():
+		return
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for pezzo in pezzi:
+		var lungo := 0.0
+		for k in pezzo.size() - 1:
+			var a: Vector2 = pezzo[k]
+			var b: Vector2 = pezzo[k + 1]
+			var d := (b - a).normalized()
+			var lato := Vector2(-d.y, d.x) * LARGHEZZA_SENTIERO * 0.5
+			var l2 := lungo + a.distance_to(b)
+			var punti := [a - lato, a + lato, b + lato, b - lato]
+			var uv := [Vector2(0, lungo / 3.0), Vector2(1, lungo / 3.0), Vector2(1, l2 / 3.0), Vector2(0, l2 / 3.0)]
+			var v3 := []
+			for p in punti:
+				v3.append(Vector3(p.x, terreno.quota_mondo(p.x, p.y) + 0.35, p.y))
+			for idx in [0, 1, 2, 0, 2, 3]:
+				st.set_normal(Vector3.UP)
+				st.set_uv(uv[idx])
+				st.add_vertex(v3[idx])
+			lungo = l2
+	_nastri = MeshInstance3D.new()
+	_nastri.mesh = st.commit()
+	_nastri.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var m := ShaderMaterial.new()
+	m.shader = load("res://shader/sentiero.gdshader")
+	m.set_shader_parameter("macchie", load("res://asset/texture/macchie.png"))
+	_nastri.material_override = m
+	add_child(_nastri)
 
 
 func _sincronizza_case() -> void:

@@ -24,6 +24,8 @@ signal isoipse_cambiate(attive: bool)
 signal comando_scelto(id: String)
 ## Azione immediata (un pulsante che non resta selezionato).
 signal azione(id: String)
+## Il giocatore ha cambiato una politica nel pannello delle politiche.
+signal politica_scelta(id: String, valore: String)
 
 const NERO := Color("1b1b1b")
 const BIANCO := Color("f4f4f0")
@@ -39,6 +41,8 @@ const ALTEZZA_FASCIA := 196
 const LARGHEZZA_MAPPE := 232
 const LATO_MINIMAPPA := 150
 const LATO_TASTO := 58
+const LATO_ICONA := 28
+const ICONE := "res://asset/icone/%s.svg"
 const NOMI_BREVI_MAPPE := ["Terreno", "Acqua", "Fertilità", "Piena", "Energia"]
 
 ## Colori delle mappe tematiche, ognuno con il suo significato (come le linee della metro).
@@ -94,6 +98,10 @@ var _nomi_mappe: Array = []
 var _testi := {}
 var minimappa: Minimappa
 var _pannello_legenda: PanelContainer
+var _pannello_politiche: PanelContainer
+var _colonna_politiche: VBoxContainer
+## id politica -> {"opzioni": {valore: Button}, "nota": Label, "note": {valore: testo}}
+var _politiche := {}
 ## Spazio al centro della barra in alto, per gli indicatori del gioco.
 var indicatori: VBoxContainer
 
@@ -115,6 +123,7 @@ func costruisci(nome_mappa: String, nomi_mappe: Array) -> void:
 	_cronaca_alta(radice)
 	_fascia_bassa(radice, nomi_mappe)
 	_crea_avviso(radice)
+	_crea_politiche(radice)
 	seleziona_modo(0)
 
 
@@ -414,8 +423,8 @@ func menu_aperto() -> String:
 
 
 ## Strumenti trasversali (valgono su tutto, non sono costruzioni): gruppo a destra dei menù.
-func aggiungi_trasversali(titolo: String, voci: Array, in_testa := false) -> void:
-	aggiungi_comandi(titolo, voci, in_testa)
+func aggiungi_trasversali(titolo: String, voci: Array, in_testa := false, posizione := -1) -> void:
+	aggiungi_comandi(titolo, voci, in_testa, posizione)
 
 
 func _aggiungi_voce(griglia: Control, v: Dictionary) -> void:
@@ -432,12 +441,14 @@ func _aggiungi_voce(griglia: Control, v: Dictionary) -> void:
 		_righe_azioni[id] = b
 
 
-func aggiungi_comandi(titolo: String, voci: Array, in_testa := false) -> void:
+func aggiungi_comandi(titolo: String, voci: Array, in_testa := false, posizione := -1) -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 6)
 	_gruppi.add_child(col)
 	if in_testa:
 		_gruppi.move_child(col, 0)
+	elif posizione >= 0:
+		_gruppi.move_child(col, mini(posizione, _gruppi.get_child_count() - 1))
 	var l := Label.new()
 	l.text = titolo.to_upper()
 	l.add_theme_font_override("font", _carattere(true, 1.6))
@@ -495,6 +506,28 @@ func _tasto(padre: Control, v: Dictionary) -> Button:
 	tasto.add_theme_font_size_override("font_size", 20)
 	tasto.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	b.add_child(tasto)
+	# Pittogramma (gioco/asset/icone, bianco su trasparente): al centro, con la lettera del tasto
+	# piccola nell'angolo. Si tinge di nero quando il tasto è scelto, come i testi.
+	var icona: TextureRect = null
+	if String(v.get("icona", "")) != "":
+		var tex := load(ICONE % v["icona"]) as Texture2D
+		if tex:
+			icona = TextureRect.new()
+			icona.texture = tex
+			icona.name = "Icona"
+			icona.position = Vector2((LATO_TASTO - LATO_ICONA) / 2.0, 6)
+			icona.size = Vector2(LATO_ICONA, LATO_ICONA)
+			icona.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icona.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icona.modulate = BIANCO
+			icona.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			b.add_child(icona)
+			tasto.position = Vector2(4, 1)
+			tasto.add_theme_font_size_override("font_size", 10)
+			tasto.add_theme_color_override("font_color", GRIGIO)
+			nome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			nome.position = Vector2(2, LATO_TASTO - 19)
+			nome.size = Vector2(LATO_TASTO - 4, 16)
 	if v.get("pericolo", false):
 		var segno := ColorRect.new()
 		segno.color = PERICOLO
@@ -502,10 +535,8 @@ func _tasto(padre: Control, v: Dictionary) -> Button:
 		segno.size = Vector2(8, 8)
 		segno.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		b.add_child(segno)
-	# Testi neri quando il tasto è scelto (inversione).
-	b.toggled.connect(func(on: bool) -> void:
-		for c in [nome, tasto]:
-			c.add_theme_color_override("font_color", NERO if on else BIANCO))
+	# Testi e icona neri quando il tasto è scelto (inversione).
+	b.toggled.connect(func(on: bool) -> void: _inverti(b, on))
 	return b
 
 
@@ -523,9 +554,20 @@ func seleziona_comando(id: String) -> void:
 ## Stato di un tasto senza emettere il segnale, con i testi interni in nero se scelto.
 func _premi(b: Button, on: bool) -> void:
 	b.set_pressed_no_signal(on)
+	_inverti(b, on)
+
+
+## Inversione di un tasto scelto: testi e icona neri sul fondo bianco. La lettera del tasto,
+## quando c'è l'icona, resta grigia (è un'indicazione secondaria).
+func _inverti(b: Button, on: bool) -> void:
+	on = on and not b.disabled  # un tasto spento non si inverte (testi neri sul fondo scuro)
+	var con_icona := b.has_node("Icona")
 	for c in b.get_children():
-		if c is Label:
-			(c as Label).add_theme_color_override("font_color", NERO if on else BIANCO)
+		if c is TextureRect:
+			(c as TextureRect).modulate = NERO if on else BIANCO
+		elif c is Label:
+			var secondaria := con_icona and (c as Label).position.y < 10
+			(c as Label).add_theme_color_override("font_color", (NERO if on else GRIGIO) if secondaria else (NERO if on else BIANCO))
 
 
 func comando() -> String:
@@ -545,6 +587,7 @@ func abilita(id: String, attivo: bool) -> void:
 	if r:
 		r.disabled = not attivo
 		r.modulate.a = 1.0 if attivo else 0.4
+		_inverti(r, r.button_pressed)
 
 
 func cambia_testo(id: String, testo: String, breve := "") -> void:
@@ -622,6 +665,132 @@ func _crea_avviso(radice: Control) -> void:
 	riga.add_child(segno)
 	_testo_avviso = Label.new()
 	riga.add_child(_testo_avviso)
+
+
+# ---------- politiche ----------
+# Le politiche non sono costruzioni (decisione di Fede del 24/11/2026): sono regole che valgono
+# finché non si cambiano. Stanno in un pannello a parte, sopra la fascia dei comandi, che si
+# apre con il tasto Politiche (P) e non ferma il tempo.
+
+func _crea_politiche(radice: Control) -> void:
+	_pannello_politiche = PanelContainer.new()
+	_pannello_politiche.anchor_top = 1.0
+	_pannello_politiche.anchor_bottom = 1.0
+	_pannello_politiche.offset_left = 190 + 2
+	_pannello_politiche.offset_bottom = -ALTEZZA_FASCIA - 2
+	_pannello_politiche.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_pannello_politiche.custom_minimum_size.x = 520
+	_pannello_politiche.visible = false
+	radice.add_child(_pannello_politiche)
+	_colonna_politiche = VBoxContainer.new()
+	_colonna_politiche.add_theme_constant_override("separation", 10)
+	_pannello_politiche.add_child(_colonna_politiche)
+	var testa := HBoxContainer.new()
+	_colonna_politiche.add_child(testa)
+	var k := Label.new()
+	k.text = "POLITICHE"
+	k.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	k.add_theme_font_override("font", _carattere(true, 1.6))
+	k.add_theme_font_size_override("font_size", 11)
+	k.add_theme_color_override("font_color", GRIGIO)
+	testa.add_child(k)
+	var chiudi := Button.new()
+	chiudi.text = "Chiudi (P)"
+	chiudi.focus_mode = Control.FOCUS_NONE
+	chiudi.add_theme_font_size_override("font_size", 11)
+	chiudi.pressed.connect(func() -> void: apri_politiche(false))
+	testa.add_child(chiudi)
+	var t := Label.new()
+	t.text = "Le regole del villaggio"
+	t.add_theme_font_override("font", _carattere(true))
+	t.add_theme_font_size_override("font_size", 18)
+	_colonna_politiche.add_child(t)
+	var nota := Label.new()
+	nota.text = "Valgono finché non si cambiano. Cambiarle costa un po' di consenso: le abitudini pesano."
+	nota.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	nota.custom_minimum_size.x = 488
+	nota.add_theme_font_size_override("font_size", 12)
+	nota.add_theme_color_override("font_color", GRIGIO)
+	_colonna_politiche.add_child(nota)
+
+
+## Aggiunge le politiche al pannello. voci: {id, titolo, descrizione, opzioni: [{id, testo, nota}]}.
+func aggiungi_politiche(voci: Array) -> void:
+	for v in voci:
+		var riga := ColorRect.new()
+		riga.color = RIGA
+		riga.custom_minimum_size.y = 1
+		_colonna_politiche.add_child(riga)
+		var col := VBoxContainer.new()
+		col.add_theme_constant_override("separation", 6)
+		_colonna_politiche.add_child(col)
+		var t := Label.new()
+		t.text = v["titolo"]
+		t.add_theme_font_override("font", _carattere(true))
+		t.add_theme_font_size_override("font_size", 14)
+		col.add_child(t)
+		if String(v.get("descrizione", "")) != "":
+			var d := Label.new()
+			d.text = v["descrizione"]
+			d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			d.custom_minimum_size.x = 488
+			d.add_theme_font_size_override("font_size", 12)
+			d.add_theme_color_override("font_color", GRIGIO)
+			col.add_child(d)
+		var scelte := HBoxContainer.new()
+		scelte.add_theme_constant_override("separation", 4)
+		col.add_child(scelte)
+		var id: String = v["id"]
+		var voce := {"opzioni": {}, "note": {}}
+		for o in v["opzioni"]:
+			var b := Button.new()
+			b.text = o["testo"]
+			b.toggle_mode = true
+			b.focus_mode = Control.FOCUS_NONE
+			b.custom_minimum_size = Vector2(0, 30)
+			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var valore: String = o["id"]
+			b.pressed.connect(func() -> void:
+				imposta_politica(id, valore)
+				politica_scelta.emit(id, valore))
+			scelte.add_child(b)
+			voce["opzioni"][valore] = b
+			voce["note"][valore] = String(o.get("nota", ""))
+		var effetto := Label.new()
+		effetto.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		effetto.custom_minimum_size.x = 488
+		effetto.add_theme_font_size_override("font_size", 12)
+		col.add_child(effetto)
+		voce["nota"] = effetto
+		_politiche[id] = voce
+
+
+## Mostra quale valore di una politica è in vigore (inversione) e cosa comporta.
+func imposta_politica(id: String, valore: String) -> void:
+	if not _politiche.has(id):
+		return
+	var voce: Dictionary = _politiche[id]
+	for k in voce["opzioni"]:
+		(voce["opzioni"][k] as Button).set_pressed_no_signal(k == valore)
+	(voce["nota"] as Label).text = voce["note"].get(valore, "")
+
+
+func politica(id: String) -> String:
+	if not _politiche.has(id):
+		return ""
+	for k in _politiche[id]["opzioni"]:
+		if (_politiche[id]["opzioni"][k] as Button).button_pressed:
+			return k
+	return ""
+
+
+func apri_politiche(aperto: bool) -> void:
+	_pannello_politiche.visible = aperto
+	segna("politiche", aperto)
+
+
+func politiche_aperte() -> bool:
+	return _pannello_politiche.visible
 
 
 func modale_aperta() -> bool:

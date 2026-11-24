@@ -37,10 +37,29 @@ var cibo := 0.0
 var salute := 70.0
 var legittimita := 60.0
 var bonus := 0.0
-var usanza := "comune"
+## Politiche del villaggio (non costruzioni: regole che valgono finché non si cambiano; decisione
+## di Fede del 24/11/2026). Cambiarne una costa un po' di consenso: le abitudini pesano.
+## raccolto: "comune" (più consenso) o "famiglie" (più raccolto).
+## stranieri (proposta di Claude): "aperta" (si accolgono sempre), "chiusa" (si respingono sempre),
+## "caso" (ogni arrivo ferma il tempo e si decide).
+var politiche := {"raccolto": "comune", "stranieri": "caso"}
+const POLITICHE := {
+	"raccolto": ["comune", "famiglie"],
+	"stranieri": ["aperta", "caso", "chiusa"],
+}
+## Gli stranieri arrivano con un generatore a parte, così le altre vicende della partita restano
+## quelle di prima a parità di seme.
+var rng_stranieri := RandomNumberGenerator.new()
+## Anni in cui le tecniche portate dagli stranieri accolti rendono di più i campi.
+var anni_sapere := 0
+var stranieri_accolti := 0
+var _gruppo_stranieri := 0
 var granaio := Vector2(-1, -1)  # punto nel mondo (metri)
 var campi: Array[int] = []  # indici dei pixel
 var sentieri: Array[int] = []
+## Tratti di sentiero come segmenti dritti tra due pixel (per disegnarli lungo la linea vera,
+## non a scalini): [Vector2i da, Vector2i a]. Un pixel di sentiero demolito toglie il pezzo.
+var tratti_sentiero: Array = []
 var case: Array[Vector2i] = []  # lotti da 20 m
 var rovine: Array[Vector2] = []  # punti nel mondo
 ## Lotti delle case demolite: per qualche anno non vi rinasce una casa (lotto -> anni rimasti).
@@ -81,6 +100,7 @@ func _init(d: MappaDati, seme: int = 1) -> void:
 	dati = d
 	n = d.lato
 	rng.seed = seme
+	rng_stranieri.seed = seme + 7919
 	bosco_presente = func(i: int) -> bool: return dati.copertura[i] > 127
 	_calcola_distanza_palude()
 
@@ -344,6 +364,7 @@ func traccia_sentiero(p: Vector2i) -> String:
 	if sentieri.size() + tratto.size() > MAX_SENTIERO:
 		return "Per ora i sentieri sono lunghi al massimo %d km." % (MAX_SENTIERO * dati.metri_per_px / 1000.0)
 	sentieri.append_array(tratto)
+	tratti_sentiero.append([partenza, p])
 	# Le case sul nuovo sentiero si spostano.
 	var prima := case.size()
 	case = case.filter(func(c: Vector2i) -> bool: return not tratto.has(px(px_da_mondo(centro_lotto(c).x, centro_lotto(c).y))))
@@ -413,12 +434,58 @@ func demolisci(punto: Vector2, raggio: float) -> Dictionary:
 	return esito
 
 
-func imposta_usanza(u: String) -> void:
-	if not fondato or usanza == u:
-		return
-	usanza = u
+func politica(id: String) -> String:
+	return politiche.get(id, "")
+
+
+## Cambia una politica. Prima della fondazione si sceglie gratis (non c'è ancora un'abitudine).
+func imposta_politica(id: String, valore: String) -> bool:
+	if not POLITICHE.has(id) or not valore in POLITICHE[id] or politiche[id] == valore:
+		return false
+	politiche[id] = valore
+	if not fondato:
+		return true
 	bonus -= 4.0
-	_scrivi("Il raccolto torna a essere diviso in comune." if u == "comune" else "Ogni famiglia tiene il proprio raccolto.")
+	match id + ":" + valore:
+		"raccolto:comune":
+			_scrivi("Il raccolto torna a essere diviso in comune.")
+		"raccolto:famiglie":
+			_scrivi("Ogni famiglia tiene il proprio raccolto.")
+		"stranieri:aperta":
+			_scrivi("Gli anziani decidono: chi arriva in pace è accolto.")
+		"stranieri:chiusa":
+			_scrivi("Gli anziani decidono: gli stranieri non restano.")
+		"stranieri:caso":
+			_scrivi("Gli anziani decideranno ogni volta chi accogliere.")
+	return true
+
+
+## Un gruppo di stranieri chiede di fermarsi (proposta di Claude, numeri da tarare).
+## Accolti: più braccia e tecniche nuove (campi più fertili per 15 anni), ma malattie nuove e
+## un po' di attrito. Respinti: nulla cambia, il villaggio resta unito.
+func _arrivo_stranieri() -> void:
+	var n_persone := 6 + rng_stranieri.randi() % 13
+	match politica("stranieri"):
+		"aperta":
+			_accogli(n_persone)
+		"chiusa":
+			bonus += 1.0
+			_scrivi("Un gruppo di %d stranieri chiede di fermarsi: viene mandato via." % n_persone)
+		_:
+			_gruppo_stranieri = n_persone
+			_decidi("stranieri", "Arrivano degli stranieri",
+				"Un gruppo di %d persone arriva dalla valle con i suoi animali e chiede di fermarsi. Coltivano in un modo che qui non si conosce." % n_persone,
+				[{"id": "accogliere", "testo": "Accoglierli", "nota": "Più braccia e tecniche nuove per i campi; qualche malattia nuova e un po' di attrito."},
+				 {"id": "respingere", "testo": "Mandarli via", "nota": "Nulla cambia. Il villaggio resta unito."}])
+
+
+func _accogli(n_persone: int) -> void:
+	pop += n_persone
+	salute -= 3.0
+	bonus -= 1.5
+	anni_sapere = 15
+	stranieri_accolti += n_persone
+	_scrivi("%d stranieri si fermano al villaggio e portano nuovi modi di coltivare." % n_persone, "buono")
 
 
 ## Risolve una decisione in attesa con l'opzione scelta.
@@ -467,6 +534,13 @@ func _applica_scelta(tipo: String, o: String) -> void:
 				cibo += guadagno
 				salute -= 3.0
 				_scrivi("La caccia porta %d unità di cibo." % roundi(guadagno))
+		"stranieri":
+			if o == "accogliere":
+				_accogli(_gruppo_stranieri)
+			else:
+				bonus += 1.0
+				_scrivi("Gli stranieri vengono mandati via.")
+			_gruppo_stranieri = 0
 		"affollamento":
 			if o == "allargarsi":
 				raggio_extra += 2
@@ -526,6 +600,11 @@ func passo() -> void:
 				bonus -= 3.0
 				_scrivi("Nessuna carestia dopo la cometa: il digiuno è stato inutile.")
 			cometa = {}
+	# Stranieri: in media un gruppo ogni 40 anni, dopo i primi anni del villaggio.
+	if anno > ANNO_INIZIO + 10 and not in_attesa() and rng_stranieri.randf() < 0.025:
+		_arrivo_stranieri()
+	if anni_sapere > 0:
+		anni_sapere -= 1
 	# Raccolto: le braccia lavorano prima i campi più fertili.
 	var braccia := pop * 0.55
 	var lavorabili := int(braccia / 3.0 * AREA_CELLA)
@@ -574,7 +653,7 @@ func passo() -> void:
 	if salute < 35.0:
 		pop *= 0.97
 	# Legittimità degli anziani.
-	var lt := 55.0 + (10.0 if cibo > pop * 0.5 else -6.0) + (8.0 if usanza == "comune" else -4.0)
+	var lt := 55.0 + (10.0 if cibo > pop * 0.5 else -6.0) + (8.0 if politica("raccolto") == "comune" else -4.0)
 	legittimita += (clampf(lt, 0.0, 100.0) - legittimita) * 0.1 + bonus * 0.4
 	bonus *= 0.6
 	if absf(bonus) < 0.2:
@@ -622,7 +701,8 @@ func _resa(i: int) -> float:
 		fattore = 0.35 + 0.6 * acqua_affidabile(i)
 	else:
 		fattore = clima * (0.85 + 0.15 * acqua_qualsiasi(i))
-	return 12.0 * fert(i) * fattore * (1.12 if usanza == "famiglie" else 1.0) / AREA_CELLA
+	return 12.0 * fert(i) * fattore * (1.12 if politica("raccolto") == "famiglie" else 1.0) \
+		* (1.08 if anni_sapere > 0 else 1.0) / AREA_CELLA
 
 
 func _piena() -> void:
@@ -768,6 +848,7 @@ func _abbandona() -> void:
 	case = []
 	campi = []
 	sentieri = []
+	tratti_sentiero = []
 	granaio = Vector2(-1, -1)
 	pop = 0.0
 	cibo = 0.0

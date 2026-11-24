@@ -170,7 +170,7 @@ func _crea_interfaccia() -> void:
 	# villaggio. Tagliare si fa con Demolisci (nella partita). L'invasività delle costruzioni non
 	# è uno strumento: è una qualità nascosta dei loro materiali (chiarimento di Fede, vedi UsoSuolo).
 	hud.aggiungi_trasversali("Prova", [
-		{"id": "anni", "testo": "Avanti di 10 anni (solo per prova: fa ricrescere il bosco anche senza villaggio)", "breve": "+10 anni", "tasto": "Y", "strumento": false},
+		{"id": "anni", "icona": "anni", "testo": "Avanti di 10 anni (solo per prova: fa ricrescere il bosco anche senza villaggio)", "breve": "+10 anni", "tasto": "Y", "strumento": false},
 	])
 	hud.comando_scelto.connect(func(_id: String) -> void: _aggiorna_pennello())
 	hud.azione.connect(_azione)
@@ -261,9 +261,14 @@ func _unhandled_input(ev: InputEvent) -> void:
 				var id: String = {KEY_X: "demolisci", KEY_F: "fonda", KEY_C: "campi", KEY_V: "sentiero", KEY_H: "granaio"}[(ev as InputEventKey).keycode]
 				hud.seleziona_comando("" if hud.comando() == id else id)
 				_aggiorna_pennello()
+			KEY_P:
+				hud.apri_politiche(not hud.politiche_aperte())
 			KEY_ESCAPE:
-				hud.seleziona_comando("")
-				_aggiorna_pennello()
+				if hud.politiche_aperte():
+					hud.apri_politiche(false)
+				else:
+					hud.seleziona_comando("")
+					_aggiorna_pennello()
 			KEY_Y:
 				_azione("anni")
 			KEY_SPACE:
@@ -305,6 +310,7 @@ func _aggiorna_pennello() -> void:
 		return
 	if hud.comando() == "" or punto_corrente == null:
 		terreno.materiale.set_shader_parameter("pennello", Vector3(0, 0, -1))
+		terreno.materiale.set_shader_parameter("griglia_campi", 0.0)
 		return
 	var p: Vector3 = punto_corrente
 	var r := raggio_pennello
@@ -313,6 +319,9 @@ func _aggiorna_pennello() -> void:
 		if hud.comando() == "fonda" and partita.sim.fondato:
 			r = -1.0
 	terreno.materiale.set_shader_parameter("pennello", Vector3(p.x, p.z, r))
+	# Quadrati della simulazione solo mentre si pongono o si tolgono campi.
+	var lato: float = dati.metri_per_px if hud.comando() == "campi" else 0.0
+	terreno.materiale.set_shader_parameter("griglia_campi", lato)
 	terreno.materiale.set_shader_parameter("colore_pennello", Hud.PERICOLO if hud.comando() == "demolisci" else Hud.BIANCO)
 
 
