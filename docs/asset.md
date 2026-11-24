@@ -91,7 +91,7 @@ Nel gioco ogni albero è scalato tra 0,95 e 1,35 (bosco maturo) e ruotato a caso
 
 ### Da fare
 - **Da verificare nella terza versione:** ombre e prestazioni sui PC di Fede; carte viste di taglio che a volte si vedono come strisce ai bordi delle chiome; la casa lunga e le capanne viste a 35 m (le texture di paglia e argilla sono nate per viste più lontane).
-- **Villaggio:** completare il lotto nello stile scelto (case lunghe piccola e grande, palizzata e varco, luogo sacro, canneto, rocce, arbusti, fosse-silos, focolare, recinto per animali) e varianti per evitare ripetizioni.
+- **Villaggio:** lotto completato il 24/11/2026 (vedi sotto). Restano le varianti per evitare ripetizioni quando il villaggio crescerà da solo.
 - **Terreno:** texture distinte per campo coltivato, bosco, palude, roccia; alberi veri al posto della volta di chiome dipinta sul terreno, che da circa 150 m mostra ancora una trama ripetuta.
 - **Abitato protourbano:** terrapieno e fossato modulari, villaggio arginato ispirato alle terramare dell'età del Bronzo, tipiche della pianura emiliana.
 
@@ -101,4 +101,23 @@ Le texture di paglia e argilla erano rumori sfumati: da vicino la paglia sembrav
 - **Argilla:** impasto con chiazze più chiare dove è asciutto, stesure a mano a pennellate curve, paglia tritata nell'impasto, crepe da ritiro sottili e solo a tratti, tracce dell'incannicciato sotto.
 - **Tetti conici:** nuove coordinate di texture (`proiezione_conica` in `prova_stile_verosimile.py`): i corsi sono anelli concentrici attorno all'apice. Con la proiezione per facce facevano zig-zag da una faccia all'altra.
 Immagine a 18 m di vista: `docs/immagini/paglia-argilla-24-11.jpg`.
+
+## Lotto del villaggio (24/11/2026, Fede: procedi)
+Script `strumenti/blender/villaggio.py` → `gioco/asset/villaggio/`, nello stile verosimile della prova (stessi materiali e forme, occlusione cotta). Comando: `blender-py strumenti/blender/villaggio.py gioco/asset/villaggio`, poi `godot --headless --path gioco --import` e, nei nuovi `.import` delle texture, `detect_3d/compress_to=0`.
+
+| Modello | Misure (m) | Facce | Note |
+|---|---|---|---|
+| casa_lunga_piccola, _media, _grande | 10,8 / 13,8 / 19,9 di lunghezza | | tetto a padiglione di paglia, muri d'argilla, pali a vista |
+| capanna_tonda, capanna_tonda_piccola | 7,5 / 6,2 di diametro | | tetto conico a corsi concentrici |
+| granaio_su_pali | 3,9 × 3,8 × 5,5 | | cappelli contro i roditori |
+| palizzata_tratto | 4,0 × 0,5 × 3,0 | | pali appuntiti con due traverse; si posa in fila |
+| palizzata_varco | 5,1 × 0,4 × 3,4 | | stipiti e architrave, mezzo tratto per parte |
+| luogo_sacro | 8,7 × 8,6 × 3,0 | | cerchio di nove pali attorno a una pietra eretta (proposta di Claude) |
+| focolare | 2,0 × 1,9 × 0,4 | | anello di sassi, cenere, ciocchi |
+| fossa_silo | 2,4 × 2,0 × 0,4 | | cupola d'argilla chiusa da una lastra |
+| recinto_animali | 9,7 × 10,2 × 1,6 | 844 | graticcio di vimini intrecciati, con un'apertura |
+| catasta_legna | 2,4 × 1,3 × 0,9 | 81 | |
+| roccia_1, _2, _3 | da 1,0 a 2,4 | 80 | |
+
+Foto di controllo: `gioco/test/foto_villaggio.gd` compone a mano un villaggio sul terrazzo centrale (palizzata, case, luogo sacro, recinto, campi e terra battuta con l'uso del suolo). Immagine: `docs/immagini/villaggio-24-11.jpg`. È solo una prova degli asset: nel gioco il villaggio crescerà da sé (abitato spontaneo, decisione di Fede del 24/11).
 

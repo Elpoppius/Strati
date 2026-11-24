@@ -2,7 +2,7 @@ extends SceneTree
 ## Verifica gli asset 3D: si caricano, poggiano sul suolo (base a quota 0) e hanno misure plausibili.
 ## Uso: godot --headless --path gioco -s res://test/verifica_asset.gd
 
-const CARTELLE := ["res://asset/prove_stile"]
+const CARTELLE := ["res://asset/prove_stile", "res://asset/villaggio"]
 const ALTEZZA_MAX := 20.0
 const LATO_MAX := 25.0
 
@@ -29,7 +29,7 @@ func _initialize() -> void:
 			var box := _aabb(nodo)
 			nodo.free()
 			# La base sta a quota 0; alberi e pali possono affondare fino a 30 cm, per non restare sospesi sui pendii.
-			var ok := box.position.y > -0.3 and box.position.y < 0.05 and box.size.y < ALTEZZA_MAX and box.size.x < LATO_MAX and box.size.z < LATO_MAX and box.size.y > 0.5
+			var ok := box.position.y > -0.3 and box.position.y < 0.05 and box.size.y < ALTEZZA_MAX and box.size.x < LATO_MAX and box.size.z < LATO_MAX and box.size.y > 0.3
 			controlla(ok, "%s: %.1f x %.1f x %.1f m, base a quota %.2f" % [file.get_basename(), box.size.x, box.size.z, box.size.y, box.position.y])
 	controlla(totale > 0, "trovati %d asset" % totale)
 	print("Verifica completata: %s" % ("nessun errore" if _errori == 0 else "%d errori" % _errori))

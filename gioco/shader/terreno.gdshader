@@ -162,9 +162,12 @@ void fragment() {
 	// alle costruzioni, campi con i solchi, superfici sigillate (cemento, asfalto, fondamenta).
 	if (uso.g + uso.b + uso.a > 0.002) {
 		float grana = mix(m_fine, 0.5, lontano);
+		// Bordi netti ma irregolari: la texture è a 10 m e, filtrata, faceva aloni sfumati.
+		float frangia = (m_fine - 0.5) * 0.25 + (m_vicina - 0.5) * 0.15;
+		uso.gba = smoothstep(vec3(0.35), vec3(0.65), uso.gba + frangia) * step(vec3(0.002), uso.gba);
 		vec3 terra_nuda = mix(vec3(0.15, 0.115, 0.075), vec3(0.22, 0.17, 0.11), smoothstep(0.3, 0.7, grana));
 		verosimile = mix(verosimile, terra_nuda, uso.g * 0.9);
-		float solchi = 0.5 + 0.5 * sin(pos_mondo.x * 2.2 + (m_vicina - 0.5) * 3.0);
+		float solchi = 0.5 + 0.5 * sin(pos_mondo.x * 3.1 + (m_vicina - 0.5) * 4.0 + (m_fine - 0.5) * 1.5);
 		solchi = mix(solchi, 0.5, lontano);
 		vec3 campo = mix(vec3(0.17, 0.13, 0.08), vec3(0.27, 0.21, 0.13), solchi * 0.6 + grana * 0.4);
 		verosimile = mix(verosimile, campo, uso.b);
