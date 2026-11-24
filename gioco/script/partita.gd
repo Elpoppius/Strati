@@ -33,14 +33,32 @@ func avvia(s: Node, seme: int = -1) -> void:
 	vista.prepara(sim, uso, s.terreno)
 	s.add_child(vista)
 	var hud: Hud = s.hud
-	hud.aggiungi_comandi("Villaggio", [
-		{"id": "fonda", "testo": "Fondare", "breve": "Fonda", "tasto": "F"},
-		{"id": "campi", "testo": "Campi", "breve": "Campi", "tasto": "C"},
-		{"id": "sentiero", "testo": "Sentiero", "breve": "Sentiero", "tasto": "V"},
-		{"id": "granaio", "testo": "Granaio · 30 cibo", "breve": "Granaio", "tasto": "H"},
-		{"id": "comune", "testo": "Raccolto diviso in comune", "breve": "Comune", "tasto": "", "strumento": false},
-		{"id": "famiglie", "testo": "Raccolto per famiglia", "breve": "Famiglie", "tasto": "", "strumento": false},
-		{"id": "demolisci", "testo": "Demolisci: alberi, case, campi, sentieri, granaio (irreversibile)", "breve": "Demolisci", "tasto": "X", "pericolo": true},
+	# Menù logici (decisione di Fede, come in Cities: Skylines e Age of Empires). Per ora le voci
+	# della prima epoca; le altre arriveranno con le epoche (pascolo, luogo sacro, recinti…).
+	hud.aggiungi_menu("insediamento", "Insediamento", "Dove nasce il villaggio.", [
+		{"id": "fonda", "testo": "Fondare il villaggio", "breve": "Fonda", "tasto": "F",
+		 "descrizione": "Clicca dove fondare. Il cerchio mostra fin dove arriveranno i campi. È la scelta più importante della partita."},
+	])
+	hud.aggiungi_menu("territorio", "Territorio", "A cosa si destina la terra attorno al villaggio.", [
+		{"id": "campi", "testo": "Dissodare campi", "breve": "Campi", "tasto": "C",
+		 "descrizione": "Un clic dissoda la terra libera nel cerchio; un clic su un campo lo abbandona. Gli alberi sui nuovi campi si tagliano."},
+	])
+	hud.aggiungi_menu("vie", "Vie", "Come ci si muove.", [
+		{"id": "sentiero", "testo": "Tracciare un sentiero", "breve": "Sentiero", "tasto": "V",
+		 "descrizione": "Un clic prolunga i sentieri dal villaggio fino a quel punto. Lungo un sentiero si possono coltivare campi più lontani."},
+	])
+	hud.aggiungi_menu("edifici", "Edifici", "Costruzioni comuni del villaggio. Le case nascono da sole.", [
+		{"id": "granaio", "testo": "Granaio (30 di cibo)", "breve": "Granaio", "tasto": "H",
+		 "descrizione": "Costa 30 di cibo e va vicino al centro: le scorte si conservano meglio."},
+	])
+	hud.aggiungi_menu("usanze", "Usanze", "Le regole del villaggio.", [
+		{"id": "comune", "testo": "Raccolto diviso in comune", "breve": "In comune", "tasto": "", "strumento": false},
+		{"id": "famiglie", "testo": "Raccolto tenuto da ogni famiglia", "breve": "Famiglie", "tasto": "", "strumento": false},
+	])
+	# Demolisci è trasversale: vale su tutto ciò che si può demolire e non è una costruzione.
+	hud.aggiungi_trasversali("Strumenti", [
+		{"id": "demolisci", "testo": "Demolisci (irreversibile)", "breve": "Demolisci", "tasto": "X", "pericolo": true,
+		 "descrizione": "Toglie nel cerchio alberi, case, campi, sentieri e granaio. Non agisce su fiumi e paludi."},
 	], true)
 	hud.aggiungi_tempo([
 		{"id": "v0", "testo": "Pausa (Spazio)", "breve": "‖"},
@@ -247,7 +265,7 @@ func aggiorna_hud() -> void:
 	for id in ["campi", "sentiero", "comune", "famiglie"]:
 		hud.abilita(id, on and not sim.finito)
 	hud.abilita("granaio", on and sim.granaio.x < 0 and not sim.finito)
-	hud.cambia_testo("granaio", "Granaio costruito" if sim.granaio.x >= 0 else "Granaio · 30 cibo", "Costruito" if sim.granaio.x >= 0 else "Granaio")
+	hud.cambia_testo("granaio", "Granaio (già costruito)" if sim.granaio.x >= 0 else "Granaio (30 di cibo)", "Granaio")
 	hud.segna("comune", sim.usanza == "comune")
 	hud.segna("famiglie", sim.usanza == "famiglie")
 	for k in 4:

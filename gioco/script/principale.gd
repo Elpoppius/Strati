@@ -169,8 +169,8 @@ func _crea_interfaccia() -> void:
 	# Strumento di prova: far passare il tempo, per vedere la ricrescita del bosco anche senza
 	# villaggio. Tagliare si fa con Demolisci (nella partita). L'invasività delle costruzioni non
 	# è uno strumento: è una qualità nascosta dei loro materiali (chiarimento di Fede, vedi UsoSuolo).
-	hud.aggiungi_comandi("Prove", [
-		{"id": "anni", "testo": "Fai passare 10 anni", "breve": "+10 anni", "tasto": "Y", "strumento": false},
+	hud.aggiungi_trasversali("Prova", [
+		{"id": "anni", "testo": "Avanti di 10 anni (solo per prova: fa ricrescere il bosco anche senza villaggio)", "breve": "+10 anni", "tasto": "Y", "strumento": false},
 	])
 	hud.comando_scelto.connect(func(_id: String) -> void: _aggiorna_pennello())
 	hud.azione.connect(_azione)

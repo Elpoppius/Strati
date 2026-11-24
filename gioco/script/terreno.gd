@@ -71,6 +71,7 @@ func costruisci(d: MappaDati, esag: float = 1.5) -> void:
 	img_acque.convert(Image.FORMAT_RH)
 	materiale.set_shader_parameter("acque", ImageTexture.create_from_image(img_acque))
 	materiale.set_shader_parameter("esagerazione", esag)
+	materiale.set_shader_parameter("uv_da_mondo", Vector2(1.0 / (passo * n), 0.5 / n))
 	materiale.set_shader_parameter("suolo", load("res://asset/texture/erba.png"))
 	materiale.set_shader_parameter("suolo_secco", load("res://asset/texture/erba_secca.png"))
 	materiale.set_shader_parameter("macchie", load("res://asset/texture/macchie.png"))

@@ -4,6 +4,7 @@
 
 ## Com'è fatto
 - **Simulazione** (`gioco/script/sim_villaggio.gd`, classe `SimVillaggio`): le regole del Prototipo 0 web (`prototipi/prototipo0/index.html`), separate dalla grafica e verificabili senza schermo (`test/verifica_villaggio.gd`). Non sa nulla di modelli o shader: tiene lo stato (centro, case, campi, sentieri, granaio, rovine, indicatori, cronaca) e le **decisioni in attesa**, che fermano il tempo.
+- **Campi disegnati come parcelle irregolari** (24/11/2026, Fede aveva notato lo squadrettamento): la simulazione ragiona a pixel da 40 m, ma lo shader del terreno disegna strisce irregolari di circa 80 × 24 m (celle di Voronoi), ognuna arata, seminata o a stoppie, con prode erbose; anche il contorno dei campi segue le parcelle.
 - **Disegno** (`gioco/script/vista_villaggio.gd`, classe `VistaVillaggio`): confronta lo stato con ciò che ha già disegnato e aggiorna solo le differenze. Case e granaio con i modelli del lotto del villaggio (tipi misti: case lunghe di tre misure e capanne tonde, scelti e ruotati in modo fisso per lotto); campi e sentieri attraverso l'**uso del suolo** (campi = suolo coltivato, che toglie gli alberi; sentieri e cortili = terra battuta); rovine con qualche sasso.
 - **Partita** (`gioco/script/partita.gd`, classe `Partita`): collega simulazione, disegno, uso del suolo e HUD; tempo continuo con pausa e tre velocità (2, 6, 15 anni al secondo); ogni anno della simulazione fa passare anche un anno all'uso del suolo, quindi un campo abbandonato su un ex bosco ricresce mentre si gioca.
 
@@ -21,7 +22,7 @@ Il prototipo ragionava a celle da 160 m. Qui:
 - **Sentiero:** un clic prolunga la rete in linea retta dal punto più vicino (centro o sentiero); non attraversa il fiume né la palude.
 - **Granaio:** 30 di cibo, vicino al centro; le scorte si conservano meglio.
 - **Usanza sul raccolto:** in comune (più legittimità) o per famiglia (più raccolto).
-- **Demolisci** (X, decisione di Fede): toglie nel cerchio alberi (legname), case, campi, sentieri e granaio; il focolare al centro resta. Sul lotto di una casa demolita non rinasce una casa per 20 anni (macerie). Fiumi e paludi non si demoliscono.
+- **Demolisci** (X, decisione di Fede): toglie nel cerchio alberi (legname), case, campi, sentieri e granaio; il focolare al centro resta. Sul lotto di una casa demolita non rinasce una casa per 20 anni (macerie): Fede ha approvato la regola e ha precisato che vale **solo per l'abitato spontaneo**; per gli edifici voluti dal giocatore (come il granaio) non c'è attesa. Fiumi e paludi non si demoliscono.
 - **Eventi e presagi:** piene dal rischio della mappa, siccità con presagio vero (le sorgenti calano), cometa come presagio falso, primo cattivo raccolto, affollamento (allargarsi o villaggio figlio), crisi di legittimità, abbandono (le rovine restano e si può rifondare), fine dopo 500 anni con il riepilogo.
 
 ## Verifiche
@@ -34,6 +35,5 @@ Con il giocatore automatico tutti e sei i siti reggono 500 anni; le popolazioni 
 
 ## Da fare
 - Prove di Fede e taratura.
-- Campi meno regolari (oggi sono quadrati da 40 m, ognuno con il suo verso dei solchi e il suo tono).
 - Livelli dell'acqua che salgono con le piene, nella grafica.
 - Salvataggio della partita (con l'uso del suolo).

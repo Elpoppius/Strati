@@ -80,6 +80,15 @@ var _anno: Label
 var _tempo: HBoxContainer
 var _nome_strumento: Label
 var _gruppi: HBoxContainer
+var _schede: HBoxContainer
+var _pagine: Control
+var _descrizione_menu: Label
+## Menù logici: id -> {"scheda": Button, "pagina": Control, "descrizione": String}.
+var _menu := {}
+var _menu_scelto := ""
+## Comando -> menù a cui appartiene (per aprire il menù giusto quando si usa il tasto).
+var _menu_di := {}
+var _descrizioni := {}
 var _nome_mappa_scelta: Label
 var _nomi_mappe: Array = []
 var _testi := {}
@@ -220,9 +229,34 @@ func _fascia_bassa(radice: Control, nomi_mappe: Array) -> void:
 	pc.custom_minimum_size.y = ALTEZZA_FASCIA
 	pc.size_flags_vertical = Control.SIZE_SHRINK_END
 	fascia.add_child(pc)
+	# Due livelli, come in Cities: Skylines e Age of Empires: in alto le schede dei menù logici
+	# (Insediamento, Territorio, Vie, Edifici, Usanze…), sotto i comandi della scheda scelta.
+	# A destra, separati, gli strumenti trasversali (Demolisci), che non sono costruzioni.
+	var riga_comandi := HBoxContainer.new()
+	riga_comandi.add_theme_constant_override("separation", 14)
+	pc.add_child(riga_comandi)
+	var menu := VBoxContainer.new()
+	menu.add_theme_constant_override("separation", 8)
+	riga_comandi.add_child(menu)
+	_schede = HBoxContainer.new()
+	_schede.add_theme_constant_override("separation", 2)
+	menu.add_child(_schede)
+	_pagine = Control.new()
+	_pagine.custom_minimum_size = Vector2(4 * LATO_TASTO + 3 * 4, 2 * LATO_TASTO + 4)
+	menu.add_child(_pagine)
+	_descrizione_menu = Label.new()
+	_descrizione_menu.add_theme_font_size_override("font_size", 11)
+	_descrizione_menu.add_theme_color_override("font_color", GRIGIO)
+	_descrizione_menu.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_descrizione_menu.custom_minimum_size.x = 4 * LATO_TASTO + 3 * 4
+	menu.add_child(_descrizione_menu)
+	var separa := ColorRect.new()
+	separa.color = RIGA
+	separa.custom_minimum_size.x = 1
+	riga_comandi.add_child(separa)
 	_gruppi = HBoxContainer.new()
-	_gruppi.add_theme_constant_override("separation", 18)
-	pc.add_child(_gruppi)
+	_gruppi.add_theme_constant_override("separation", 14)
+	riga_comandi.add_child(_gruppi)
 	var spazio := Control.new()
 	spazio.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spazio.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -340,6 +374,64 @@ func _bollino(padre: Control, sigla: String, colore: Color, sigla_scura: bool, q
 ## voci: dizionari con id, testo, breve (etichetta sotto il tasto, facoltativa), tasto,
 ## pericolo (bool: azione irreversibile, segno rosso), strumento (bool: resta selezionato e si
 ## usa cliccando sulla mappa; altrimenti è un'azione immediata).
+## Aggiunge un menù logico (una scheda in alto, i suoi comandi sotto).
+## voci: come in aggiungi_comandi, più "descrizione" (cosa fa, mostrata nella scheda dello strumento).
+func aggiungi_menu(id_menu: String, titolo: String, descrizione: String, voci: Array) -> void:
+	var scheda := Button.new()
+	scheda.text = titolo
+	scheda.toggle_mode = true
+	scheda.focus_mode = Control.FOCUS_NONE
+	scheda.tooltip_text = descrizione
+	scheda.add_theme_font_size_override("font_size", 12)
+	_schede.add_child(scheda)
+	var griglia := GridContainer.new()
+	griglia.columns = 4
+	griglia.add_theme_constant_override("h_separation", 4)
+	griglia.add_theme_constant_override("v_separation", 4)
+	griglia.visible = false
+	_pagine.add_child(griglia)
+	_menu[id_menu] = {"scheda": scheda, "pagina": griglia, "descrizione": descrizione}
+	scheda.pressed.connect(func() -> void: apri_menu(id_menu))
+	for v in voci:
+		_aggiungi_voce(griglia, v)
+		_menu_di[v["id"]] = id_menu
+	if _menu_scelto == "":
+		apri_menu(id_menu)
+
+
+func apri_menu(id_menu: String) -> void:
+	if not _menu.has(id_menu):
+		return
+	_menu_scelto = id_menu
+	for k in _menu:
+		(_menu[k]["scheda"] as Button).set_pressed_no_signal(k == id_menu)
+		(_menu[k]["pagina"] as Control).visible = k == id_menu
+	_descrizione_menu.text = _menu[id_menu]["descrizione"]
+
+
+func menu_aperto() -> String:
+	return _menu_scelto
+
+
+## Strumenti trasversali (valgono su tutto, non sono costruzioni): gruppo a destra dei menù.
+func aggiungi_trasversali(titolo: String, voci: Array, in_testa := false) -> void:
+	aggiungi_comandi(titolo, voci, in_testa)
+
+
+func _aggiungi_voce(griglia: Control, v: Dictionary) -> void:
+	var b := _tasto(griglia, v)
+	var id: String = v["id"]
+	_testi[id] = v["testo"]
+	_descrizioni[id] = v.get("descrizione", "")
+	if v.get("strumento", true):
+		b.toggle_mode = true
+		b.pressed.connect(func() -> void: seleziona_comando("" if _comando == id else id); comando_scelto.emit(_comando))
+		_righe_comandi[id] = b
+	else:
+		b.pressed.connect(func() -> void: azione.emit(id))
+		_righe_azioni[id] = b
+
+
 func aggiungi_comandi(titolo: String, voci: Array, in_testa := false) -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 6)
@@ -358,16 +450,7 @@ func aggiungi_comandi(titolo: String, voci: Array, in_testa := false) -> void:
 	griglia.add_theme_constant_override("v_separation", 4)
 	col.add_child(griglia)
 	for v in voci:
-		var b := _tasto(griglia, v)
-		var id: String = v["id"]
-		_testi[id] = v["testo"]
-		if v.get("strumento", true):
-			b.toggle_mode = true
-			b.pressed.connect(func() -> void: seleziona_comando("" if _comando == id else id); comando_scelto.emit(_comando))
-			_righe_comandi[id] = b
-		else:
-			b.pressed.connect(func() -> void: azione.emit(id))
-			_righe_azioni[id] = b
+		_aggiungi_voce(griglia, v)
 
 
 ## Comandi del tempo, piccoli, nella striscia in alto accanto all'anno.
@@ -430,7 +513,11 @@ func seleziona_comando(id: String) -> void:
 	_comando = id
 	for k in _righe_comandi:
 		_premi(_righe_comandi[k], k == id)
-	_nome_strumento.text = _testi.get(id, "Nessuno strumento")
+	_nome_strumento.text = _testi.get(id, "Nessuno strumento").get_slice(" (", 0)
+	if _menu_di.has(id):
+		apri_menu(_menu_di[id])
+	if String(_descrizioni.get(id, "")) != "":
+		_messaggio.text = _descrizioni[id]
 
 
 ## Stato di un tasto senza emettere il segnale, con i testi interni in nero se scelto.

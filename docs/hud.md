@@ -30,11 +30,27 @@ Il campo di gioco resta libero: l'interfaccia sta in una fascia in basso e in du
 - **In alto a destra:** le prestazioni (fotogrammi al secondo, alberi, cache), piccole, senza fondo.
 - **In basso a sinistra:** gli indicatori (popolazione, cibo, salute, legittimità), come le risorse; il valore diventa rosso quando è in pericolo.
 - **Accanto, la scheda dello strumento scelto** (come la scheda dell'unità selezionata): nome, messaggio dell'ultima azione, lettura del lotto sotto il puntatore.
-- **In basso al centro, la griglia dei comandi:** tasti quadrati con la lettera del tasto in grande e il nome sotto, raggruppati (Villaggio, con Demolisci; Prove: +10 anni, per vedere la ricrescita del bosco). Un comando può essere uno strumento (resta scelto, si usa cliccando sulla mappa) o un'azione immediata. Il segno rosso nell'angolo vuol dire azione irreversibile.
+- **In basso al centro, i comandi su due livelli** (decisione di Fede: menù logici come in Cities: Skylines e Age of Empires): in alto le **schede dei menù** (Insediamento, Territorio, Vie, Edifici, Usanze), sotto i **tasti** della scheda aperta (quadrati, lettera del tasto in grande e nome sotto) e una riga che dice a cosa serve il menù. Scegliere uno strumento, anche da tastiera, apre la sua scheda. A destra, separati da una riga, gli **strumenti trasversali** (Demolisci), che valgono su tutto e non sono costruzioni, e la **Prova** (+10 anni, solo per vedere la ricrescita del bosco). Un comando può essere uno strumento (resta scelto, si usa cliccando sulla mappa) o un'azione immediata. Il segno rosso nell'angolo vuol dire azione irreversibile. Scelto uno strumento, la scheda a sinistra ne mostra il nome e cosa fa.
 - **In basso a destra, piccoli** (Fede: cliccabili ma non importanti, come i tasti attorno alla minimappa di Age of Empires IV): la minimappa (150 px) ruotata come la vista, con il riquadro di ciò che inquadra la camera e il centro del villaggio (un clic o un trascinamento spostano la camera); accanto, i bollini tondi delle cinque mappe tematiche (numero e colore, nome nel suggerimento) e i quadratini delle sovrapposizioni (G lotti, I isoipse). La mappa scelta ha un anello bianco. Sopra, solo quando è attiva una mappa tematica, una legenda sottile.
 - **Avvisi** (siccità, carestie gravi) sopra la minimappa, a destra, con un segno rosso.
 - **Scelte** (presagi, momenti decisivi, eventi): finestra al centro; il tempo si ferma finché non si sceglie.
 - **Strumento sulla mappa:** un cerchio sottile bianco (rosso se l'azione è irreversibile) segue il puntatore; per Fondare mostra fin dove arriveranno i campi.
+
+## Diciture
+| Dicitura | Dove | Significato |
+|---|---|---|
+| Popolazione | indicatori | abitanti del villaggio |
+| Cibo 543 / 121 l'anno | indicatori | scorte di cibo / quanto ne consuma il villaggio in un anno (rosso se le scorte sono sotto il 30% del consumo) |
+| Salute | indicatori | da 0 a 100: acqua, aria (paludi), affollamento, fame |
+| Legittimità | indicatori | da 0 a 100: quanto il villaggio riconosce l'autorità di chi governa (nella prima epoca gli anziani); sotto 5 per quattro anni il villaggio si divide |
+| ‖ 2 6 15 | in alto, accanto all'anno | pausa, oppure 2, 6, 15 anni al secondo |
+| Insediamento, Territorio, Vie, Edifici, Usanze | schede dei comandi | menù logici: dove nasce il villaggio; a cosa si destina la terra; come ci si muove; costruzioni comuni; regole del villaggio |
+| In comune / Famiglie | Usanze | il raccolto si divide tra tutti (più legittimità) o ogni famiglia tiene il suo (più raccolto, meno legittimità) |
+| Demolisci | Strumenti | toglie ciò che si può demolire nel cerchio; non agisce su fiumi e paludi |
+| +10 anni | Prova | fa passare dieci anni subito, solo per provare la ricrescita del bosco |
+| 1–5 | bollini accanto alla minimappa | mappe tematiche: terreno, acqua, fertilità, rischio di piena, energia dell'acqua |
+| G, I | quadratini accanto alla minimappa | griglia dei lotti da 20 m, isoipse ogni 25 m |
+| fps, alberi (livello), cache | in alto a destra | prestazioni, per le prove sui PC |
 
 ## Tasti
 1–5 mappe · G griglia · I isoipse · F fondare · C campi · V sentiero · H granaio · Spazio pausa o riprendi · + e − velocità del tempo · X demolisci · Y +10 anni · [ e ] raggio dello strumento · Esc nessuno strumento · Q E ruota · rotella zoom · tasto destro o WASD sposta · Home torna al sito.

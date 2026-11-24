@@ -53,6 +53,12 @@ func _process(_d: float) -> bool:
 	_s.applica_strumento()
 	controlla(h._messaggio.text.contains("non si demoliscono"), "fiumi e paludi non si demoliscono: " + h._messaggio.text)
 	_s.punto_corrente = punto
+	# Menù logici e strumenti trasversali.
+	controlla(h._menu.has("insediamento") and h._menu.has("territorio") and h._menu.has("vie") and h._menu.has("edifici") and h._menu.has("usanze"), "menù logici: Insediamento, Territorio, Vie, Edifici, Usanze")
+	controlla(not h._menu_di.has("demolisci") and h._righe_comandi.has("demolisci"), "Demolisci è uno strumento trasversale, fuori dai menù delle costruzioni")
+	h.seleziona_comando("sentiero")
+	controlla(h.menu_aperto() == "vie" and (h._menu["vie"]["pagina"] as Control).visible and not (h._menu["territorio"]["pagina"] as Control).visible, "scegliere uno strumento (anche da tastiera) apre il suo menù")
+	controlla(h._messaggio.text.contains("sentieri"), "la scheda spiega cosa fa lo strumento scelto")
 	controlla(not h._righe_comandi.has("sigilla") and not h._righe_comandi.has("costruisci"), "nessuno strumento per scegliere il materiale: è una qualità nascosta delle costruzioni")
 	_s._azione("anni")
 	controlla(h._messaggio.text.contains("10 anni"), "l'azione Fai passare 10 anni funziona")
