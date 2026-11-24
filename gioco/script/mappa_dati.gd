@@ -36,6 +36,14 @@ const NOMI_ZONA := ["Bassa pianura", "Alta pianura", "Fascia pedecollinare", "Co
 @export var pozze_fine: PackedByteArray
 ## Lato della griglia di distanza_acqua e bosco_fine (più fine di quella del terreno).
 @export var lato_acqua: int = 0
+## Velocità media della corrente lungo fiumi e torrenti (0–255 = 0–4 m/s), 0 fuori dall'acqua.
+@export var velocita: PackedByteArray
+## Potenza idraulica media ogni 100 m di corso, scala logaritmica (1 = 1 kW, 255 = 1000 kW).
+@export var potenza: PackedByteArray
+## Corsi d'acqua: nome, regime, portate (media, magra, piena), lunghezza, quote, pendenza massima.
+@export var corsi_acqua: Array = []
+## Siti adatti alle dighe: corso, pixel, altezza, lunghezza della diga, area e volume dell'invaso.
+@export var siti_diga: Array = []
 @export var sorgenti: PackedVector2Array
 ## Ogni sito è un Dictionary { "n": int, "nome": String, "px": Vector2 }.
 @export var siti: Array = []
@@ -92,4 +100,11 @@ func campione(xm: float, zm: float) -> Dictionary:
 		"acqua_stagionale": acqua_stagionale[i] / 255.0,
 		"bosco": copertura[i] > 127,
 		"edificabile": edificabile_px(p),
+		"velocita": velocita[i] / 255.0 * 4.0 if velocita.size() == lato * lato else 0.0,
+		"potenza_kw": kw_da_byte(potenza[i]) if potenza.size() == lato * lato else 0.0,
 	}
+
+
+## Potenza in kW ogni 100 m di corso dal valore in scala logaritmica.
+static func kw_da_byte(v: int) -> float:
+	return 0.0 if v == 0 else pow(10.0, (v - 1) / 254.0 * 3.0)

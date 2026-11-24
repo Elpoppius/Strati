@@ -17,6 +17,8 @@ Ogni mappa è una risorsa `MappaDati` (`gioco/script/mappa_dati.gd`), generata d
 | bosco fine | 4 volte la griglia (10 m) | margine del bosco dipinto, sottobosco, posa degli alberi (0,5 = margine) |
 | palude fine, pozze fine | 10 m | paludi: erba umida, fango, pozze d'acqua ferma; posa dei canneti |
 | distanza dall'acqua | 4 volte la griglia (oggi 1024 × 1024, 2 m per unità) | fiumi, torrenti, rive |
+| velocità della corrente, potenza idraulica | griglia | rapide e schiuma, mappa tematica dell'energia dell'acqua, lettura del lotto |
+| corsi d'acqua, siti per le dighe | elenco in `meta.json` | portate e regime, siti per le dighe nella mappa dell'energia |
 
 Una mappa nuova eredita tutto il resto: basta che fornisca questi strati.
 
@@ -40,7 +42,8 @@ Codice: in fondo a `gioco/shader/terreno.gdshader`. Dati: la distanza dalla riva
 - Schiuma sottile lungo la riva, sponda bagnata più scura e un velo di limo.
 - **L'acqua segue i rilievi:** prende la stessa ombreggiatura del versante su cui scorre (richiesta di Fede), così un fiume in una valle non sembra incollato sopra.
 - **Sponde in rilievo** (dopo la prova di Fede, "acqua piatta"): dal campo di distanza lo shader ricava il verso della riva e inclina la normale del terreno negli ultimi metri, così la luce modella l'argine; dalla parte del sole l'argine fa ombra sull'acqua. Tre toni di profondità (bassa, media, fonda), fondale chiaro che traspare dove l'acqua è bassa, chiazze larghe di vento e cielo riflesso visibili anche da lontano.
-- Da fare: corrente nel verso del fiume, cascate e rapide sui torrenti, paludi con acqua bassa e canne, livelli che cambiano con le piene.
+- **Corrente vera (24/11/2026, richiesta di Fede: la corrente come meccanica per mulini, turbine e dighe):** l'acqua scorre alla velocità calcolata per quel tratto (dati `velocita`) e sopra circa 1,5 m/s si rompe in **rapide**, chiazze d'acqua bianca che scorrono. Il calcolo idraulico è descritto in `docs/mappa-pedecollinare.md` (sezione Idraulica).
+- Da fare: cascate (servono salti nel letto dei torrenti, che la mappa oggi non ha); livelli che cambiano con le stagioni e le piene, insieme alla simulazione delle piene nel Prototipo 0 in Godot.
 
 ## Paludi e gessi
 Non stanno più nei colori dei vertici, che facevano quadretti da 40 m (segnalato da Fede).
@@ -51,6 +54,8 @@ Non stanno più nei colori dei vertici, che facevano quadretti da 40 m (segnalat
 
 ## Mappe tematiche
 I dati tematici non hanno più gradini: le fasce di fertilità e di rischio di piena passano gradualmente da una all'altra (circa 160 m) e la vicinanza all'acqua si misura in linea d'aria, non più a scacchiera (attorno alle sorgenti venivano quadrati). Lo shader le legge ammorbidite. Codice: `strumenti/mappe/genera_pedecollinare.py`.
+
+**Energia dell'acqua (24/11/2026, tasto 5):** potenza idraulica media lungo fiumi e torrenti, dal blu (poca) al giallo e al rosso (molta), in una fascia che segue la riva; il resto della mappa si schiarisce. Compaiono le etichette dei siti adatti alle dighe (altezza, lunghezza della diga, invaso, potenza media). Immagine: `docs/immagini/energia-acqua-24-11.jpg`. La lettura del lotto sull'acqua dice corrente, potenza ogni 100 m e regime del corso.
 
 ## Luce e ombre
 Codice: `gioco/script/principale.gd` (sole e ambiente), `gioco/script/camera_isometrica.gd` (distanza e piani di taglio).

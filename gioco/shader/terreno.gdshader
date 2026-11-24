@@ -36,6 +36,9 @@ uniform sampler2D uso_suolo : filter_linear, repeat_disable;
 uniform float uso_attivo = 0.0;
 // Zone speciali a celle da 40 m: R palude, G gessi. Lo shader ne ammorbidisce e frastaglia i bordi.
 uniform sampler2D zone_speciali : filter_linear, repeat_disable;
+// Idraulica a 40 m: R velocità della corrente (0–1 = 0–4 m/s), G potenza ogni 100 m (logaritmica,
+// 1 = 1000 kW). Rapide e schiuma nell'acqua, mappa tematica dell'energia dell'acqua (modo 4).
+uniform sampler2D idraulica : filter_linear, repeat_disable;
 uniform sampler2D chioma_a : source_color, filter_linear_mipmap, repeat_enable;
 uniform sampler2D chioma_b : source_color, filter_linear_mipmap, repeat_enable;
 uniform float lato_suolo = 9.0;
@@ -223,6 +226,14 @@ void fragment() {
 		} else if (modo == 3) {
 			float r = t.g;
 			col = r > 0.01 ? mix(base, pow(vec3(0.71, 0.24, 0.16), vec3(2.2)), 0.15 + 0.6 * r) : mix(base, vec3(1.0), 0.3);
+		} else if (modo == 4) {
+			// Energia dell'acqua: dal blu (poca potenza) al giallo e al rosso (molta), lungo i corsi;
+			// il resto della mappa si schiarisce.
+			float p = texture(idraulica, UV).g;
+			vec3 rampa = p < 0.5 ? mix(vec3(0.16, 0.38, 0.62), vec3(0.95, 0.78, 0.2), p / 0.5) : mix(vec3(0.95, 0.78, 0.2), vec3(0.78, 0.18, 0.1), (p - 0.5) / 0.5);
+			// La forma della fascia viene dalla distanza fine dall'acqua (niente quadretti da 40 m).
+			float vicino = (1.0 - smoothstep(12.0, 140.0, d_acqua)) * step(0.004, p);
+			col = mix(mix(base, vec3(1.0), 0.35), pow(rampa, vec3(2.2)), 0.85 * vicino);
 		}
 	}
 	// Isoipse ogni passo_isoipse metri di quota.
@@ -259,7 +270,11 @@ void fragment() {
 	vec2 lungo = length(verso_riva) > 0.0 ? vec2(-verso_riva.y, verso_riva.x) : vec2(1.0, 0.0);
 	vec2 pf = vec2(dot(pa, lungo), dot(pa, verso_riva));
 	float corrente = 1.0 - pozze;
-	vec2 pc_ = mix(pa, vec2(pf.x / 3.0, pf.y), corrente * 0.8) + vec2(TIME * 0.6 * corrente, 0.0);
+	// Velocità vera della corrente (dati della mappa): l'acqua scorre più in fretta dove il corso
+	// è ripido e si rompe in rapide e schiuma bianca sopra circa 1,5 m/s.
+	float vel = texture(idraulica, UV).r * 4.0;
+	float rapide = smoothstep(1.3, 2.3, vel) * corrente;
+	vec2 pc_ = mix(pa, vec2(pf.x / 3.0, pf.y), corrente * 0.8) + vec2(TIME * (0.25 + 0.3 * vel) * corrente, 0.0);
 	vec2 deforma = vec2(texture(macchie, pa / 23.0 + vec2(TIME * 0.003, 0.0)).r, texture(macchie, ruota * pa / 19.0 + vec2(0.3, TIME * 0.002)).r) - 0.5;
 	vec2 pd = pc_ + deforma * 9.0;
 	float o1 = texture(macchie, pd / 4.3 + vec2(TIME * 0.03, TIME * 0.017)).r;
@@ -303,6 +318,9 @@ void fragment() {
 	// Schiuma sottile lungo la riva dei fiumi, spezzata dalle increspature.
 	float schiuma = (1.0 - smoothstep(0.3, 1.6 + bordo, abs(d_acqua + 1.0 + deforma.x * 1.5))) * smoothstep(0.45, 0.6, o1 * 0.5 + o4 * 0.5) * corrente;
 	acqua = mix(acqua, vec3(0.7, 0.7, 0.64), schiuma * 0.35);
+	// Rapide: acqua bianca a chiazze che scorrono, più fitta dove la corrente è più forte.
+	float bianca = smoothstep(0.55 - 0.15 * rapide, 0.7, o1 * 0.45 + o2 * 0.35 + o4 * 0.2) * rapide;
+	acqua = mix(acqua, vec3(0.78, 0.8, 0.76), bianca * mix(0.75, 0.35, lontano));
 	// Ombra della sponda sull'acqua: lungo la riva dalla parte del sole l'argine fa ombra.
 	vec2 sole_o = length(ls.xz) > 1e-4 ? normalize(ls.xz) : vec2(0.0);
 	float ombra_sponda = smoothstep(0.1, 0.7, dot(verso_riva, sole_o)) * (1.0 - smoothstep(0.0, 7.0, -d_acqua));

@@ -34,6 +34,17 @@ func _init() -> void:
 	d.palude_fine = FileAccess.get_file_as_bytes(base + "/grezzi/palude_fine.u8")
 	d.pozze_fine = FileAccess.get_file_as_bytes(base + "/grezzi/pozze_fine.u8")
 	d.lato_acqua = int(meta.get("lato_acqua_px", d.lato))
+	# Idraulica (24/11/2026): corrente, potenza, corsi d'acqua e siti per le dighe.
+	if FileAccess.file_exists(base + "/grezzi/velocita.u8"):
+		d.velocita = FileAccess.get_file_as_bytes(base + "/grezzi/velocita.u8")
+		d.potenza = FileAccess.get_file_as_bytes(base + "/grezzi/potenza.u8")
+	d.corsi_acqua = meta.get("corsi_acqua", [])
+	var siti_diga := []
+	for s in meta.get("siti_diga", []):
+		var c: Dictionary = s.duplicate()
+		c["px"] = Vector2(s["px"][0], s["px"][1])
+		siti_diga.append(c)
+	d.siti_diga = siti_diga
 	var sorgenti := PackedVector2Array()
 	for s in meta["sorgenti_px"]:
 		sorgenti.append(Vector2(s[0], s[1]))

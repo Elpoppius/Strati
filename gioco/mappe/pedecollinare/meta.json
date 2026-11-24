@@ -82,5 +82,174 @@
         122
       ]
     }
+  ],
+  "corsi_acqua": [
+    {
+      "nome": "Fiume maggiore",
+      "regime": "perenne",
+      "portata_media_m3s": 15.0,
+      "portata_magra_m3s": 2.0,
+      "portata_piena_m3s": 600.0,
+      "lunghezza_km": 11.43,
+      "quota_monte_m": 114.0,
+      "quota_valle_m": 14.1,
+      "pendenza_max_per_mille": 43.1,
+      "velocita_max_ms": 2.74,
+      "potenza_max_kw_100m": 380.3
+    },
+    {
+      "nome": "Torrente stagionale",
+      "regime": "stagionale (secco d'estate)",
+      "portata_media_m3s": 0.4,
+      "portata_magra_m3s": 0.0,
+      "portata_piena_m3s": 60.0,
+      "lunghezza_km": 7.29,
+      "quota_monte_m": 195.0,
+      "quota_valle_m": 34.0,
+      "pendenza_max_per_mille": 66.2,
+      "velocita_max_ms": 1.51,
+      "potenza_max_kw_100m": 15.9
+    },
+    {
+      "nome": "Torrente orientale",
+      "regime": "irregolare",
+      "portata_media_m3s": 1.5,
+      "portata_magra_m3s": 0.1,
+      "portata_piena_m3s": 150.0,
+      "lunghezza_km": 8.99,
+      "quota_monte_m": 186.4,
+      "quota_valle_m": 23.6,
+      "pendenza_max_per_mille": 57.8,
+      "velocita_max_ms": 1.9,
+      "potenza_max_kw_100m": 53.7
+    }
+  ],
+  "siti_diga": [
+    {
+      "corso": "Fiume maggiore",
+      "px": [
+        41,
+        221
+      ],
+      "altezza_m": 20.0,
+      "lunghezza_m": 360,
+      "area_ha": 19.2,
+      "volume_milioni_m3": 1.42,
+      "salto_m": 20.0,
+      "potenza_media_kw": 1541.4,
+      "resa": 196.7
+    },
+    {
+      "corso": "Fiume maggiore",
+      "px": [
+        49,
+        246
+      ],
+      "altezza_m": 20.0,
+      "lunghezza_m": 280,
+      "area_ha": 6.6,
+      "volume_milioni_m3": 0.62,
+      "salto_m": 20.0,
+      "potenza_media_kw": 1449.4,
+      "resa": 110.5
+    },
+    {
+      "corso": "Fiume maggiore",
+      "px": [
+        45,
+        188
+      ],
+      "altezza_m": 10.0,
+      "lunghezza_m": 1200,
+      "area_ha": 30.2,
+      "volume_milioni_m3": 1.27,
+      "salto_m": 10.0,
+      "potenza_media_kw": 830.5,
+      "resa": 106.2
+    },
+    {
+      "corso": "Torrente stagionale",
+      "px": [
+        124,
+        218
+      ],
+      "altezza_m": 20.0,
+      "lunghezza_m": 480,
+      "area_ha": 11.8,
+      "volume_milioni_m3": 0.96,
+      "salto_m": 20.0,
+      "potenza_media_kw": 41.3,
+      "resa": 100.0
+    },
+    {
+      "corso": "Torrente stagionale",
+      "px": [
+        128,
+        243
+      ],
+      "altezza_m": 20.0,
+      "lunghezza_m": 240,
+      "area_ha": 3.8,
+      "volume_milioni_m3": 0.31,
+      "salto_m": 20.0,
+      "potenza_media_kw": 38.9,
+      "resa": 64.0
+    },
+    {
+      "corso": "Torrente stagionale",
+      "px": [
+        130,
+        193
+      ],
+      "altezza_m": 10.0,
+      "lunghezza_m": 1080,
+      "area_ha": 9.6,
+      "volume_milioni_m3": 0.37,
+      "salto_m": 10.0,
+      "potenza_media_kw": 21.9,
+      "resa": 34.4
+    },
+    {
+      "corso": "Torrente orientale",
+      "px": [
+        202,
+        243
+      ],
+      "altezza_m": 20.0,
+      "lunghezza_m": 240,
+      "area_ha": 6.7,
+      "volume_milioni_m3": 0.64,
+      "salto_m": 20.0,
+      "potenza_media_kw": 145.9,
+      "resa": 134.0
+    },
+    {
+      "corso": "Torrente orientale",
+      "px": [
+        205,
+        218
+      ],
+      "altezza_m": 20.0,
+      "lunghezza_m": 360,
+      "area_ha": 9.0,
+      "volume_milioni_m3": 0.68,
+      "salto_m": 20.0,
+      "potenza_media_kw": 155.1,
+      "resa": 94.1
+    },
+    {
+      "corso": "Torrente orientale",
+      "px": [
+        216,
+        191
+      ],
+      "altezza_m": 10.0,
+      "lunghezza_m": 1040,
+      "area_ha": 10.9,
+      "volume_milioni_m3": 0.42,
+      "salto_m": 10.0,
+      "potenza_media_kw": 82.6,
+      "resa": 40.2
+    }
   ]
 }

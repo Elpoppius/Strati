@@ -84,6 +84,8 @@ func costruisci(d: MappaDati, esag: float = 1.5) -> void:
 		var img := Image.create_from_data(d.lato_acqua, d.lato_acqua, false, Image.FORMAT_L8, d.get(strato))
 		materiale.set_shader_parameter(strato, ImageTexture.create_from_image(img))
 	materiale.set_shader_parameter("zone_speciali", _texture_zone_speciali())
+	if d.velocita.size() == n * n:
+		materiale.set_shader_parameter("idraulica", _texture_idraulica())
 	materiale.set_shader_parameter("chioma_a", load("res://asset/texture/foglie_quercia.png"))
 	materiale.set_shader_parameter("chioma_b", load("res://asset/texture/foglie_carpino.png"))
 	material_override = materiale
@@ -118,6 +120,17 @@ func _rumore_mappa(seme: int, frequenza: float) -> ImageTexture:
 	r.fractal_octaves = 6
 	r.frequency = frequenza
 	return ImageTexture.create_from_image(r.get_image(1024, 1024, false, false, true))
+
+
+## Idraulica per lo shader: rosso = velocità della corrente, verde = potenza (scala logaritmica).
+func _texture_idraulica() -> ImageTexture:
+	var n := dati.lato
+	var byte := PackedByteArray()
+	byte.resize(n * n * 2)
+	for i in n * n:
+		byte[i * 2] = dati.velocita[i]
+		byte[i * 2 + 1] = dati.potenza[i]
+	return ImageTexture.create_from_image(Image.create_from_data(n, n, false, Image.FORMAT_RG8, byte))
 
 
 ## Zone speciali per lo shader: rosso = palude, verde = gessi (255 dentro, 0 fuori).

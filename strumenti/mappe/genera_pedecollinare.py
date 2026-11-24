@@ -24,7 +24,13 @@ Produce nella cartella indicata:
   grezzi/distanza_acqua.u8   (1024 x 1024) distanza dal bordo del corso d'acqua più vicino: 128 = riva,
                              ogni unità vale 2 m (sotto 128 si è in acqua). Serve a disegnare
                              fiumi e torrenti con bordi morbidi a qualunque zoom.
-  meta.json                  dimensioni, quote, sorgenti e siti di fondazione
+  grezzi/velocita.u8         velocità media della corrente lungo fiumi e torrenti (0-255 = 0-4 m/s),
+                             0 fuori dall'acqua. La usa lo shader per rapide e schiuma.
+  grezzi/potenza.u8          potenza idraulica media ogni 100 m di corso (scala logaritmica:
+                             0 = niente, 255 = 1000 kW), 0 fuori dall'acqua. Mappa tematica
+                             dell'energia dell'acqua (mulini, turbine).
+  meta.json                  dimensioni, quote, sorgenti, siti di fondazione, corsi d'acqua
+                             (portate, dislivelli, profilo) e siti adatti alle dighe
   anteprima.png              immagine a colori per controllo umano
 """
 import json
@@ -33,7 +39,7 @@ import sys
 
 import numpy as np
 from PIL import Image
-from scipy.ndimage import distance_transform_edt, gaussian_filter, map_coordinates
+from scipy.ndimage import distance_transform_edt, gaussian_filter, label, map_coordinates
 
 CELLE = 64            # celle del prototipo
 SCALA = 4             # pixel per cella
@@ -92,6 +98,124 @@ def fasce(d, nodi):
 def distanza_euclidea(sorgenti_mask):
     """Distanza in pixel dalla sorgente più vicina, in linea d'aria: dà cerchi, non quadrati."""
     return distance_transform_edt(~sorgenti_mask)
+
+# ---------- idraulica: corrente, potenza, dislivelli per le dighe ----------
+# Corsi d'acqua della mappa: linea di mezzeria (in celle del prototipo), tratto, larghezza
+# dell'alveo in celle, portate in m³/s (proposta di Claude, verosimili per l'appennino bolognese:
+# un fiume come il Reno o il Savena e due torrenti). Scorrono verso nord (y che diminuisce).
+CORSI = [
+    {"nome": "Fiume maggiore", "linea": rx, "y_min": 0.0, "mezza_larghezza": 1.5,
+     "portata_media": 15.0, "portata_magra": 2.0, "portata_piena": 600.0, "regime": "perenne"},
+    {"nome": "Torrente stagionale", "linea": tx, "y_min": 20.0, "mezza_larghezza": 0.3,
+     "portata_media": 0.4, "portata_magra": 0.0, "portata_piena": 60.0, "regime": "stagionale (secco d'estate)"},
+    {"nome": "Torrente orientale", "linea": ex, "y_min": 10.0, "mezza_larghezza": 0.3,
+     "portata_media": 1.5, "portata_magra": 0.1, "portata_piena": 150.0, "regime": "irregolare"},
+]
+RHO_G = 1000.0 * 9.81
+MANNING_N = 0.035     # alveo naturale con ghiaie e vegetazione
+PASSO_PROFILO = 1.0 / 16.0   # 10 m in celle
+ALTEZZE_DIGA = [10.0, 20.0]  # metri sopra il letto
+
+
+def _quota_in(e, xc, y):
+    """Quota bilineare nel punto (xc, y) in celle del prototipo (xc = centro del pixel)."""
+    return map_coordinates(e, [np.atleast_1d(y) * SCALA, np.atleast_1d(xc) * SCALA - 0.5], order=1, mode="nearest")
+
+
+def idraulica(e, x, y, dR, dT, dE):
+    """Profilo di ogni corso d'acqua (letto, pendenza, velocità, potenza), strati a 40 m per
+    il gioco e siti adatti alle dighe (valli strette con un buon invaso)."""
+    M = 160.0
+    vel = np.zeros((LATO, LATO)); pot = np.zeros((LATO, LATO))
+    corsi_meta = []; siti = []
+    for corso, d_corso in zip(CORSI, [dR, dT, dE]):
+        ys = np.arange(CELLE - 1e-3, corso["y_min"], -PASSO_PROFILO)          # da monte (sud) a valle
+        xs = corso["linea"](ys)
+        letto = _quota_in(e, xs, ys)
+        # Il letto scende sempre verso valle: si toglie il rumore che lo farebbe risalire.
+        letto = np.minimum.accumulate(letto)
+        s = np.concatenate([[0.0], np.cumsum(np.hypot(np.diff(xs), np.diff(ys)) * M)])
+        # Pendenza su 200 m, ammorbidita.
+        pend = -np.gradient(letto, s)
+        pend = np.maximum(gaussian_filter(pend, 10), 0.0004)
+        # La portata cresce verso valle con il bacino (dal 60% al 100% della media allo sbocco).
+        frazione = 0.6 + 0.4 * (1.0 - ys / CELLE)
+        q = corso["portata_media"] * frazione
+        # Alveo: larghezza dalla geometria idraulica, profondità e velocità da Manning.
+        larg = np.maximum(3.5 * np.sqrt(q), 1.0)
+        prof = (q * MANNING_N / (larg * np.sqrt(pend))) ** 0.6
+        v = np.clip(q / np.maximum(larg * prof, 1e-6), 0.0, 4.0)
+        kw100 = RHO_G * q * pend * 100.0 / 1000.0      # potenza ogni 100 m di corso, in kW
+        # Strati a 40 m: ogni pixel vicino all'alveo prende i valori del corso alla sua y.
+        ordine = np.argsort(ys)
+        v_y = np.interp(y, ys[ordine], v[ordine]); p_y = np.interp(y, ys[ordine], kw100[ordine])
+        # Fascia larga attorno all'alveo: lo shader legge questi valori a 40 m e ne disegna la
+        # forma con la distanza fine dall'acqua, quindi qui non devono esserci buchi vicino alla riva.
+        vicino = (d_corso <= corso["mezza_larghezza"] + 3.0) & (y >= corso["y_min"])
+        vel = np.where(vicino, np.maximum(vel, v_y), vel)
+        pot = np.where(vicino, np.maximum(pot, p_y), pot)
+        # Dighe: ogni 100 m si misura quanto è larga la valle a 10 e 20 m sopra il letto e quanta
+        # acqua tratterrebbe (area e volume dell'invaso a monte, collegato all'alveo).
+        candidati = []
+        for k in range(0, len(ys), 10):
+            yk, xk, zb = ys[k], xs[k], letto[k]
+            riga = int(round(yk * SCALA))
+            if riga <= 2 or riga >= LATO - 2:
+                continue
+            for h in ALTEZZE_DIGA:
+                lim = zb + h
+                c = int(np.clip(round(xk * SCALA - 0.5), 0, LATO - 1))
+                sx = c; dx = c
+                while sx > 0 and e[riga, sx] < lim:
+                    sx -= 1
+                while dx < LATO - 1 and e[riga, dx] < lim:
+                    dx += 1
+                if e[riga, sx] < lim or e[riga, dx] < lim:
+                    continue                     # la valle non si chiude: niente diga
+                lunghezza = (dx - sx) * METRI_PER_PX
+                if lunghezza > 1500:
+                    continue
+                sotto = (e < lim)
+                sotto[:riga + 1, :] = False      # solo a monte (sud) della diga
+                etichette, _ = label(sotto)
+                semi = etichette[riga + 1, sx + 1:dx]
+                semi = semi[semi > 0]
+                if semi.size == 0:
+                    continue
+                invaso = np.isin(etichette, np.unique(semi))
+                area = invaso.sum() * METRI_PER_PX ** 2
+                volume = float(((lim - e) * invaso).sum() * METRI_PER_PX ** 2)
+                candidati.append({"corso": corso["nome"], "px": [int(round(xk * SCALA - 0.5)), riga],
+                                  "altezza_m": h, "lunghezza_m": round(lunghezza),
+                                  "area_ha": round(area / 1e4, 1), "volume_milioni_m3": round(volume / 1e6, 2),
+                                  "salto_m": h, "potenza_media_kw": round(RHO_G * float(q[k]) * h * 0.8 / 1000.0, 1),
+                                  "resa": volume / max(lunghezza * h, 1.0)})
+        # Si tengono i tre migliori per corso (acqua trattenuta per metro cubo di diga), almeno a
+        # 1 km l'uno dall'altro; in ogni luogo l'altezza che rende di più.
+        scelti = []
+        for cand in sorted(candidati, key=lambda c: -c["resa"]):
+            if all(np.hypot(cand["px"][0] - o["px"][0], cand["px"][1] - o["px"][1]) * METRI_PER_PX >= 1000 for o in scelti):
+                scelti.append(cand)
+            if len(scelti) == 3:
+                break
+        for c in scelti:
+            c["resa"] = round(c["resa"], 1)
+        siti += scelti
+        corsi_meta.append({
+            "nome": corso["nome"], "regime": corso["regime"],
+            "portata_media_m3s": corso["portata_media"], "portata_magra_m3s": corso["portata_magra"],
+            "portata_piena_m3s": corso["portata_piena"],
+            "lunghezza_km": round(float(s[-1]) / 1000.0, 2),
+            "quota_monte_m": round(float(letto[0]), 1), "quota_valle_m": round(float(letto[-1]), 1),
+            "pendenza_max_per_mille": round(float(pend.max()) * 1000.0, 1),
+            "velocita_max_ms": round(float(v.max()), 2),
+            "potenza_max_kw_100m": round(float(kw100.max()), 1),
+        })
+    vel_u8 = (np.clip(vel / 4.0, 0, 1) * 255).round().astype(np.uint8)
+    # Potenza in scala logaritmica: 1 kW = 1, 1000 kW = 255 (0 = niente acqua).
+    pot_u8 = np.where(pot > 0, np.clip(np.log10(np.maximum(pot, 1.0)) / 3.0 * 254 + 1, 1, 255), 0).round().astype(np.uint8)
+    return corsi_meta, vel_u8, pot_u8, siti
+
 
 def genera(uscita):
     py, px = np.mgrid[0:LATO, 0:LATO].astype(np.float64)
@@ -212,7 +336,11 @@ def genera(uscita):
     palude_u8 = (np.clip(v_pal, 0, 1) * 255).round().astype(np.uint8)
     pozze_u8 = (np.clip(v_pozze, 0, 1) * 255).round().astype(np.uint8)
 
+    corsi, velocita_u8, potenza_u8, siti_diga = idraulica(e, x, y, dR, dT, dE)
+
     g = os.path.join(uscita, "grezzi"); os.makedirs(g, exist_ok=True)
+    velocita_u8.tofile(os.path.join(g, "velocita.u8"))
+    potenza_u8.tofile(os.path.join(g, "potenza.u8"))
     dist_u8.tofile(os.path.join(g, "distanza_acqua.u8"))
     bosco_u8.tofile(os.path.join(g, "bosco_fine.u8"))
     palude_u8.tofile(os.path.join(g, "palude_fine.u8"))
@@ -234,6 +362,8 @@ def genera(uscita):
         "nord": "in alto (riga 0)",
         "sorgenti_px": sorgenti_px,
         "siti": [{"n": nn, "nome": nome, "px": [int((sx + 0.5) * SCALA), int((sy + 0.5) * SCALA)]} for nn, nome, sx, sy in SITI],
+        "corsi_acqua": corsi,
+        "siti_diga": siti_diga,
     }
     with open(os.path.join(uscita, "meta.json"), "w", encoding="utf-8") as fh:
         json.dump(meta, fh, ensure_ascii=False, indent=2)

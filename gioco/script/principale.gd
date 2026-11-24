@@ -5,7 +5,7 @@ extends Node3D
 const PERCORSO_MAPPA := "res://mappe/pedecollinare/mappa.res"
 const ESAGERAZIONE := 1.5
 const LATO_LOTTO := 20.0
-const NOMI_MODI := ["Terreno", "Acqua", "Fertilità", "Rischio piena"]
+const NOMI_MODI := ["Terreno", "Acqua", "Fertilità", "Rischio piena", "Energia dell'acqua"]
 const SITO_INIZIALE := 1
 
 ## Sole: altezza sull'orizzonte e angolo rispetto alla direzione in cui guarda la camera (gradi).
@@ -34,6 +34,8 @@ var _casella_isoipse: CheckBox
 var _prestazioni: Label
 var _tempo_prestazioni := 0.0
 var _trascinando := false
+## Etichette dei siti adatti alle dighe: visibili solo nella mappa dell'energia dell'acqua.
+var _segni_dighe: Array[Label3D] = []
 ## Stato degli alberi mostrato nel pannello: da dove vengono e quanto ci hanno messo.
 var _stato_alberi := ""
 var _inizio_calcolo_alberi := -1
@@ -52,6 +54,7 @@ func _ready() -> void:
 	terreno.costruisci(dati, ESAGERAZIONE)
 	terreno.materiale.set_shader_parameter("lato_lotto", LATO_LOTTO)
 	_crea_segni_siti()
+	_crea_segni_dighe()
 	cam = CameraIsometrica.new()
 	cam.name = "Camera"
 	add_child(cam)
@@ -123,6 +126,33 @@ func _crea_segni_siti() -> void:
 		add_child(etichetta)
 
 
+## Siti per le dighe (dai dati della mappa): per ogni luogo l'altezza con l'invaso più grande.
+func _crea_segni_dighe() -> void:
+	var migliori := {}
+	for s in dati.siti_diga:
+		var k: Vector2 = s["px"]
+		if not migliori.has(k) or float(s["volume_milioni_m3"]) > float(migliori[k]["volume_milioni_m3"]):
+			migliori[k] = s
+	for s in migliori.values():
+		var p: Vector2 = dati.mondo_da_pixel(s["px"])
+		var etichetta := Label3D.new()
+		etichetta.text = "Diga %d m · lunga %d m\ninvaso %s milioni di m³ · %s ha\n%s kW medi" % [
+			int(s["altezza_m"]), int(s["lunghezza_m"]), String.num(s["volume_milioni_m3"], 2).replace(".", ","),
+			String.num(s["area_ha"], 1).replace(".", ","), String.num(s["potenza_media_kw"], 0)]
+		etichetta.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		etichetta.fixed_size = true
+		etichetta.pixel_size = 0.001
+		etichetta.font_size = 20
+		etichetta.outline_size = 8
+		etichetta.modulate = Color8(18, 52, 86)
+		etichetta.outline_modulate = Color8(243, 244, 239)
+		etichetta.no_depth_test = true
+		etichetta.visible = false
+		etichetta.position = Vector3(p.x, dati.quota(p.x, p.y) * ESAGERAZIONE + 25.0, p.y)
+		add_child(etichetta)
+		_segni_dighe.append(etichetta)
+
+
 func _crea_interfaccia() -> void:
 	var livello := CanvasLayer.new()
 	add_child(livello)
@@ -156,7 +186,7 @@ func _crea_interfaccia() -> void:
 	_casella_isoipse.toggled.connect(func(v: bool) -> void: isoipse_attive = v)
 	colonna.add_child(_casella_isoipse)
 	var aiuto := Label.new()
-	aiuto.text = "Tasto destro o WASD: sposta · Rotella: zoom · Q / E: ruota di 90°\nG: griglia · I: isoipse · 1–4: mappe · Home: torna al terrazzo centrale"
+	aiuto.text = "Tasto destro o WASD: sposta · Rotella: zoom · Q / E: ruota di 90°\nG: griglia · I: isoipse · 1–5: mappe · Home: torna al terrazzo centrale"
 	aiuto.add_theme_font_size_override("font_size", 13)
 	colonna.add_child(aiuto)
 	# Prestazioni: utile per le prove sui tre PC di Fede.
@@ -180,6 +210,8 @@ func _crea_interfaccia() -> void:
 func imposta_modo(i: int) -> void:
 	modo = i
 	terreno.materiale.set_shader_parameter("modo", i)
+	for e in _segni_dighe:
+		e.visible = (i == 4)
 	for k in _pulsanti_modo.size():
 		_pulsanti_modo[k].button_pressed = (k == i)
 
@@ -248,7 +280,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 			KEY_I:
 				isoipse_attive = not isoipse_attive
 				_casella_isoipse.button_pressed = isoipse_attive
-			KEY_1, KEY_2, KEY_3, KEY_4:
+			KEY_1, KEY_2, KEY_3, KEY_4, KEY_5:
 				imposta_modo((ev as InputEventKey).keycode - KEY_1)
 			KEY_HOME:
 				torna_al_sito()
@@ -288,6 +320,19 @@ func testo_lettura(x: float, z: float) -> String:
 		parti.append("acqua affidabile vicina" if a > 0.6 else "acqua affidabile a distanza" if a > 0.2 else "solo acqua stagionale" if s > 0.6 else "acqua lontana")
 		if c["bosco"]:
 			parti.append("bosco")
+	var v: float = c["velocita"]
+	if v > 0.0 and (not c["edificabile"] or modo == 4):
+		parti.append("corrente %s m/s" % String.num(v, 1).replace(".", ","))
+		parti.append("%s kW ogni 100 m" % String.num(c["potenza_kw"], 0 if c["potenza_kw"] >= 10.0 else 1).replace(".", ","))
+		var k: int = c["tipo"] - MappaDati.FIUME
+		if not c["edificabile"] and k >= 0 and k < dati.corsi_acqua.size():
+			parti.append(dati.corsi_acqua[k]["regime"])
+	if uso:
+		var s_uso := uso.stato(x, z)
+		if s_uso != UsoSuolo.NATURALE:
+			parti.append(UsoSuolo.NOMI_STATO[s_uso] + (" da %d anni" % uso.anni_libero(x, z) if s_uso == UsoSuolo.LIBERO else ""))
+		if uso.memoria_bosco(x, z):
+			parti.append("ex area boschiva")
 	return " · ".join(parti)
 
 

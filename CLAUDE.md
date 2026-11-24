@@ -32,7 +32,7 @@ Aggiungi in cima a `docs/diario.md` una voce con data, cosa è stato fatto, deci
 ## Comandi utili (ambiente di Claude)
 Dopo `sh scripts/setup_strumenti.sh`, aggiungi i comandi al percorso: `export PATH=$HOME/bin:$PATH`.
 - `godot --headless --path gioco --import` importa le risorse del progetto (da rifare dopo ogni modifica a script o risorse).
-- `godot --headless --path gioco -s res://test/verifica_base.gd` esegue le verifiche della base. Devono passare tutte prima di ogni push, insieme a `verifica_asset.gd`, `verifica_alberi.gd`, `verifica_cache_alberi.gd` e `verifica_uso_suolo.gd`.
+- `godot --headless --path gioco -s res://test/verifica_base.gd` esegue le verifiche della base. Devono passare tutte prima di ogni push, insieme a `verifica_asset.gd`, `verifica_alberi.gd`, `verifica_cache_alberi.gd`, `verifica_uso_suolo.gd` e `verifica_acqua.gd`.
 - `godot --headless --path gioco -s res://test/misura_alberi.gd` misura i tempi degli alberi e stampa l'impronta dei dati di tutta la mappa: se si cambia solo la velocità del calcolo, l'impronta deve restare uguale.
 - `python3 strumenti/mappe/genera_pedecollinare.py gioco/mappe/pedecollinare` rigenera i dati della mappa; poi `godot --headless --path gioco -s res://strumenti/importa_mappa.gd -- pedecollinare` li converte in `mappa.res`.
 - `xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto.gd -- /tmp/foto.png [modo] [dimensione_vista] [rotazioni]` salva un'immagine reale della scena (schermo virtuale, rendering software). Serve a controllare shader e aspetto; non sostituisce le prove di Fede.
