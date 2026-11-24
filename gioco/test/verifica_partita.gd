@@ -19,6 +19,14 @@ func _initialize() -> void:
 	root.add_child(_s)
 
 
+func _destro(premuto: bool, pos: Vector2) -> InputEventMouseButton:
+	var ev := InputEventMouseButton.new()
+	ev.button_index = MOUSE_BUTTON_RIGHT
+	ev.pressed = premuto
+	ev.position = pos
+	return ev
+
+
 ## Clicca la prima opzione della finestra di scelta aperta (o quella col testo indicato).
 func _rispondi(h: Hud, testo := "") -> bool:
 	if not h.modale_aperta():
@@ -85,6 +93,14 @@ func _process(_d: float) -> bool:
 	h.seleziona_comando("sentiero")
 	_s._aggiorna_pennello()
 	controlla(float(mat.get_shader_parameter("mostra_zona")) < 0.5, "col puntatore fuori dal terreno e un altro strumento la zona si spegne")
+	# Tasto destro (Fede): un clic secco deseleziona come Esc; trascinato sposta la vista e basta.
+	h.seleziona_comando("zona")
+	_s._unhandled_input(_destro(true, Vector2(400, 300)))
+	_s._unhandled_input(_destro(false, Vector2(460, 330)))
+	controlla(h.comando() == "zona", "trascinare col tasto destro non toglie lo strumento")
+	_s._unhandled_input(_destro(true, Vector2(400, 300)))
+	_s._unhandled_input(_destro(false, Vector2(401, 301)))
+	controlla(h.comando() == "" and float(mat.get_shader_parameter("mostra_zona")) < 0.5, "un clic destro toglie lo strumento come Esc, e la zona si spegne")
 	_s.punto_corrente = Vector3(sito.x, 0, sito.y)
 	h.seleziona_comando("campi")
 	# Campi a est del centro, entro il raggio.

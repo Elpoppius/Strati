@@ -34,6 +34,10 @@ var hud: Hud
 var raggio_pennello := 40.0
 var _tempo_prestazioni := 0.0
 var _trascinando := false
+## Dove è stato premuto il tasto destro: se al rilascio si è mosso meno della soglia (pixel) è un
+## clic secco e annulla come Esc; altrimenti era un trascinamento della vista.
+var _destro_da := Vector2.ZERO
+const SOGLIA_CLIC_DESTRO := 5.0
 ## Strumenti a pennello (Fede: la zona agricola si disegna tenendo premuto e trascinando).
 const STRUMENTI_PENNELLO := ["zona"]
 var _pennellando := false
@@ -238,7 +242,14 @@ func _unhandled_input(ev: InputEvent) -> void:
 			cam.zoom(1.0 / 1.18)
 		elif mb.button_index == MOUSE_BUTTON_WHEEL_DOWN and mb.pressed:
 			cam.zoom(1.18)
-		elif mb.button_index == MOUSE_BUTTON_RIGHT or mb.button_index == MOUSE_BUTTON_MIDDLE:
+		elif mb.button_index == MOUSE_BUTTON_RIGHT:
+			# Tasto destro (Fede): trascinato sposta la vista, un clic secco annulla come Esc.
+			_trascinando = mb.pressed
+			if mb.pressed:
+				_destro_da = mb.position
+			elif _destro_da.distance_to(mb.position) < SOGLIA_CLIC_DESTRO:
+				annulla()
+		elif mb.button_index == MOUSE_BUTTON_MIDDLE:
 			_trascinando = mb.pressed
 		elif mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed and hud.comando() != "":
 			aggiorna_lettura(mb.position)
@@ -283,15 +294,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 			KEY_P:
 				hud.apri_politiche(not hud.politiche_aperte())
 			KEY_ESCAPE:
-				if hud.politiche_aperte():
-					hud.apri_politiche(false)
-				elif partita and partita.inizio_sentiero.x >= 0:
-					partita.annulla_sentiero()
-					hud.imposta_messaggio("Sentiero chiuso. Un clic dove comincia il prossimo.")
-					_aggiorna_pennello()
-				else:
-					hud.seleziona_comando("")
-					_aggiorna_pennello()
+				annulla()
 			KEY_Y:
 				_azione("anni")
 			KEY_SPACE:
@@ -305,6 +308,20 @@ func _unhandled_input(ev: InputEvent) -> void:
 				raggio_pennello = clampf(raggio_pennello * f, 10.0, 400.0)
 				hud.imposta_messaggio("Raggio dello strumento: %d m." % roundi(raggio_pennello))
 				_aggiorna_pennello()
+
+
+## Esc o clic destro: chiude le politiche, poi la catena del sentiero, poi deseleziona lo strumento.
+func annulla() -> void:
+	_pennellando = false
+	if hud.politiche_aperte():
+		hud.apri_politiche(false)
+	elif partita and partita.inizio_sentiero.x >= 0:
+		partita.annulla_sentiero()
+		hud.imposta_messaggio("Sentiero chiuso. Un clic dove comincia il prossimo.")
+		_aggiorna_pennello()
+	else:
+		hud.seleziona_comando("")
+		_aggiorna_pennello()
 
 
 ## Applica lo strumento di prova scelto nell'HUD al cerchio attorno al punto sotto il puntatore.

@@ -3,7 +3,7 @@
 **Strati** è il progetto di Fede: un gestionale urbanistico-politico in cui il giocatore governa una città europea verosimile attraverso i secoli. Ispirazione centrale: lo sventramento di Parigi di Haussmann, riletto in chiave contemporanea. Lo costruiscono Fede e Claude, da soli, a costo zero.
 
 ## All'inizio di ogni sessione
-1. Leggi `docs/diario.md` (ultime voci in cima): cosa è stato fatto, cosa è deciso, qual è il prossimo passo.
+1. Leggi `docs/diario.md` (ultime voci in cima): cosa è stato fatto, cosa è deciso, qual è il prossimo passo. Poi `docs/todo.md`: il lavoro in corso e il suo ordine; aggiornalo quando una voce è fatta o cambia.
 2. Leggi i documenti di design in `docs/` che riguardano il lavoro del giorno.
 3. Se servono Godot o Blender, esegui `sh scripts/setup_strumenti.sh` (2–3 minuti). L'ambiente di lavoro non si conserva tra sessioni.
 

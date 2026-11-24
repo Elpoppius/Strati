@@ -6,13 +6,18 @@ Voci più recenti in cima.
 **Fatto**
 - **Zona agricola che restava accesa** (segnalato da Fede): togliendo lo strumento (clic sul tasto o Esc) o con il puntatore fuori dal terreno, la funzione del pennello usciva prima di spegnere la zona. Ora la zona si vede solo con Zona agricola o Campo, in ogni caso. Quattro verifiche nuove in `test/verifica_partita.gd`.
 - **Colonne del blocco Info che ballavano** (segnalato da Fede): il blocco si allargava quando i numeri crescevano (per esempio "2147 / 833 l'anno") e spingeva gli altri blocchi; in più le cifre di Inter hanno larghezze diverse. Ora il blocco ha larghezza fissa (300 px), la colonna dei nomi è fissa, i valori sono allineati a destra con cifre tabellari (`tnum`), e un valore troppo lungo si tronca con i puntini invece di allargare il blocco. Cifre tabellari anche per l'anno in alto. Regola in `docs/hud.md`; due verifiche nuove in `test/verifica_partita.gd`.
+- **Zona agricola, di nuovo** (Fede: restava accesa passando a un altro strumento, per esempio Sentiero): con il codice di stasera la zona si spegne sia dal tasto sia con V; probabilmente la prova era sulla versione di prima del Pull. Aggiunte comunque le verifiche.
+- **Tasto destro come Esc** (richiesta di Fede): un clic secco chiude le politiche, chiude la catena dei sentieri o toglie lo strumento; trascinato sposta la vista come prima (soglia di 5 px). Esc e clic destro usano la stessa funzione `annulla()` in `principale.gd`. Tasti aggiornati in `docs/hud.md`; due verifiche nuove in `test/verifica_partita.gd`.
+- **Todo del villaggio completo** (richiesta di Fede: imbastire la fase successiva partendo da un todo; scelta di Fede: chiudere la prima epoca prima del protourbano): nuovo `docs/todo.md` con ciò che c'è, la taratura, gli otto sistemi mancanti in ordine proposto (gruppi di consenso, luogo sacro, legna e disboscamento, pascolo e riserva, scorrerie, sentieri che diventano strade, recinto da decidere, evento soglia "il metallo e lo scambio"), mappe, base tecnica e proposte aperte. `CLAUDE.md` ora dice di leggerlo a inizio sessione.
 - Tutte le 9 verifiche superate. Il messaggio "3 resources still in use at exit" alla fine di `verifica_villaggio.gd` c'era già prima: da guardare quando capita.
 
 **Decisioni**
-- Nessuna decisione di design nuova: correzioni di difetti segnalati da Fede.
+- Fede: il clic destro deseleziona come Esc.
+- Fede: la fase successiva è completare il villaggio (prima epoca) prima dell'abitato protourbano; si parte da un todo. L'ordine in `docs/todo.md` è una proposta di Claude.
 
 **Prossimo passo**
-- Fede: fare Pull e controllare che la zona agricola sparisca togliendo lo strumento e che il blocco Info resti fermo mentre scorre il tempo; poi continuare le prove del villaggio (vedi la voce precedente).
+- Fede: fare Pull e controllare zona agricola, blocco Info fermo e clic destro; rivedere `docs/todo.md` (ordine, e le voci con (?): come mostrare i tre gruppi di consenso, forma del luogo sacro, recinto nel villaggio o no).
+- Claude: dopo il via di Fede, la taratura e poi il primo sistema del todo (gruppi di consenso).
 
 ## 24/11/2026
 **Per riprendere (riepilogo di fine sessione, account di oggi)**
