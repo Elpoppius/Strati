@@ -29,6 +29,8 @@ const LEGGERI := 2
 const COMPLETI := 3
 
 var alberi: Alberi
+## Uso del suolo: alberi tagliati, in ricrescita, aree costruite (può mancare).
+var uso: UsoSuolo
 var terreno: Terreno
 var cam: CameraIsometrica
 ## 0 sagome rade, 1 sagome, 2 leggeri, 3 completi.
@@ -46,6 +48,9 @@ var _blocchi := {}
 var _mutex := Mutex.new()
 var _in_corso := {}
 var _pronti := {}
+## Revisione di ogni blocco disegnato (Vector3i): cresce quando l'uso del suolo lo cambia, e i
+## buffer preparati con una revisione vecchia si scartano.
+var _rev := {}
 ## Compiti in sottofondo al massimo insieme.
 const COMPITI_MAX := 6
 
@@ -110,6 +115,15 @@ func aggiorna(budget_us: int) -> void:
 	else:
 		livello = RADE
 	terreno.materiale.set_shader_parameter("sottobosco", 1.0 if livello >= LEGGERI else 0.0)
+	if uso:
+		# Blocchi cambiati dall'uso del suolo: si ridisegnano (i vecchi restano finché i nuovi
+		# non sono pronti).
+		for b in uso.prendi_cambiati():
+			for l in [1, RADE_BLOCCO]:
+				var ub := Vector3i(floori(b.x / float(l)), floori(b.y / float(l)), l)
+				_rev[ub] = int(_rev.get(ub, 0)) + 1
+				if _blocchi.has(ub):
+					_blocchi[ub]["livello"] = -1
 	var lato := RADE_BLOCCO if livello == RADE else 1
 	var servono := _blocchi_inquadrati(lato)
 	var tenere := {}
@@ -121,19 +135,26 @@ func aggiorna(budget_us: int) -> void:
 		if _blocchi.has(u) and _blocchi[u]["livello"] == livello:
 			continue
 		var chiave := Vector4i(u.x, u.y, u.z, livello)
+		var rev: int = _rev.get(u, 0)
 		if budget_us < 0:
-			_prepara(chiave)
+			_prepara(chiave, rev)
 		_mutex.lock()
-		var parti: Variant = _pronti.get(chiave)
+		var pronto: Variant = _pronti.get(chiave)
 		_pronti.erase(chiave)
 		_mutex.unlock()
-		if parti == null:
+		if pronto != null and pronto[0] != rev:
+			# Preparato prima di una modifica dell'uso del suolo: si rifà.
+			pronto = null
+			if _in_corso.has(chiave):
+				WorkerThreadPool.wait_for_task_completion(_in_corso[chiave])
+				_in_corso.erase(chiave)
+		if pronto == null:
 			mancano += 1
 			if not _in_corso.has(chiave) and _in_corso.size() < COMPITI_MAX:
-				# Alta priorità: il calcolo di tutta la mappa (Alberi.calcola_in_sottofondo) gira a bassa
-				# priorità e, con pochi processori, altrimenti teneva in coda questi blocchi per secondi.
-				_in_corso[chiave] = WorkerThreadPool.add_task(_prepara.bind(chiave), true, "Blocco di alberi")
+				# Alta priorità: i blocchi inquadrati passano davanti al calcolo di tutta la mappa.
+				_in_corso[chiave] = WorkerThreadPool.add_task(_prepara.bind(chiave, rev), true, "Blocco di alberi")
 			continue
+		var parti: Array = pronto[1]
 		if _in_corso.has(chiave):
 			WorkerThreadPool.wait_for_task_completion(_in_corso[chiave])
 			_in_corso.erase(chiave)
@@ -214,14 +235,18 @@ func _dist_blocco(u: Vector3i, c: Vector3) -> float:
 
 ## Su un altro thread: dati del blocco e buffer delle MultiMesh, una parte per modello
 ## (per le sagome una parte sola). Ogni parte: [modello o -1, buffer, istanze, y_min, y_max].
-func _prepara(chiave: Vector4i) -> void:
+func _prepara(chiave: Vector4i, rev: int) -> void:
 	var liv := chiave.w
 	var lato := chiave.z
 	var k := Alberi.CAMPI
 	var dati := PackedFloat32Array()
 	for j in lato:
 		for i in lato:
-			dati.append_array(alberi.alberi_nel_blocco(Vector2i(chiave.x * lato + i, chiave.y * lato + j)))
+			var b := Vector2i(chiave.x * lato + i, chiave.y * lato + j)
+			var arr := alberi.alberi_nel_blocco(b)
+			if uso and uso.blocco_toccato(b):
+				arr = _filtra(arr)
+			dati.append_array(arr)
 	var n := dati.size() / k
 	var parti := []
 	if liv == RADE or liv == SAGOME:
@@ -244,8 +269,24 @@ func _prepara(chiave: Vector4i) -> void:
 			if not (per_modello[m] as PackedInt32Array).is_empty():
 				parti.append(_buffer(dati, per_modello[m], false, m, 1.0))
 	_mutex.lock()
-	_pronti[chiave] = parti
+	_pronti[chiave] = [rev, parti]
 	_mutex.unlock()
+
+
+## Alberi del blocco secondo l'uso del suolo: tolti quelli tagliati o coperti, rimpiccioliti
+## quelli che stanno ricrescendo.
+func _filtra(arr: PackedFloat32Array) -> PackedFloat32Array:
+	var k := Alberi.CAMPI
+	var out := PackedFloat32Array()
+	for t in arr.size() / k:
+		var o := t * k
+		var f := uso.fattore_albero(arr[o], arr[o + 1], int(arr[o + 4]), (arr[o + 5] - 0.84) / 0.24)
+		if f <= 0.0:
+			continue
+		var s := out.size()
+		out.append_array(arr.slice(o, o + k))
+		out[s + 3] = arr[o + 3] * f
+	return out
 
 
 ## Buffer di una MultiMesh: per ogni istanza trasformazione 3 x 4 per righe, colore e, per le

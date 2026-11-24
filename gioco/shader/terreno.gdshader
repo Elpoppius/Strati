@@ -30,6 +30,10 @@ uniform sampler2D palude_fine : filter_linear, repeat_disable;
 uniform sampler2D pozze_fine : filter_linear, repeat_disable;
 // 1 quando gli alberi veri sono visibili (vista vicina): sotto il bosco si dipinge il sottobosco.
 uniform float sottobosco = 0.0;
+// Uso del suolo (classe UsoSuolo, griglia da 10 m come bosco_fine): R bosco presente (1 = come la
+// mappa), G terra nuda o battuta, B campo, A superficie sigillata.
+uniform sampler2D uso_suolo : filter_linear, repeat_disable;
+uniform float uso_attivo = 0.0;
 // Zone speciali a celle da 40 m: R palude, G gessi. Lo shader ne ammorbidisce e frastaglia i bordi.
 uniform sampler2D zone_speciali : filter_linear, repeat_disable;
 uniform sampler2D chioma_a : source_color, filter_linear_mipmap, repeat_enable;
@@ -127,7 +131,8 @@ void fragment() {
 	// Boschi: bordo irregolare (la copertura a celle viene mossa dalla maschera) e una volta
 	// di chiome fatta da due strati di foglie, con macchie di luce e d'ombra grandi come alberi.
 	float lobi = texture(macchie, ruota * pos_mondo.xz / 157.0 + vec2(0.21, 0.67)).r;
-	float bosco = smoothstep(0.47, 0.53, texture(bosco_fine, UV).r + (texture(macchie, pos_mondo.xz / 19.0).r - 0.5) * 0.04 * (1.0 - lontano));
+	vec4 uso = uso_attivo > 0.5 ? texture(uso_suolo, UV) : vec4(1.0, 0.0, 0.0, 0.0);
+	float bosco = smoothstep(0.47, 0.53, texture(bosco_fine, UV).r * uso.r + (texture(macchie, pos_mondo.xz / 19.0).r - 0.5) * 0.04 * (1.0 - lontano));
 	if (bosco > 0.0 && sottobosco > 0.5) {
 		// Sottobosco: terra con foglie secche ed erba rada, in ombra sotto le chiome.
 		vec3 lettiera = mix(vec3(0.13, 0.12, 0.06), vec3(0.19, 0.17, 0.09), smoothstep(0.3, 0.7, m_fine));
@@ -149,6 +154,19 @@ void fragment() {
 		// Al margine il bosco si dirada.
 		volta *= mix(0.8, 1.0, smoothstep(0.0, 0.6, bosco));
 		verosimile = mix(verosimile, volta * 0.6, bosco);
+	}
+	// Uso del suolo: terra nuda dopo il taglio (si ricopre d'erba in pochi anni) o battuta attorno
+	// alle costruzioni, campi con i solchi, superfici sigillate (cemento, asfalto, fondamenta).
+	if (uso.g + uso.b + uso.a > 0.002) {
+		float grana = mix(m_fine, 0.5, lontano);
+		vec3 terra_nuda = mix(vec3(0.15, 0.115, 0.075), vec3(0.22, 0.17, 0.11), smoothstep(0.3, 0.7, grana));
+		verosimile = mix(verosimile, terra_nuda, uso.g * 0.9);
+		float solchi = 0.5 + 0.5 * sin(pos_mondo.x * 2.2 + (m_vicina - 0.5) * 3.0);
+		solchi = mix(solchi, 0.5, lontano);
+		vec3 campo = mix(vec3(0.17, 0.13, 0.08), vec3(0.27, 0.21, 0.13), solchi * 0.6 + grana * 0.4);
+		verosimile = mix(verosimile, campo, uso.b);
+		vec3 sigillo = vec3(0.3, 0.29, 0.27) * (0.9 + 0.2 * grana);
+		verosimile = mix(verosimile, sigillo, uso.a);
 	}
 	// Zone speciali lette in otto punti attorno, come la copertura dei boschi: bordi senza gradini.
 	vec2 pz = 1.2 / vec2(textureSize(zone_speciali, 0));

@@ -19,6 +19,7 @@ var cam: CameraIsometrica
 var sole: DirectionalLight3D
 var alberi: Alberi
 var vista_alberi: VistaAlberi
+var uso: UsoSuolo
 var modo := 0
 var griglia_attiva := true
 ## Isoipse spente di serie (scelta di Fede): il rilievo si legge da luce e ombre; tasto I.
@@ -63,6 +64,11 @@ func _ready() -> void:
 	vista_alberi.name = "Alberi"
 	add_child(vista_alberi)
 	vista_alberi.prepara(alberi, terreno, cam)
+	# Uso del suolo: alberi tagliati, in ricrescita, campi, costruzioni (regole di Fede in UsoSuolo).
+	uso = UsoSuolo.new(alberi)
+	vista_alberi.uso = uso
+	terreno.materiale.set_shader_parameter("uso_suolo", uso.texture)
+	terreno.materiale.set_shader_parameter("uso_attivo", 1.0)
 	# Dal secondo avvio gli alberi si caricano dalla cache; la prima volta si calcolano in
 	# sottofondo su tutti i processori e poi si salvano (vedi Alberi).
 	var t0 := Time.get_ticks_msec()

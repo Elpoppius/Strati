@@ -13,9 +13,20 @@ Voci più recenti in cima.
   - **Cache su disco:** finito il primo calcolo, gli alberi si salvano in `user://cache/` (circa 20 MB nella cartella dei dati dell'utente, fuori dal repository). Dagli avvii successivi si caricano in circa 0,13 s, prima che la mappa compaia. La cache si scarta da sola se cambiano la mappa o `alberi.gd`.
   - Il pannello ora dice da dove vengono gli alberi e quanto ci hanno messo ("alberi calcolati in … s" oppure "alberi dalla cache in … ms").
   - Nuovi test: `test/verifica_cache_alberi.gd` (salvataggio, caricamento, scarto di una cache non valida o rovinata) e `test/misura_alberi.gd` (tempi e impronta dei dati). Tutte le verifiche superate.
+- **Disboscamento e uso del suolo** (regole di Fede, vedi Decisioni): nuova classe `UsoSuolo` (`gioco/script/uso_suolo.gd`) sulla griglia da 10 m, con memoria del bosco, taglio con conteggio del legname, ricrescita dai margini solo con semi vicini e terreno libero, campi, costruzioni non invasive (tolte, si torna come prima) e sigillate (mai più alberi, memoria che resta). La vista toglie o rimpicciolisce gli alberi toccati senza ricalcolare la cache; il terreno mostra terra nuda, campi con i solchi, superfici sigillate. Dettagli in `docs/resa-grafica.md`, immagine `docs/immagini/uso-suolo-24-11.jpg`, verifiche `test/verifica_uso_suolo.gd` (tutte superate). Non ci sono ancora comandi nel gioco per tagliare o costruire: arriveranno con l'HUD.
 
 **Decisioni**
 - Fede: il caricamento degli alberi va reso più rapido, ottimizzando o precaricando. Scelta di Claude: entrambe le cose, cioè calcolo ottimizzato e parallelo la prima volta, cache su disco precaricata all'avvio dalle volte successive.
+- Fede: le prove sui PC (tempi degli alberi, fotogrammi al secondo) vanno in coda; il PC dedicato è pronto.
+- Fede: rimandati la taratura di dettaglio e densità degli alberi e il prato da vicino in 3D.
+- Fede, **disboscamento:** un'area disboscata resta in memoria come ex area boschiva. Se attorno ci sono altri alberi (è stata tagliata una parte del bosco), nel tempo nascono nuovi alberi, purché il terreno resti libero. Se il terreno viene edificato: con materiali non invasivi, tolto l'edificio e lasciato libero il terreno si torna alla condizione di prima (possono nascere nuovi alberi); con materiali invasivi (cemento, asfalto, fondamenta, fognature) l'area non accoglie più alberi, ma resta la memoria dell'origine boschiva. Gli effetti della rimozione degli alberi sono quelli naturali, come i vantaggi.
+- Fede, **acqua:** inserire la meccanica della corrente (per mulini, turbine…) e i dislivelli per le dighe, oltre a rapide, cascate e livelli che cambiano con le piene.
+- Fede: sistemare le carte delle chiome viste di taglio (dopo l'acqua, prima delle texture delle case).
+- Fede: procedere con le texture di paglia e argilla e con il lotto del villaggio.
+- Fede: **Prototipo 0 in Godot accolto**, giocabile (non solo resa grafica).
+- Fede: niente recinto per ora; nelle epoche in cui è coerente **l'abitato cresce spontaneo**.
+- Fede, **HUD:** disposizione come in Age of Empires, con i controlli delle mappe a destra e i comandi a sinistra. Lo stile è da definire.
+- Fede: ordine di lavoro 3 (disboscamento), 4 (acqua), 5 (carte di taglio), 6 (texture), 7 (villaggio), a (HUD), 8 (Prototipo 0 in Godot).
 
 **Prossimo passo**
 - Fede, sul PC di casa: fare Pull, aprire il gioco due volte e riportare i tempi del pannello. La prima volta "alberi calcolati in … s", la seconda "alberi dalla cache in … ms". Dire anche se all'avvio ci sono scatti.
