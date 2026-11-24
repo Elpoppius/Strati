@@ -20,6 +20,8 @@ var sole: DirectionalLight3D
 var alberi: Alberi
 var vista_alberi: VistaAlberi
 var uso: UsoSuolo
+## La partita della prima epoca (il villaggio): simulazione, disegno e comandi.
+var partita: Partita
 var modo := 0
 var griglia_attiva := true
 ## Isoipse spente di serie (scelta di Fede): il rilievo si legge da luce e ombre; tasto I.
@@ -80,6 +82,10 @@ func _ready() -> void:
 		_stato_alberi = "calcolo degli alberi in corso"
 		alberi.calcola_in_sottofondo(cam.bersaglio.x, cam.bersaglio.z)
 	_crea_interfaccia()
+	partita = Partita.new()
+	partita.name = "Partita"
+	add_child(partita)
+	partita.avvia(self)
 	imposta_modo(0)
 
 
@@ -163,7 +169,7 @@ func _crea_interfaccia() -> void:
 	# veri non arrivano con il Prototipo 0 in Godot.
 	hud.aggiungi_comandi("Prove · uso del suolo", [
 		{"id": "abbatti", "testo": "Abbatti gli alberi", "tasto": "T"},
-		{"id": "coltiva", "testo": "Campi", "tasto": "C"},
+		{"id": "coltiva", "testo": "Suolo coltivato", "tasto": ""},
 		{"id": "costruisci", "testo": "Costruisci · argilla e legno", "tasto": "B"},
 		{"id": "sigilla", "testo": "Costruisci · cemento e asfalto", "tasto": "!", "pericolo": true},
 		{"id": "libera", "testo": "Libera il terreno", "tasto": "L"},
@@ -254,8 +260,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 				imposta_modo((ev as InputEventKey).keycode - KEY_1)
 			KEY_HOME:
 				torna_al_sito()
-			KEY_T, KEY_C, KEY_B, KEY_L:
-				var id: String = {KEY_T: "abbatti", KEY_C: "coltiva", KEY_B: "costruisci", KEY_L: "libera"}[(ev as InputEventKey).keycode]
+			KEY_T, KEY_B, KEY_L, KEY_F, KEY_C, KEY_V, KEY_H:
+				var id: String = {KEY_T: "abbatti", KEY_B: "costruisci", KEY_L: "libera", KEY_F: "fonda", KEY_C: "campi", KEY_V: "sentiero", KEY_H: "granaio"}[(ev as InputEventKey).keycode]
 				hud.seleziona_comando("" if hud.comando() == id else id)
 				_aggiorna_pennello()
 			KEY_ESCAPE:
@@ -263,6 +269,12 @@ func _unhandled_input(ev: InputEvent) -> void:
 				_aggiorna_pennello()
 			KEY_Y:
 				_azione("anni")
+			KEY_SPACE:
+				partita.pausa_o_riprendi()
+			KEY_EQUAL, KEY_KP_ADD:
+				partita.imposta_velocita(mini(partita.velocita + 1, 3))
+			KEY_MINUS, KEY_KP_SUBTRACT:
+				partita.imposta_velocita(maxi(partita.velocita - 1, 0))
 			KEY_BRACKETLEFT, KEY_BRACKETRIGHT:
 				var f := 1.25 if (ev as InputEventKey).keycode == KEY_BRACKETRIGHT else 0.8
 				raggio_pennello = clampf(raggio_pennello * f, 10.0, 400.0)
@@ -275,6 +287,10 @@ func applica_strumento() -> void:
 	if punto_corrente == null or uso == null:
 		return
 	var p: Vector3 = punto_corrente
+	if hud.comando() in Partita.STRUMENTI:
+		partita.applica(hud.comando(), p, raggio_pennello)
+		hud.imposta_lettura(testo_lettura(p.x, p.z))
+		return
 	var celle := uso.celle_nel_cerchio(p.x, p.z, raggio_pennello)
 	match hud.comando():
 		"abbatti":
@@ -308,7 +324,12 @@ func _aggiorna_pennello() -> void:
 		terreno.materiale.set_shader_parameter("pennello", Vector3(0, 0, -1))
 		return
 	var p: Vector3 = punto_corrente
-	terreno.materiale.set_shader_parameter("pennello", Vector3(p.x, p.z, raggio_pennello))
+	var r := raggio_pennello
+	if partita and hud.comando() in Partita.STRUMENTI:
+		r = partita.raggio_strumento(hud.comando(), raggio_pennello)
+		if hud.comando() == "fonda" and partita.sim.fondato:
+			r = -1.0
+	terreno.materiale.set_shader_parameter("pennello", Vector3(p.x, p.z, r))
 	terreno.materiale.set_shader_parameter("colore_pennello", Hud.PERICOLO if hud.comando() == "sigilla" else Hud.BIANCO)
 
 

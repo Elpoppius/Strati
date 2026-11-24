@@ -51,6 +51,13 @@ const LEGENDE := [
 var tema: Theme
 var _righe_mappe: Array[Button] = []
 var _righe_comandi := {}
+var _righe_azioni := {}
+var _cronaca: Label
+var _valori_indicatori := {}
+var _avviso: PanelContainer
+var _testo_avviso: Label
+var _modale: Control
+var _radice: Control
 var _comando := ""
 var _griglia: Button
 var _isoipse: Button
@@ -79,10 +86,12 @@ func costruisci(nome_mappa: String, nomi_mappe: Array) -> void:
 	radice.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	radice.theme = tema
 	add_child(radice)
+	_radice = radice
 	_barra_alta(radice, nome_mappa)
 	_pannello_comandi(radice)
 	_pannello_mappe(radice, nomi_mappe)
 	_barra_bassa(radice)
+	_crea_avviso(radice)
 	seleziona_modo(0)
 
 
@@ -133,6 +142,14 @@ func _pannello_comandi(radice: Control) -> void:
 	_messaggio.add_theme_color_override("font_color", GRIGIO)
 	_messaggio.add_theme_font_size_override("font_size", 13)
 	_colonna_comandi.add_child(_messaggio)
+	_intestazione(_colonna_comandi, "Cronaca")
+	_cronaca = Label.new()
+	_cronaca.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_cronaca.custom_minimum_size.x = LARGHEZZA_PANNELLO - 2 * MARGINE
+	_cronaca.add_theme_color_override("font_color", GRIGIO)
+	_cronaca.add_theme_font_size_override("font_size", 12)
+	_cronaca.text = "—"
+	_colonna_comandi.add_child(_cronaca)
 
 
 func _pannello_mappe(radice: Control, nomi: Array) -> void:
@@ -198,7 +215,7 @@ func _barra_bassa(radice: Control) -> void:
 	_lettura.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	riga.add_child(_lettura)
 	var aiuto := Label.new()
-	aiuto.text = "Tasto destro o WASD sposta · rotella zoom · Q E ruota · Home torna al sito"
+	aiuto.text = "Spazio tempo · + − velocità · [ ] raggio · Esc nessuno strumento · tasto destro o WASD sposta · rotella zoom · Q E ruota"
 	aiuto.add_theme_color_override("font_color", GRIGIO)
 	aiuto.add_theme_font_size_override("font_size", 12)
 	riga.add_child(aiuto)
@@ -226,6 +243,7 @@ func aggiungi_comandi(titolo: String, voci: Array) -> void:
 			_righe_comandi[id] = r
 		else:
 			r.pressed.connect(func() -> void: azione.emit(id))
+			_righe_azioni[id] = r
 
 
 func seleziona_comando(id: String) -> void:
@@ -236,6 +254,161 @@ func seleziona_comando(id: String) -> void:
 
 func comando() -> String:
 	return _comando
+
+
+## Segna come scelta (per inversione) una riga di azione, per esempio la velocità del tempo.
+func segna(id: String, premuto: bool) -> void:
+	var r: Button = _righe_azioni.get(id, _righe_comandi.get(id))
+	if r:
+		r.toggle_mode = true
+		r.set_pressed_no_signal(premuto)
+
+
+func abilita(id: String, attivo: bool) -> void:
+	var r: Button = _righe_azioni.get(id, _righe_comandi.get(id))
+	if r:
+		r.disabled = not attivo
+		r.modulate.a = 1.0 if attivo else 0.4
+
+
+func cambia_testo(id: String, testo: String) -> void:
+	var r: Button = _righe_azioni.get(id, _righe_comandi.get(id))
+	if r:
+		r.text = "        " + testo
+
+
+## Indicatori nella barra in alto: voci [etichetta, valore, allarme]. In allarme il valore è
+## rosso (pericolo), altrimenti bianco.
+func imposta_indicatori(voci: Array) -> void:
+	for v in voci:
+		var nome: String = v[0]
+		if not _valori_indicatori.has(nome):
+			var box := HBoxContainer.new()
+			box.add_theme_constant_override("separation", 6)
+			var e := Label.new()
+			e.text = nome.to_upper()
+			e.add_theme_font_override("font", _carattere(true, 1.6))
+			e.add_theme_font_size_override("font_size", 11)
+			e.add_theme_color_override("font_color", GRIGIO)
+			box.add_child(e)
+			var l := Label.new()
+			l.add_theme_font_override("font", _carattere(true))
+			l.add_theme_font_size_override("font_size", 16)
+			box.add_child(l)
+			indicatori.add_child(box)
+			_valori_indicatori[nome] = l
+		var lab: Label = _valori_indicatori[nome]
+		lab.text = str(v[1])
+		lab.add_theme_color_override("font_color", PERICOLO if v[2] else BIANCO)
+
+
+func imposta_cronaca(righe: Array) -> void:
+	_cronaca.text = "\n".join(righe) if not righe.is_empty() else "—"
+
+
+## Avviso breve sotto la barra in alto, per gli eventi rilevanti (siccità, carestie gravi).
+func avviso(testo: String) -> void:
+	_testo_avviso.text = testo
+	_avviso.visible = true
+	var t := get_tree().create_timer(4.0) if is_inside_tree() else null
+	if t:
+		t.timeout.connect(func() -> void: if _testo_avviso.text == testo: _avviso.visible = false)
+
+
+func _crea_avviso(radice: Control) -> void:
+	_avviso = PanelContainer.new()
+	_avviso.anchor_left = 0.5
+	_avviso.anchor_right = 0.5
+	_avviso.offset_top = ALTEZZA_BARRA + 12
+	_avviso.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_avviso.visible = false
+	radice.add_child(_avviso)
+	var riga := HBoxContainer.new()
+	riga.add_theme_constant_override("separation", 12)
+	_avviso.add_child(riga)
+	var segno := ColorRect.new()
+	segno.color = PERICOLO
+	segno.custom_minimum_size = Vector2(4, 0)
+	riga.add_child(segno)
+	_testo_avviso = Label.new()
+	riga.add_child(_testo_avviso)
+
+
+func modale_aperta() -> bool:
+	return _modale != null
+
+
+## Finestra di scelta al centro (momenti decisivi, presagi, eventi). `al_termine` riceve l'id
+## dell'opzione scelta.
+func mostra_scelta(tipo: String, titolo: String, testo: String, opzioni: Array, al_termine: Callable) -> void:
+	chiudi_scelta()
+	var velo := ColorRect.new()
+	velo.color = Color(0, 0, 0, 0.35)
+	velo.set_anchors_preset(Control.PRESET_FULL_RECT)
+	velo.mouse_filter = Control.MOUSE_FILTER_STOP
+	_radice.add_child(velo)
+	_modale = velo
+	var centro := CenterContainer.new()
+	centro.set_anchors_preset(Control.PRESET_FULL_RECT)
+	velo.add_child(centro)
+	var p := PanelContainer.new()
+	p.custom_minimum_size.x = 560
+	centro.add_child(p)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 10)
+	p.add_child(col)
+	var k := Label.new()
+	k.text = tipo.to_upper()
+	k.add_theme_font_override("font", _carattere(true, 1.6))
+	k.add_theme_font_size_override("font_size", 11)
+	k.add_theme_color_override("font_color", GRIGIO)
+	col.add_child(k)
+	var t := Label.new()
+	t.text = titolo
+	t.add_theme_font_override("font", _carattere(true))
+	t.add_theme_font_size_override("font_size", 24)
+	col.add_child(t)
+	var riga := ColorRect.new()
+	riga.color = RIGA
+	riga.custom_minimum_size.y = 1
+	col.add_child(riga)
+	var corpo := Label.new()
+	corpo.text = testo
+	corpo.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	corpo.custom_minimum_size.x = 528
+	col.add_child(corpo)
+	for o in opzioni:
+		var box := VBoxContainer.new()
+		box.add_theme_constant_override("separation", 0)
+		col.add_child(box)
+		var b := Button.new()
+		b.text = String(o["testo"])
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.focus_mode = Control.FOCUS_NONE
+		b.custom_minimum_size.y = 34
+		var st := StyleBoxFlat.new()
+		st.bg_color = Color(0, 0, 0, 0)
+		st.set_border_width_all(1)
+		st.border_color = RIGA
+		st.set_content_margin_all(8)
+		b.add_theme_stylebox_override("normal", st)
+		box.add_child(b)
+		var id: String = o["id"]
+		b.pressed.connect(func() -> void: chiudi_scelta(); al_termine.call(id))
+		if String(o.get("nota", "")) != "":
+			var nota := Label.new()
+			nota.text = o["nota"]
+			nota.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			nota.custom_minimum_size.x = 528
+			nota.add_theme_font_size_override("font_size", 12)
+			nota.add_theme_color_override("font_color", GRIGIO)
+			box.add_child(nota)
+
+
+func chiudi_scelta() -> void:
+	if _modale:
+		_modale.queue_free()
+		_modale = null
 
 
 func seleziona_modo(i: int) -> void:
@@ -384,4 +557,5 @@ func _crea_tema() -> Theme:
 	t.set_color("font_pressed_color", "Button", NERO)
 	t.set_color("font_hover_pressed_color", "Button", NERO)
 	t.set_color("font_focus_color", "Button", BIANCO)
+	t.set_color("font_disabled_color", "Button", GRIGIO)
 	return t

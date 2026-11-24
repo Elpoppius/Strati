@@ -31,4 +31,10 @@
 - **Strumento sulla mappa:** un cerchio sottile bianco (rosso se l'azione è irreversibile) segue il puntatore.
 
 ## Tasti
-1–5 mappe · G griglia · I isoipse · T abbatti · C campi · B costruisci (argilla e legno) · L libera · Y +10 anni · [ e ] raggio dello strumento · Esc nessuno strumento · Q E ruota · rotella zoom · tasto destro o WASD sposta · Home torna al sito.
+1–5 mappe · G griglia · I isoipse · F fondare · C campi · V sentiero · H granaio · Spazio pausa o riprendi · + e − velocità del tempo · T abbatti · B costruisci (argilla e legno) · L libera · Y +10 anni · [ e ] raggio dello strumento · Esc nessuno strumento · Q E ruota · rotella zoom · tasto destro o WASD sposta · Home torna al sito.
+
+## Partita (Prototipo 0 in Godot)
+- **Barra in alto:** anno, popolazione, cibo (scorta / consumo dell'anno), salute, legittimità. Il valore diventa rosso quando è in pericolo (pochi abitanti, scorte sotto il 30% del consumo, salute sotto 45, legittimità sotto 30).
+- **Pannello a sinistra:** gruppo *Villaggio* (Fondare, Campi, Sentiero, Granaio, usanza sul raccolto), gruppo *Tempo* (pausa e tre velocità), messaggio dell'ultima azione e *Cronaca* con gli ultimi fatti.
+- **Scelte:** finestra al centro, con tipo (presagio, momento decisivo, evento, crisi…), titolo, testo e opzioni con la loro conseguenza in grigio. Il tempo si ferma finché non si sceglie.
+- **Avvisi:** fascia breve sotto la barra in alto con un segno rosso, solo per gli eventi rilevanti (siccità, carestie gravi).

@@ -168,11 +168,24 @@ void fragment() {
 		// Bordi netti ma irregolari: la texture è a 10 m e, filtrata, faceva aloni sfumati.
 		float frangia = (m_fine - 0.5) * 0.25 + (m_vicina - 0.5) * 0.15;
 		uso.gba = smoothstep(vec3(0.35), vec3(0.65), uso.gba + frangia) * step(vec3(0.002), uso.gba);
-		vec3 terra_nuda = mix(vec3(0.15, 0.115, 0.075), vec3(0.22, 0.17, 0.11), smoothstep(0.3, 0.7, grana));
+		// Terra battuta o appena scoperta: più chiara e polverosa dei campi arati.
+		vec3 terra_nuda = mix(vec3(0.2, 0.165, 0.12), vec3(0.29, 0.24, 0.18), smoothstep(0.3, 0.7, grana));
 		verosimile = mix(verosimile, terra_nuda, uso.g * 0.9);
-		float solchi = 0.5 + 0.5 * sin(pos_mondo.x * 3.1 + (m_vicina - 0.5) * 4.0 + (m_fine - 0.5) * 1.5);
+		// Campi: appezzamenti da 40 m (la griglia della mappa), ognuno con il suo verso dei solchi
+		// e il suo tono (arato, seminato, stoppie), separati da sottili prode erbose.
+		vec2 cella_campo = floor((pos_mondo.xz + 20.0) / 40.0);
+		float h1 = fract(sin(dot(cella_campo, vec2(12.9898, 78.233))) * 43758.5453);
+		float h2 = fract(sin(dot(cella_campo, vec2(39.3468, 11.135))) * 24634.6345);
+		vec2 verso_solchi = h1 < 0.5 ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+		float solchi = 0.5 + 0.5 * sin(dot(pos_mondo.xz, verso_solchi) * 3.1 + (m_fine - 0.5) * 1.5);
 		solchi = mix(solchi, 0.5, lontano);
-		vec3 campo = mix(vec3(0.17, 0.13, 0.08), vec3(0.27, 0.21, 0.13), solchi * 0.6 + grana * 0.4);
+		vec3 arato = mix(vec3(0.16, 0.12, 0.075), vec3(0.25, 0.19, 0.12), solchi * 0.6 + grana * 0.4);
+		vec3 seminato = mix(arato, verosimile * vec3(0.95, 1.0, 0.85), 0.55 * (0.6 + 0.4 * solchi));
+		vec3 stoppie = mix(vec3(0.36, 0.3, 0.17), vec3(0.45, 0.38, 0.22), solchi * 0.5 + grana * 0.5);
+		vec3 campo = h2 < 0.45 ? arato : (h2 < 0.8 ? seminato : stoppie);
+		vec2 in_cella = abs(fract((pos_mondo.xz + 20.0) / 40.0) - 0.5) * 40.0;
+		float proda = smoothstep(19.6 - 1.2 * (1.0 - lontano), 19.9, max(in_cella.x, in_cella.y));
+		campo = mix(campo, verosimile * 0.9, proda * (1.0 - lontano * 0.7));
 		verosimile = mix(verosimile, campo, uso.b);
 		vec3 sigillo = vec3(0.3, 0.29, 0.27) * (0.9 + 0.2 * grana);
 		verosimile = mix(verosimile, sigillo, uso.a);
