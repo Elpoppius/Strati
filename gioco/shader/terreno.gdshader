@@ -63,6 +63,10 @@ uniform vec3 colore_pennello : source_color = vec3(1.0);
 // presi. x = lato in metri (0 = spenta), y = scarto dell'origine (20 per le celle da 40 m centrate
 // sui punti della mappa, 0 per i lotti da 20 m), z = raggio in cui si vede la griglia.
 uniform vec3 griglia_magnetica = vec3(0.0);
+// Contado del villaggio (x, z, raggio in metri; raggio negativo = spento): con lo strumento Campi
+// si vede il confine della terra coltivabile, con la zona fuori appena velata (decisione di Fede:
+// il limite c'è ma non si percepiva).
+uniform vec3 contado = vec3(0.0, 0.0, -1.0);
 
 // Tecnica di ogni campo (UsoSuolo.tecniche, un byte per cella da 10 m, senza filtro): 0 zappa
 // (villaggio), 1 aratro in croce, 2 centuriazione, 3 strisce medievali, 4 meccanica.
@@ -373,6 +377,16 @@ void fragment() {
 	// Lotto sotto il puntatore.
 	if (lotto_evidenziato.x >= 0.0 && floor(pos_mondo.xz / lato_lotto) == lotto_evidenziato) {
 		col = mix(col, pow(vec3(0.71, 0.26, 0.18), vec3(2.2)), 0.55);
+	}
+	if (contado.z > 0.0) {
+		float dc = distance(pos_mondo.xz, contado.xy);
+		float fwc2 = max(fwidth(dc), 1e-3);
+		float linea_c = 1.0 - smoothstep(fwc2 * 0.8, fwc2 * 2.2, abs(dc - contado.z));
+		// Tratteggio lungo il confine, per distinguerlo dal cerchio dello strumento.
+		float ang = atan(pos_mondo.z - contado.y, pos_mondo.x - contado.x) * contado.z / 12.0;
+		linea_c *= step(0.4, fract(ang));
+		col = mix(col, vec3(1.0), linea_c * 0.75);
+		col *= 1.0 - 0.18 * smoothstep(contado.z, contado.z + fwc2 * 3.0, dc);
 	}
 	// Strumento dell'HUD: anello sottile e area appena schiarita.
 	if (pennello.z > 0.0) {

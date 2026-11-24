@@ -90,6 +90,17 @@ func _process(_d: float) -> bool:
 	h.seleziona_comando("sentiero")
 	controlla(h.menu_aperto() == "vie" and (h._menu["vie"]["pagina"] as Control).visible and not (h._menu["territorio"]["pagina"] as Control).visible, "scegliere uno strumento (anche da tastiera) apre il suo menù")
 	controlla(h._messaggio.text.contains("comincia"), "la scheda spiega cosa fa lo strumento scelto")
+	# Il gioco è a sé stante (Fede): nei testi del gioco niente nomi di altri giochi.
+	var citazioni: Array[String] = []
+	for testi in [h._testi, h._descrizioni]:
+		for k in testi:
+			for nome in ["Cities", "Skylines", "Age of Empires", "SimCity", "Caesar", "Civilization"]:
+				if String(testi[k]).contains(nome):
+					citazioni.append(k)
+	for b in h._righe_azioni.values():
+		if (b as Control).tooltip_text.contains("Cities"):
+			citazioni.append(str(b))
+	controlla(citazioni.is_empty(), "nessun riferimento ad altri giochi nei testi del gioco %s" % str(citazioni))
 	controlla(not h._righe_comandi.has("sigilla") and not h._righe_comandi.has("costruisci"), "nessuno strumento per scegliere il materiale: è una qualità nascosta delle costruzioni")
 	_s._azione("anni")
 	controlla(h._messaggio.text.contains("10 anni"), "l'azione Fai passare 10 anni funziona")

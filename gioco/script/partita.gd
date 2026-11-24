@@ -49,13 +49,15 @@ func avvia(s: Node, seme: int = -1) -> void:
 	])
 	hud.aggiungi_menu("vie", "Vie", "Come ci si muove.", [
 		{"id": "sentiero", "icona": "sentiero", "testo": "Tracciare un sentiero", "breve": "Sentiero", "tasto": "V",
-		 "descrizione": "Come in Cities: un clic dove comincia, un clic dove finisce, poi si continua da lì; Esc chiude. Un sentiero collegato al villaggio porta i campi più lontano."},
-		{"id": "collega_rete", "icona": "collega", "testo": "Collega alla rete: ogni sentiero parte dal punto più vicino del villaggio o dei sentieri",
-		 "breve": "Collega", "tasto": "", "strumento": false},
+		 "descrizione": "Un clic dove comincia, un clic dove finisce, poi si continua da lì; Esc chiude. I campi serviti da un sentiero collegato al villaggio rendono di più."},
 	])
 	hud.aggiungi_menu("edifici", "Edifici", "Costruzioni comuni. Le case nascono da sole.", [
 		{"id": "granaio", "icona": "granaio", "testo": "Granaio (30 di cibo)", "breve": "Granaio", "tasto": "H",
 		 "descrizione": "Costa 30 di cibo e va vicino al centro: le scorte si conservano meglio."},
+	])
+	# Opzione dello strumento Sentiero (Fede: un'opzione, non un tasto accanto): Collega alla rete.
+	hud.aggiungi_opzioni("sentiero", [
+		{"id": "collega_rete", "testo": "Collega alla rete", "suggerimento": "Acceso: ogni sentiero parte dal punto più vicino del villaggio o dei sentieri. Spento: il sentiero comincia dove vuoi."},
 	])
 	# Strumenti: l'ultimo menù a destra, che funziona come gli altri (decisione di Fede). Demolisci
 	# resta trasversale: vale su tutto ciò che si può demolire e non è una costruzione.
@@ -207,7 +209,7 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 			var testo := ""
 			if v["sito"] != null:
 				testo += "Sito %d · %s\n\n" % [v["sito"]["n"], v["sito"]["nome"]]
-			for voce in [["Acqua", "acqua"], ["Fertilità intorno", "fertilita"], ["Rischio di piena", "piena"], ["Difesa", "difesa"], ["Aria", "aria"]]:
+			for voce in [["Acqua", "acqua"], ["Fertilità intorno", "fertilita"], ["Boschi (caccia e raccolta)", "bosco"], ["Pesca", "pesca"], ["Rischio di piena", "piena"], ["Difesa", "difesa"], ["Aria", "aria"]]:
 				testo += "%s: %s%s\n" % [voce[0], v[voce[1]][0], "  (sfavorevole)" if v[voce[1]][1] else ""]
 			testo += "\nÈ la decisione più importante della partita: il sito condiziona tutti i secoli successivi."
 			hud.mostra_scelta("Fondazione", "Fondare qui?", testo,
@@ -235,11 +237,16 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 						celle.append(q)
 			# Solo aggiungere: i campi che ci sono già restano (Fede: sovrapporre il cerchio ai campi
 			# esistenti li abbandonava). Per abbandonare un campo si usa Demolisci.
+			var fuori := 0
+			for q in celle:
+				if not sim.a_portata(q) and not sim.campi.has(sim.px(q)):
+					fuori += 1
 			var aggiunti := sim.aggiungi_campi(celle)
+			var nota_fuori := (" %d fuori dal contado (fino a %d m dal villaggio)." % [fuori, roundi(sim.raggio_contado())]) if fuori > 0 else ""
 			if aggiunti == 0:
-				hud.imposta_messaggio(sim.motivo_campo(p) if sim.motivo_campo(p) != "" else "Qui i campi ci sono già.")
+				hud.imposta_messaggio((sim.motivo_campo(p) if sim.motivo_campo(p) != "" else "Qui i campi ci sono già.") + (nota_fuori if sim.a_portata(p) else ""))
 			else:
-				hud.imposta_messaggio("Dissodati %d campi (%s ha)." % [aggiunti, String.num(aggiunti * 0.16, 1).replace(".", ",")])
+				hud.imposta_messaggio("Dissodati %d campi (%s ha).%s" % [aggiunti, String.num(aggiunti * 0.16, 1).replace(".", ","), nota_fuori])
 		"sentiero":
 			if not sim.fondato:
 				hud.imposta_messaggio("Prima bisogna fondare il villaggio.")
@@ -257,7 +264,7 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 				hud.imposta_messaggio(m)
 				return
 			hud.imposta_messaggio("Sentiero tracciato (%d m)%s Continua da qui o premi Esc." % [roundi(_lunghezza(a, p)),
-				": porta i campi più lontano." if sim.collegato(p) else ", non collegato al villaggio."])
+				": i campi che serve rendono di più." if sim.collegato(p) else ", non collegato al villaggio."])
 			if not collega_rete:
 				inizio_sentiero = p
 		"demolisci":
@@ -328,7 +335,7 @@ func annulla_sentiero() -> void:
 func raggio_strumento(comando: String, raggio: float) -> float:
 	match comando:
 		"fonda":
-			return (5 + sim.raggio_extra) * SimVillaggio.PX_CELLA * sim.dati.metri_per_px
+			return SimVillaggio.CONTADO_MIN
 		"campi", "demolisci":
 			return raggio
 		"granaio":
@@ -346,12 +353,16 @@ func aggiorna_hud() -> void:
 		["Cibo", ("%d / %d l'anno" % [roundi(sim.cibo), roundi(sim.pop)]) if on else trattino, on and sim.cibo < sim.pop * 0.3],
 		["Salute", str(roundi(sim.salute)) if on else trattino, on and sim.salute < 45.0],
 		["Legittimità", str(roundi(sim.legittimita)) if on else trattino, on and sim.legittimita < 30.0],
+		["Caccia e pesca", ("%d%%" % roundi(100.0 * (sim.ultima_caccia + sim.ultima_pesca) / maxf(sim.ultimo_raccolto + sim.ultima_caccia + sim.ultima_pesca, 1.0))) if on else trattino, false],
+		["Densità", ("%d ab/ha" % roundi(sim.densita())) if on else trattino, on and sim.affollamento > 0.3],
 	])
 	var righe: Array = []
 	for e in sim.cronaca.slice(0, 6):
 		righe.append("%s · %s" % [SimVillaggio.anno_testo(e["anno"]), e["testo"]])
 	hud.imposta_cronaca(righe)
 	hud.abilita("fonda", not on and not sim.finito)
+	# Dopo la fondazione il tasto non serve più (Fede): torna solo se il villaggio è abbandonato.
+	hud.mostra("fonda", not on)
 	hud.segna("collega_rete", collega_rete)
 	for id in ["campi", "sentiero", "comune", "famiglie"]:
 		hud.abilita(id, on and not sim.finito)

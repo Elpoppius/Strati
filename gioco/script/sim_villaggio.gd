@@ -65,6 +65,34 @@ const RESA_TECNICA := [1.0, 1.3, 1.55, 1.8, 3.0]
 const COSTO_AMMODERNAMENTO := 0.8
 const QUOTA_AMMODERNAMENTO := 0.1
 var tecnica_corrente := 0
+
+# ---------- contado ed economia mista ----------
+## Contado (decisione di Fede del 24/11/2026): la terra che il villaggio coltiva. Il raggio cresce
+## con gli abitanti, da 400 m alla fondazione fino a 800 m, il limite di cammino (verosimile: oltre
+## circa 1 km la cura dei campi cala molto). I sentieri non lo allargano.
+const CONTADO_MIN := 400.0
+const CONTADO_MAX := 800.0
+const CONTADO_PER_ABITANTE := 4.0
+var _contado_annunciato := 0.0
+## Sentieri (decisione di Fede): velocizzano l'accumulo di cibo. I campi serviti da un sentiero
+## collegato al villaggio (entro 120 m) o vicini al centro (entro 200 m) rendono di più.
+const BONUS_SENTIERO := 0.1
+## Economia mista (decisione di Fede): caccia, raccolta e pesca accanto ai campi. Boschi e acque
+## vicini danno cibo; ma l'acqua porta le piene e il bosco la selvaggina che rovina i campi al suo
+## margine (proposta di Claude). Numeri da tarare.
+const RAGGIO_RISORSE := 40  # pixel (1,6 km)
+const QUOTA_CACCIA := 0.4  # cibo per abitante che caccia e raccolta possono dare al massimo
+const QUOTA_PESCA := 0.2
+const RESA_BOSCO := 0.04
+const RESA_ACQUA := 0.15
+var selvaggina := 1.0
+var ultima_caccia := 0.0
+var ultima_pesca := 0.0
+var _risorse := {"bosco": 0.0, "acqua": 0.0}
+var _anni_risorse := 0
+var _campi_serviti := {}
+var _campi_al_bosco := {}
+var _firma_serviti := 0
 var _tecnica_campi := {}  # indice del pixel -> tecnica (assente = 0)
 ## Gli stranieri arrivano con un generatore a parte, così le altre vicende della partita restano
 ## quelle di prima a parità di seme.
@@ -276,6 +304,9 @@ func valuta_sito(p: Vector2i) -> Dictionary:
 	out["difesa"] = ["buona", false] if difesa > 0.8 else (["discreta", false] if difesa > 0.3 else ["scarsa", true])
 	var dm := _d_palude[i]
 	out["aria"] = ["malsana, paludi vicine", true] if dm <= 3.0 else (["paludi non lontane", true] if dm <= 6.0 else ["salubre", false])
+	var r := risorse_attorno(p)
+	out["bosco"] = ["ricchi, molta selvaggina", false] if r["bosco"] > 550.0 else (["presenti", false] if r["bosco"] > 300.0 else ["pochi", true])
+	out["pesca"] = ["fiume vicino, buona pesca", false] if r["acqua"] > 150.0 else (["torrenti o fiume a distanza", false] if r["acqua"] > 40.0 else ["scarsa", true])
 	out["sito"] = null
 	for sito in dati.siti:
 		if cheb(Vector2i(sito["px"]), p) <= 8:
@@ -298,6 +329,9 @@ func fonda(p: Vector2i) -> void:
 	cibo = 45.0
 	salute = 70.0
 	legittimita = 60.0
+	selvaggina = 1.0
+	_anni_risorse = 0
+	_contado_annunciato = CONTADO_MIN
 	stat["fondazioni"] += 1
 	var v := valuta_sito(p)
 	var nome := (" presso il " + String(v["sito"]["nome"]).to_lower()) if v["sito"] != null else ""
@@ -305,20 +339,20 @@ func fonda(p: Vector2i) -> void:
 	disponi_case()
 
 
+## Raggio del contado in metri: cresce con gli abitanti (decisione di Fede).
+func raggio_contado() -> float:
+	return clampf(CONTADO_MIN + (pop - 30.0) * CONTADO_PER_ABITANTE, CONTADO_MIN, CONTADO_MAX)
+
+
+## Lo stesso raggio in pixel della mappa (arrotondato per eccesso), per scorrere i dintorni.
 func raggio_campi() -> int:
-	return (5 + raggio_extra) * PX_CELLA
+	return ceili(raggio_contado() / dati.metri_per_px)
 
 
 func a_portata(p: Vector2i) -> bool:
 	if not fondato:
 		return false
-	if cheb(p, centro) <= raggio_campi():
-		return true
-	# Solo i sentieri collegati al villaggio allungano il raggio dei campi.
-	for s in sentieri_collegati():
-		if cheb(p, px_di(s)) <= 2 * PX_CELLA:
-			return true
-	return false
+	return mondo_di_px(p).distance_to(mondo_di_px(centro)) <= raggio_contado() + 0.5
 
 
 ## Sentieri collegati al centro del villaggio (punti contigui, anche in diagonale). I sentieri
@@ -382,7 +416,7 @@ func motivo_campo(p: Vector2i) -> String:
 	if _occupato_da_case(p) or (granaio.x >= 0 and px_da_mondo(granaio.x, granaio.y) == p):
 		return "Il terreno è occupato da case o dal granaio."
 	if not a_portata(p):
-		return "Troppo lontano dal villaggio. Un sentiero allunga il raggio dei campi."
+		return "Fuori dal contado: oggi la gente va a lavorare fino a %d m dal villaggio. Il contado cresce con gli abitanti." % roundi(raggio_contado())
 	return ""
 
 
@@ -543,6 +577,77 @@ func demolisci(punto: Vector2, raggio: float) -> Dictionary:
 	return esito
 
 
+## Boschi e acque attorno a un punto, pesati con la vicinanza (1 al centro, 0 a 1,6 km): da qui
+## vengono caccia, raccolta e pesca.
+func risorse_attorno(p: Vector2i) -> Dictionary:
+	var bosco := 0.0
+	var acqua := 0.0
+	for dy in range(-RAGGIO_RISORSE, RAGGIO_RISORSE + 1):
+		for dx in range(-RAGGIO_RISORSE, RAGGIO_RISORSE + 1):
+			var d := sqrt(float(dx * dx + dy * dy)) / RAGGIO_RISORSE
+			if d > 1.0:
+				continue
+			var q := p + Vector2i(dx, dy)
+			if q.x < 0 or q.y < 0 or q.x >= n or q.y >= n:
+				continue
+			var j := px(q)
+			var w := 1.0 - d
+			var t := dati.tipo[j]
+			if t == MappaDati.FIUME:
+				acqua += w
+			elif t == MappaDati.TORRENTE or t == MappaDati.TORRENTE_EST:
+				acqua += w * 0.6
+			elif t == MappaDati.PALUDE:
+				acqua += w * 0.5
+				bosco += w * 0.3
+			elif bosco_presente.call(j):
+				bosco += w
+	return {"bosco": bosco, "acqua": acqua}
+
+
+## Campi serviti (sentiero collegato entro 120 m o centro entro 200 m) e campi al margine del bosco.
+func _aggiorna_campi_serviti() -> void:
+	var firma := hash([campi.hash(), sentieri.hash(), centro, _anni_risorse])
+	if firma == _firma_serviti:
+		return
+	_firma_serviti = firma
+	_campi_serviti = {}
+	var collegati := sentieri_collegati()
+	for i in campi:
+		var p := px_di(i)
+		if mondo_di_px(p).distance_to(mondo_di_px(centro)) <= 200.0:
+			_campi_serviti[i] = true
+			continue
+		for dy in range(-3, 4):
+			for dx in range(-3, 4):
+				if dx * dx + dy * dy <= 9 and collegati.has(px(p + Vector2i(dx, dy))):
+					_campi_serviti[i] = true
+	_campi_al_bosco = {}
+	for i in campi:
+		var p := px_di(i)
+		for dy in range(-2, 3):
+			for dx in range(-2, 3):
+				var q := p + Vector2i(dx, dy)
+				if q.x >= 0 and q.y >= 0 and q.x < n and q.y < n and bosco_presente.call(px(q)):
+					_campi_al_bosco[i] = true
+
+
+func servito(i: int) -> bool:
+	_aggiorna_campi_serviti()
+	return _campi_serviti.has(i)
+
+
+## Abitanti per ettaro nell'abitato (il cerchio che contiene le case).
+func densita() -> float:
+	if case.is_empty():
+		return 0.0
+	var c := mondo_di_px(centro)
+	var r := 10.0
+	for l in case:
+		r = maxf(r, centro_lotto(l).distance_to(c) + LOTTO * 0.5)
+	return pop / (PI * r * r / 10000.0)
+
+
 func tecnica_campo(i: int) -> int:
 	return _tecnica_campi.get(i, 0)
 
@@ -698,10 +803,10 @@ func _applica_scelta(tipo: String, o: String) -> void:
 				_scrivi("Gli stranieri vengono mandati via.")
 			_gruppo_stranieri = 0
 		"affollamento":
-			if o == "allargarsi":
-				raggio_extra += 2
+			if o == "restare":
+				raggio_extra += 1
 				salute -= 5.0
-				_scrivi("Il villaggio si allarga.")
+				_scrivi("Le famiglie restano: l'abitato si stringe e si allarga un poco.")
 			else:
 				_fonda_figlio()
 
@@ -775,8 +880,18 @@ func passo() -> void:
 		raccolto += _resa(ordinati[k])
 	ultimo_raccolto = raccolto
 	ultimi_lavorati = mini(lavorabili, ordinati.size())
+	# Caccia, raccolta e pesca (economia mista): la selvaggina cala se si caccia troppo e ricresce
+	# lentamente; boschi e acque si ricontano ogni 5 anni (tagli e campi tolgono bosco).
+	if _anni_risorse <= 0:
+		_risorse = risorse_attorno(centro)
+		_anni_risorse = 5
+	_anni_risorse -= 1
+	var portata_bosco: float = _risorse["bosco"] * RESA_BOSCO
+	ultima_caccia = minf(pop * QUOTA_CACCIA, portata_bosco * selvaggina)
+	selvaggina = clampf(selvaggina - ultima_caccia / maxf(portata_bosco * 8.0, 1.0) + (1.0 - selvaggina) * 0.1, 0.05, 1.0)
+	ultima_pesca = minf(pop * QUOTA_PESCA, float(_risorse["acqua"]) * RESA_ACQUA)
 	var consumo := pop * (0.8 if razionamento > 0 else 1.0)
-	cibo += raccolto - consumo
+	cibo += raccolto + ultima_caccia + ultima_pesca - consumo
 	if razionamento > 0:
 		razionamento -= 1
 	var carestia := 0.0
@@ -819,6 +934,11 @@ func passo() -> void:
 	if absf(bonus) < 0.2:
 		bonus = 0.0
 	legittimita = clampf(legittimita, 0.0, 100.0)
+	# Il contado cresce con gli abitanti: lo si annuncia ogni 100 m.
+	var passo_contado := floorf(raggio_contado() / 100.0) * 100.0
+	if passo_contado > _contado_annunciato and passo_contado > CONTADO_MIN:
+		_scrivi("Il villaggio cresce: ora si coltiva fino a %d m dal centro." % roundi(passo_contado), "buono")
+	_contado_annunciato = maxf(_contado_annunciato, passo_contado)
 	memoria = maxf(0.0, memoria - 1.5)
 	for l in macerie.keys():
 		macerie[l] -= 1
@@ -829,7 +949,7 @@ func passo() -> void:
 		gia_affollato = true
 		_decidi("affollamento", "Il villaggio è affollato",
 			"Le famiglie sono ormai %d. Le case si stringono e i campi più lontani sono faticosi da raggiungere." % roundi(pop / 6.0),
-			[{"id": "allargarsi", "testo": "Allargarsi", "nota": "Il villaggio può crescere più lontano dal centro. Per qualche anno la salute ne risente."},
+			[{"id": "restare", "testo": "Restare tutti", "nota": "Le case si stringono e l'abitato si allarga un poco: la salute ne risente. Il contado resta quello che il cammino permette."},
 			 {"id": "figlio", "testo": "Fondare un villaggio figlio", "nota": "Un terzo delle famiglie parte per fondare un nuovo villaggio. Il consenso cresce."}])
 	if legittimita <= 5.0:
 		anni_legittimita_bassa += 1
@@ -861,8 +981,13 @@ func _resa(i: int) -> float:
 		fattore = 0.35 + 0.6 * acqua_affidabile(i)
 	else:
 		fattore = clima * (0.85 + 0.15 * acqua_qualsiasi(i))
+	_aggiorna_campi_serviti()
+	# Sentiero: si va e si torna più in fretta. Bosco: la selvaggina rovina i campi al suo margine
+	# (meno, se la caccia la tiene bassa).
+	var vie := 1.0 + BONUS_SENTIERO if _campi_serviti.has(i) else 1.0
+	var danni := 1.0 - 0.25 * selvaggina if _campi_al_bosco.has(i) else 1.0
 	return 12.0 * fert(i) * fattore * (1.12 if politica("raccolto") == "famiglie" else 1.0) \
-		* (1.08 if anni_sapere > 0 else 1.0) * RESA_TECNICA[tecnica_campo(i)] / AREA_CELLA
+		* (1.08 if anni_sapere > 0 else 1.0) * RESA_TECNICA[tecnica_campo(i)] * vie * danni / AREA_CELLA
 
 
 ## Piene (decisione di Fede del 24/11/2026). Di stagione (disastrosa = false): frequenti, arrivano

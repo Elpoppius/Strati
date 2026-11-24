@@ -31,7 +31,7 @@ Il campo di gioco resta libero: l'interfaccia sta in una fascia in basso e in du
 - **Fascia in basso a cinque blocchi** (decisione di Fede del 24/11/2026), da sinistra:
   1. **Info:** gli indicatori (popolazione, cibo, salute, legittimità), come le risorse; il valore diventa rosso quando è in pericolo.
   2. **Descrizione:** la scheda dello strumento scelto (come la scheda dell'unità selezionata): nome, cosa fa o messaggio dell'ultima azione, lettura del lotto sotto il puntatore.
-  3. **Costruzione:** schede Insediamento, Territorio, Vie, Edifici.
+  3. **Costruzione:** schede Insediamento, Territorio, Vie, Edifici. Dopo la fondazione il tasto Fondare sparisce, e con lui la scheda Insediamento finché resta vuota (torna se il villaggio è abbandonato).
   4. **Gestione:** scheda Politiche (tasto P, apre il pannello delle politiche) e, allo stesso livello, scheda **Ammodernamento** (decisione di Fede) con un tasto per settore: oggi Agricolo; poi Viario (strade), Abitativo e gli altri. Il tasto di un settore è spento finché non c'è niente da ammodernare e diventa invertito quando l'ammodernamento è attivo; un clic lo avvia o lo sospende.
   5. **Strumenti:** schede Demolizione (Demolisci, X: vale su tutto e non è una costruzione) e Prova (+10 anni, Y, solo per le prove).
 
@@ -42,7 +42,8 @@ Il campo di gioco resta libero: l'interfaccia sta in una fascia in basso e in du
 - **Scelte** (solo le scelte vere: presagi, primo cattivo raccolto, affollamento, stranieri se la politica è "caso per caso"): finestra al centro; il tempo si ferma finché non si sceglie. Niente finestre con il solo tasto "Continua" (tranne abbandono e fine della partita).
 - **Anteprima dei sentieri** (come in Cities: Skylines): nastro trasparente dall'inizio al puntatore, bianco se si può tracciare, rosso se no, con accanto la lunghezza o il motivo ("non collegato al villaggio" se il tratto è staccato); un quadratino segna l'inizio; mentre lo strumento è attivo i sentieri esistenti si schiariscono.
 - **Strumento sulla mappa:** un cerchio sottile bianco (rosso se l'azione è irreversibile) segue il puntatore; per Fondare mostra fin dove arriveranno i campi. 
-- **Griglia magnetica** (idea di Fede, come in Cities: Skylines): mentre si pone qualcosa, attorno al puntatore compaiono i quadrati a cui lo strumento si aggancia, e si schiariscono quelli che verranno presi. Campi: celle da 40 m della simulazione, prese se il loro centro sta nel cerchio. Granaio: lotti da 20 m, l'edificio si aggancia al centro del lotto. Fondare: il cerchio si aggancia al punto della mappa più vicino (niente griglia, il cerchio è di 800 m). Fuori da questi momenti la griglia non si vede.
+- **Contado:** con lo strumento Campi una linea tratteggiata segna il confine della terra coltivabile, che cresce con gli abitanti; fuori, il terreno è appena velato. Un clic che esce dal confine dice quanti campi restano fuori e perché.
+- **Griglia magnetica** (idea di Fede, come in Cities: Skylines): mentre si pone qualcosa, attorno al puntatore compaiono i quadrati a cui lo strumento si aggancia, e si schiariscono quelli che verranno presi. Campi: celle da 40 m della simulazione, prese se il loro centro sta nel cerchio. Granaio: lotti da 20 m, l'edificio si aggancia al centro del lotto. Fondare: il cerchio si aggancia al punto della mappa più vicino (niente griglia; il cerchio mostra il contado iniziale di 400 m). Fuori da questi momenti la griglia non si vede.
 
 ## Pittogrammi
 In `gioco/asset/icone/`, SVG fatti da noi: bianchi su trasparente, 28 px su una griglia di 32, tratti pieni e squadrati, nessun colore (il colore resta per i significati: il segno rosso dell'irreversibile sta sul tasto, non nell'icona). Nell'HUD si tingono di nero quando il tasto è scelto. Si aggiungono a una voce con `"icona": "nome"`.
@@ -75,7 +76,9 @@ Sono una prima serie (proposta di Claude), da confermare con Fede.
 | In comune / Alle famiglie | Politiche: divisione del raccolto | il raccolto si divide tra tutti (più legittimità) o ogni famiglia tiene il suo (più raccolto, meno legittimità) |
 | Aperta / Caso per caso / Chiusa | Politiche: accoglienza degli stranieri | chi arriva resta sempre; a ogni arrivo si decide; viene sempre mandato via |
 | Ammodernamento · Agricolo | Gestione | avvia o sospende il rifacimento dei campi vecchi con la tecnica nuova, un po' ogni anno pagando cibo (spento finché non c'è una tecnica nuova) |
-| Collega | Vie | acceso: ogni sentiero parte dal punto più vicino della rete (un clic dove finisce); spento: inizio libero come in Cities |
+| Opzioni · Collega alla rete | Descrizione, con lo strumento Sentiero | acceso: ogni sentiero parte dal punto più vicino della rete (un clic dove finisce); spento: il sentiero comincia dove vuoi |
+| Caccia e pesca | indicatori | quanta parte del cibo dell'anno viene da caccia, raccolta e pesca |
+| Densità | indicatori | abitanti per ettaro nell'abitato (rossa quando le case non bastano) |
 | Demolizione, Prova | Strumenti | schede degli strumenti |
 | Demolisci | Strumenti | toglie ciò che si può demolire nel cerchio; non agisce su fiumi e paludi |
 | +10 anni | Prova | fa passare dieci anni subito, solo per provare la ricrescita del bosco |

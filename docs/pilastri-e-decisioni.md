@@ -81,7 +81,7 @@ Struttura simmetrica: **6 macro-ere × 2 epoche**. Il passaggio di macro-era sbl
 - **Leggere:** poche mappe tematiche (altimetria e rischio di piena; acqua: sorgenti, torrenti, falda; fertilità del suolo; boschi e selvaggina).
 - **Decidere:**
   - *Fondare:* scegliere il sito, la decisione più importante della partita.
-  - *Destinare il territorio:* campi, pascolo, bosco, riserva.
+  - *Destinare il territorio:* campi, pascolo, bosco, riserva (dentro il contado, che cresce con gli abitanti).
   - *Costruire:* granaio, recinto, luogo sacro, sentiero. Le capanne non si piazzano: crescono da sole vicino a campi, acqua e sentieri. Il giocatore orienta la crescita.
   - *Politiche (le usanze):* divisione del raccolto (in comune: più coesione; per famiglia: più prosperità e più disuguaglianza), accoglienza degli stranieri. **Decisione di Fede (24/11/2026):** le usanze non sono oggetti da costruire ma politiche, regole che valgono finché non si cambiano; stanno in un pannello a parte, non tra i menù delle costruzioni, e da qui si comincia a introdurre questo genere di scelte.
 - **Simulare (ogni anno):** raccolto = suolo × campi × clima dell'anno × braccia; consumo e scorte; crescita o calo della popolazione; salute legata ad acqua e affollamento; legittimità degli anziani legata al cibo e al rispetto delle usanze.
@@ -184,6 +184,18 @@ Un insediamento abbandonato resta come rovina nel sottosuolo; si può rifondare 
 
 ## Scenari (rimandati)
 Città reali gestite "in medias res". Da sviluppare dopo le basi del gioco. Idee: Parigi 1853 (Haussmann), Barcellona 1859 (Cerdà), Vienna 1857 (il Ring), Napoli 1884 (Risanamento), Roma 1871 (capitale).
+
+## Abitato, contado ed espansione (decisione di Fede del 24/11/2026, proposta di Claude accolta)
+- **Due confini diversi.** L'**abitato** è dove si vive e si costruisce: cresce per densità (abitanti per ettaro), e quando è troppo pieno nascono le pressioni, prima numeriche (affollamento), poi igieniche (salute), poi di spazi. Il **contado** è la terra che la città usa e governa (campi, boschi, pascoli, acque): cresce per competenza territoriale, cioè per quanta gente c'è e quanta terra serve a sfamarla. Si leggono su mappe tematiche distinte.
+- **Lo sprawl è la crescita di base**, quella che succede se non si pianifica: borghi fuori porta lungo le strade, appena oltre il confine, con un confine sfumato. Il piano (recinto, addizione, piano regolatore) è lo strumento per incanalarlo. Ignorare la pressione costa dopo (disordine, salute, consenso); pianificare costa subito (risorse, consenso).
+- **Il contado si consolida con l'uso:** la terra usata davvero rafforza la competenza; quella rivendicata e non usata si perde o diventa contesa con i vicini (astratti). Ai margini del contado nascono le scorrerie.
+- **Strumenti di espansione per epoca:** villaggio: abitato spontaneo, villaggio figlio, contado che cresce con gli abitanti fino al limite di cammino; protourbano: recinto o palizzata, alleanze o razzie; città-stato: confine sacro rituale, colonie, assegnazione delle terre; impero: reticolo pianificato, centuriazione e catasto; medioevo: borghi fuori porta e nuovo giro di mura, contado conquistato o comprato dai signori; principe: addizione pianificata; ragione e industria: abbattimento delle mura, piano di ampliamento, esproprio; massa e globale: piano regolatore, annessione dei comuni vicini, limiti al consumo di suolo.
+- **La tecnica riduce il bisogno di terra:** con l'ammodernamento ogni campo rende di più, quindi intensificare è un'alternativa a espandersi.
+- **Nel villaggio:** contado da 400 a 800 m con gli abitanti; abitato spontaneo con la densità come indicatore; a 150 abitanti la scelta tra villaggio figlio e restare tutti (affollamento pagato in salute).
+
+## Economia mista (decisione di Fede del 24/11/2026)
+Il gioco si basa molto sull'agricoltura, ma prima dell'agricoltura vengono caccia, pesca e raccolta, e i primi agricoltori continuarono a praticarle a lungo. Nel villaggio il cibo viene da campi, caccia e raccolta (boschi) e pesca (acque). La vicinanza a boschi e fiumi dà vantaggi ma espone ai rischi: le piene per l'acqua, la selvaggina che rovina i campi per il bosco. Storicamente la vicinanza ai fiumi è sempre stata premiata, ma pericolosa.
+- *Proposta di Claude, non ancora decisa:* un **prologo nomade** prima del villaggio, con un gruppo di cacciatori-raccoglitori tra accampamenti stagionali; la fondazione come scelta di fermarsi e l'agricoltura come primo evento soglia, con i suoi presagi.
 
 ## Scala della città
 Struttura scalare a quattro livelli. I dati vivono sempre sul lotto; i livelli superiori sono aggregazioni.

@@ -67,6 +67,8 @@ var _righe_azioni := {}
 var _cronaca: Label
 var _valori_indicatori := {}
 var _notifiche: VBoxContainer
+var _opzioni: HBoxContainer
+var _opzioni_di := {}  # strumento -> [Button]
 var _colonna_mappe: Control
 var _modale: Control
 var _radice: Control
@@ -231,6 +233,19 @@ func _fascia_bassa(radice: Control, nomi_mappe: Array) -> void:
 	_messaggio.custom_minimum_size.x = 298
 	_messaggio.add_theme_font_size_override("font_size", 13)
 	cs.add_child(_messaggio)
+	# Opzioni dello strumento scelto (come in Cities: Skylines), per esempio Collega alla rete per
+	# il Sentiero. Compaiono solo con il loro strumento.
+	_opzioni = HBoxContainer.new()
+	_opzioni.add_theme_constant_override("separation", 4)
+	_opzioni.visible = false
+	cs.add_child(_opzioni)
+	var titolo_opzioni := Label.new()
+	titolo_opzioni.text = "OPZIONI"
+	titolo_opzioni.add_theme_font_override("font", _carattere(true, 1.6))
+	titolo_opzioni.add_theme_font_size_override("font_size", 11)
+	titolo_opzioni.add_theme_color_override("font_color", GRIGIO)
+	titolo_opzioni.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_opzioni.add_child(titolo_opzioni)
 	_lettura = Label.new()
 	_lettura.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_lettura.custom_minimum_size.x = 298
@@ -533,8 +548,62 @@ func _tasto(padre: Control, v: Dictionary) -> Button:
 	return b
 
 
+## Opzioni di uno strumento: voci {id, testo, suggerimento}. Interruttori che emettono azione(id);
+## il loro stato si segna con segna(id, acceso).
+func aggiungi_opzioni(strumento: String, voci: Array) -> void:
+	var tasti: Array = []
+	for v in voci:
+		var b := Button.new()
+		b.text = v["testo"]
+		b.toggle_mode = true
+		b.focus_mode = Control.FOCUS_NONE
+		b.tooltip_text = v.get("suggerimento", "")
+		b.add_theme_font_size_override("font_size", 12)
+		b.visible = false
+		# Interruttore: un quadratino vuoto o pieno davanti al nome, bordo sottile; acceso, invertito.
+		var st := StyleBoxFlat.new()
+		st.bg_color = Color(0, 0, 0, 0)
+		st.set_border_width_all(1)
+		st.border_color = RIGA
+		st.set_content_margin_all(6)
+		b.add_theme_stylebox_override("normal", st)
+		var nome: String = v["testo"]
+		b.text = "□  " + nome
+		b.toggled.connect(func(on: bool) -> void: b.text = ("■  " if on else "□  ") + nome)
+		var id: String = v["id"]
+		b.pressed.connect(func() -> void: azione.emit(id))
+		_opzioni.add_child(b)
+		_righe_azioni[id] = b
+		tasti.append(b)
+	_opzioni_di[strumento] = tasti
+
+
+## Mostra o nasconde un comando; una scheda senza comandi visibili sparisce.
+func mostra(id: String, visibile: bool) -> void:
+	var b: Button = _righe_azioni.get(id, _righe_comandi.get(id))
+	if b == null or b.visible == visibile:
+		return
+	b.visible = visibile
+	for k in _menu:
+		var pagina: Control = _menu[k]["pagina"]
+		var piena := pagina.get_children().any(func(c: Node) -> bool: return (c as Control).visible)
+		(_menu[k]["scheda"] as Control).visible = piena
+		var blocco: String = _menu[k]["blocco"]
+		if not piena and _blocchi[blocco].get("aperto", "") == k:
+			for k2 in _menu:
+				if _menu[k2]["blocco"] == blocco and (_menu[k2]["scheda"] as Control).visible:
+					apri_menu(k2)
+					break
+
+
 func seleziona_comando(id: String) -> void:
 	_comando = id
+	var ha_opzioni := false
+	for k in _opzioni_di:
+		for b in _opzioni_di[k]:
+			(b as Control).visible = k == id
+			ha_opzioni = ha_opzioni or k == id
+	_opzioni.visible = ha_opzioni
 	for k in _righe_comandi:
 		_premi(_righe_comandi[k], k == id)
 	_nome_strumento.text = _testi.get(id, "Nessuno strumento").get_slice(" (", 0)
@@ -573,6 +642,8 @@ func segna(id: String, premuto: bool) -> void:
 	if r:
 		r.toggle_mode = true
 		_premi(r, premuto)
+		if r.text.begins_with("□") or r.text.begins_with("■"):
+			r.text = ("■" if premuto else "□") + r.text.substr(1)
 
 
 func abilita(id: String, attivo: bool) -> void:

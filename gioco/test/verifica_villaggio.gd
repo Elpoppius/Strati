@@ -76,7 +76,25 @@ func _initialize() -> void:
 	controlla(t.aggiungi_campi(lista) == 2 and t.campi.size() == 2, "due campi vicini al villaggio")
 	var sentiero := t.traccia_sentiero(c + Vector2i(0, -30))
 	controlla(sentiero == "" and t.sentieri.size() == 30, "un sentiero di 1,2 km verso nord (%s)" % sentiero)
-	controlla(t.motivo_campo(c + Vector2i(5, -28)) == "", "il sentiero allunga il raggio dei campi")
+	# Contado (decisione di Fede): 400 m alla fondazione, cresce con gli abitanti fino a 800 m; i
+	# sentieri non lo allargano ma rendono di più i campi che servono.
+	controlla(is_equal_approx(t.raggio_contado(), 400.0) and t.motivo_campo(c + Vector2i(0, -10)) == "" and t.motivo_campo(c + Vector2i(0, -11)) != "", "contado di 400 m alla fondazione")
+	controlla(t.motivo_campo(c + Vector2i(5, -28)) != "", "il sentiero non allarga il contado")
+	var pop0 := t.pop
+	t.pop = 130.0
+	controlla(is_equal_approx(t.raggio_contado(), 800.0) and t.motivo_campo(c + Vector2i(0, -19)) == "", "con 130 abitanti il contado arriva a 800 m")
+	t.pop = 1000.0
+	controlla(is_equal_approx(t.raggio_contado(), 800.0), "il contado non supera 800 m (limite di cammino)")
+	t.pop = pop0
+	var lungo := c + Vector2i(1, -9)
+	var lontano_dal_sentiero := c + Vector2i(9, -2)
+	t.aggiungi_campi([lungo, lontano_dal_sentiero])
+	controlla(t.servito(t.px(lungo)) and not t.servito(t.px(lontano_dal_sentiero)), "i campi lungo un sentiero collegato sono serviti, gli altri no")
+	# Economia mista: caccia e pesca danno cibo; cacciando, la selvaggina cala.
+	var r0 := t.risorse_attorno(c)
+	controlla(r0["bosco"] > 0.0 and r0["acqua"] > 0.0, "attorno al sito ci sono boschi e acque (%d, %d)" % [roundi(r0["bosco"]), roundi(r0["acqua"])])
+	var v := t.valuta_sito(c)
+	controlla(v.has("bosco") and v.has("pesca"), "la valutazione del sito dice boschi e pesca: %s, %s" % [v["bosco"][0], v["pesca"][0]])
 	controlla(t.motivo_granaio(t.mondo_di_px(c) + Vector2(60, 0)) == "" and t.motivo_granaio(t.mondo_di_px(c) + Vector2(900, 0)) != "", "il granaio va vicino al centro (con %d di cibo si può)" % roundi(t.cibo))
 	# Politiche: cambiarle costa consenso, gli stranieri seguono la regola in vigore.
 	controlla(t.politica("raccolto") == "comune" and t.politica("stranieri") == "caso", "politiche iniziali: raccolto in comune, stranieri caso per caso")

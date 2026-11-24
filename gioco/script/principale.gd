@@ -318,6 +318,8 @@ func _aggiorna_pennello() -> void:
 	if hud.comando() == "" or punto_corrente == null:
 		terreno.materiale.set_shader_parameter("pennello", Vector3(0, 0, -1))
 		terreno.materiale.set_shader_parameter("griglia_magnetica", Vector3.ZERO)
+		if hud.comando() != "campi":
+			terreno.materiale.set_shader_parameter("contado", Vector3(0, 0, -1))
 		if partita:
 			if hud.comando() == "sentiero":
 				partita.vista.nascondi_anteprima()
@@ -347,6 +349,12 @@ func _aggiorna_pennello() -> void:
 			centro = Vector2(roundf(p.x / dati.metri_per_px), roundf(p.z / dati.metri_per_px)) * dati.metri_per_px
 	terreno.materiale.set_shader_parameter("pennello", Vector3(centro.x, centro.y, r))
 	terreno.materiale.set_shader_parameter("griglia_magnetica", griglia)
+	# Confine del contado con lo strumento Campi.
+	var contado := Vector3(0, 0, -1)
+	if partita and partita.sim and partita.sim.fondato and hud.comando() == "campi":
+		var cc := partita.sim.mondo_di_px(partita.sim.centro)
+		contado = Vector3(cc.x, cc.y, partita.sim.raggio_contado())
+	terreno.materiale.set_shader_parameter("contado", contado)
 	# Sentieri: anteprima come in Cities.
 	if partita:
 		if hud.comando() == "sentiero":
