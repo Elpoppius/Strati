@@ -209,7 +209,7 @@ func _fascia_bassa(radice: Control, nomi_mappe: Array) -> void:
 	pi.size_flags_vertical = Control.SIZE_FILL
 	fascia.add_child(pi)
 	indicatori = VBoxContainer.new()
-	indicatori.add_theme_constant_override("separation", 6)
+	indicatori.add_theme_constant_override("separation", 3)
 	pi.add_child(indicatori)
 	# Scheda dello strumento scelto: nome, messaggio, lettura del lotto.
 	var ps := PanelContainer.new()
@@ -688,11 +688,15 @@ func imposta_indicatori(voci: Array) -> void:
 			l.add_theme_font_override("font", _carattere(true))
 			l.add_theme_font_size_override("font_size", 16)
 			box.add_child(l)
+			box.mouse_filter = Control.MOUSE_FILTER_STOP
 			indicatori.add_child(box)
 			_valori_indicatori[nome] = l
 		var lab: Label = _valori_indicatori[nome]
 		lab.text = str(v[1])
 		lab.add_theme_color_override("font_color", PERICOLO if v[2] else BIANCO)
+		# Quarto elemento facoltativo: cosa vuol dire l'indicatore (suggerimento al passaggio).
+		if v.size() > 3:
+			(lab.get_parent() as Control).tooltip_text = String(v[3])
 
 
 func imposta_cronaca(righe: Array) -> void:

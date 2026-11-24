@@ -95,6 +95,15 @@ func _initialize() -> void:
 	controlla(r0["bosco"] > 0.0 and r0["acqua"] > 0.0, "attorno al sito ci sono boschi e acque (%d, %d)" % [roundi(r0["bosco"]), roundi(r0["acqua"])])
 	var v := t.valuta_sito(c)
 	controlla(v.has("bosco") and v.has("pesca"), "la valutazione del sito dice boschi e pesca: %s, %s" % [v["bosco"][0], v["pesca"][0]])
+	# Indicatori di caccia e pesca (richiesta di Fede): offerta dell'anno e caccia eccessiva.
+	t.decisioni.clear()
+	t.avvisi.clear()
+	t.selvaggina = 0.3
+	t.passo()
+	var avvisato := t.avvisi.any(func(x: Dictionary) -> bool: return String(x["testo"]).begins_with("Si caccia troppo"))
+	controlla(t.offerta_caccia > 0.0 and avvisato and not t.in_attesa(), "con poca selvaggina arriva la notifica \"si caccia troppo\", senza fermare il gioco")
+	t.avvisi.clear()
+	t.cibo = 45.0
 	controlla(t.motivo_granaio(t.mondo_di_px(c) + Vector2(60, 0)) == "" and t.motivo_granaio(t.mondo_di_px(c) + Vector2(900, 0)) != "", "il granaio va vicino al centro (con %d di cibo si può)" % roundi(t.cibo))
 	# Politiche: cambiarle costa consenso, gli stranieri seguono la regola in vigore.
 	controlla(t.politica("raccolto") == "comune" and t.politica("stranieri") == "caso", "politiche iniziali: raccolto in comune, stranieri caso per caso")

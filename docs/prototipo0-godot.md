@@ -14,7 +14,7 @@ Il cibo non viene solo dai campi: caccia, raccolta e pesca pesano molto all'iniz
 - **Boschi** entro 1,6 km dal centro (pesati con la vicinanza; ricontati ogni 5 anni, quindi tagli e campi li riducono): caccia e raccolta fino a 0,4 di cibo per abitante. La **selvaggina** cala se si caccia troppo e ricresce lentamente.
 - **Acque** (fiume, torrenti, paludi a metà): pesca fino a 0,2 di cibo per abitante.
 - **Il rischio della vicinanza** (decisione di Fede: storicamente premiata ma pericolosa): l'acqua porta le piene; il bosco porta la selvaggina, che rovina i campi al suo margine (fino al 25% di raccolto in meno, meno se la caccia la tiene bassa; proposta di Claude).
-- La valutazione del sito dice anche boschi e pesca; l'indicatore "Caccia e pesca" dice quanta parte del cibo dell'anno ne viene.
+- La valutazione del sito dice anche boschi e pesca. Indicatori (richiesta di Fede): **Caccia** (preso / offerta dei boschi, freccia dell'andamento della selvaggina, rosso quando si caccia troppo) e **Pesca** (preso / offerta delle acque). Quando la selvaggina scende sotto il 40% arriva una notifica discreta "Si caccia troppo"; quando torna sopra il 60% la cronaca lo dice.
 - Numeri da tarare (proposta di Claude).
 
 ## Scale (dal prototipo web alla mappa vera)

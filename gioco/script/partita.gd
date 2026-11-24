@@ -353,7 +353,12 @@ func aggiorna_hud() -> void:
 		["Cibo", ("%d / %d l'anno" % [roundi(sim.cibo), roundi(sim.pop)]) if on else trattino, on and sim.cibo < sim.pop * 0.3],
 		["Salute", str(roundi(sim.salute)) if on else trattino, on and sim.salute < 45.0],
 		["Legittimità", str(roundi(sim.legittimita)) if on else trattino, on and sim.legittimita < 30.0],
-		["Caccia e pesca", ("%d%%" % roundi(100.0 * (sim.ultima_caccia + sim.ultima_pesca) / maxf(sim.ultimo_raccolto + sim.ultima_caccia + sim.ultima_pesca, 1.0))) if on else trattino, false],
+		["Caccia", ("%d / %d %s" % [roundi(sim.ultima_caccia), roundi(sim.offerta_caccia), "↓" if sim.andamento_selvaggina < -0.03 else ("↑" if sim.andamento_selvaggina > 0.03 else "")]).strip_edges() if on else trattino,
+			on and sim.selvaggina < SimVillaggio.SOGLIA_SELVAGGINA,
+			"Cibo dalla caccia e dalla raccolta quest'anno / quanto offrono i boschi. Selvaggina al %d%%%s. Rosso: si caccia troppo." % [roundi(sim.selvaggina * 100.0),
+				" (in calo)" if sim.andamento_selvaggina < -0.03 else (" (in crescita)" if sim.andamento_selvaggina > 0.03 else "")]],
+		["Pesca", ("%d / %d" % [roundi(sim.ultima_pesca), roundi(sim.offerta_pesca)]) if on else trattino, false,
+			"Cibo dalla pesca quest'anno / quanto offrono fiume, torrenti e paludi vicini."],
 		["Densità", ("%d ab/ha" % roundi(sim.densita())) if on else trattino, on and sim.affollamento > 0.3],
 	])
 	var righe: Array = []

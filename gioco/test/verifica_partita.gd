@@ -120,6 +120,7 @@ func _process(_d: float) -> bool:
 	controlla(p.vista.numero_case() == sim.case.size(), "case disegnate allineate alla simulazione (%d)" % sim.case.size())
 	print("   %d abitanti, %d campi, %d case, abbandoni %d" % [roundi(sim.pop), sim.campi.size(), sim.case.size(), sim.stat["abbandoni"]])
 	controlla(sim.fondato and sim.stat["abbandoni"] == 0, "con i campi il villaggio vive")
+	controlla(h._valori_indicatori.has("Caccia") and h._valori_indicatori.has("Pesca") and h._valori_indicatori["Caccia"].text.contains("/"), "indicatori di caccia e pesca: " + h._valori_indicatori["Caccia"].text)
 	controlla(h._valori_indicatori.has("Popolazione") and h._valori_indicatori["Popolazione"].text == str(roundi(sim.pop)), "gli indicatori seguono la simulazione")
 	controlla(h._cronaca.text != "—", "la cronaca si riempie")
 	# Demolisci: le case nel cerchio spariscono e per un po' non rinascono lì.

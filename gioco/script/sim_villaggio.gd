@@ -88,6 +88,15 @@ const RESA_ACQUA := 0.15
 var selvaggina := 1.0
 var ultima_caccia := 0.0
 var ultima_pesca := 0.0
+## Offerta dell'anno (quanto caccia e pesca potrebbero dare) e andamento della selvaggina, per gli
+## indicatori (richiesta di Fede: si vede se si caccia troppo e quanto offrono bosco e acque).
+var offerta_caccia := 0.0
+var offerta_pesca := 0.0
+var andamento_selvaggina := 0.0  # variazione negli ultimi 5 anni
+var _storia_selvaggina: Array[float] = []
+var _caccia_eccessiva := false
+## Sotto questa soglia di selvaggina si caccia troppo (indicatore rosso e notifica).
+const SOGLIA_SELVAGGINA := 0.4
 var _risorse := {"bosco": 0.0, "acqua": 0.0}
 var _anni_risorse := 0
 var _campi_serviti := {}
@@ -330,6 +339,8 @@ func fonda(p: Vector2i) -> void:
 	salute = 70.0
 	legittimita = 60.0
 	selvaggina = 1.0
+	_storia_selvaggina = []
+	_caccia_eccessiva = false
 	_anni_risorse = 0
 	_contado_annunciato = CONTADO_MIN
 	stat["fondazioni"] += 1
@@ -887,9 +898,23 @@ func passo() -> void:
 		_anni_risorse = 5
 	_anni_risorse -= 1
 	var portata_bosco: float = _risorse["bosco"] * RESA_BOSCO
-	ultima_caccia = minf(pop * QUOTA_CACCIA, portata_bosco * selvaggina)
+	offerta_caccia = portata_bosco * selvaggina
+	ultima_caccia = minf(pop * QUOTA_CACCIA, offerta_caccia)
 	selvaggina = clampf(selvaggina - ultima_caccia / maxf(portata_bosco * 8.0, 1.0) + (1.0 - selvaggina) * 0.1, 0.05, 1.0)
-	ultima_pesca = minf(pop * QUOTA_PESCA, float(_risorse["acqua"]) * RESA_ACQUA)
+	offerta_pesca = float(_risorse["acqua"]) * RESA_ACQUA
+	ultima_pesca = minf(pop * QUOTA_PESCA, offerta_pesca)
+	_storia_selvaggina.append(selvaggina)
+	if _storia_selvaggina.size() > 6:
+		_storia_selvaggina.pop_front()
+	andamento_selvaggina = selvaggina - _storia_selvaggina[0]
+	# Si caccia troppo: notifica discreta quando la selvaggina scende sotto la soglia, e quando torna.
+	if not _caccia_eccessiva and selvaggina < SOGLIA_SELVAGGINA:
+		_caccia_eccessiva = true
+		_scrivi("Si caccia troppo: nei boschi attorno al villaggio la selvaggina si fa rara.")
+		_notifica("Si caccia troppo: la selvaggina cala (%d%%)." % roundi(selvaggina * 100.0), false, mondo_di_px(centro))
+	elif _caccia_eccessiva and selvaggina > SOGLIA_SELVAGGINA + 0.2:
+		_caccia_eccessiva = false
+		_scrivi("La selvaggina torna nei boschi.", "buono")
 	var consumo := pop * (0.8 if razionamento > 0 else 1.0)
 	cibo += raccolto + ultima_caccia + ultima_pesca - consumo
 	if razionamento > 0:

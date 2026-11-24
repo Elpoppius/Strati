@@ -77,7 +77,8 @@ Sono una prima serie (proposta di Claude), da confermare con Fede.
 | Aperta / Caso per caso / Chiusa | Politiche: accoglienza degli stranieri | chi arriva resta sempre; a ogni arrivo si decide; viene sempre mandato via |
 | Ammodernamento · Agricolo | Gestione | avvia o sospende il rifacimento dei campi vecchi con la tecnica nuova, un po' ogni anno pagando cibo (spento finché non c'è una tecnica nuova) |
 | Opzioni · Collega alla rete | Descrizione, con lo strumento Sentiero | acceso: ogni sentiero parte dal punto più vicino della rete (un clic dove finisce); spento: il sentiero comincia dove vuoi |
-| Caccia e pesca | indicatori | quanta parte del cibo dell'anno viene da caccia, raccolta e pesca |
+| Caccia 10 / 18 ↓ | indicatori | cibo da caccia e raccolta quest'anno / quanto offrono i boschi; freccia: la selvaggina cala o cresce; rosso: si caccia troppo (selvaggina sotto il 40%). Il suggerimento dice la selvaggina in percentuale |
+| Pesca 6 / 12 | indicatori | cibo dalla pesca quest'anno / quanto offrono fiume, torrenti e paludi vicini |
 | Densità | indicatori | abitanti per ettaro nell'abitato (rossa quando le case non bastano) |
 | Demolizione, Prova | Strumenti | schede degli strumenti |
 | Demolisci | Strumenti | toglie ciò che si può demolire nel cerchio; non agisce su fiumi e paludi |
