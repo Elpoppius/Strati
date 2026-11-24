@@ -260,8 +260,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 				imposta_modo((ev as InputEventKey).keycode - KEY_1)
 			KEY_HOME:
 				torna_al_sito()
-			KEY_X, KEY_F, KEY_C, KEY_V, KEY_H:
-				var id: String = {KEY_X: "demolisci", KEY_F: "fonda", KEY_C: "campi", KEY_V: "sentiero", KEY_H: "granaio"}[(ev as InputEventKey).keycode]
+			KEY_X, KEY_F, KEY_C, KEY_Z, KEY_V, KEY_H:
+				var id: String = {KEY_X: "demolisci", KEY_F: "fonda", KEY_C: "campi", KEY_Z: "zona", KEY_V: "sentiero", KEY_H: "granaio"}[(ev as InputEventKey).keycode]
 				hud.seleziona_comando("" if hud.comando() == id else id)
 				_aggiorna_pennello()
 			KEY_P:
@@ -318,7 +318,7 @@ func _aggiorna_pennello() -> void:
 	if hud.comando() == "" or punto_corrente == null:
 		terreno.materiale.set_shader_parameter("pennello", Vector3(0, 0, -1))
 		terreno.materiale.set_shader_parameter("griglia_magnetica", Vector3.ZERO)
-		if hud.comando() != "campi":
+		if not hud.comando() in ["campi", "zona"]:
 			terreno.materiale.set_shader_parameter("contado", Vector3(0, 0, -1))
 		if partita:
 			if hud.comando() == "sentiero":
@@ -337,7 +337,7 @@ func _aggiorna_pennello() -> void:
 	var griglia := Vector3.ZERO
 	var centro := Vector2(p.x, p.z)
 	match hud.comando():
-		"campi":
+		"campi", "zona":
 			# Celle da 40 m centrate sui punti della mappa: si prendono quelle col centro nel cerchio.
 			griglia = Vector3(dati.metri_per_px, dati.metri_per_px * 0.5, r * 1.15)
 		"granaio":
@@ -351,10 +351,12 @@ func _aggiorna_pennello() -> void:
 	terreno.materiale.set_shader_parameter("griglia_magnetica", griglia)
 	# Confine del contado con lo strumento Campi.
 	var contado := Vector3(0, 0, -1)
-	if partita and partita.sim and partita.sim.fondato and hud.comando() == "campi":
+	if partita and partita.sim and partita.sim.fondato and hud.comando() in ["campi", "zona"]:
 		var cc := partita.sim.mondo_di_px(partita.sim.centro)
 		contado = Vector3(cc.x, cc.y, partita.sim.raggio_contado())
 	terreno.materiale.set_shader_parameter("contado", contado)
+	# La zona agricola si vede mentre si destina la terra (Zona agricola o Campo).
+	terreno.materiale.set_shader_parameter("mostra_zona", 1.0 if hud.comando() in ["campi", "zona"] else 0.0)
 	# Sentieri: anteprima come in Cities.
 	if partita:
 		if hud.comando() == "sentiero":

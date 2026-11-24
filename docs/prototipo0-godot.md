@@ -9,6 +9,9 @@
 - **Disegno** (`gioco/script/vista_villaggio.gd`, classe `VistaVillaggio`): confronta lo stato con ciò che ha già disegnato e aggiorna solo le differenze. Case e granaio con i modelli del lotto del villaggio (tipi misti: case lunghe di tre misure e capanne tonde, scelti e ruotati in modo fisso per lotto); campi e sentieri attraverso l'**uso del suolo** (campi = suolo coltivato, che toglie gli alberi; sentieri e cortili = terra battuta); rovine con qualche sasso.
 - **Partita** (`gioco/script/partita.gd`, classe `Partita`): collega simulazione, disegno, uso del suolo e HUD; tempo continuo con pausa e tre velocità (2, 6, 15 anni al secondo); ogni anno della simulazione fa passare anche un anno all'uso del suolo, quindi un campo abbandonato su un ex bosco ricresce mentre si gioca.
 
+## Resa dei campi
+Un campo da 0,16 ha su terra di fertilità 1 rende 24 unità di cibo per cella del prototipo prima di clima e tecnica: circa una persona sfamata all'anno su terra media (decisione di Fede del 24/11/2026: prima la resa era la metà e i campi erano troppi rispetto alla gente).
+
 ## Economia mista (decisione di Fede del 24/11/2026)
 Il cibo non viene solo dai campi: caccia, raccolta e pesca pesano molto all'inizio e calano con il tempo. Storicamente i primi agricoltori continuavano a cacciare, pescare e raccogliere.
 - **Boschi** entro 1,6 km dal centro (pesati con la vicinanza; ricontati ogni 5 anni, quindi tagli e campi li riducono): caccia e raccolta fino a 0,4 di cibo per abitante. La **selvaggina** cala se si caccia troppo e ricresce lentamente.
@@ -21,14 +24,15 @@ Il cibo non viene solo dai campi: caccia, raccolta e pesca pesano molto all'iniz
 ## Scale (dal prototipo web alla mappa vera)
 Il prototipo ragionava a celle da 160 m. Qui:
 - **campi** sulla griglia della mappa, a pixel da 40 m (0,16 ha): 16 pixel valgono una cella, quindi un pixel rende 1/16 di una cella e le braccia lavorano 16 pixel dove prima lavoravano una cella;
-- **case** sui lotti da 20 m, una ogni 8 abitanti, distanziate di almeno un lotto;
+- **case** sui lotti da 20 m, una ogni 6 abitanti (prima 8: case troppo poche rispetto ai campi), distanziate di almeno un lotto;
 - **contado** (decisione di Fede del 24/11/2026): i campi arrivano a 400 m dal centro alla fondazione; il raggio cresce di 4 m per abitante fino a 800 m (circa 130 abitanti), il limite di cammino, e non va oltre. Con lo strumento Campi il confine si vede sulla mappa (linea tratteggiata, fuori appena velato). I sentieri non lo allargano; il granaio va entro 320 m dal centro;
 - i numeri dell'economia (cibo, braccia, consumo, salute, legittimità, eventi, presagi) sono quelli del prototipo.
 
 ## Regole (come nel prototipo, con le decisioni di Fede)
 - **Fondare:** si clicca dove fondare (dopo la fondazione il tasto sparisce e torna solo se il villaggio è abbandonato); la finestra mostra la valutazione del sito (acqua, fertilità attorno, rischio di piena, difesa, aria). Il cerchio dello strumento mostra fin dove arriveranno i campi.
 - **Abitato spontaneo** (decisione di Fede del 24/11: niente recinto per ora): le case nascono da sole vicino al centro e all'acqua, lontano dalle zone di piena finché la memoria del rischio è viva, mai su campi o sentieri. Il giocatore orienta la crescita con campi, sentieri e granaio.
-- **Campi:** un clic dissoda la terra libera dentro il cerchio; i campi che ci sono già restano (prima un clic su un campo abbandonava tutti i campi nel cerchio: Fede l'ha segnalato come un errore). Per abbandonare un campo si usa Demolisci. Mentre lo strumento è attivo, dentro il cerchio si vedono i quadrati da 40 m della simulazione.
+- **Zona agricola** (decisione di Fede del 24/11/2026: nel villaggio i campi seguono l'automatismo delle case; nelle epoche successive andranno gestiti uno per uno): il giocatore disegna dove la comunità può coltivare, dentro il contado; dentro la zona le famiglie dissodano da sole i campi che mancano per sfamarsi (fabbisogno meno caccia e pesca, più il 10%), al massimo 0,05 campi per abitante all'anno e non oltre le braccia, dalla terra migliore e più vicina, lasciando libero l'abitato. Quando la zona è piena arriva una notifica discreta (al massimo ogni 25 anni). La zona si vede (velo chiaro e bordo) solo mentre si usa Zona agricola o Campo; Demolisci la toglie.
+- **Campo:** il campo messo a mano. Un clic dissoda la terra libera dentro il cerchio; i campi che ci sono già restano (prima un clic su un campo abbandonava tutti i campi nel cerchio: Fede l'ha segnalato come un errore). Per abbandonare un campo si usa Demolisci. Mentre lo strumento è attivo, dentro il cerchio si vedono i quadrati da 40 m della simulazione.
 - **Sentiero** (decisione di Fede, modello: le strade di Cities: Skylines): un clic dove comincia, un clic dove finisce, poi si continua da lì; Esc chiude la catena. L'inizio è libero, così si possono fare reti complesse; l'opzione **Collega alla rete** (nel blocco Descrizione quando è scelto Sentiero) fa partire ogni sentiero dal punto più vicino del villaggio o dei sentieri. Inizio e fine si agganciano ai punti da 40 m. **Il sentiero velocizza l'accumulo di cibo** (decisione di Fede): i campi entro 120 m da un sentiero collegato al villaggio, o entro 200 m dal centro, rendono il 10% in più. Non attraversa il fiume né la palude.
 - **Granaio:** 30 di cibo, vicino al centro; le scorte si conservano meglio.
 - **Politiche** (decisione di Fede del 24/11: le usanze sono politiche, non costruzioni; pannello a parte, tasto P). Cambiarne una dopo la fondazione costa un po' di consenso.
@@ -47,7 +51,7 @@ Il prototipo ragionava a celle da 160 m. Qui:
 - Foto: `test/foto_partita.gd`.
 
 ## Note di bilanciamento
-Con il contado che cresce con gli abitanti e l'economia mista (24/11/2026) le popolazioni finali con il giocatore automatico scendono a 450–570 abitanti (prima oltre il migliaio). L'area dei gessi resta poverissima: entro 400 m la fertilità è molto bassa e il villaggio vive di caccia e carestie; è un sito sfavorevole, ma va controllato nelle prove. Le case trovano poco posto tra i campi (l'indicatore Densità lo mostra): da rivedere con l'abitato e lo sprawl. Il dosso nelle paludi resta piccolo (poche case trovano posto), l'area dei gessi soffre più carestie.
+Con il contado che cresce con gli abitanti e l'economia mista (24/11/2026) le popolazioni finali con il giocatore automatico scendono a 450–570 abitanti (prima oltre il migliaio). L'area dei gessi resta poverissima: entro 400 m la fertilità è molto bassa e il villaggio vive di caccia e carestie; è un sito sfavorevole, ma va controllato nelle prove. Con la resa raddoppiata, una casa ogni 6 abitanti e i campi dissodati secondo il bisogno (24/11/2026, Fede: il rapporto tra campi e case sembrava un'azienda agricola) le popolazioni finali tornano a 850–1000 abitanti (gessi 410), con 120–160 case; a 123 abitanti 21 case e 111 campi (circa 18 ha), contro 15 case e 390 campi di prima. Da tarare con le prove. Il dosso nelle paludi resta piccolo (poche case trovano posto), l'area dei gessi soffre più carestie.
 
 ## Da fare
 - Prove di Fede e taratura.

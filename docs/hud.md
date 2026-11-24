@@ -31,7 +31,7 @@ Il campo di gioco resta libero: l'interfaccia sta in una fascia in basso e in du
 - **Fascia in basso a cinque blocchi** (decisione di Fede del 24/11/2026), da sinistra:
   1. **Info:** gli indicatori (popolazione, cibo, salute, legittimità), come le risorse; il valore diventa rosso quando è in pericolo.
   2. **Descrizione:** la scheda dello strumento scelto (come la scheda dell'unità selezionata): nome, cosa fa o messaggio dell'ultima azione, lettura del lotto sotto il puntatore.
-  3. **Costruzione:** schede Insediamento, Territorio, Vie, Edifici. Dopo la fondazione il tasto Fondare sparisce, e con lui la scheda Insediamento finché resta vuota (torna se il villaggio è abbandonato).
+  3. **Costruzione:** schede Insediamento, Territorio (Zona agricola, Z; Campo, C), Vie, Edifici. Dopo la fondazione il tasto Fondare sparisce, e con lui la scheda Insediamento finché resta vuota (torna se il villaggio è abbandonato).
   4. **Gestione:** scheda Politiche (tasto P, apre il pannello delle politiche) e, allo stesso livello, scheda **Ammodernamento** (decisione di Fede) con un tasto per settore: oggi Agricolo; poi Viario (strade), Abitativo e gli altri. Il tasto di un settore è spento finché non c'è niente da ammodernare e diventa invertito quando l'ammodernamento è attivo; un clic lo avvia o lo sospende.
   5. **Strumenti:** schede Demolizione (Demolisci, X: vale su tutto e non è una costruzione) e Prova (+10 anni, Y, solo per le prove).
 
@@ -42,7 +42,8 @@ Il campo di gioco resta libero: l'interfaccia sta in una fascia in basso e in du
 - **Scelte** (solo le scelte vere: presagi, primo cattivo raccolto, affollamento, stranieri se la politica è "caso per caso"): finestra al centro; il tempo si ferma finché non si sceglie. Niente finestre con il solo tasto "Continua" (tranne abbandono e fine della partita).
 - **Anteprima dei sentieri** (come in Cities: Skylines): nastro trasparente dall'inizio al puntatore, bianco se si può tracciare, rosso se no, con accanto la lunghezza o il motivo ("non collegato al villaggio" se il tratto è staccato); un quadratino segna l'inizio; mentre lo strumento è attivo i sentieri esistenti si schiariscono.
 - **Strumento sulla mappa:** un cerchio sottile bianco (rosso se l'azione è irreversibile) segue il puntatore; per Fondare mostra fin dove arriveranno i campi. 
-- **Contado:** con lo strumento Campi una linea tratteggiata segna il confine della terra coltivabile, che cresce con gli abitanti; fuori, il terreno è appena velato. Un clic che esce dal confine dice quanti campi restano fuori e perché.
+- **Zona agricola:** con Zona agricola o Campo la zona si vede come un velo chiaro con un bordo sottile.
+- **Contado:** con lo strumento Zona agricola o Campo una linea tratteggiata segna il confine della terra coltivabile, che cresce con gli abitanti; fuori, il terreno è appena velato. Un clic che esce dal confine dice quanti campi restano fuori e perché.
 - **Griglia magnetica** (idea di Fede, come in Cities: Skylines): mentre si pone qualcosa, attorno al puntatore compaiono i quadrati a cui lo strumento si aggancia, e si schiariscono quelli che verranno presi. Campi: celle da 40 m della simulazione, prese se il loro centro sta nel cerchio. Granaio: lotti da 20 m, l'edificio si aggancia al centro del lotto. Fondare: il cerchio si aggancia al punto della mappa più vicino (niente griglia; il cerchio mostra il contado iniziale di 400 m). Fuori da questi momenti la griglia non si vede.
 
 ## Pittogrammi
@@ -51,7 +52,8 @@ In `gioco/asset/icone/`, SVG fatti da noi: bianchi su trasparente, 28 px su una 
 | Icona | Comando | Figura |
 |---|---|---|
 | `fonda` | Fondare | palo piantato con la bandiera |
-| `campi` | Campi | due appezzamenti con i solchi in versi diversi |
+| `zona_agricola` | Zona agricola | area tratteggiata con dentro un campo |
+| `campi` | Campo | due appezzamenti con i solchi in versi diversi |
 | `sentiero` | Sentiero | traccia a tratti che serpeggia tra due punti |
 | `granaio` | Granaio | casa delle scorte su pali |
 | `demolisci` | Demolisci | costruzione cancellata da una croce |
@@ -89,7 +91,7 @@ Sono una prima serie (proposta di Claude), da confermare con Fede.
 | fps, alberi (livello), cache | in alto a destra | prestazioni, per le prove sui PC |
 
 ## Tasti
-1–5 mappe · G griglia · I isoipse · F fondare · C campi · V sentiero · H granaio · Spazio pausa o riprendi · + e − velocità del tempo · X demolisci · P politiche · Y +10 anni · [ e ] raggio dello strumento · Esc chiude le politiche, chiude la catena dei sentieri o toglie lo strumento · Q E ruota · rotella zoom · tasto destro o WASD sposta · Home torna al sito.
+1–5 mappe · G griglia · I isoipse · F fondare · Z zona agricola · C campo · V sentiero · H granaio · Spazio pausa o riprendi · + e − velocità del tempo · X demolisci · P politiche · Y +10 anni · [ e ] raggio dello strumento · Esc chiude le politiche, chiude la catena dei sentieri o toglie lo strumento · Q E ruota · rotella zoom · tasto destro o WASD sposta · Home torna al sito.
 
 ## Partita (Prototipo 0 in Godot)
 - **Indicatori:** popolazione, cibo (scorta / consumo dell'anno), salute, legittimità. Rossi quando sono in pericolo (pochi abitanti, scorte sotto il 30% del consumo, salute sotto 45, legittimità sotto 30).

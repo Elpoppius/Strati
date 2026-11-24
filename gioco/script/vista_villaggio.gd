@@ -33,13 +33,36 @@ func prepara(s: SimVillaggio, u: UsoSuolo, t: Terreno) -> void:
 	sim = s
 	uso = u
 	terreno = t
+	# Zona agricola: un byte per punto della mappa, letto dallo shader del terreno (si vede mentre
+	# si destina la terra).
+	_immagine_zona = Image.create(sim.n, sim.n, false, Image.FORMAT_L8)
+	_texture_zona = ImageTexture.create_from_image(_immagine_zona)
+	terreno.materiale.set_shader_parameter("zona_agricola", _texture_zona)
 
 
 func numero_case() -> int:
 	return _case.size()
 
 
+var _immagine_zona: Image
+var _texture_zona: ImageTexture
+var _firma_zona := 0
+
+
+func _sincronizza_zona() -> void:
+	var firma := sim.zona.hash()
+	if firma == _firma_zona:
+		return
+	_firma_zona = firma
+	_immagine_zona.fill(Color(0, 0, 0))
+	for i in sim.zona:
+		var p := sim.px_di(i)
+		_immagine_zona.set_pixel(p.x, p.y, Color(1, 1, 1))
+	_texture_zona.update(_immagine_zona)
+
+
 func sincronizza() -> void:
+	_sincronizza_zona()
 	_sincronizza_centro()
 	_sincronizza_campi_e_sentieri()
 	_sincronizza_case()

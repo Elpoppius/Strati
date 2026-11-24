@@ -29,18 +29,15 @@ func _gioca(sim: SimVillaggio, sito: Vector2i, scelta_presagi := "") -> Dictiona
 		if not sim.fondato:
 			sim.fonda(sito)
 		if sim.anno % 5 == 0:
-			var voluti := int(sim.pop * 0.55 / 3.0 * SimVillaggio.AREA_CELLA * 1.1)
-			if sim.campi.size() < voluti:
-				var candidati: Array[Vector2i] = []
+			# Giocatore automatico: la zona agricola copre tutto il contado (che cresce con gli
+			# abitanti); i campi li dissodano le famiglie.
+			if sim.anno % 25 == 0 or sim.zona.is_empty():
+				var tutta: Array[Vector2i] = []
 				var r := sim.raggio_campi()
 				for dy in range(-r, r + 1):
 					for dx in range(-r, r + 1):
-						var p := sim.centro + Vector2i(dx, dy)
-						if p.x >= 0 and p.y >= 0 and p.x < sim.n and p.y < sim.n and not sim.campi.has(sim.px(p)) and sim.motivo_campo(p) == "":
-							candidati.append(p)
-				candidati.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
-					return sim.fert(sim.px(a)) - SimVillaggio.cheb(a, sim.centro) * 0.01 > sim.fert(sim.px(b)) - SimVillaggio.cheb(b, sim.centro) * 0.01)
-				sim.aggiungi_campi(candidati.slice(0, voluti - sim.campi.size()))
+						tutta.append(sim.centro + Vector2i(dx, dy))
+				sim.aggiungi_zona(tutta)
 			if sim.granaio.x < 0 and sim.cibo > 40.0:
 				var c := sim.mondo_di_px(sim.centro)
 				for prova in [Vector2(60, 0), Vector2(-60, 0), Vector2(0, 60), Vector2(0, -60), Vector2(100, 100)]:
@@ -70,7 +67,7 @@ func _initialize() -> void:
 	var t := SimVillaggio.new(d, 3)
 	var c := Vector2i(d.siti[0]["px"])
 	t.fonda(c)
-	controlla(t.fondato and t.pop == 30.0 and t.case.size() == 4, "fondazione: 30 abitanti, 4 case (%d)" % t.case.size())
+	controlla(t.fondato and t.pop == 30.0 and t.case.size() == 5, "fondazione: 30 abitanti, 5 case (una ogni 6 abitanti) (%d)" % t.case.size())
 	controlla(t.motivo_campo(c + Vector2i(60, 0)) != "", "un campo troppo lontano non si può fare")
 	var lista: Array[Vector2i] = [c + Vector2i(3, 0), c + Vector2i(4, 0)]
 	controlla(t.aggiungi_campi(lista) == 2 and t.campi.size() == 2, "due campi vicini al villaggio")

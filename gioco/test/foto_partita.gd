@@ -23,19 +23,15 @@ func _process(_d: float) -> bool:
 		sim.fonda(sim.px_da_mondo(sito.x, sito.y))
 		var anni := int(args[2]) if args.size() > 2 else 150
 		for k in anni:
+			if k % 25 == 0 and sim.fondato:
+				# Zona agricola su tutto il contado; i campi li dissodano le famiglie.
+				var tutta: Array[Vector2i] = []
+				var r := sim.raggio_campi()
+				for dy in range(-r, r + 1):
+					for dx in range(-r, r + 1):
+						tutta.append(sim.centro + Vector2i(dx, dy))
+				sim.aggiungi_zona(tutta)
 			if k % 5 == 0 and sim.fondato:
-				var voluti := int(sim.pop * 0.55 / 3.0 * SimVillaggio.AREA_CELLA * 1.1)
-				if sim.campi.size() < voluti:
-					# I campi più vicini al centro ancora liberi: un disco compatto.
-					var candidati: Array[Vector2i] = []
-					var r := sim.raggio_campi()
-					for dy in range(-r, r + 1):
-						for dx in range(-r, r + 1):
-							var q := sim.centro + Vector2i(dx, dy)
-							if Vector2(dx, dy).length() > 3.0 and not sim.campi.has(sim.px(q)) and sim.motivo_campo(q) == "":
-								candidati.append(q)
-					candidati.sort_custom(func(u: Vector2i, w: Vector2i) -> bool: return (u - sim.centro).length_squared() < (w - sim.centro).length_squared())
-					sim.aggiungi_campi(candidati.slice(0, voluti - sim.campi.size()))
 				if sim.granaio.x < 0 and sim.cibo > 40.0:
 					var c := sim.mondo_di_px(sim.centro)
 					sim.costruisci_granaio(c + Vector2(70, -30))

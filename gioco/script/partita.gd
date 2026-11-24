@@ -5,7 +5,7 @@ extends Node
 ## Tempo continuo con pausa e tre velocità; si ferma da solo nei momenti decisivi
 ## (decisione di Fede del 23/11/2026).
 
-const STRUMENTI := ["fonda", "campi", "sentiero", "granaio", "demolisci"]
+const STRUMENTI := ["fonda", "zona", "campi", "sentiero", "granaio", "demolisci"]
 const VELOCITA := [0.0, 2.0, 6.0, 15.0]  # anni al secondo, come nel Prototipo 0
 const NOMI_VELOCITA := ["Pausa", "2 anni al secondo", "6 anni al secondo", "15 anni al secondo"]
 
@@ -44,8 +44,10 @@ func avvia(s: Node, seme: int = -1) -> void:
 		 "descrizione": "Clicca dove fondare. Il cerchio mostra fin dove arriveranno i campi. È la scelta più importante della partita."},
 	])
 	hud.aggiungi_menu("territorio", "Territorio", "A cosa si destina la terra attorno al villaggio.", [
-		{"id": "campi", "icona": "campi", "testo": "Dissodare campi", "breve": "Campi", "tasto": "C",
-		 "descrizione": "Un clic dissoda la terra libera nel cerchio; i campi che ci sono già restano. Gli alberi sui nuovi campi si tagliano. Per abbandonare un campo: Demolisci."},
+		{"id": "zona", "icona": "zona_agricola", "testo": "Zona agricola", "breve": "Zona", "tasto": "Z",
+		 "descrizione": "Un clic destina alla coltivazione la terra nel cerchio. Dentro la zona le famiglie dissodano da sole i campi quando servono, dalla terra migliore e più vicina. Per toglierla: Demolisci."},
+		{"id": "campi", "icona": "campi", "testo": "Campo", "breve": "Campo", "tasto": "C",
+		 "descrizione": "Un clic dissoda subito la terra libera nel cerchio, a mano; i campi che ci sono già restano. Gli alberi sui nuovi campi si tagliano. Per abbandonare un campo: Demolisci."},
 	])
 	hud.aggiungi_menu("vie", "Vie", "Come ci si muove.", [
 		{"id": "sentiero", "icona": "sentiero", "testo": "Tracciare un sentiero", "breve": "Sentiero", "tasto": "V",
@@ -114,8 +116,6 @@ func avvia(s: Node, seme: int = -1) -> void:
 		var punti := []
 		if sim.fondato:
 			punti.append(sim.mondo_di_px(sim.centro))
-		for f in sim.figli:
-			punti.append(sim.mondo_di_px(sim.px_di(f)))
 		return punti
 	hud.azione.connect(_azione)
 	hud.seleziona_comando("fonda")
@@ -193,7 +193,7 @@ func _scelto(opzione: String, id: int, tipo: String) -> void:
 	sim.scegli(id, opzione)
 	var hud: Hud = scena.hud
 	if tipo == "primo_cattivo" and opzione == "campi":
-		hud.seleziona_comando("campi")
+		hud.seleziona_comando("zona")
 		imposta_velocita(0)
 	if tipo == "abbandono":
 		hud.seleziona_comando("fonda")
@@ -232,10 +232,23 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 						vista.sincronizza()
 						var c := sim.mondo_di_px(p)
 						scena.cam.vai_a(c.x, c.y, 600.0)
-						hud.seleziona_comando("campi")
-						hud.imposta_messaggio("Villaggio fondato. Ora dissoda i campi (cerchio: un clic dissoda la terra libera dentro il cerchio; un clic su un campo lo abbandona). Poi fai scorrere il tempo con Spazio.")
+						hud.seleziona_comando("zona")
+						hud.imposta_messaggio("Villaggio fondato. Ora disegna la zona agricola: dentro, le famiglie dissoderanno i campi quando serviranno. Poi fai scorrere il tempo con Spazio.")
 						aggiorna_hud()
 						scena._aggiorna_pennello())
+		"zona":
+			if not sim.fondato:
+				return
+			var celle_z := _celle_cerchio(p, Vector2(punto.x, punto.z), raggio)
+			var fuori_z := 0
+			for q in celle_z:
+				if not sim.a_portata(q) and not sim.zona.has(sim.px(q)):
+					fuori_z += 1
+			var nuove := sim.aggiungi_zona(celle_z)
+			var testo_z := ("Zona agricola: %s ha in più (in tutto %s ha). Le famiglie dissoderanno qui i campi quando serviranno." % [_ettari(nuove), _ettari(sim.zona.size())]) if nuove > 0 else "Qui la terra è già nella zona agricola, oppure non si può coltivare."
+			if fuori_z > 0:
+				testo_z += " %d celle fuori dal contado (fino a %d m dal villaggio)." % [fuori_z, roundi(sim.raggio_contado())]
+			hud.imposta_messaggio(testo_z)
 		"campi":
 			if not sim.fondato:
 				return
@@ -300,6 +313,8 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 				parti.append("%d tratti di sentiero" % esito["sentieri"])
 			if esito["granaio"]:
 				parti.append("il granaio")
+			if esito.get("zona", 0) > 0:
+				parti.append("%s ha di zona agricola" % _ettari(esito["zona"]))
 			hud.imposta_messaggio(("Demoliti: " + ", ".join(parti) + ".") if not parti.is_empty() else "Qui non c'è niente da demolire.")
 		"granaio":
 			var m := sim.costruisci_granaio(Vector2(punto.x, punto.z))
@@ -310,6 +325,21 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 				hud.imposta_messaggio(m)
 	vista.sincronizza()
 	aggiorna_hud()
+
+
+func _ettari(px_n: int) -> String:
+	return String.num(px_n * sim.dati.metri_per_px * sim.dati.metri_per_px / 10000.0, 1).replace(".", ",")
+
+
+func _celle_cerchio(p: Vector2i, c: Vector2, raggio: float) -> Array[Vector2i]:
+	var celle: Array[Vector2i] = []
+	var r := int(ceil(raggio / sim.dati.metri_per_px))
+	for dy in range(-r, r + 1):
+		for dx in range(-r, r + 1):
+			var q := p + Vector2i(dx, dy)
+			if q.x >= 0 and q.y >= 0 and q.x < sim.n and q.y < sim.n and sim.mondo_di_px(q).distance_to(c) <= raggio:
+				celle.append(q)
+	return celle
 
 
 func _lunghezza(a: Vector2i, b: Vector2i) -> float:
@@ -348,7 +378,7 @@ func raggio_strumento(comando: String, raggio: float) -> float:
 	match comando:
 		"fonda":
 			return SimVillaggio.CONTADO_MIN
-		"campi", "demolisci":
+		"zona", "campi", "demolisci":
 			return raggio
 		"granaio":
 			return 8.0
@@ -396,7 +426,7 @@ func aggiorna_hud() -> void:
 	# Dopo la fondazione il tasto non serve più (Fede): torna solo se il villaggio è abbandonato.
 	hud.mostra("fonda", not on)
 	hud.segna("collega_rete", collega_rete)
-	for id in ["campi", "sentiero", "comune", "famiglie"]:
+	for id in ["zona", "campi", "sentiero", "comune", "famiglie"]:
 		hud.abilita(id, on and not sim.finito)
 	hud.abilita("granaio", on and sim.granaio.x < 0 and not sim.finito)
 	hud.cambia_testo("granaio", "Granaio (già costruito)" if sim.granaio.x >= 0 else "Granaio (30 di cibo)", "Granaio")

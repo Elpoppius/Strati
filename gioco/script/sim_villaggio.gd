@@ -130,7 +130,18 @@ var rovine: Array[Vector2] = []  # punti nel mondo
 ## Lotti delle case demolite: per qualche anno non vi rinasce una casa (lotto -> anni rimasti).
 var macerie := {}
 const ANNI_MACERIE := 20
-var figli: Array[int] = []
+## Zona agricola (decisione di Fede del 24/11/2026): i pixel dove la comunità può coltivare. Dentro
+## la zona le famiglie dissodano da sole i campi quando servono, come fanno con le case; il
+## giocatore può anche porre i campi a mano (strumento Campo).
+var zona := {}
+## Quota massima di nuovi campi all'anno per abitante (dissodare richiede tempo e braccia).
+const DISSODAMENTO_PER_ABITANTE := 0.05
+var _zona_piena_anno := -99999
+## Resa di un pixel di campo (0,16 ha) su terra di fertilità 1, prima di clima e tecnica: circa
+## una persona sfamata all'anno su terra media (Fede: prima i campi erano troppi per la gente).
+const RESA_CAMPO := 24.0
+## Abitanti per casa (prima 8: case troppo poche rispetto ai campi).
+const ABITANTI_PER_CASA := 6.0
 var memoria := 40.0
 var razionamento := 0
 var siccita := 0
@@ -453,6 +464,83 @@ func aggiungi_campi(lista: Array[Vector2i]) -> int:
 	return aggiunti
 
 
+## Aggiunge pixel alla zona agricola (solo terra asciutta dentro il contado). Restituisce quanti.
+func aggiungi_zona(lista: Array[Vector2i]) -> int:
+	var aggiunti := 0
+	for p in lista:
+		if p.x < 0 or p.y < 0 or p.x >= n or p.y >= n:
+			continue
+		var i := px(p)
+		if not zona.has(i) and edificabile(i) and a_portata(p):
+			zona[i] = true
+			aggiunti += 1
+	return aggiunti
+
+
+func togli_zona(lista: Array[Vector2i]) -> int:
+	var tolti := 0
+	for p in lista:
+		if zona.erase(px(p)):
+			tolti += 1
+	return tolti
+
+
+## Raggio dell'abitato in metri (dove nascono le case): i campi della zona agricola lo lasciano libero.
+func raggio_abitato() -> float:
+	var servono := ceili(pop / ABITANTI_PER_CASA)
+	return (3 + ceili(1.4 * sqrt(servono)) + raggio_extra * 3) * LOTTO
+
+
+## Resa attesa di un campo in un anno normale (per decidere quanti campi dissodare).
+func _resa_attesa(i: int) -> float:
+	return RESA_CAMPO * fert(i) * 0.95 * (0.85 + 0.15 * acqua_qualsiasi(i)) * RESA_TECNICA[tecnica_corrente] / AREA_CELLA
+
+
+## Le famiglie dissodano nella zona agricola i campi che mancano per sfamarsi: tanti quanti ne
+## servono (più un piccolo margine), un po' ogni anno, dalla terra migliore e più vicina, lasciando
+## libero l'abitato. Restituisce quanti campi sono stati dissodati.
+func _dissoda_zona() -> int:
+	if zona.is_empty() or not fonti["agricoltura"]:
+		return 0
+	var fabbisogno := pop * 1.1 - ultima_caccia - ultima_pesca
+	var attesa := 0.0
+	for i in campi:
+		attesa += _resa_attesa(i)
+	var mancante := fabbisogno - attesa
+	if mancante <= 0.0:
+		return 0
+	var braccia := int(pop * 0.55 / 3.0 * AREA_CELLA)
+	var massimo := mini(maxi(2, int(pop * DISSODAMENTO_PER_ABITANTE)), braccia - campi.size())
+	if massimo <= 0:
+		return 0
+	var c := mondo_di_px(centro)
+	var libero := raggio_abitato() + 20.0
+	var candidati: Array[int] = []
+	for i in zona:
+		if campi.has(i):
+			continue
+		var p := px_di(i)
+		if mondo_di_px(p).distance_to(c) < libero or motivo_campo(p) != "":
+			continue
+		candidati.append(i)
+	if candidati.is_empty():
+		if anno - _zona_piena_anno >= 25:
+			_zona_piena_anno = anno
+			_notifica("La zona agricola è piena: le famiglie non trovano altra terra da dissodare.", false, c)
+		return 0
+	candidati.sort_custom(func(a: int, b: int) -> bool:
+		return fert(a) - mondo_di_px(px_di(a)).distance_to(c) / 1500.0 > fert(b) - mondo_di_px(px_di(b)).distance_to(c) / 1500.0)
+	var nuovi := 0
+	for i in candidati:
+		if mancante <= 0.0 or nuovi >= massimo:
+			break
+		campi.append(i)
+		_tecnica_campi[i] = tecnica_corrente
+		mancante -= _resa_attesa(i)
+		nuovi += 1
+	return nuovi
+
+
 func togli_campi(lista: Array[Vector2i]) -> int:
 	var tolti := 0
 	for p in lista:
@@ -585,6 +673,11 @@ func demolisci(punto: Vector2, raggio: float) -> Dictionary:
 	var n_campi := campi.size()
 	campi = campi.filter(func(i: int) -> bool: return not dentro.call(i))
 	esito["campi"] = n_campi - campi.size()
+	esito["zona"] = 0
+	for i in zona.keys():
+		if dentro.call(i):
+			zona.erase(i)
+			esito["zona"] += 1
 	var n_sentieri := sentieri.size()
 	sentieri = sentieri.filter(func(i: int) -> bool: return not dentro.call(i))
 	esito["sentieri"] = n_sentieri - sentieri.size()
@@ -840,10 +933,10 @@ func _applica_scelta(tipo: String, o: String) -> void:
 		"affollamento":
 			if o == "restare":
 				raggio_extra += 1
-				salute -= 5.0
-				_scrivi("Le famiglie restano: l'abitato si stringe e si allarga un poco.")
+				salute -= 3.0
+				_scrivi("Le famiglie restano: l'abitato si allarga.")
 			else:
-				_fonda_figlio()
+				_emigra()
 
 
 # ---------- un anno ----------
@@ -905,6 +998,7 @@ func passo() -> void:
 		anni_sapere -= 1
 	if ammodernamenti["agricolo"]:
 		_ammoderna()
+	_dissoda_zona()
 	# Raccolto: le braccia lavorano prima i campi più fertili.
 	var braccia := pop * 0.55 * (1.0 + (0.0 if fonti["caccia"] else 0.2) + (0.0 if fonti["pesca"] else 0.1))
 	var lavorabili := int(braccia / 3.0 * AREA_CELLA) if fonti["agricoltura"] else 0
@@ -967,7 +1061,7 @@ func passo() -> void:
 			"Il raccolto non basta a sfamare tutti: %d contro un bisogno di %d." % [roundi(raccolto), roundi(consumo)],
 			[{"id": "razionare", "testo": "Razionare per tre anni", "nota": "Si consuma meno; salute e consenso calano un poco."},
 			 {"id": "caccia", "testo": "Cacciare di più nei boschi", "nota": "Più cibo subito, ma i cacciatori rischiano e la selvaggina cala."},
-			 {"id": "campi", "testo": "Dissodare nuovi campi", "nota": "Torni alla mappa e aggiungi campi con il comando Campi."}])
+			 {"id": "campi", "testo": "Allargare la zona agricola", "nota": "Torni alla mappa e allarghi la zona dove le famiglie dissodano i campi."}])
 	# Salute.
 	var dm := _d_palude[px(centro)]
 	var obiettivo := 72.0 + 15.0 * acqua_qualsiasi(px(centro)) - (25.0 if dm <= 3.0 else (10.0 if dm <= 6.0 else 0.0)) \
@@ -1002,9 +1096,9 @@ func passo() -> void:
 	if not gia_affollato and pop >= 150.0:
 		gia_affollato = true
 		_decidi("affollamento", "Il villaggio è affollato",
-			"Le famiglie sono ormai %d. Le case si stringono e i campi più lontani sono faticosi da raggiungere." % roundi(pop / 6.0),
-			[{"id": "restare", "testo": "Restare tutti", "nota": "Le case si stringono e l'abitato si allarga un poco: la salute ne risente. Il contado resta quello che il cammino permette."},
-			 {"id": "figlio", "testo": "Fondare un villaggio figlio", "nota": "Un terzo delle famiglie parte per fondare un nuovo villaggio. Il consenso cresce."}])
+			"Le famiglie sono ormai %d. Le case si stringono e i campi più lontani sono faticosi da raggiungere." % roundi(pop / ABITANTI_PER_CASA),
+			[{"id": "restare", "testo": "Restare", "nota": "Più gente, più case: l'abitato si allarga verso i campi. Per qualche anno la salute ne risente."},
+			 {"id": "emigrare", "testo": "Emigrare", "nota": "Un terzo delle famiglie parte in cerca di terra altrove: meno bocche da sfamare e meno braccia."}])
 	if legittimita <= 5.0:
 		anni_legittimita_bassa += 1
 	else:
@@ -1040,7 +1134,7 @@ func _resa(i: int) -> float:
 	# (meno, se la caccia la tiene bassa).
 	var vie := 1.0 + BONUS_SENTIERO if _campi_serviti.has(i) else 1.0
 	var danni := 1.0 - 0.25 * selvaggina if _campi_al_bosco.has(i) else 1.0
-	return 12.0 * fert(i) * fattore * (1.12 if politica("raccolto") == "famiglie" else 1.0) \
+	return RESA_CAMPO * fert(i) * fattore * (1.12 if politica("raccolto") == "famiglie" else 1.0) \
 		* (1.08 if anni_sapere > 0 else 1.0) * RESA_TECNICA[tecnica_campo(i)] * vie * danni / AREA_CELLA
 
 
@@ -1123,7 +1217,7 @@ func _inizia_siccita() -> void:
 func disponi_case() -> void:
 	if not fondato:
 		return
-	var servono := ceili(pop / 8.0)
+	var servono := ceili(pop / ABITANTI_PER_CASA)
 	while case.size() > servono:
 		case.pop_back()
 	var lc := lotto_da_mondo(mondo_di_px(centro).x, mondo_di_px(centro).y)
@@ -1170,25 +1264,11 @@ func disponi_case() -> void:
 	affollamento = clampf(float(servono - case.size()) / servono, 0.0, 1.0) if servono > 0 else 0.0
 
 
-func _fonda_figlio() -> void:
-	var migliore := -1
-	var punteggio := -1e9
-	for y in range(0, n, 2):
-		for x in range(0, n, 2):
-			var p := Vector2i(x, y)
-			var i := px(p)
-			var d := cheb(p, centro)
-			if not edificabile(i) or d < 9 * PX_CELLA or d > 16 * PX_CELLA:
-				continue
-			var sc := fert(i) + acqua_qualsiasi(i) - piena(i) + float((i * 40503) % 97) / 200.0
-			if sc > punteggio:
-				punteggio = sc
-				migliore = i
+## Emigrazione (decisione di Fede: al posto del villaggio figlio): un terzo delle famiglie parte.
+func _emigra() -> void:
 	pop *= 0.67
-	bonus += 6.0
-	if migliore >= 0:
-		figli.append(migliore)
-	_scrivi("Un terzo delle famiglie parte e fonda un villaggio figlio.", "buono")
+	stat["emigrazioni"] = stat.get("emigrazioni", 0) + 1
+	_scrivi("Un terzo delle famiglie emigra in cerca di terra altrove.")
 	disponi_case()
 
 
@@ -1203,6 +1283,7 @@ func _abbandona() -> void:
 	case = []
 	campi = []
 	_tecnica_campi = {}
+	zona = {}
 	sentieri = []
 	tratti_sentiero = []
 	granaio = Vector2(-1, -1)
@@ -1216,7 +1297,7 @@ func _abbandona() -> void:
 func _fine() -> void:
 	finito = true
 	var testo := "Il villaggio conta %d abitanti%s.\nAnni di carestia: %d · Piene: %d · Siccità: %d\nPresagi letti correttamente: %d su %d · Fondazioni: %d%s\nLa domanda del prototipo: la scelta del sito ha pesato? Prova un'altra partita da un sito diverso e confronta." % [
-		roundi(pop), (" e ha fondato %d villaggi figli" % figli.size()) if not figli.is_empty() else "",
+		roundi(pop), (" (emigrazioni: %d)" % stat["emigrazioni"]) if stat.get("emigrazioni", 0) > 0 else "",
 		stat["carestie"], stat["piene"], stat["siccita"], stat["presagi_letti"], stat["presagi_totali"], stat["fondazioni"],
 		(" (abbandoni: %d)" % stat["abbandoni"]) if stat["abbandoni"] > 0 else ""]
 	_decidi("fine", "%s: cinque secoli dopo" % anno_testo(anno), testo, [{"id": "ok", "testo": "Resta a guardare la mappa", "nota": ""}])

@@ -67,6 +67,10 @@ uniform vec3 griglia_magnetica = vec3(0.0);
 // si vede il confine della terra coltivabile, con la zona fuori appena velata (decisione di Fede:
 // il limite c'è ma non si percepiva).
 uniform vec3 contado = vec3(0.0, 0.0, -1.0);
+// Zona agricola (un valore per punto della mappa, 1 = nella zona) e se mostrarla: si vede solo
+// mentre si destina la terra, come velo chiaro con un bordo sottile.
+uniform sampler2D zona_agricola : filter_linear, repeat_disable;
+uniform float mostra_zona = 0.0;
 
 // Tecnica di ogni campo (UsoSuolo.tecniche, un byte per cella da 10 m, senza filtro): 0 zappa
 // (villaggio), 1 aratro in croce, 2 centuriazione, 3 strisce medievali, 4 meccanica.
@@ -377,6 +381,12 @@ void fragment() {
 	// Lotto sotto il puntatore.
 	if (lotto_evidenziato.x >= 0.0 && floor(pos_mondo.xz / lato_lotto) == lotto_evidenziato) {
 		col = mix(col, pow(vec3(0.71, 0.26, 0.18), vec3(2.2)), 0.55);
+	}
+	if (mostra_zona > 0.5) {
+		float z = texture(zona_agricola, UV).r;
+		float fz = max(fwidth(z), 1e-3);
+		float bordo_z = 1.0 - smoothstep(fz * 0.5, fz * 2.0, abs(z - 0.5));
+		col = mix(col, vec3(1.0), smoothstep(0.45, 0.55, z) * 0.1 + bordo_z * 0.6);
 	}
 	if (contado.z > 0.0) {
 		float dc = distance(pos_mondo.xz, contado.xy);

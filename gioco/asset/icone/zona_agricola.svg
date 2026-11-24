@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="miter">
+<!-- Zona agricola: un'area tratteggiata con dentro un solo campo -->
+<rect x="4" y="4" width="24" height="24" stroke-width="2" stroke-dasharray="3 3" stroke-linecap="butt"/>
+<rect x="10" y="12" width="12" height="10" fill="#ffffff" stroke="none"/>
+<line x1="10" y1="15" x2="22" y2="15" stroke="#1b1b1b" stroke-width="1.2"/>
+<line x1="10" y1="19" x2="22" y2="19" stroke="#1b1b1b" stroke-width="1.2"/>
+</svg>

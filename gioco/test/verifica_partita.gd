@@ -43,9 +43,15 @@ func _process(_d: float) -> bool:
 	_s.applica_strumento()
 	controlla(h.modale_aperta(), "fondare chiede conferma mostrando la valutazione del sito")
 	_rispondi(h, "Fonda qui")
-	controlla(sim.fondato and h.comando() == "campi", "fondato; si passa ai campi")
-	controlla(p.vista.numero_case() == sim.case.size() and sim.case.size() == 4, "le case della simulazione sono disegnate (%d)" % p.vista.numero_case())
+	controlla(sim.fondato and h.comando() == "zona", "fondato; si passa alla zona agricola")
+	controlla(p.vista.numero_case() == sim.case.size() and sim.case.size() == 5, "le case della simulazione sono disegnate (%d)" % p.vista.numero_case())
 	controlla(_s.uso.stato(sito.x, sito.y) == UsoSuolo.COSTRUITO, "terra battuta al centro del villaggio")
+	# Zona agricola a ovest: dentro, le famiglie dissodano da sole i campi che servono.
+	_s.raggio_pennello = 150.0
+	_s.punto_corrente = Vector3(sito.x - 250.0, 0, sito.y)
+	_s.applica_strumento()
+	controlla(sim.zona.size() > 20 and h._messaggio.text.contains("Zona agricola"), "la zona agricola si disegna (%d punti): %s" % [sim.zona.size(), h._messaggio.text])
+	h.seleziona_comando("campi")
 	# Campi a est del centro, entro il raggio.
 	_s.raggio_pennello = 120.0
 	_s.punto_corrente = Vector3(sito.x + 300.0, 0, sito.y)
