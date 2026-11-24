@@ -67,6 +67,12 @@ var _righe_azioni := {}
 var _cronaca: Label
 var _valori_indicatori := {}
 var _notifiche: VBoxContainer
+var _sezione_fonti: VBoxContainer
+var _fonti_info := {}  # id -> {valore: Label, riempimento: ColorRect, riga: Control}
+## Clic su una fonte di cibo nel blocco Info.
+signal fonte_scelta(id: String)
+## Interruttore di una politica (per esempio una fonte di cibo) acceso o spento.
+signal interruttore_scelto(politica: String, voce: String, acceso: bool)
 var _opzioni: HBoxContainer
 var _opzioni_di := {}  # strumento -> [Button]
 var _colonna_mappe: Control
@@ -208,9 +214,23 @@ func _fascia_bassa(radice: Control, nomi_mappe: Array) -> void:
 	pi.custom_minimum_size = Vector2(190, ALTEZZA_FASCIA)
 	pi.size_flags_vertical = Control.SIZE_FILL
 	fascia.add_child(pi)
+	var colonna_info := VBoxContainer.new()
+	colonna_info.add_theme_constant_override("separation", 6)
+	pi.add_child(colonna_info)
 	indicatori = VBoxContainer.new()
 	indicatori.add_theme_constant_override("separation", 3)
-	pi.add_child(indicatori)
+	colonna_info.add_child(indicatori)
+	# Fonti di cibo (richiesta di Fede): da dove si attinge e quanto si usa di ciò che è disponibile.
+	_sezione_fonti = VBoxContainer.new()
+	_sezione_fonti.add_theme_constant_override("separation", 2)
+	_sezione_fonti.visible = false
+	colonna_info.add_child(_sezione_fonti)
+	var tf := Label.new()
+	tf.text = "FONTI DI CIBO"
+	tf.add_theme_font_override("font", _carattere(true, 1.6))
+	tf.add_theme_font_size_override("font_size", 10)
+	tf.add_theme_color_override("font_color", GRIGIO)
+	_sezione_fonti.add_child(tf)
 	# Scheda dello strumento scelto: nome, messaggio, lettura del lotto.
 	var ps := PanelContainer.new()
 	ps.custom_minimum_size = Vector2(330, ALTEZZA_FASCIA)
@@ -699,6 +719,66 @@ func imposta_indicatori(voci: Array) -> void:
 			(lab.get_parent() as Control).tooltip_text = String(v[3])
 
 
+## Fonti di cibo nel blocco Info. voci: {id, nome, preso, offerta, accesa, allarme, freccia,
+## suggerimento}. Per ognuna: quanto se ne prende quest'anno / quanto è disponibile, e una barra
+## sottile con la quota usata (bianca; rossa se la risorsa si sta esaurendo; grigia se la fonte è
+## spenta). Un clic apre le politiche.
+func imposta_fonti(voci: Array) -> void:
+	_sezione_fonti.visible = not voci.is_empty()
+	for v in voci:
+		var id: String = v["id"]
+		if not _fonti_info.has(id):
+			var riga := VBoxContainer.new()
+			riga.add_theme_constant_override("separation", 1)
+			riga.mouse_filter = Control.MOUSE_FILTER_STOP
+			riga.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			riga.gui_input.connect(func(ev: InputEvent) -> void:
+				if ev is InputEventMouseButton and (ev as InputEventMouseButton).pressed and (ev as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+					fonte_scelta.emit(id))
+			_sezione_fonti.add_child(riga)
+			var box := HBoxContainer.new()
+			box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			riga.add_child(box)
+			var e := Label.new()
+			e.text = String(v["nome"]).to_upper()
+			e.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			e.add_theme_font_override("font", _carattere(true, 1.6))
+			e.add_theme_font_size_override("font_size", 11)
+			e.add_theme_color_override("font_color", GRIGIO)
+			box.add_child(e)
+			var l := Label.new()
+			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			l.add_theme_font_override("font", _carattere(true))
+			l.add_theme_font_size_override("font_size", 14)
+			box.add_child(l)
+			var fondo := ColorRect.new()
+			fondo.color = RIGA
+			fondo.custom_minimum_size.y = 3
+			fondo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			riga.add_child(fondo)
+			var pieno := ColorRect.new()
+			pieno.anchor_bottom = 1.0
+			pieno.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			fondo.add_child(pieno)
+			_fonti_info[id] = {"valore": l, "riempimento": pieno, "riga": riga}
+		var f: Dictionary = _fonti_info[id]
+		var accesa: bool = v["accesa"]
+		var preso: float = v["preso"]
+		var offerta: float = v["offerta"]
+		var lab: Label = f["valore"]
+		if accesa:
+			lab.text = ("%d / %d %s" % [roundi(preso), roundi(offerta), v.get("freccia", "")]).strip_edges()
+		else:
+			lab.text = "spenta"
+		var colore := GRIGIO if not accesa else (PERICOLO if v.get("allarme", false) else BIANCO)
+		lab.add_theme_color_override("font_color", colore)
+		var pieno: ColorRect = f["riempimento"]
+		pieno.color = colore
+		pieno.anchor_right = clampf(preso / offerta, 0.0, 1.0) if accesa and offerta > 0.0 else 0.0
+		pieno.offset_right = 0.0
+		(f["riga"] as Control).tooltip_text = String(v.get("suggerimento", ""))
+
+
 func imposta_cronaca(righe: Array) -> void:
 	_cronaca.text = "\n".join(righe.slice(0, 4)) if not righe.is_empty() else "—"
 
@@ -859,8 +939,23 @@ func aggiungi_politiche(voci: Array) -> void:
 		scelte.add_theme_constant_override("separation", 4)
 		col.add_child(scelte)
 		var id: String = v["id"]
-		var voce := {"opzioni": {}, "note": {}}
-		for o in v["opzioni"]:
+		var voce := {"opzioni": {}, "note": {}, "interruttori": {}, "colonna": col}
+		# Interruttori (più voci accese insieme, per esempio le fonti di cibo) invece di opzioni
+		# alternative: quadratino vuoto o pieno davanti al nome.
+		for o in v.get("interruttori", []):
+			var b := Button.new()
+			var nome: String = o["testo"]
+			b.text = "□  " + nome
+			b.toggle_mode = true
+			b.focus_mode = Control.FOCUS_NONE
+			b.custom_minimum_size = Vector2(0, 30)
+			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var vid: String = o["id"]
+			b.toggled.connect(func(on: bool) -> void: b.text = ("■  " if on else "□  ") + nome)
+			b.pressed.connect(func() -> void: interruttore_scelto.emit(id, vid, b.button_pressed))
+			scelte.add_child(b)
+			voce["interruttori"][vid] = b
+		for o in v.get("opzioni", []):
 			var b := Button.new()
 			b.text = o["testo"]
 			b.toggle_mode = true
@@ -922,6 +1017,23 @@ func politica_attiva(id: String) -> bool:
 	for k in _politiche[id]["opzioni"]:
 		return not (_politiche[id]["opzioni"][k] as Button).disabled
 	return false
+
+
+## Stato degli interruttori di una politica ({voce: acceso}) e riga che dice cosa comporta.
+func imposta_interruttori(id: String, stati: Dictionary, nota := "") -> void:
+	if not _politiche.has(id):
+		return
+	var voce: Dictionary = _politiche[id]
+	for k in stati:
+		var b: Button = voce["interruttori"].get(k)
+		if b:
+			b.set_pressed_no_signal(stati[k])
+			b.text = ("■" if stati[k] else "□") + b.text.substr(1)
+	(voce["nota"] as Label).text = nota
+
+
+func interruttore(id: String, voce: String) -> bool:
+	return _politiche.has(id) and (_politiche[id]["interruttori"].get(voce) as Button).button_pressed
 
 
 func politica(id: String) -> String:

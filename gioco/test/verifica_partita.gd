@@ -120,7 +120,20 @@ func _process(_d: float) -> bool:
 	controlla(p.vista.numero_case() == sim.case.size(), "case disegnate allineate alla simulazione (%d)" % sim.case.size())
 	print("   %d abitanti, %d campi, %d case, abbandoni %d" % [roundi(sim.pop), sim.campi.size(), sim.case.size(), sim.stat["abbandoni"]])
 	controlla(sim.fondato and sim.stat["abbandoni"] == 0, "con i campi il villaggio vive")
-	controlla(h._valori_indicatori.has("Caccia") and h._valori_indicatori.has("Pesca") and h._valori_indicatori["Caccia"].text.contains("/"), "indicatori di caccia e pesca: " + h._valori_indicatori["Caccia"].text)
+	# Fonti di cibo nel blocco Info (Fede): da dove si attinge e quanto si usa di ciò che c'è.
+	controlla(h._sezione_fonti.visible and h._fonti_info.has("agricoltura") and h._fonti_info.has("caccia") and h._fonti_info.has("pesca")
+		and (h._fonti_info["caccia"]["valore"] as Label).text.contains("/"), "le fonti di cibo si leggono nel blocco Info: caccia " + (h._fonti_info["caccia"]["valore"] as Label).text)
+	# Spegnere la caccia dalle politiche: la caccia non dà più cibo, almeno una fonte resta accesa.
+	h.interruttore_scelto.emit("fonti", "caccia", false)
+	controlla(not sim.fonti["caccia"] and not h.interruttore("fonti", "caccia") and (h._fonti_info["caccia"]["valore"] as Label).text == "spenta", "la caccia si spegne dalle politiche e il blocco Info lo mostra")
+	h.interruttore_scelto.emit("fonti", "pesca", false)
+	h.interruttore_scelto.emit("fonti", "agricoltura", false)
+	controlla(sim.fonti["agricoltura"], "almeno una fonte di cibo resta accesa")
+	h.interruttore_scelto.emit("fonti", "caccia", true)
+	h.interruttore_scelto.emit("fonti", "pesca", true)
+	h.fonte_scelta.emit("caccia")
+	controlla(h.politiche_aperte(), "un clic su una fonte apre le politiche")
+	h.apri_politiche(false)
 	controlla(h._valori_indicatori.has("Popolazione") and h._valori_indicatori["Popolazione"].text == str(roundi(sim.pop)), "gli indicatori seguono la simulazione")
 	controlla(h._cronaca.text != "—", "la cronaca si riempie")
 	# Demolisci: le case nel cerchio spariscono e per un po' non rinascono lì.

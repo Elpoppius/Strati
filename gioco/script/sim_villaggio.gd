@@ -95,6 +95,15 @@ var offerta_pesca := 0.0
 var andamento_selvaggina := 0.0  # variazione negli ultimi 5 anni
 var _storia_selvaggina: Array[float] = []
 var _caccia_eccessiva := false
+## Fonti di cibo (politica approvata da Fede il 24/11/2026): agricoltura, caccia e pesca si
+## accendono e si spengono; almeno una resta accesa. Spegnerne una non cancella niente: si smette
+## di lavorarla e le braccia passano alle altre (caccia spenta: +20% di campi lavorati; pesca
+## spenta: +10%; agricoltura spenta: caccia e pesca possono dare il 50% in più). Cambiare costa un
+## poco di consenso (−2).
+var fonti := {"agricoltura": true, "caccia": true, "pesca": true}
+const FONTI := ["agricoltura", "caccia", "pesca"]
+## Raccolto che darebbero tutti i campi se fossero lavorati: l'offerta dell'agricoltura.
+var raccolto_potenziale := 0.0
 ## Sotto questa soglia di selvaggina si caccia troppo (indicatore rosso e notifica).
 const SOGLIA_SELVAGGINA := 0.4
 var _risorse := {"bosco": 0.0, "acqua": 0.0}
@@ -340,6 +349,7 @@ func fonda(p: Vector2i) -> void:
 	legittimita = 60.0
 	selvaggina = 1.0
 	_storia_selvaggina = []
+	fonti = {"agricoltura": true, "caccia": true, "pesca": true}
 	_caccia_eccessiva = false
 	_anni_risorse = 0
 	_contado_annunciato = CONTADO_MIN
@@ -705,6 +715,20 @@ func imposta_ammodernamento(settore: String, attivo: bool) -> bool:
 	return true
 
 
+## Accende o spegne una fonte di cibo. Almeno una resta accesa. Restituisce vero se è cambiata.
+func imposta_fonte(fonte: String, accesa: bool) -> bool:
+	if not fonti.has(fonte) or fonti[fonte] == accesa:
+		return false
+	if not accesa and fonti.values().count(true) <= 1:
+		return false
+	fonti[fonte] = accesa
+	if fondato:
+		bonus -= 2.0
+		var nomi := {"agricoltura": "i campi", "caccia": "la caccia", "pesca": "la pesca"}
+		_scrivi(("Si riprende %s." if accesa else "Gli anziani sospendono %s: le braccia vanno alle altre fonti di cibo.") % nomi[fonte])
+	return true
+
+
 func politica(id: String) -> String:
 	return politiche.get(id, "")
 
@@ -882,15 +906,20 @@ func passo() -> void:
 	if ammodernamenti["agricolo"]:
 		_ammoderna()
 	# Raccolto: le braccia lavorano prima i campi più fertili.
-	var braccia := pop * 0.55
-	var lavorabili := int(braccia / 3.0 * AREA_CELLA)
+	var braccia := pop * 0.55 * (1.0 + (0.0 if fonti["caccia"] else 0.2) + (0.0 if fonti["pesca"] else 0.1))
+	var lavorabili := int(braccia / 3.0 * AREA_CELLA) if fonti["agricoltura"] else 0
 	var ordinati := campi.duplicate()
 	ordinati.sort_custom(func(a: int, b: int) -> bool: return fert(a) > fert(b))
 	var raccolto := 0.0
-	for k in mini(lavorabili, ordinati.size()):
-		raccolto += _resa(ordinati[k])
+	raccolto_potenziale = 0.0
+	for k in ordinati.size():
+		var r := _resa(ordinati[k])
+		raccolto_potenziale += r
+		if k < lavorabili:
+			raccolto += r
 	ultimo_raccolto = raccolto
 	ultimi_lavorati = mini(lavorabili, ordinati.size())
+	var piu_braccia := 1.0 if fonti["agricoltura"] else 1.5
 	# Caccia, raccolta e pesca (economia mista): la selvaggina cala se si caccia troppo e ricresce
 	# lentamente; boschi e acque si ricontano ogni 5 anni (tagli e campi tolgono bosco).
 	if _anni_risorse <= 0:
@@ -899,10 +928,10 @@ func passo() -> void:
 	_anni_risorse -= 1
 	var portata_bosco: float = _risorse["bosco"] * RESA_BOSCO
 	offerta_caccia = portata_bosco * selvaggina
-	ultima_caccia = minf(pop * QUOTA_CACCIA, offerta_caccia)
+	ultima_caccia = minf(pop * QUOTA_CACCIA * piu_braccia, offerta_caccia) if fonti["caccia"] else 0.0
 	selvaggina = clampf(selvaggina - ultima_caccia / maxf(portata_bosco * 8.0, 1.0) + (1.0 - selvaggina) * 0.1, 0.05, 1.0)
 	offerta_pesca = float(_risorse["acqua"]) * RESA_ACQUA
-	ultima_pesca = minf(pop * QUOTA_PESCA, offerta_pesca)
+	ultima_pesca = minf(pop * QUOTA_PESCA * piu_braccia, offerta_pesca) if fonti["pesca"] else 0.0
 	_storia_selvaggina.append(selvaggina)
 	if _storia_selvaggina.size() > 6:
 		_storia_selvaggina.pop_front()

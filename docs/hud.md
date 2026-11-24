@@ -77,8 +77,9 @@ Sono una prima serie (proposta di Claude), da confermare con Fede.
 | Aperta / Caso per caso / Chiusa | Politiche: accoglienza degli stranieri | chi arriva resta sempre; a ogni arrivo si decide; viene sempre mandato via |
 | Ammodernamento · Agricolo | Gestione | avvia o sospende il rifacimento dei campi vecchi con la tecnica nuova, un po' ogni anno pagando cibo (spento finché non c'è una tecnica nuova) |
 | Opzioni · Collega alla rete | Descrizione, con lo strumento Sentiero | acceso: ogni sentiero parte dal punto più vicino della rete (un clic dove finisce); spento: il sentiero comincia dove vuoi |
-| Caccia 10 / 18 ↓ | indicatori | cibo da caccia e raccolta quest'anno / quanto offrono i boschi; freccia: la selvaggina cala o cresce; rosso: si caccia troppo (selvaggina sotto il 40%). Il suggerimento dice la selvaggina in percentuale |
-| Pesca 6 / 12 | indicatori | cibo dalla pesca quest'anno / quanto offrono fiume, torrenti e paludi vicini |
+| Fonti di cibo: Campi, Caccia, Pesca | blocco Info, sotto gli indicatori (richiesta di Fede: deve essere ben leggibile da dove si attinge e quanto si usa la risorsa) | per ogni fonte "preso / disponibile" dell'anno e una barra sottile con la quota usata: bianca; rossa se la risorsa si esaurisce (si caccia troppo); grigia con la scritta "spenta" se la fonte è spenta. Campi: raccolto / raccolto se si lavorassero tutti i campi. Un clic su una fonte apre le politiche |
+| Caccia 10 / 18 ↓ | Fonti di cibo | freccia: la selvaggina cala o cresce; rosso: si caccia troppo (selvaggina sotto il 40%); il suggerimento dice la selvaggina in percentuale |
+| Agricoltura, Caccia e raccolta, Pesca | Politiche: fonti di cibo | interruttori (più accesi insieme): una fonte spenta non si lavora e le sue braccia passano alle altre; almeno una resta accesa; cambiare costa −2 di consenso |
 | Densità | indicatori | abitanti per ettaro nell'abitato (rossa quando le case non bastano) |
 | Demolizione, Prova | Strumenti | schede degli strumenti |
 | Demolisci | Strumenti | toglie ciò che si può demolire nel cerchio; non agisce su fiumi e paludi |

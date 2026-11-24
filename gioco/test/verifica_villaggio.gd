@@ -103,6 +103,17 @@ func _initialize() -> void:
 	var avvisato := t.avvisi.any(func(x: Dictionary) -> bool: return String(x["testo"]).begins_with("Si caccia troppo"))
 	controlla(t.offerta_caccia > 0.0 and avvisato and not t.in_attesa(), "con poca selvaggina arriva la notifica \"si caccia troppo\", senza fermare il gioco")
 	t.avvisi.clear()
+	# Fonti di cibo: spenta la caccia non dà cibo e la selvaggina si riprende; almeno una resta.
+	controlla(t.imposta_fonte("caccia", false) and not t.imposta_fonte("caccia", false), "la caccia si spegne (una volta sola)")
+	var s0 := t.selvaggina
+	t.decisioni.clear()
+	t.passo()
+	controlla(t.ultima_caccia == 0.0 and t.selvaggina > s0, "con la caccia spenta non si caccia e la selvaggina cresce")
+	t.imposta_fonte("pesca", false)
+	controlla(not t.imposta_fonte("agricoltura", false) and t.fonti["agricoltura"], "l'ultima fonte accesa non si spegne")
+	t.imposta_fonte("caccia", true)
+	t.imposta_fonte("pesca", true)
+	t.avvisi.clear()
 	t.cibo = 45.0
 	controlla(t.motivo_granaio(t.mondo_di_px(c) + Vector2(60, 0)) == "" and t.motivo_granaio(t.mondo_di_px(c) + Vector2(900, 0)) != "", "il granaio va vicino al centro (con %d di cibo si può)" % roundi(t.cibo))
 	# Politiche: cambiarle costa consenso, gli stranieri seguono la regola in vigore.

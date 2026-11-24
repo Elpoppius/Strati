@@ -77,6 +77,12 @@ func avvia(s: Node, seme: int = -1) -> void:
 		 "breve": "Agricolo", "tasto": "", "strumento": false},
 	], "gestione")
 	hud.aggiungi_politiche([
+		{"id": "fonti", "titolo": "Fonti di cibo",
+		 "descrizione": "Da dove il villaggio prende il cibo. Una fonte spenta non si lavora: le sue braccia passano alle altre. Almeno una resta accesa.",
+		 "interruttori": [
+			{"id": "agricoltura", "testo": "Agricoltura"},
+			{"id": "caccia", "testo": "Caccia e raccolta"},
+			{"id": "pesca", "testo": "Pesca"}]},
 		{"id": "raccolto", "titolo": "Divisione del raccolto",
 		 "descrizione": "Chi tiene il frutto dei campi.",
 		 "opzioni": [
@@ -89,6 +95,12 @@ func avvia(s: Node, seme: int = -1) -> void:
 			{"id": "caso", "testo": "Caso per caso", "nota": "A ogni arrivo il tempo si ferma e gli anziani decidono."},
 			{"id": "chiusa", "testo": "Chiusa", "nota": "Gli stranieri vengono mandati via: nulla cambia, il villaggio resta unito."}]},
 	])
+	hud.interruttore_scelto.connect(func(_politica: String, fonte: String, accesa: bool) -> void:
+		if not sim.imposta_fonte(fonte, accesa):
+			hud.imposta_messaggio("Almeno una fonte di cibo resta accesa.")
+		aggiorna_hud())
+	# Un clic su una fonte nel blocco Info apre le politiche (lì si accende e si spegne).
+	hud.fonte_scelta.connect(func(_id: String) -> void: hud.apri_politiche(true))
 	hud.politica_scelta.connect(func(id: String, valore: String) -> void:
 		sim.imposta_politica(id, valore)
 		aggiorna_hud())
@@ -353,14 +365,28 @@ func aggiorna_hud() -> void:
 		["Cibo", ("%d / %d l'anno" % [roundi(sim.cibo), roundi(sim.pop)]) if on else trattino, on and sim.cibo < sim.pop * 0.3],
 		["Salute", str(roundi(sim.salute)) if on else trattino, on and sim.salute < 45.0],
 		["Legittimità", str(roundi(sim.legittimita)) if on else trattino, on and sim.legittimita < 30.0],
-		["Caccia", ("%d / %d %s" % [roundi(sim.ultima_caccia), roundi(sim.offerta_caccia), "↓" if sim.andamento_selvaggina < -0.03 else ("↑" if sim.andamento_selvaggina > 0.03 else "")]).strip_edges() if on else trattino,
-			on and sim.selvaggina < SimVillaggio.SOGLIA_SELVAGGINA,
-			"Cibo dalla caccia e dalla raccolta quest'anno / quanto offrono i boschi. Selvaggina al %d%%%s. Rosso: si caccia troppo." % [roundi(sim.selvaggina * 100.0),
-				" (in calo)" if sim.andamento_selvaggina < -0.03 else (" (in crescita)" if sim.andamento_selvaggina > 0.03 else "")]],
-		["Pesca", ("%d / %d" % [roundi(sim.ultima_pesca), roundi(sim.offerta_pesca)]) if on else trattino, false,
-			"Cibo dalla pesca quest'anno / quanto offrono fiume, torrenti e paludi vicini."],
 		["Densità", ("%d ab/ha" % roundi(sim.densita())) if on else trattino, on and sim.affollamento > 0.3],
 	])
+	# Fonti di cibo (Fede: deve essere ben leggibile da dove si attinge e quanto si usa la risorsa).
+	if on:
+		var freccia := "↓" if sim.andamento_selvaggina < -0.03 else ("↑" if sim.andamento_selvaggina > 0.03 else "")
+		hud.imposta_fonti([
+			{"id": "agricoltura", "nome": "Campi", "preso": sim.ultimo_raccolto, "offerta": sim.raccolto_potenziale, "accesa": sim.fonti["agricoltura"],
+			 "suggerimento": "Raccolto di quest'anno / raccolto se si lavorassero tutti i campi (%d campi, %d lavorati)." % [sim.campi.size(), sim.ultimi_lavorati]},
+			{"id": "caccia", "nome": "Caccia", "preso": sim.ultima_caccia, "offerta": sim.offerta_caccia, "accesa": sim.fonti["caccia"],
+			 "allarme": sim.selvaggina < SimVillaggio.SOGLIA_SELVAGGINA, "freccia": freccia,
+			 "suggerimento": "Cibo da caccia e raccolta quest'anno / quanto offrono i boschi. Selvaggina al %d%%%s. Rosso: si caccia troppo; un clic apre le politiche per sospendere la caccia." % [roundi(sim.selvaggina * 100.0),
+				" (in calo)" if sim.andamento_selvaggina < -0.03 else (" (in crescita)" if sim.andamento_selvaggina > 0.03 else "")]},
+			{"id": "pesca", "nome": "Pesca", "preso": sim.ultima_pesca, "offerta": sim.offerta_pesca, "accesa": sim.fonti["pesca"],
+			 "suggerimento": "Cibo dalla pesca quest'anno / quanto offrono fiume, torrenti e paludi vicini."},
+		])
+	else:
+		hud.imposta_fonti([])
+	var accese: Array[String] = []
+	for f in SimVillaggio.FONTI:
+		if sim.fonti[f]:
+			accese.append({"agricoltura": "campi", "caccia": "caccia e raccolta", "pesca": "pesca"}[f])
+	hud.imposta_interruttori("fonti", sim.fonti, "Il cibo viene da: %s." % ", ".join(accese))
 	var righe: Array = []
 	for e in sim.cronaca.slice(0, 6):
 		righe.append("%s · %s" % [SimVillaggio.anno_testo(e["anno"]), e["testo"]])
