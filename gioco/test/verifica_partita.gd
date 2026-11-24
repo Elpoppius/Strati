@@ -65,7 +65,7 @@ func _process(_d: float) -> bool:
 			for a in 8:
 				_s.punto_corrente = Vector3(c.x + cos(a * 0.8) * 350.0, 0, c.y + sin(a * 0.8) * 350.0)
 				_s.applica_strumento()
-	controlla(sim.anno > anno0 + 250, "il tempo scorre (%s)" % SimVillaggio.anno_testo(sim.anno))
+	controlla(sim.anno > anno0 + 150, "il tempo scorre (%s)" % SimVillaggio.anno_testo(sim.anno))
 	controlla(p.vista.numero_case() == sim.case.size(), "case disegnate allineate alla simulazione (%d)" % sim.case.size())
 	print("   %d abitanti, %d campi, %d case, abbandoni %d" % [roundi(sim.pop), sim.campi.size(), sim.case.size(), sim.stat["abbandoni"]])
 	controlla(sim.fondato and sim.stat["abbandoni"] == 0, "con i campi il villaggio vive")

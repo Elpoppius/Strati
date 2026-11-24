@@ -19,6 +19,7 @@ Voci più recenti in cima.
 - **Texture di paglia e argilla per lo zoom ravvicinato** (Fede: procedi): paglia a corsi di steli disegnati uno per uno con le teste tagliate e l'ombra del corso sopra; argilla con stesure a mano, paglia tritata e crepe sottili; tetti conici con i corsi ad anelli concentrici invece che a zig-zag. Rigenerati con Blender casa lunga, capanna tonda e granaio. Dettagli in `docs/asset.md`, immagine `docs/immagini/paglia-argilla-24-11.jpg`.
 - **Lotto del villaggio** (Fede: procedi): nuovo script `strumenti/blender/villaggio.py` con 16 modelli nello stile verosimile in `gioco/asset/villaggio/`: case lunghe piccola, media e grande, capanne tonde in due misure, granaio su pali, palizzata (tratto e varco), luogo sacro (cerchio di pali attorno a una pietra eretta: proposta di Claude), focolare, fossa-silo, recinto per gli animali in graticcio, catasta di legna, tre rocce. Foto di controllo `test/foto_villaggio.gd` (villaggio composto a mano con palizzata, terra battuta e campi dall'uso del suolo), immagine `docs/immagini/villaggio-24-11.jpg`. Lo shader del terreno ora dà bordi netti e irregolari a campi e terra battuta (prima erano aloni sfumati). Verifica degli asset estesa alla nuova cartella.
 - **HUD** (decisioni di Fede: disposizione di Age of Empires, stile svizzero alla Noorda e Vignelli, colori solo con significato): nuova classe `Hud` (`gioco/script/hud.gd`). Fasce scure a filo dei bordi, testo bianco, scelta per inversione; mappe a destra con i bollini colorati come le linee della metro (blu acqua, verde fertilità, rosso piena e pericolo, giallo energia), sovrapposizioni e legenda; comandi a sinistra, oggi gli strumenti di prova dell'uso del suolo (abbattere, campi, costruire non invasivo e sigillato, liberare, +10 anni) con cerchio sulla mappa e raggio regolabile; lettura del lotto nella barra in basso. Regole e tasti in `docs/hud.md` (nuovo), immagine `docs/immagini/hud-24-11.jpg`, verifiche `test/verifica_hud.gd`.
+- **HUD ridisposto come negli esempi di Age of Empires IV mandati da Fede** (conta la disposizione, non lo stile grafico): campo di gioco libero; in alto al centro anno e tempo, in alto a sinistra la cronaca; in basso a sinistra gli indicatori e la scheda dello strumento scelto; in basso al centro la griglia dei comandi a tasti quadrati; in basso a destra la nuova minimappa (`gioco/script/minimappa.gd`: ruotata come la vista, riquadro della camera, clic per spostarsi) con le mappe tematiche e la legenda; avvisi sopra la minimappa. Stile svizzero invariato. Dettagli in `docs/hud.md`.
 - **Prototipo 0 in Godot, giocabile** (proposta accolta da Fede): simulazione del villaggio separata dalla grafica (`gioco/script/sim_villaggio.gd`), con le regole del prototipo web portate sulla mappa vera (campi a pixel da 40 m, case a lotti da 20 m, raggi convertiti; stessa economia, eventi e presagi); disegno con i modelli del villaggio e l'uso del suolo (`vista_villaggio.gd`: campi coltivati che tolgono gli alberi, sentieri e cortili di terra battuta, rovine); partita con tempo continuo, pausa e tre velocità, scelte che fermano il tempo, indicatori, cronaca (`partita.gd`). Ogni anno di gioco fa passare un anno anche all'uso del suolo (un campo abbandonato su un ex bosco ricresce). Campi disegnati come appezzamenti da 40 m con solchi e toni propri e prode erbose. Abitato spontaneo, niente recinto (decisione di Fede). Documento `docs/prototipo0-godot.md`, immagine `docs/immagini/prototipo0-godot-24-11.jpg`, verifiche `test/verifica_villaggio.gd` (500 anni per ogni sito: tutti abitabili) e `test/verifica_partita.gd`.
 
 **Decisioni**
@@ -36,19 +37,18 @@ Voci più recenti in cima.
 - Fede: ordine di lavoro 3 (disboscamento), 4 (acqua), 5 (carte di taglio), 6 (texture), 7 (villaggio), a (HUD), 8 (Prototipo 0 in Godot).
 
 **Prossimo passo**
-- Fede, sul PC di casa: fare Pull, aprire il gioco due volte e riportare i tempi del pannello. La prima volta "alberi calcolati in … s", la seconda "alberi dalla cache in … ms". Dire anche se all'avvio ci sono scatti.
-- Fede: dire i fotogrammi al secondo mostrati nel pannello a circa 150, 600, 2000 e 6000 m di vista, se ci sono scatti scorrendo la mappa, come appaiono specie, densità, canneti, acqua e passaggio tra i livelli di dettaglio.
-- Fede: preparare il PC dedicato (Godot 4.7.2, Blender 5.3, GitHub Desktop: vedi `docs/setup-pc.md`); continuare a provare il Prototipo 0.
-- Claude, prossime sessioni:
-  - alberi sulla mappa: tarare livelli di dettaglio e densità sulle prestazioni dei PC di Fede; confermare con Fede la scelta delle specie (proposta di Claude);
-  - prato da vicino: valutare ciuffi d'erba, fiori e sassi in 3D posati come gli alberi (proposta di Claude), se a zoom stretto il terreno sembra ancora piatto;
-  - alberi come dati modificabili: abbattere o costruire su un'area boscata la segna come "area disboscata" (costruita: bosco perso ma ricordato; solo abbattuta: può ricrescere); il terreno sotto cambia (terra battuta, terra nuda, erba rada) con una mappa dell'uso del suolo aggiornabile durante il gioco; progettare l'interazione con il gameplay (proposte di Claude da discutere: legname, rischio di frane e piene più rapide, ricrescita per stadi da arbusti ad alberi). La cache degli alberi resta lo strato di partenza, le modifiche della partita si terranno a parte;
-  - acqua: rapide e cascate sui torrenti, livelli che cambiano con le piene;
-  - alberi: carte viste di taglio ai bordi delle chiome;
-  - texture di paglia e argilla delle case da rivedere per lo zoom ravvicinato;
-  - poi completare il lotto del villaggio nello stile scelto;
-  - portare in Godot il Prototipo 0 (ciclo del villaggio: fondazione, campi, case, sentieri, granaio, stagioni) sulla mappa vera, con la simulazione separata dalla grafica e verificabile senza grafica (proposta di Claude, da confermare con Fede).
-- In sospeso: recinto come primo strumento di regolazione nel Prototipo 0.
+- Fede: fare Pull e **provare il Prototipo 0 in Godot** (F fondare, C campi, V sentiero, H granaio, Spazio per il tempo) e l'HUD nuovo; dire cosa funziona, cosa no, come si legge l'interfaccia.
+- Fede, da confermare: le regole dello stile dell'HUD (`docs/hud.md`); il carattere (Inter, licenza OFL, libera ma non CC0, al posto di quello di Godot?); il luogo sacro come cerchio di pali attorno a una pietra; le portate dei corsi d'acqua; i tempi della ricrescita del bosco; le specie degli alberi.
+- In coda (Fede): prove sui PC dei tempi degli alberi ("alberi calcolati in … s" al primo avvio, "alberi dalla cache in … ms" al secondo) e dei fotogrammi al secondo a 150, 600, 2000 e 6000 m di vista.
+- Rimandati da Fede: taratura di dettaglio e densità degli alberi; prato da vicino in 3D.
+- Claude, prossime sessioni (proposte):
+  - bilanciamento del villaggio dopo le prove di Fede (popolazioni finali troppo alte, come nel prototipo web);
+  - effetti del disboscamento nella simulazione (erosione e frane sui pendii, piene più rapide, meno selvaggina; legname come risorsa);
+  - mulini e dighe come costruzioni che usano la corrente e i dislivelli calcolati (dall'epoca in cui sono coerenti);
+  - livelli dell'acqua che salgono con le piene nella grafica; cascate (servono salti nel letto dei torrenti);
+  - campi meno regolari; varianti dei modelli del villaggio;
+  - salvataggio della partita, con l'uso del suolo;
+  - mappa tematica della memoria del suolo (ex boschi, aree sigillate).
 
 ## 23/11/2026
 **Fatto**

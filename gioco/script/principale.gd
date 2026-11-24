@@ -161,19 +161,20 @@ func _crea_interfaccia() -> void:
 	hud = Hud.new()
 	add_child(hud)
 	hud.costruisci(dati.nome, NOMI_MODI)
+	hud.minimappa.collega(dati, cam)
 	hud.imposta_sovrapposizioni(griglia_attiva, isoipse_attive)
 	hud.modo_scelto.connect(imposta_modo)
 	hud.griglia_cambiata.connect(func(v: bool) -> void: griglia_attiva = v)
 	hud.isoipse_cambiate.connect(func(v: bool) -> void: isoipse_attive = v)
 	# Strumenti di prova dell'uso del suolo (regole di Fede sul disboscamento), finché i comandi
 	# veri non arrivano con il Prototipo 0 in Godot.
-	hud.aggiungi_comandi("Prove · uso del suolo", [
-		{"id": "abbatti", "testo": "Abbatti gli alberi", "tasto": "T"},
-		{"id": "coltiva", "testo": "Suolo coltivato", "tasto": ""},
-		{"id": "costruisci", "testo": "Costruisci · argilla e legno", "tasto": "B"},
-		{"id": "sigilla", "testo": "Costruisci · cemento e asfalto", "tasto": "!", "pericolo": true},
-		{"id": "libera", "testo": "Libera il terreno", "tasto": "L"},
-		{"id": "anni", "testo": "Fai passare 10 anni", "tasto": "Y", "strumento": false},
+	hud.aggiungi_comandi("Prove · suolo", [
+		{"id": "abbatti", "testo": "Abbatti gli alberi", "breve": "Abbatti", "tasto": "T"},
+		{"id": "coltiva", "testo": "Suolo coltivato", "breve": "Coltiva", "tasto": ""},
+		{"id": "costruisci", "testo": "Costruisci con argilla e legno", "breve": "Argilla", "tasto": "B"},
+		{"id": "sigilla", "testo": "Costruisci con cemento e asfalto (irreversibile)", "breve": "Cemento", "tasto": "", "pericolo": true},
+		{"id": "libera", "testo": "Libera il terreno", "breve": "Libera", "tasto": "L"},
+		{"id": "anni", "testo": "Fai passare 10 anni", "breve": "+10 anni", "tasto": "Y", "strumento": false},
 	])
 	hud.comando_scelto.connect(func(_id: String) -> void: _aggiorna_pennello())
 	hud.azione.connect(_azione)

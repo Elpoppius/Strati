@@ -34,19 +34,26 @@ func avvia(s: Node, seme: int = -1) -> void:
 	s.add_child(vista)
 	var hud: Hud = s.hud
 	hud.aggiungi_comandi("Villaggio", [
-		{"id": "fonda", "testo": "Fondare", "tasto": "F"},
-		{"id": "campi", "testo": "Campi", "tasto": "C"},
-		{"id": "sentiero", "testo": "Sentiero", "tasto": "V"},
-		{"id": "granaio", "testo": "Granaio · 30 cibo", "tasto": "H"},
-		{"id": "comune", "testo": "Raccolto diviso in comune", "tasto": "", "strumento": false},
-		{"id": "famiglie", "testo": "Raccolto per famiglia", "tasto": "", "strumento": false},
+		{"id": "fonda", "testo": "Fondare", "breve": "Fonda", "tasto": "F"},
+		{"id": "campi", "testo": "Campi", "breve": "Campi", "tasto": "C"},
+		{"id": "sentiero", "testo": "Sentiero", "breve": "Sentiero", "tasto": "V"},
+		{"id": "granaio", "testo": "Granaio · 30 cibo", "breve": "Granaio", "tasto": "H"},
+		{"id": "comune", "testo": "Raccolto diviso in comune", "breve": "Comune", "tasto": "", "strumento": false},
+		{"id": "famiglie", "testo": "Raccolto per famiglia", "breve": "Famiglie", "tasto": "", "strumento": false},
+	], true)
+	hud.aggiungi_tempo([
+		{"id": "v0", "testo": "Pausa (Spazio)", "breve": "‖"},
+		{"id": "v1", "testo": NOMI_VELOCITA[1], "breve": "2"},
+		{"id": "v2", "testo": NOMI_VELOCITA[2], "breve": "6"},
+		{"id": "v3", "testo": NOMI_VELOCITA[3], "breve": "15"},
 	])
-	hud.aggiungi_comandi("Tempo", [
-		{"id": "v0", "testo": NOMI_VELOCITA[0], "tasto": "␣", "strumento": false},
-		{"id": "v1", "testo": NOMI_VELOCITA[1], "tasto": "", "strumento": false},
-		{"id": "v2", "testo": NOMI_VELOCITA[2], "tasto": "", "strumento": false},
-		{"id": "v3", "testo": NOMI_VELOCITA[3], "tasto": "", "strumento": false},
-	])
+	hud.minimappa.segni = func() -> Array:
+		var punti := []
+		if sim.fondato:
+			punti.append(sim.mondo_di_px(sim.centro))
+		for f in sim.figli:
+			punti.append(sim.mondo_di_px(sim.px_di(f)))
+		return punti
 	hud.azione.connect(_azione)
 	hud.seleziona_comando("fonda")
 	hud.imposta_messaggio("Leggi la mappa, poi clicca dove fondare il villaggio. Il cerchio mostra fin dove arriveranno i campi. È la decisione più importante della partita.")
@@ -217,7 +224,7 @@ func aggiorna_hud() -> void:
 	for id in ["campi", "sentiero", "comune", "famiglie"]:
 		hud.abilita(id, on and not sim.finito)
 	hud.abilita("granaio", on and sim.granaio.x < 0 and not sim.finito)
-	hud.cambia_testo("granaio", "Granaio costruito" if sim.granaio.x >= 0 else "Granaio · 30 cibo")
+	hud.cambia_testo("granaio", "Granaio costruito" if sim.granaio.x >= 0 else "Granaio · 30 cibo", "Costruito" if sim.granaio.x >= 0 else "Granaio")
 	hud.segna("comune", sim.usanza == "comune")
 	hud.segna("famiglie", sim.usanza == "famiglie")
 	for k in 4:

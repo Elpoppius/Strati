@@ -34,6 +34,11 @@ const PERICOLO := Color("c8102e")
 const ALTEZZA_BARRA := 40
 const LARGHEZZA_PANNELLO := 248
 const MARGINE := 16
+## Altezza della fascia in basso (indicatori, scheda, comandi, minimappa).
+const ALTEZZA_FASCIA := 196
+const LARGHEZZA_MAPPE := 344
+const LATO_TASTO := 58
+const NOMI_BREVI_MAPPE := ["Terreno", "Acqua", "Fertilità", "Piena", "Energia"]
 
 ## Colori delle mappe tematiche, ognuno con il suo significato (come le linee della metro).
 const COLORI_MAPPE := [Color("dcdcd6"), Color("2a6db5"), Color("3e8e3a"), Color("c8102e"), Color("f0a91c")]
@@ -69,10 +74,17 @@ var _legenda_sx: Label
 var _legenda_dx: Label
 var _legenda_nota: Label
 var _legenda_riga: Control
-var _colonna_comandi: VBoxContainer
-var _titolo_luogo: Label
+var _nome_mappa := ""
+var _anno: Label
+var _tempo: HBoxContainer
+var _nome_strumento: Label
+var _gruppi: HBoxContainer
+var _nome_mappa_scelta: Label
+var _nomi_mappe: Array = []
+var _testi := {}
+var minimappa: Minimappa
 ## Spazio al centro della barra in alto, per gli indicatori del gioco.
-var indicatori: HBoxContainer
+var indicatori: VBoxContainer
 
 
 func _init() -> void:
@@ -87,102 +99,150 @@ func costruisci(nome_mappa: String, nomi_mappe: Array) -> void:
 	radice.theme = tema
 	add_child(radice)
 	_radice = radice
-	_barra_alta(radice, nome_mappa)
-	_pannello_comandi(radice)
-	_pannello_mappe(radice, nomi_mappe)
-	_barra_bassa(radice)
+	_nome_mappa = nome_mappa
+	_striscia_alta(radice)
+	_cronaca_alta(radice)
+	_fascia_bassa(radice, nomi_mappe)
 	_crea_avviso(radice)
 	seleziona_modo(0)
 
 
 # ---------- parti ----------
+# Disposizione (esempi di Age of Empires IV mandati da Fede, 24/11/2026): il campo di gioco resta
+# libero; in alto al centro solo l'anno e il tempo; in alto a sinistra la cronaca, come gli
+# obiettivi; in basso a sinistra gli indicatori (come le risorse) e la scheda dello strumento
+# scelto; in basso al centro la griglia dei comandi; in basso a destra la minimappa con i
+# controlli delle mappe; gli avvisi sopra la minimappa.
 
-func _barra_alta(radice: Control, nome_mappa: String) -> void:
-	var barra := PanelContainer.new()
-	barra.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	barra.custom_minimum_size.y = ALTEZZA_BARRA
-	radice.add_child(barra)
-	var riga := HBoxContainer.new()
-	riga.add_theme_constant_override("separation", 24)
-	barra.add_child(riga)
-	var marchio := Label.new()
-	marchio.text = "Strati"
-	marchio.add_theme_font_override("font", _carattere(true))
-	marchio.add_theme_font_size_override("font_size", 19)
-	riga.add_child(marchio)
-	_titolo_luogo = Label.new()
-	_titolo_luogo.text = nome_mappa
-	_titolo_luogo.add_theme_color_override("font_color", GRIGIO)
-	riga.add_child(_titolo_luogo)
-	indicatori = HBoxContainer.new()
-	indicatori.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	indicatori.alignment = BoxContainer.ALIGNMENT_CENTER
-	indicatori.add_theme_constant_override("separation", 28)
-	riga.add_child(indicatori)
-	_prestazioni = Label.new()
-	_prestazioni.add_theme_color_override("font_color", GRIGIO)
-	_prestazioni.add_theme_font_size_override("font_size", 12)
-	_prestazioni.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	riga.add_child(_prestazioni)
-
-
-func _pannello_comandi(radice: Control) -> void:
+func _striscia_alta(radice: Control) -> void:
 	var p := PanelContainer.new()
-	p.anchor_left = 0.0
-	p.anchor_top = 0.0
-	p.offset_top = ALTEZZA_BARRA + 1
-	p.custom_minimum_size.x = LARGHEZZA_PANNELLO
+	p.anchor_left = 0.5
+	p.anchor_right = 0.5
+	p.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	radice.add_child(p)
-	_colonna_comandi = VBoxContainer.new()
-	_colonna_comandi.add_theme_constant_override("separation", 2)
-	p.add_child(_colonna_comandi)
-	_messaggio = Label.new()
-	_messaggio.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_messaggio.custom_minimum_size.x = LARGHEZZA_PANNELLO - 2 * MARGINE
-	_messaggio.add_theme_color_override("font_color", GRIGIO)
-	_messaggio.add_theme_font_size_override("font_size", 13)
-	_colonna_comandi.add_child(_messaggio)
-	_intestazione(_colonna_comandi, "Cronaca")
-	_cronaca = Label.new()
-	_cronaca.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_cronaca.custom_minimum_size.x = LARGHEZZA_PANNELLO - 2 * MARGINE
-	_cronaca.add_theme_color_override("font_color", GRIGIO)
-	_cronaca.add_theme_font_size_override("font_size", 12)
-	_cronaca.text = "—"
-	_colonna_comandi.add_child(_cronaca)
+	var riga := HBoxContainer.new()
+	riga.add_theme_constant_override("separation", 14)
+	p.add_child(riga)
+	_anno = Label.new()
+	_anno.add_theme_font_override("font", _carattere(true))
+	_anno.add_theme_font_size_override("font_size", 18)
+	_anno.text = "—"
+	riga.add_child(_anno)
+	_tempo = HBoxContainer.new()
+	_tempo.add_theme_constant_override("separation", 2)
+	riga.add_child(_tempo)
+	# Prestazioni in alto a destra, piccole e grigie, senza fondo.
+	_prestazioni = Label.new()
+	_prestazioni.anchor_left = 1.0
+	_prestazioni.anchor_right = 1.0
+	_prestazioni.offset_left = -600
+	_prestazioni.offset_right = -MARGINE
+	_prestazioni.offset_top = 6
+	_prestazioni.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_prestazioni.add_theme_color_override("font_color", BIANCO)
+	_prestazioni.add_theme_color_override("font_outline_color", Color(NERO, 0.8))
+	_prestazioni.add_theme_constant_override("outline_size", 4)
+	_prestazioni.add_theme_font_size_override("font_size", 11)
+	radice.add_child(_prestazioni)
 
 
-func _pannello_mappe(radice: Control, nomi: Array) -> void:
+func _cronaca_alta(radice: Control) -> void:
 	var p := PanelContainer.new()
-	p.anchor_left = 1.0
-	p.anchor_right = 1.0
-	p.offset_left = -LARGHEZZA_PANNELLO
-	p.offset_top = ALTEZZA_BARRA + 1
-	p.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	p.custom_minimum_size.x = LARGHEZZA_PANNELLO
+	p.custom_minimum_size.x = 360
 	radice.add_child(p)
 	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 2)
+	col.add_theme_constant_override("separation", 4)
 	p.add_child(col)
-	_intestazione(col, "Mappe")
-	for i in nomi.size():
-		var r := _riga(col, nomi[i], str(i + 1), COLORI_MAPPE[i] if i < COLORI_MAPPE.size() else BIANCO, i in TESTO_SCURO_SU)
-		r.toggle_mode = true
-		r.pressed.connect(func() -> void: seleziona_modo(i); modo_scelto.emit(i))
-		_righe_mappe.append(r)
-	_intestazione(col, "Sovrapposizioni")
-	_griglia = _riga(col, "Griglia dei lotti · 20 m", "G", Color(0, 0, 0, 0), false, true)
-	_griglia.toggle_mode = true
-	_griglia.toggled.connect(func(v: bool) -> void: griglia_cambiata.emit(v))
-	_isoipse = _riga(col, "Isoipse · 25 m", "I", Color(0, 0, 0, 0), false, true)
-	_isoipse.toggle_mode = true
-	_isoipse.toggled.connect(func(v: bool) -> void: isoipse_cambiate.emit(v))
-	_intestazione(col, "Legenda")
+	var titolo := Label.new()
+	titolo.text = "STRATI · " + _nome_mappa.to_upper()
+	titolo.add_theme_font_override("font", _carattere(true, 1.6))
+	titolo.add_theme_font_size_override("font_size", 11)
+	titolo.add_theme_color_override("font_color", GRIGIO)
+	col.add_child(titolo)
+	_cronaca = Label.new()
+	_cronaca.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_cronaca.custom_minimum_size.x = 328
+	_cronaca.add_theme_font_size_override("font_size", 12)
+	_cronaca.text = "—"
+	col.add_child(_cronaca)
+
+
+func _fascia_bassa(radice: Control, nomi_mappe: Array) -> void:
+	var fascia := HBoxContainer.new()
+	fascia.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	fascia.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	fascia.add_theme_constant_override("separation", 2)
+	fascia.alignment = BoxContainer.ALIGNMENT_BEGIN
+	fascia.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	radice.add_child(fascia)
+	# Indicatori (come le risorse).
+	var pi := PanelContainer.new()
+	pi.custom_minimum_size = Vector2(190, ALTEZZA_FASCIA)
+	pi.size_flags_vertical = Control.SIZE_SHRINK_END
+	fascia.add_child(pi)
+	indicatori = VBoxContainer.new()
+	indicatori.add_theme_constant_override("separation", 6)
+	pi.add_child(indicatori)
+	# Scheda dello strumento scelto: nome, messaggio, lettura del lotto.
+	var ps := PanelContainer.new()
+	ps.custom_minimum_size = Vector2(330, ALTEZZA_FASCIA)
+	ps.size_flags_vertical = Control.SIZE_SHRINK_END
+	fascia.add_child(ps)
+	var cs := VBoxContainer.new()
+	cs.add_theme_constant_override("separation", 6)
+	ps.add_child(cs)
+	_nome_strumento = Label.new()
+	_nome_strumento.add_theme_font_override("font", _carattere(true))
+	_nome_strumento.add_theme_font_size_override("font_size", 18)
+	_nome_strumento.text = "Nessuno strumento"
+	cs.add_child(_nome_strumento)
+	var r := ColorRect.new()
+	r.color = RIGA
+	r.custom_minimum_size.y = 1
+	cs.add_child(r)
+	_messaggio = Label.new()
+	_messaggio.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_messaggio.custom_minimum_size.x = 298
+	_messaggio.add_theme_font_size_override("font_size", 13)
+	cs.add_child(_messaggio)
+	_lettura = Label.new()
+	_lettura.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_lettura.custom_minimum_size.x = 298
+	_lettura.size_flags_vertical = Control.SIZE_EXPAND | Control.SIZE_SHRINK_END
+	_lettura.add_theme_font_size_override("font_size", 12)
+	_lettura.add_theme_color_override("font_color", GRIGIO)
+	_lettura.text = "Passa sul terreno per leggere il lotto."
+	cs.add_child(_lettura)
+	# Griglia dei comandi.
+	var pc := PanelContainer.new()
+	pc.custom_minimum_size.y = ALTEZZA_FASCIA
+	pc.size_flags_vertical = Control.SIZE_SHRINK_END
+	fascia.add_child(pc)
+	_gruppi = HBoxContainer.new()
+	_gruppi.add_theme_constant_override("separation", 18)
+	pc.add_child(_gruppi)
+	var spazio := Control.new()
+	spazio.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spazio.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fascia.add_child(spazio)
+	# Mappe: legenda sopra, elenco delle mappe e minimappa sotto.
+	var colonna := VBoxContainer.new()
+	colonna.add_theme_constant_override("separation", 2)
+	colonna.size_flags_vertical = Control.SIZE_SHRINK_END
+	fascia.add_child(colonna)
+	var pl := PanelContainer.new()
+	colonna.add_child(pl)
+	var cl := VBoxContainer.new()
+	cl.add_theme_constant_override("separation", 4)
+	pl.add_child(cl)
+	_nome_mappa_scelta = Label.new()
+	_nome_mappa_scelta.add_theme_font_override("font", _carattere(true))
+	cl.add_child(_nome_mappa_scelta)
 	_legenda_riga = VBoxContainer.new()
-	(_legenda_riga as VBoxContainer).add_theme_constant_override("separation", 4)
-	col.add_child(_legenda_riga)
+	(_legenda_riga as VBoxContainer).add_theme_constant_override("separation", 2)
+	cl.add_child(_legenda_riga)
 	_legenda_barra = TextureRect.new()
-	_legenda_barra.custom_minimum_size = Vector2(LARGHEZZA_PANNELLO - 2 * MARGINE, 8)
+	_legenda_barra.custom_minimum_size = Vector2(LARGHEZZA_MAPPE - 2 * MARGINE, 8)
 	_legenda_barra.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_legenda_barra.stretch_mode = TextureRect.STRETCH_SCALE
 	_legenda_riga.add_child(_legenda_barra)
@@ -194,62 +254,147 @@ func _pannello_mappe(radice: Control, nomi: Array) -> void:
 	_legenda_dx.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_legenda_nota = Label.new()
 	_legenda_nota.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_legenda_nota.custom_minimum_size.x = LARGHEZZA_PANNELLO - 2 * MARGINE
-	_legenda_nota.add_theme_font_size_override("font_size", 13)
+	_legenda_nota.custom_minimum_size.x = LARGHEZZA_MAPPE - 2 * MARGINE
+	_legenda_nota.add_theme_font_size_override("font_size", 12)
 	_legenda_nota.add_theme_color_override("font_color", GRIGIO)
-	col.add_child(_legenda_nota)
-
-
-func _barra_bassa(radice: Control) -> void:
-	var barra := PanelContainer.new()
-	barra.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	barra.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	barra.custom_minimum_size.y = 34
-	radice.add_child(barra)
-	var riga := HBoxContainer.new()
-	barra.add_child(riga)
-	_lettura = Label.new()
-	_lettura.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_lettura.text = "Passa sul terreno per leggere il lotto."
-	_lettura.clip_text = true
-	_lettura.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	riga.add_child(_lettura)
-	var aiuto := Label.new()
-	aiuto.text = "Spazio tempo · + − velocità · [ ] raggio · Esc nessuno strumento · tasto destro o WASD sposta · rotella zoom · Q E ruota"
-	aiuto.add_theme_color_override("font_color", GRIGIO)
-	aiuto.add_theme_font_size_override("font_size", 12)
-	riga.add_child(aiuto)
+	cl.add_child(_legenda_nota)
+	var pm := PanelContainer.new()
+	pm.custom_minimum_size.y = ALTEZZA_FASCIA
+	colonna.add_child(pm)
+	var rm := HBoxContainer.new()
+	rm.add_theme_constant_override("separation", 12)
+	pm.add_child(rm)
+	var elenco := VBoxContainer.new()
+	elenco.add_theme_constant_override("separation", 0)
+	rm.add_child(elenco)
+	for i in nomi_mappe.size():
+		var b := _riga(elenco, NOMI_BREVI_MAPPE[i] if i < NOMI_BREVI_MAPPE.size() else nomi_mappe[i], str(i + 1), COLORI_MAPPE[i] if i < COLORI_MAPPE.size() else BIANCO, i in TESTO_SCURO_SU, false, 132)
+		b.toggle_mode = true
+		b.tooltip_text = nomi_mappe[i]
+		b.pressed.connect(func() -> void: seleziona_modo(i); modo_scelto.emit(i))
+		_righe_mappe.append(b)
+	_nomi_mappe = nomi_mappe
+	var sp := Control.new()
+	sp.custom_minimum_size.y = 4
+	elenco.add_child(sp)
+	_griglia = _riga(elenco, "Lotti", "G", Color(0, 0, 0, 0), false, true, 132)
+	_griglia.toggle_mode = true
+	_griglia.tooltip_text = "Griglia dei lotti da 20 m"
+	_griglia.toggled.connect(func(v: bool) -> void: griglia_cambiata.emit(v))
+	_isoipse = _riga(elenco, "Isoipse", "I", Color(0, 0, 0, 0), false, true, 132)
+	_isoipse.toggle_mode = true
+	_isoipse.tooltip_text = "Isoipse ogni 25 m"
+	_isoipse.toggled.connect(func(v: bool) -> void: isoipse_cambiate.emit(v))
+	minimappa = Minimappa.new()
+	minimappa.custom_minimum_size = Vector2(ALTEZZA_FASCIA - 26, ALTEZZA_FASCIA - 26)
+	rm.add_child(minimappa)
 
 
 # ---------- comandi ----------
 
-## Aggiunge un gruppo di comandi al pannello di sinistra.
-## voci: dizionari con id, testo, tasto (facoltativo), pericolo (bool: azione irreversibile),
-## strumento (bool: resta selezionato e si usa cliccando sulla mappa; altrimenti è un'azione).
-func aggiungi_comandi(titolo: String, voci: Array) -> void:
-	var prima := _messaggio.get_index()
-	var intest := _intestazione(_colonna_comandi, titolo)
-	_colonna_comandi.move_child(intest, prima)
-	prima += 1
+## Aggiunge un gruppo di comandi alla griglia in basso.
+## voci: dizionari con id, testo, breve (etichetta sotto il tasto, facoltativa), tasto,
+## pericolo (bool: azione irreversibile, segno rosso), strumento (bool: resta selezionato e si
+## usa cliccando sulla mappa; altrimenti è un'azione immediata).
+func aggiungi_comandi(titolo: String, voci: Array, in_testa := false) -> void:
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 6)
+	_gruppi.add_child(col)
+	if in_testa:
+		_gruppi.move_child(col, 0)
+	var l := Label.new()
+	l.text = titolo.to_upper()
+	l.add_theme_font_override("font", _carattere(true, 1.6))
+	l.add_theme_font_size_override("font_size", 11)
+	l.add_theme_color_override("font_color", GRIGIO)
+	col.add_child(l)
+	var griglia := GridContainer.new()
+	griglia.columns = 3 if voci.size() > 4 else 2
+	griglia.add_theme_constant_override("h_separation", 4)
+	griglia.add_theme_constant_override("v_separation", 4)
+	col.add_child(griglia)
 	for v in voci:
-		var colore: Color = PERICOLO if v.get("pericolo", false) else Color(0, 0, 0, 0)
-		var r := _riga(_colonna_comandi, v["testo"], v.get("tasto", ""), colore, false, not v.get("pericolo", false))
-		_colonna_comandi.move_child(r, prima)
-		prima += 1
+		var b := _tasto(griglia, v)
 		var id: String = v["id"]
+		_testi[id] = v["testo"]
 		if v.get("strumento", true):
-			r.toggle_mode = true
-			r.pressed.connect(func() -> void: seleziona_comando("" if _comando == id else id); comando_scelto.emit(_comando))
-			_righe_comandi[id] = r
+			b.toggle_mode = true
+			b.pressed.connect(func() -> void: seleziona_comando("" if _comando == id else id); comando_scelto.emit(_comando))
+			_righe_comandi[id] = b
 		else:
-			r.pressed.connect(func() -> void: azione.emit(id))
-			_righe_azioni[id] = r
+			b.pressed.connect(func() -> void: azione.emit(id))
+			_righe_azioni[id] = b
+
+
+## Comandi del tempo, piccoli, nella striscia in alto accanto all'anno.
+func aggiungi_tempo(voci: Array) -> void:
+	for v in voci:
+		var b := Button.new()
+		b.text = v.get("breve", v["testo"])
+		b.tooltip_text = v["testo"]
+		b.focus_mode = Control.FOCUS_NONE
+		b.custom_minimum_size = Vector2(34, 26)
+		b.toggle_mode = true
+		_tempo.add_child(b)
+		var id: String = v["id"]
+		b.pressed.connect(func() -> void: azione.emit(id))
+		_righe_azioni[id] = b
+
+
+func _tasto(padre: Control, v: Dictionary) -> Button:
+	var b := Button.new()
+	b.custom_minimum_size = Vector2(LATO_TASTO, LATO_TASTO)
+	b.focus_mode = Control.FOCUS_NONE
+	b.tooltip_text = v["testo"] + ((" (" + v["tasto"] + ")") if String(v.get("tasto", "")) != "" else "")
+	var st := StyleBoxFlat.new()
+	st.bg_color = Color(1, 1, 1, 0.04)
+	st.set_border_width_all(1)
+	st.border_color = RIGA
+	b.add_theme_stylebox_override("normal", st)
+	b.add_theme_stylebox_override("disabled", st)
+	padre.add_child(b)
+	var nome := Label.new()
+	nome.text = v.get("breve", v["testo"])
+	nome.position = Vector2(5, LATO_TASTO - 20)
+	nome.size = Vector2(LATO_TASTO - 8, 16)
+	nome.clip_text = true
+	nome.add_theme_font_size_override("font_size", 11)
+	nome.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.add_child(nome)
+	var tasto := Label.new()
+	tasto.text = v.get("tasto", "")
+	tasto.position = Vector2(6, 2)
+	tasto.add_theme_font_override("font", _carattere(true))
+	tasto.add_theme_font_size_override("font_size", 20)
+	tasto.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	b.add_child(tasto)
+	if v.get("pericolo", false):
+		var segno := ColorRect.new()
+		segno.color = PERICOLO
+		segno.position = Vector2(LATO_TASTO - 12, 4)
+		segno.size = Vector2(8, 8)
+		segno.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.add_child(segno)
+	# Testi neri quando il tasto è scelto (inversione).
+	b.toggled.connect(func(on: bool) -> void:
+		for c in [nome, tasto]:
+			c.add_theme_color_override("font_color", NERO if on else BIANCO))
+	return b
 
 
 func seleziona_comando(id: String) -> void:
 	_comando = id
 	for k in _righe_comandi:
-		(_righe_comandi[k] as Button).set_pressed_no_signal(k == id)
+		_premi(_righe_comandi[k], k == id)
+	_nome_strumento.text = _testi.get(id, "Nessuno strumento")
+
+
+## Stato di un tasto senza emettere il segnale, con i testi interni in nero se scelto.
+func _premi(b: Button, on: bool) -> void:
+	b.set_pressed_no_signal(on)
+	for c in b.get_children():
+		if c is Label:
+			(c as Label).add_theme_color_override("font_color", NERO if on else BIANCO)
 
 
 func comando() -> String:
@@ -261,7 +406,7 @@ func segna(id: String, premuto: bool) -> void:
 	var r: Button = _righe_azioni.get(id, _righe_comandi.get(id))
 	if r:
 		r.toggle_mode = true
-		r.set_pressed_no_signal(premuto)
+		_premi(r, premuto)
 
 
 func abilita(id: String, attivo: bool) -> void:
@@ -271,10 +416,16 @@ func abilita(id: String, attivo: bool) -> void:
 		r.modulate.a = 1.0 if attivo else 0.4
 
 
-func cambia_testo(id: String, testo: String) -> void:
+func cambia_testo(id: String, testo: String, breve := "") -> void:
 	var r: Button = _righe_azioni.get(id, _righe_comandi.get(id))
 	if r:
-		r.text = "        " + testo
+		_testi[id] = testo
+		r.tooltip_text = testo
+		var etichette := r.get_children().filter(func(c: Node) -> bool: return c is Label)
+		if etichette.is_empty():
+			r.text = testo
+		else:
+			(etichette[0] as Label).text = breve if breve != "" else testo.get_slice(" · ", 0)
 
 
 ## Indicatori nella barra in alto: voci [etichetta, valore, allarme]. In allarme il valore è
@@ -282,16 +433,20 @@ func cambia_testo(id: String, testo: String) -> void:
 func imposta_indicatori(voci: Array) -> void:
 	for v in voci:
 		var nome: String = v[0]
+		if nome == "Anno":
+			_anno.text = str(v[1])
+			continue
 		if not _valori_indicatori.has(nome):
 			var box := HBoxContainer.new()
-			box.add_theme_constant_override("separation", 6)
 			var e := Label.new()
 			e.text = nome.to_upper()
+			e.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			e.add_theme_font_override("font", _carattere(true, 1.6))
 			e.add_theme_font_size_override("font_size", 11)
 			e.add_theme_color_override("font_color", GRIGIO)
 			box.add_child(e)
 			var l := Label.new()
+			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 			l.add_theme_font_override("font", _carattere(true))
 			l.add_theme_font_size_override("font_size", 16)
 			box.add_child(l)
@@ -303,7 +458,7 @@ func imposta_indicatori(voci: Array) -> void:
 
 
 func imposta_cronaca(righe: Array) -> void:
-	_cronaca.text = "\n".join(righe) if not righe.is_empty() else "—"
+	_cronaca.text = "\n".join(righe.slice(0, 4)) if not righe.is_empty() else "—"
 
 
 ## Avviso breve sotto la barra in alto, per gli eventi rilevanti (siccità, carestie gravi).
@@ -317,10 +472,14 @@ func avviso(testo: String) -> void:
 
 func _crea_avviso(radice: Control) -> void:
 	_avviso = PanelContainer.new()
-	_avviso.anchor_left = 0.5
-	_avviso.anchor_right = 0.5
-	_avviso.offset_top = ALTEZZA_BARRA + 12
-	_avviso.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_avviso.anchor_left = 1.0
+	_avviso.anchor_right = 1.0
+	_avviso.anchor_top = 1.0
+	_avviso.anchor_bottom = 1.0
+	_avviso.offset_right = 0
+	_avviso.offset_bottom = -ALTEZZA_FASCIA - 150
+	_avviso.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_avviso.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	_avviso.visible = false
 	radice.add_child(_avviso)
 	var riga := HBoxContainer.new()
@@ -414,6 +573,8 @@ func chiudi_scelta() -> void:
 func seleziona_modo(i: int) -> void:
 	for k in _righe_mappe.size():
 		_righe_mappe[k].set_pressed_no_signal(k == i)
+	if _nome_mappa_scelta and i < _nomi_mappe.size():
+		_nome_mappa_scelta.text = _nomi_mappe[i]
 	var l: Array = LEGENDE[i] if i < LEGENDE.size() else ["", "", [], ""]
 	var colori: Array = l[2]
 	_legenda_barra.visible = not colori.is_empty()
@@ -479,9 +640,9 @@ func _intestazione(col: VBoxContainer, testo: String) -> Control:
 
 
 ## Riga cliccabile: bollino (colore e sigla) e testo. Selezionata: fondo bianco, testo nero.
-func _riga(col: VBoxContainer, testo: String, sigla: String, colore: Color, sigla_scura: bool, quadrato := false) -> Button:
+func _riga(col: VBoxContainer, testo: String, sigla: String, colore: Color, sigla_scura: bool, quadrato := false, larghezza := LARGHEZZA_PANNELLO - 2 * MARGINE) -> Button:
 	var b := Button.new()
-	b.custom_minimum_size = Vector2(LARGHEZZA_PANNELLO - 2 * MARGINE, 30)
+	b.custom_minimum_size = Vector2(larghezza, 28)
 	b.focus_mode = Control.FOCUS_NONE
 	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	b.text = "        " + testo
@@ -497,7 +658,7 @@ func _riga(col: VBoxContainer, testo: String, sigla: String, colore: Color, sigl
 			st.set_border_width_all(1)
 			st.border_color = GRIGIO
 		bollino.add_theme_stylebox_override("panel", st)
-		bollino.position = Vector2(4, 4)
+		bollino.position = Vector2(4, 3)
 		bollino.size = Vector2(22, 22)
 		b.add_child(bollino)
 		var l := Label.new()
