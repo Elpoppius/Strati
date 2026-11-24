@@ -27,11 +27,9 @@ var isoipse_attive := false
 var lotto_corrente := Vector2i(-1, -1)
 var punto_corrente: Variant = null
 
-var _lettura: Label
-var _pulsanti_modo: Array[Button] = []
-var _casella_griglia: CheckBox
-var _casella_isoipse: CheckBox
-var _prestazioni: Label
+var hud: Hud
+## Raggio dello strumento di prova dell'uso del suolo, in metri.
+var raggio_pennello := 40.0
 var _tempo_prestazioni := 0.0
 var _trascinando := false
 ## Etichette dei siti adatti alle dighe: visibili solo nella mappa dell'energia dell'acqua.
@@ -154,57 +152,26 @@ func _crea_segni_dighe() -> void:
 
 
 func _crea_interfaccia() -> void:
-	var livello := CanvasLayer.new()
-	add_child(livello)
-	var pannello := PanelContainer.new()
-	pannello.position = Vector2(16, 16)
-	livello.add_child(pannello)
-	var colonna := VBoxContainer.new()
-	colonna.add_theme_constant_override("separation", 8)
-	pannello.add_child(colonna)
-	var titolo := Label.new()
-	titolo.text = "Strati · mappa %s" % dati.nome.to_lower()
-	titolo.add_theme_font_size_override("font_size", 20)
-	colonna.add_child(titolo)
-	var riga := HBoxContainer.new()
-	colonna.add_child(riga)
-	for i in NOMI_MODI.size():
-		var b := Button.new()
-		b.text = NOMI_MODI[i]
-		b.toggle_mode = true
-		b.pressed.connect(imposta_modo.bind(i))
-		riga.add_child(b)
-		_pulsanti_modo.append(b)
-	_casella_griglia = CheckBox.new()
-	_casella_griglia.text = "Griglia dei lotti (20 m)"
-	_casella_griglia.button_pressed = griglia_attiva
-	_casella_griglia.toggled.connect(func(v: bool) -> void: griglia_attiva = v)
-	colonna.add_child(_casella_griglia)
-	_casella_isoipse = CheckBox.new()
-	_casella_isoipse.text = "Isoipse (ogni 25 m)"
-	_casella_isoipse.button_pressed = isoipse_attive
-	_casella_isoipse.toggled.connect(func(v: bool) -> void: isoipse_attive = v)
-	colonna.add_child(_casella_isoipse)
-	var aiuto := Label.new()
-	aiuto.text = "Tasto destro o WASD: sposta · Rotella: zoom · Q / E: ruota di 90°\nG: griglia · I: isoipse · 1–5: mappe · Home: torna al terrazzo centrale"
-	aiuto.add_theme_font_size_override("font_size", 13)
-	colonna.add_child(aiuto)
-	# Prestazioni: utile per le prove sui tre PC di Fede.
-	_prestazioni = Label.new()
-	_prestazioni.add_theme_font_size_override("font_size", 13)
-	colonna.add_child(_prestazioni)
-	_lettura = Label.new()
-	_lettura.add_theme_font_size_override("font_size", 15)
-	_lettura.anchor_top = 1.0
-	_lettura.anchor_bottom = 1.0
-	_lettura.offset_left = 16
-	_lettura.offset_top = -40
-	_lettura.offset_bottom = -12
-	_lettura.add_theme_color_override("font_color", Color8(30, 41, 39))
-	_lettura.add_theme_color_override("font_outline_color", Color8(243, 244, 239))
-	_lettura.add_theme_constant_override("outline_size", 6)
-	_lettura.text = "Passa sul terreno per leggere il lotto."
-	livello.add_child(_lettura)
+	hud = Hud.new()
+	add_child(hud)
+	hud.costruisci(dati.nome, NOMI_MODI)
+	hud.imposta_sovrapposizioni(griglia_attiva, isoipse_attive)
+	hud.modo_scelto.connect(imposta_modo)
+	hud.griglia_cambiata.connect(func(v: bool) -> void: griglia_attiva = v)
+	hud.isoipse_cambiate.connect(func(v: bool) -> void: isoipse_attive = v)
+	# Strumenti di prova dell'uso del suolo (regole di Fede sul disboscamento), finché i comandi
+	# veri non arrivano con il Prototipo 0 in Godot.
+	hud.aggiungi_comandi("Prove · uso del suolo", [
+		{"id": "abbatti", "testo": "Abbatti gli alberi", "tasto": "T"},
+		{"id": "coltiva", "testo": "Campi", "tasto": "C"},
+		{"id": "costruisci", "testo": "Costruisci · argilla e legno", "tasto": "B"},
+		{"id": "sigilla", "testo": "Costruisci · cemento e asfalto", "tasto": "!", "pericolo": true},
+		{"id": "libera", "testo": "Libera il terreno", "tasto": "L"},
+		{"id": "anni", "testo": "Fai passare 10 anni", "tasto": "Y", "strumento": false},
+	])
+	hud.comando_scelto.connect(func(_id: String) -> void: _aggiorna_pennello())
+	hud.azione.connect(_azione)
+	hud.imposta_messaggio("Scegli uno strumento e clicca sulla mappa. Raggio %d m ( [ e ] per cambiarlo)." % roundi(raggio_pennello))
 
 
 func imposta_modo(i: int) -> void:
@@ -212,8 +179,8 @@ func imposta_modo(i: int) -> void:
 	terreno.materiale.set_shader_parameter("modo", i)
 	for e in _segni_dighe:
 		e.visible = (i == 4)
-	for k in _pulsanti_modo.size():
-		_pulsanti_modo[k].button_pressed = (k == i)
+	if hud:
+		hud.seleziona_modo(i)
 
 
 func torna_al_sito() -> void:
@@ -232,10 +199,10 @@ func _process(delta: float) -> void:
 		_inizio_calcolo_alberi = -1
 		_salvataggio_alberi = WorkerThreadPool.add_task(alberi.salva_cache, false, "Cache degli alberi")
 	_tempo_prestazioni += delta
-	if _prestazioni and _tempo_prestazioni > 0.5:
+	if hud and _tempo_prestazioni > 0.5:
 		_tempo_prestazioni = 0.0
 		var liv: String = VistaAlberi.NOMI_LIVELLI[vista_alberi.livello] if vista_alberi else ""
-		_prestazioni.text = "%d fotogrammi al secondo · %d alberi (%s)\n%s" % [Engine.get_frames_per_second(), vista_alberi.alberi_visibili if vista_alberi else 0, liv, _stato_alberi]
+		hud.imposta_prestazioni("%d fps · %d alberi (%s) · %s" % [Engine.get_frames_per_second(), vista_alberi.alberi_visibili if vista_alberi else 0, liv, _stato_alberi])
 	# La griglia compare quando la vista è abbastanza vicina da distinguere i lotti.
 	var alfa := 0.0
 	if griglia_attiva:
@@ -263,6 +230,9 @@ func _unhandled_input(ev: InputEvent) -> void:
 			cam.zoom(1.18)
 		elif mb.button_index == MOUSE_BUTTON_RIGHT or mb.button_index == MOUSE_BUTTON_MIDDLE:
 			_trascinando = mb.pressed
+		elif mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed and hud.comando() != "":
+			aggiorna_lettura(mb.position)
+			applica_strumento()
 	elif ev is InputEventMouseMotion:
 		var mm := ev as InputEventMouseMotion
 		if _trascinando:
@@ -276,14 +246,70 @@ func _unhandled_input(ev: InputEvent) -> void:
 				cam.ruota(1)
 			KEY_G:
 				griglia_attiva = not griglia_attiva
-				_casella_griglia.button_pressed = griglia_attiva
+				hud.imposta_sovrapposizioni(griglia_attiva, isoipse_attive)
 			KEY_I:
 				isoipse_attive = not isoipse_attive
-				_casella_isoipse.button_pressed = isoipse_attive
+				hud.imposta_sovrapposizioni(griglia_attiva, isoipse_attive)
 			KEY_1, KEY_2, KEY_3, KEY_4, KEY_5:
 				imposta_modo((ev as InputEventKey).keycode - KEY_1)
 			KEY_HOME:
 				torna_al_sito()
+			KEY_T, KEY_C, KEY_B, KEY_L:
+				var id: String = {KEY_T: "abbatti", KEY_C: "coltiva", KEY_B: "costruisci", KEY_L: "libera"}[(ev as InputEventKey).keycode]
+				hud.seleziona_comando("" if hud.comando() == id else id)
+				_aggiorna_pennello()
+			KEY_ESCAPE:
+				hud.seleziona_comando("")
+				_aggiorna_pennello()
+			KEY_Y:
+				_azione("anni")
+			KEY_BRACKETLEFT, KEY_BRACKETRIGHT:
+				var f := 1.25 if (ev as InputEventKey).keycode == KEY_BRACKETRIGHT else 0.8
+				raggio_pennello = clampf(raggio_pennello * f, 10.0, 400.0)
+				hud.imposta_messaggio("Raggio dello strumento: %d m." % roundi(raggio_pennello))
+				_aggiorna_pennello()
+
+
+## Applica lo strumento di prova scelto nell'HUD al cerchio attorno al punto sotto il puntatore.
+func applica_strumento() -> void:
+	if punto_corrente == null or uso == null:
+		return
+	var p: Vector3 = punto_corrente
+	var celle := uso.celle_nel_cerchio(p.x, p.z, raggio_pennello)
+	match hud.comando():
+		"abbatti":
+			hud.imposta_messaggio("Tagliati %d alberi e arbusti: legname. L'area ricorda di essere stata un bosco." % uso.abbatti(celle))
+		"coltiva":
+			hud.imposta_messaggio("Campi su %d celle (%d alberi tagliati). Finché sono coltivati, niente alberi." % [celle.size(), uso.coltiva(celle)])
+		"costruisci":
+			hud.imposta_messaggio("Costruito con argilla e legno (%d alberi tagliati). Tolto l'edificio, il terreno torna com'era." % uso.edifica(celle, false))
+		"sigilla":
+			hud.imposta_messaggio("Sigillato con cemento e asfalto (%d alberi tagliati). Qui non cresceranno più alberi." % uso.edifica(celle, true))
+		"libera":
+			uso.libera(celle)
+			hud.imposta_messaggio("Terreno liberato. Se era un bosco e attorno ci sono alberi, ricrescerà.")
+	hud.imposta_lettura(testo_lettura(p.x, p.z))
+
+
+func _azione(id: String) -> void:
+	if id == "anni" and uso:
+		uso.avanza_anni(10)
+		hud.imposta_messaggio("Sono passati 10 anni.")
+		if punto_corrente != null:
+			var p: Vector3 = punto_corrente
+			hud.imposta_lettura(testo_lettura(p.x, p.z))
+
+
+## Cerchio dello strumento sul terreno: bianco, rosso se l'azione è irreversibile.
+func _aggiorna_pennello() -> void:
+	if terreno == null or hud == null:
+		return
+	if hud.comando() == "" or punto_corrente == null:
+		terreno.materiale.set_shader_parameter("pennello", Vector3(0, 0, -1))
+		return
+	var p: Vector3 = punto_corrente
+	terreno.materiale.set_shader_parameter("pennello", Vector3(p.x, p.z, raggio_pennello))
+	terreno.materiale.set_shader_parameter("colore_pennello", Hud.PERICOLO if hud.comando() == "sigilla" else Hud.BIANCO)
 
 
 ## Legge il terreno sotto un punto dello schermo e aggiorna l'evidenziazione del lotto.
@@ -294,12 +320,13 @@ func aggiorna_lettura(pos_schermo: Vector2) -> void:
 	if punto_corrente == null:
 		lotto_corrente = Vector2i(-1, -1)
 		terreno.materiale.set_shader_parameter("lotto_evidenziato", Vector2(-1, -1))
-		_lettura.text = "Fuori dalla mappa."
+		hud.imposta_lettura("Fuori dalla mappa.")
 		return
 	var p: Vector3 = punto_corrente
 	lotto_corrente = Vector2i(floori(p.x / LATO_LOTTO), floori(p.z / LATO_LOTTO))
 	terreno.materiale.set_shader_parameter("lotto_evidenziato", Vector2(lotto_corrente))
-	_lettura.text = testo_lettura(p.x, p.z)
+	hud.imposta_lettura(testo_lettura(p.x, p.z))
+	_aggiorna_pennello()
 
 
 func testo_lettura(x: float, z: float) -> String:

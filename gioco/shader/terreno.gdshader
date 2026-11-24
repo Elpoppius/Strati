@@ -53,6 +53,9 @@ uniform float forza_rilievo = 0.6;
 uniform float lato_lotto = 20.0;
 uniform float alfa_griglia = 0.0;
 uniform vec2 lotto_evidenziato = vec2(-1.0, -1.0);
+// Strumento dell'HUD: cerchio (x, z, raggio; raggio negativo = spento) e suo colore.
+uniform vec3 pennello = vec3(0.0, 0.0, -1.0);
+uniform vec3 colore_pennello : source_color = vec3(1.0);
 
 varying vec3 pos_mondo;
 varying vec3 normale_mondo;
@@ -254,6 +257,14 @@ void fragment() {
 	// Lotto sotto il puntatore.
 	if (lotto_evidenziato.x >= 0.0 && floor(pos_mondo.xz / lato_lotto) == lotto_evidenziato) {
 		col = mix(col, pow(vec3(0.71, 0.26, 0.18), vec3(2.2)), 0.55);
+	}
+	// Strumento dell'HUD: anello sottile e area appena schiarita.
+	if (pennello.z > 0.0) {
+		float dp = distance(pos_mondo.xz, pennello.xy);
+		float fw = max(fwidth(dp), 1e-3);
+		float anello = 1.0 - smoothstep(fw * 0.5, fw * 2.0, abs(dp - pennello.z));
+		col = mix(col, colore_pennello, anello * 0.9);
+		col = mix(col, colore_pennello, (1.0 - step(pennello.z, dp)) * 0.08);
 	}
 	// Acqua disegnata dal campo di distanza (d_acqua, calcolato all'inizio): bordi morbidi a qualunque zoom.
 	float bordo = max(fwidth(d_acqua), 0.5);
