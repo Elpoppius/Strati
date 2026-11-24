@@ -3,6 +3,12 @@
 Voci più recenti in cima.
 
 ## 24/11/2026
+**Per riprendere (riepilogo di fine sessione, account di oggi)**
+- Stato: Prototipo 0 giocabile in Godot con HUD a cinque blocchi (Info con fonti di cibo, Descrizione con opzioni dello strumento, Costruzione, Gestione con Politiche e Ammodernamento, Strumenti con Demolizione e Prova), lettura del sito in fondazione, zona agricola a pennello e campo a mano, sentieri liberi con anteprima, politiche (fonti di cibo, raccolto, stranieri), notifiche discrete. Tutte le 9 verifiche passano; ultimo lavoro caricato.
+- Decisioni di fondo di oggi (tutte di Fede): ritmo meditativo, non incalzante; il gioco non cita altri giochi nei suoi testi; abitato e contado separati, sprawl come crescita di base; economia mista con rischi della vicinanza a fiumi e boschi; il campo cambia con l'epoca e l'ammodernamento sovrascrive il tipo vecchio; zona agricola automatica in quest'epoca; villaggio figlio tolto (al suo posto Emigrare).
+- Da fare per primo: aspettare le prove di Fede sul villaggio e tarare (popolazioni, carestie, quantità di campi, peso di caccia e pesca). Proposte aperte: prologo nomade, orti disegnati più piccoli dentro il quadrato da 40 m, "Caccia regolata".
+- Lavorando: Fede vuole conferma della ricezione delle modifiche prima di partire quando le richieste sono di design; sempre in italiano.
+
 **Fatto**
 - **Verifica del lavoro del 23/11** (fatto con l'altro account): l'importazione in Godot è pulita e non modifica i file `.import`; verifiche base, asset e alberi superate; la mappa rigenerata dagli script è identica byte per byte (dati grezzi e `mappa.res`); foto della scena a 600 m e a 4 km senza errori (a parte l'audio, che manca nell'ambiente di Claude); il Prototipo 0 non ha errori di sintassi. I quattro errori `file_access.cpp:967` visti nell'editor di Fede non si riproducono aprendo il progetto da zero senza grafica: da ricontrollare se compaiono ancora.
 - **Documenti allineati:** `produzione-e-collaborazione.md` (asset nello stile verosimile al posto del "plastico", terreno generato da codice, percorso aggiornato), `pilastri-e-decisioni.md` (riga sugli asset), `resa-grafica.md` (alberi: numeri e prestazioni), `CLAUDE.md` (nuove verifiche e cache). Allineati al repository anche i documenti del Progetto Claude dell'account usato oggi, che erano fermi a prima del repository (Godot 4.3, nome del repository sbagliato).
