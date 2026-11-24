@@ -85,7 +85,7 @@ Voci più recenti in cima.
 - Fede: ordine di lavoro 3 (disboscamento), 4 (acqua), 5 (carte di taglio), 6 (texture), 7 (villaggio), a (HUD), 8 (Prototipo 0 in Godot).
 
 **Prossimo passo**
-- Fede: fare Pull e **provare il Prototipo 0 in Godot** (F fondare, C campi, V sentiero, H granaio, P politiche, Spazio per il tempo) e l'HUD nuovo; dire cosa funziona, cosa no, come si legge l'interfaccia.
+- Fede: fare Pull e **provare il Prototipo 0 in Godot** (F fondare con la lettura del sito, Z zona agricola a pennello, C campo, V sentiero con anteprima e opzione Collega alla rete, H granaio, P politiche e fonti di cibo, X demolisci, Spazio per il tempo) e l'HUD a cinque blocchi; dire cosa funziona, cosa no, come si legge l'interfaccia e se il villaggio sembra ancora troppo agricolo.
 - Fede, da confermare: i numeri dell'economia mista e del contado (proposte di Claude); il prologo nomade; i numeri della politica sugli stranieri (proposta di Claude); le rese delle tecniche e i costi dell'ammodernamento (proposte di Claude); le regole dello stile dell'HUD (`docs/hud.md`); l'elenco dei materiali invasivi; il luogo sacro come cerchio di pali attorno a una pietra; le portate dei corsi d'acqua; i tempi della ricrescita del bosco; le specie degli alberi.
 - In coda (Fede): prove sui PC dei tempi degli alberi ("alberi calcolati in … s" al primo avvio, "alberi dalla cache in … ms" al secondo) e dei fotogrammi al secondo a 150, 600, 2000 e 6000 m di vista.
 - Rimandati da Fede: taratura di dettaglio e densità degli alberi; prato da vicino in 3D.
