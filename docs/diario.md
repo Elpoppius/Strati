@@ -16,13 +16,13 @@ Voci più recenti in cima.
 **Decisioni**
 - Fede: il clic destro deseleziona come Esc.
 - Fede: la fase successiva è completare il villaggio (prima epoca) prima dell'abitato protourbano; si parte da un todo. L'ordine in `docs/todo.md` è una proposta di Claude.
-- Fede: il luogo sacro è il cerchio di pali attorno a una pietra; il recinto appartiene al protourbano; ok ai tre gruppi di consenso (resta da chiarire se tre righe nel blocco Info o un indicatore con il dettaglio al passaggio).
-- Fede: lo scopo del gioco è creare una città; più abitanti è più successo, come in Cities: Skylines. Va trovata un'idea per gestirlo (proposte di Claude in `docs/sessioni-giocatori.md`).
+- Fede: il luogo sacro è il cerchio di pali attorno a una pietra; il recinto appartiene al protourbano; ok ai tre gruppi di consenso nel blocco Info un solo indicatore, con il dettaglio dei tre gruppi al passaggio.
+- Fede: lo scopo del gioco è creare una città; più abitanti è più successo, come in Cities: Skylines. Va trovata un'idea per gestirlo (proposte di Claude in `docs/sessioni-giocatori.md`); la scelta tra l'idea 1 (il tetto apre l'epoca) e la 2 (abitanti sul territorio) si fa dopo aver completato tutte le dinamiche della prima epoca.
 
 **Prossimo passo**
 - Fede: fare Pull e controllare zona agricola, blocco Info fermo e clic destro; rivedere `docs/todo.md` (ordine, e le voci con (?): come mostrare i tre gruppi di consenso, forma del luogo sacro, recinto nel villaggio o no).
-- Fede: scegliere tra le idee per la crescita degli abitanti (`docs/sessioni-giocatori.md`) e dire come mostrare i gruppi di consenso.
-- Claude: dopo il via di Fede, l'idea scelta per la crescita, poi il primo sistema del todo (gruppi di consenso); rifare le sessioni dopo ogni modifica che tocca la crescita.
+- Fede: la scelta sulla crescita degli abitanti aspetta la prima epoca completa.
+- Claude: completare le dinamiche della prima epoca nell'ordine di `docs/todo.md`, a partire dai gruppi di consenso; rifare le sessioni dopo ogni modifica che tocca la crescita.
 
 ## 24/11/2026
 **Per riprendere (riepilogo di fine sessione, account di oggi)**
