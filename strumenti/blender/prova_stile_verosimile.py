@@ -76,6 +76,31 @@ def proiezione_box(ob, tile=TILE):
                 uv[li].uv = (p.x / tile, p.z / tile)
 
 
+def proiezione_conica(ob, raggio, apice_z, tile=TILE):
+    """UV per un tetto conico (24/11/2026): i corsi di paglia diventano anelli concentrici
+    (v = distanza dall'apice lungo la falda) e gli steli scendono verso la gronda. Con la
+    proiezione per facce i corsi facevano zig-zag da una faccia all'altra."""
+    me = ob.data
+    if not me.uv_layers:
+        me.uv_layers.new(name="UVMap")
+    uv = me.uv_layers.active.data
+    mw = ob.matrix_world
+    giri = max(1, round(2 * math.pi * raggio / tile))
+    for poly in me.polygons:
+        angoli = []
+        for li in poly.loop_indices:
+            p = mw @ me.vertices[me.loops[li].vertex_index].co
+            angoli.append(math.atan2(p.y, p.x))
+        # Facce a cavallo della cucitura (angolo ±π): si porta tutto dalla stessa parte.
+        if max(angoli) - min(angoli) > math.pi:
+            angoli = [a + 2 * math.pi if a < 0 else a for a in angoli]
+        for li, a in zip(poly.loop_indices, angoli):
+            p = mw @ me.vertices[me.loops[li].vertex_index].co
+            r = math.hypot(p.x, p.y)
+            dist = math.hypot(r, apice_z - p.z)
+            uv[li].uv = (a / (2 * math.pi) * giri, dist / tile)
+
+
 def collega(ob, mat):
     bpy.context.scene.collection.objects.link(ob)
     ob.data.materials.append(mat)
@@ -182,7 +207,7 @@ def tetto_conico(nome, raggio, gronda, altezza, spessore, mat, seme, lati=16):
     bpy.ops.object.select_all(action="DESELECT")
     ob.select_set(True)
     bpy.ops.object.modifier_apply(modifier=mod.name)
-    proiezione_box(ob)
+    proiezione_conica(ob, raggio, gronda + altezza)
     return ob
 
 

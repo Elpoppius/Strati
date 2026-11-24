@@ -94,3 +94,11 @@ Nel gioco ogni albero è scalato tra 0,95 e 1,35 (bosco maturo) e ruotato a caso
 - **Villaggio:** completare il lotto nello stile scelto (case lunghe piccola e grande, palizzata e varco, luogo sacro, canneto, rocce, arbusti, fosse-silos, focolare, recinto per animali) e varianti per evitare ripetizioni.
 - **Terreno:** texture distinte per campo coltivato, bosco, palude, roccia; alberi veri al posto della volta di chiome dipinta sul terreno, che da circa 150 m mostra ancora una trama ripetuta.
 - **Abitato protourbano:** terrapieno e fossato modulari, villaggio arginato ispirato alle terramare dell'età del Bronzo, tipiche della pianura emiliana.
+
+## Paglia e argilla da vicino (24/11/2026, richiesta di Fede)
+Le texture di paglia e argilla erano rumori sfumati: da vicino la paglia sembrava una superficie liscia e chiara, l'argilla una tinta uniforme. Rifatte in `strumenti/blender/texture_procedurali.py`:
+- **Paglia:** sei corsi di steli sovrapposti per ripetizione (circa 40 cm l'uno sul tetto), ogni stelo disegnato, più scuro in alto dove il corso sopra fa ombra; teste tagliate chiare lungo il bordo di ogni corso, ondulato; toni dal dorato al grigio della paglia vecchia, qualche velo di muschio. Un po' più scura e calda di prima, perché al sole del gioco si sbiancava.
+- **Argilla:** impasto con chiazze più chiare dove è asciutto, stesure a mano a pennellate curve, paglia tritata nell'impasto, crepe da ritiro sottili e solo a tratti, tracce dell'incannicciato sotto.
+- **Tetti conici:** nuove coordinate di texture (`proiezione_conica` in `prova_stile_verosimile.py`): i corsi sono anelli concentrici attorno all'apice. Con la proiezione per facce facevano zig-zag da una faccia all'altra.
+Immagine a 18 m di vista: `docs/immagini/paglia-argilla-24-11.jpg`.
+

@@ -63,31 +63,120 @@ def colore(base, campo):
 
 
 def paglia():
-    # Fili di paglia lungo la verticale (che sul tetto corre lungo la falda).
-    fibre = rumore_anisotropo(LATO, 160, 6, 1) * 0.6 + rumore_anisotropo(LATO, 64, 3, 2) * 0.4
-    macchie = fbm(LATO, 4, 4, 3)
-    campo = 0.62 + 0.55 * fibre
-    # Corsi di paglia sovrapposti: bande orizzontali più scure alla base di ogni corso.
-    y = (np.arange(LATO)[:, None] / LATO * 6 + rumore_anisotropo(LATO, 8, 4, 4) * 0.4) % 1.0
-    corsi = 0.78 + 0.22 * np.clip(y * 1.6, 0, 1)
-    grande = 0.85 + 0.3 * fbm(LATO, 2, 3, 5)
-    campo = campo * corsi * grande
-    base = np.array([0.70, 0.55, 0.31])
-    img = colore(base, campo)
-    # Invecchiamento: zone ingrigite e più scure.
-    grigio = np.array([0.50, 0.45, 0.36])
-    peso = np.clip((macchie - 0.55) * 2.0, 0, 0.4)[..., None]
-    return img * (1 - peso) + colore(grigio, campo) * peso
+    """Tetto di paglia visto da vicino (rifatto il 24/11/2026 per lo zoom ravvicinato): corsi di
+    steli sovrapposti, ogni stelo disegnato, le teste tagliate chiare in fondo a ogni corso e
+    l'ombra del corso sopra; toni dal dorato al grigio della paglia invecchiata.
+    Gli steli corrono lungo la verticale, che sul tetto segue la pendenza della falda."""
+    rng = np.random.default_rng(1)
+    s = 2
+    corsi = 6
+    alto = LATO / corsi
+    img = Image.new("RGB", (LATO * s, LATO * s), (58, 46, 30))
+    d = ImageDraw.Draw(img)
+    dorati = [(186, 148, 88), (170, 132, 76), (198, 160, 98), (158, 122, 70), (176, 146, 96), (146, 116, 72)]
+    grigi = [(142, 128, 104), (128, 114, 92), (152, 138, 112)]
+    # Bordo inferiore di ogni corso un po' ondulato, ripetibile in orizzontale.
+    onda = rumore_valore(LATO, 6, 7)[0] * alto * 0.25
+    # Dal basso verso l'alto della texture: ogni corso copre la parte alta di quello sotto,
+    # così si vedono le teste tagliate sopra gli steli del corso seguente.
+    for c in reversed(range(corsi)):
+        for _ in range(5200):
+            x = rng.random() * LATO
+            fondo = (c + 1) * alto + onda[int(x) % LATO] - rng.random() * alto * 0.12
+            lung = alto * rng.uniform(0.75, 1.15)
+            y0 = fondo - lung
+            a = rng.normal(0, 0.07)
+            palette = grigi if rng.random() < 0.18 else dorati
+            base = palette[rng.integers(len(palette))]
+            # Più scuri in alto, dove il corso sopra fa ombra; più chiari verso le teste.
+            k = rng.uniform(0.85, 1.08)
+            w = max(1, int(rng.uniform(0.9, 1.8) * s))
+            pezzi = 4
+            for j in range(pezzi):
+                t0, t1 = j / pezzi, (j + 1) / pezzi
+                luce = k * (0.62 + 0.42 * t1)
+                col = tuple(int(min(255, ch * luce)) for ch in base)
+                xa, ya = x + math.sin(a) * lung * t0, y0 + lung * t0
+                xb, yb = x + math.sin(a) * lung * t1, y0 + lung * t1
+                for ox in (-LATO, 0, LATO):
+                    for oy in (-LATO, 0, LATO):
+                        if -40 < xa + ox < LATO + 40 and -40 < ya + oy < LATO + 40:
+                            d.line([((xa + ox) * s, (ya + oy) * s), ((xb + ox) * s, (yb + oy) * s)], fill=col, width=w)
+            # Testa tagliata dello stelo: un punto chiaro in fondo.
+            if rng.random() < 0.55:
+                col = tuple(int(min(255, ch * 1.18 * k)) for ch in base)
+                r = rng.uniform(0.6, 1.2) * s
+                xb, yb = x + math.sin(a) * lung, fondo
+                for ox in (-LATO, 0, LATO):
+                    for oy in (-LATO, 0, LATO):
+                        cx, cy = (xb + ox) * s, (yb + oy) * s
+                        if -40 * s < cx < (LATO + 40) * s and -40 * s < cy < (LATO + 40) * s:
+                            d.ellipse([cx - r, cy - r * 0.7, cx + r, cy + r * 0.7], fill=col)
+    arr = np.asarray(img.resize((LATO, LATO), Image.LANCZOS)).astype(float) / 255
+    # Ombra sotto le teste del corso precedente (subito sotto il bordo di ogni corso).
+    y = np.arange(LATO)[:, None]
+    fase = ((y - onda[None, :]) / alto) % 1.0
+    ombra = 1.0 - 0.38 * np.exp(-fase / 0.08)
+    arr = arr * ombra[..., None]
+    # Invecchiamento a chiazze larghe: paglia ingrigita e qualche velo di muschio.
+    vecchio = np.clip((fbm(LATO, 3, 4, 3) - 0.5) * 2.2, 0, 0.45)[..., None]
+    arr = arr * (1 - vecchio) + (arr.mean(axis=-1, keepdims=True) * np.array([1.0, 0.97, 0.9])) * vecchio
+    muschio = np.clip((fbm(LATO, 5, 3, 8) - 0.66) * 3.0, 0, 0.3)[..., None]
+    arr = arr * (1 - muschio) + arr * np.array([0.72, 0.85, 0.55]) * muschio
+    # Un po' più scura e calda: al sole del gioco la paglia chiara si sbiancava (prova del 24/11).
+    arr = arr * np.array([0.86, 0.8, 0.7])
+    return arr * (0.92 + 0.16 * fbm(LATO, 2, 3, 5))[..., None]
 
 
 def argilla():
+    """Muro d'argilla e paglia (incannicciato intonacato) visto da vicino (rifatto il 24/11/2026):
+    stesure a mano a chiazze, crepe da ritiro, paglia tritata nell'impasto, tracce dei rami sotto."""
+    rng = np.random.default_rng(10)
     n = fbm(LATO, 4, 6, 10)
-    fine = fbm(LATO, 32, 3, 11)
+    fine = fbm(LATO, 48, 3, 11)
     # Tracce dell'incannicciato sotto l'intonaco: righe orizzontali appena visibili.
     righe = 0.5 + 0.5 * np.sin(np.arange(LATO)[:, None] / LATO * 2 * math.pi * 14 + n * 3)
-    campo = 0.78 + 0.3 * n + 0.12 * fine - 0.05 * righe
-    chiare = np.clip((fbm(LATO, 3, 3, 12) - 0.55) * 2.5, 0, 0.35)[..., None]
-    return colore(np.array([0.66, 0.50, 0.34]), campo) * (1 - chiare) + colore(np.array([0.78, 0.66, 0.50]), campo) * chiare
+    campo = 0.8 + 0.28 * (n - 0.5) * 2 * 0.5 + 0.1 * (fine - 0.5) - 0.06 * righe
+    base = np.array([0.60, 0.46, 0.31])
+    asciutta = np.array([0.74, 0.62, 0.46])
+    img = colore(base, campo)
+    chiare = np.clip((fbm(LATO, 3, 3, 12) - 0.5) * 2.2, 0, 0.55)[..., None]
+    img = img * (1 - chiare) + colore(asciutta, campo) * chiare
+    # Stesure a mano: pennellate corte e curve, un po' più chiare o più scure dell'intorno.
+    s = 2
+    strato = Image.new("RGBA", (LATO * s, LATO * s), (0, 0, 0, 0))
+    d = ImageDraw.Draw(strato)
+    for _ in range(900):
+        x, y = rng.random() * LATO, rng.random() * LATO
+        w, h = rng.uniform(14, 40), rng.uniform(5, 12)
+        tono = (255, 236, 205, int(rng.uniform(8, 24))) if rng.random() < 0.65 else (70, 48, 30, int(rng.uniform(6, 16)))
+        a0 = rng.uniform(0, 360)
+        for ox in (-LATO, 0, LATO):
+            for oy in (-LATO, 0, LATO):
+                if -50 < x + ox < LATO + 50 and -50 < y + oy < LATO + 50:
+                    d.arc([(x + ox - w) * s, (y + oy - h) * s, (x + ox + w) * s, (y + oy + h) * s], a0, a0 + rng.uniform(70, 160), fill=tono, width=int(h * 0.8 * s))
+    strato = np.asarray(strato.resize((LATO, LATO), Image.LANCZOS)).astype(float) / 255
+    img = img * (1 - strato[..., 3:]) + strato[..., :3] * strato[..., 3:]
+    # Paglia tritata nell'impasto: pagliuzze chiare corte.
+    pagliuzze = fili(rng, 1800, LATO, [(196, 164, 104), (178, 146, 90), (210, 182, 122)], lung=(2, 6), spessore=(0.7, 1.1),
+                     luce=(0.9, 1.05), inclinazione=1.6, fondo=(0, 0, 0))
+    maschera = (pagliuzze.max(axis=-1, keepdims=True) > 0.25) * 0.75
+    img = img * (1 - maschera) + pagliuzze * maschera
+    # Crepe da ritiro: bordi di celle irregolari (ripetibili), sottili e scure, solo a tratti.
+    punti = rng.random((70, 2)) * LATO
+    yy, xx = np.mgrid[0:LATO, 0:LATO].astype(float)
+    d1 = np.full((LATO, LATO), 1e9); d2 = np.full((LATO, LATO), 1e9)
+    for px, py in punti:
+        for ox in (-LATO, 0, LATO):
+            for oy in (-LATO, 0, LATO):
+                dd = np.hypot(xx - px - ox, yy - py - oy)
+                d2 = np.where(dd < d1, d1, np.minimum(d2, dd))
+                d1 = np.minimum(d1, dd)
+    bordo = np.clip(1.0 - (d2 - d1) / 1.4, 0, 1)
+    a_tratti = np.clip((fbm(LATO, 6, 3, 13) - 0.55) * 4.0, 0, 1)
+    crepe = (bordo * a_tratti)[..., None]
+    img = img * (1 - 0.4 * crepe)
+    return np.clip(img, 0, 1)
 
 
 def legno():
