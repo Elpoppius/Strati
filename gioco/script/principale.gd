@@ -175,6 +175,8 @@ func _crea_interfaccia() -> void:
 	], "strumenti")
 	hud.comando_scelto.connect(func(_id: String) -> void: _aggiorna_pennello())
 	hud.azione.connect(_azione)
+	# Un clic su una notifica porta la camera sul luogo.
+	hud.notifica_scelta.connect(func(punto: Vector2) -> void: cam.vai_a(punto.x, punto.y))
 	hud.imposta_messaggio("Scegli uno strumento e clicca sulla mappa. Raggio %d m ( [ e ] per cambiarlo)." % roundi(raggio_pennello))
 
 
@@ -267,6 +269,10 @@ func _unhandled_input(ev: InputEvent) -> void:
 			KEY_ESCAPE:
 				if hud.politiche_aperte():
 					hud.apri_politiche(false)
+				elif partita and partita.inizio_sentiero.x >= 0:
+					partita.annulla_sentiero()
+					hud.imposta_messaggio("Sentiero chiuso. Un clic dove comincia il prossimo.")
+					_aggiorna_pennello()
 				else:
 					hud.seleziona_comando("")
 					_aggiorna_pennello()
@@ -312,6 +318,11 @@ func _aggiorna_pennello() -> void:
 	if hud.comando() == "" or punto_corrente == null:
 		terreno.materiale.set_shader_parameter("pennello", Vector3(0, 0, -1))
 		terreno.materiale.set_shader_parameter("griglia_magnetica", Vector3.ZERO)
+		if partita:
+			if hud.comando() == "sentiero":
+				partita.vista.nascondi_anteprima()
+			else:
+				partita.annulla_sentiero()
 		return
 	var p: Vector3 = punto_corrente
 	var r := raggio_pennello
@@ -336,6 +347,13 @@ func _aggiorna_pennello() -> void:
 			centro = Vector2(roundf(p.x / dati.metri_per_px), roundf(p.z / dati.metri_per_px)) * dati.metri_per_px
 	terreno.materiale.set_shader_parameter("pennello", Vector3(centro.x, centro.y, r))
 	terreno.materiale.set_shader_parameter("griglia_magnetica", griglia)
+	# Sentieri: anteprima come in Cities.
+	if partita:
+		if hud.comando() == "sentiero":
+			partita.anteprima_sentiero(p)
+		else:
+			partita.annulla_sentiero()
+		partita.vista.evidenzia_sentieri(hud.comando() == "sentiero")
 	terreno.materiale.set_shader_parameter("colore_pennello", Hud.PERICOLO if hud.comando() == "demolisci" else Hud.BIANCO)
 
 

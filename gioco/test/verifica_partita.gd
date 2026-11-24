@@ -53,12 +53,40 @@ func _process(_d: float) -> bool:
 	controlla(sim.campi.size() > 10, "un clic dissoda i campi nel cerchio (%d)" % sim.campi.size())
 	var f := sim.mondo_di_px(sim.px_di(sim.campi[0]))
 	controlla(_s.uso.stato(f.x, f.y) == UsoSuolo.COLTIVATO, "i campi sono suolo coltivato")
+	# Sovrapporre il cerchio a campi che ci sono già ne aggiunge, non li abbandona (bug segnalato da Fede).
+	var n_campi := sim.campi.size()
+	_s.punto_corrente = Vector3(sito.x + 380.0, 0, sito.y)
+	_s.applica_strumento()
+	controlla(sim.campi.size() >= n_campi and not h._messaggio.text.contains("bbandon"), "un clic sopra campi esistenti non li abbandona (%d → %d)" % [n_campi, sim.campi.size()])
 	# Sentiero verso nord, poi campi attorno: niente corridoio d'erba a scalini lungo il sentiero
 	# (segnalato da Fede): accanto alla linea del sentiero il campo arriva fino al nastro.
 	var c0 := sim.mondo_di_px(sim.centro)
+	# Sentieri come in Cities (decisione di Fede): un clic dove comincia, uno dove finisce.
 	h.seleziona_comando("sentiero")
-	_s.punto_corrente = Vector3(c0.x, 0, c0.y - 480.0)
+	_s.punto_corrente = Vector3(c0.x, 0, c0.y)
 	_s.applica_strumento()
+	controlla(p.inizio_sentiero == sim.centro and sim.sentieri.is_empty(), "il primo clic fissa l'inizio del sentiero")
+	_s.punto_corrente = Vector3(c0.x, 0, c0.y - 480.0)
+	_s._aggiorna_pennello()
+	controlla(p.vista._anteprima != null and p.vista._anteprima.visible and p.vista._etichetta.text.contains("480 m"), "anteprima del sentiero con la lunghezza: " + (p.vista._etichetta.text if p.vista._etichetta else ""))
+	_s.applica_strumento()
+	controlla(sim.sentieri.size() == 12 and p.inizio_sentiero == sim.px_da_mondo(c0.x, c0.y - 480.0), "il secondo clic traccia il sentiero e si continua da lì")
+	var ev_esc := InputEventKey.new()
+	ev_esc.keycode = KEY_ESCAPE
+	ev_esc.pressed = true
+	_s._unhandled_input(ev_esc)
+	controlla(p.inizio_sentiero.x < 0 and h.comando() == "sentiero", "Esc chiude la catena e lo strumento resta")
+	# Un tratto libero, lontano e staccato dalla rete, si costruisce ma non porta i campi lontano.
+	var lontano := sim.centro + Vector2i(34, 0)
+	var n_s := sim.sentieri.size()
+	controlla(sim.traccia_sentiero_da(lontano, lontano + Vector2i(0, 6)) == "" and sim.sentieri.size() > n_s and not sim.collegato(lontano), "un sentiero libero si costruisce anche staccato dalla rete")
+	controlla(not sim.a_portata(lontano + Vector2i(3, 3)), "un sentiero staccato non allunga il raggio dei campi")
+	# Collega alla rete: il sentiero parte dal punto più vicino della rete.
+	p._azione("collega_rete")
+	_s.punto_corrente = Vector3(c0.x + 400.0, 0, c0.y - 120.0)
+	_s.applica_strumento()
+	controlla(p.collega_rete and sim.collegato(sim.px_da_mondo(c0.x + 400.0, c0.y - 120.0)), "con Collega alla rete un clic traccia un sentiero collegato")
+	p._azione("collega_rete")
 	h.seleziona_comando("campi")
 	_s.punto_corrente = Vector3(c0.x, 0, c0.y - 300.0)
 	_s.applica_strumento()
@@ -103,6 +131,11 @@ func _process(_d: float) -> bool:
 	var anno1 := sim.anno
 	p._process(1.0)
 	controlla(sim.anno == anno1, "in pausa il tempo è fermo")
+	# Notifiche discrete: non fermano il tempo.
+	var d_prima := sim.decisioni.size()
+	sim._notifica("Prova di notifica", false, c0)
+	p._process(0.01)
+	controlla(h.notifiche().has("Prova di notifica") and sim.decisioni.size() == d_prima and not h.modale_aperta(), "le notifiche compaiono senza fermare il gioco")
 	print("Verifica completata: " + ("nessun errore" if _errori == 0 else "%d errori" % _errori))
 	quit(1 if _errori > 0 else 0)
 	return true

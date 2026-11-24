@@ -108,8 +108,13 @@ var cronaca: Array = []
 ## Decisioni che aspettano il giocatore: il tempo si ferma finché non sono risolte.
 ## Ognuna: {id, tipo, titolo, testo, opzioni: [{id, testo, nota}]}.
 var decisioni: Array = []
-## Avvisi brevi a schermo (eventi rilevanti).
-var avvisi: Array[String] = []
+## Notifiche discrete (decisione di Fede del 24/11/2026: ritmo meditativo; piene e carestie non
+## fermano il gioco): {testo, pericolo (bool), punto (Vector2 nel mondo, x < 0 se nessuno)}.
+var avvisi: Array = []
+## Probabilità all'anno (decisione di Fede: le piene di stagione sono frequenti e toccano solo i
+## campi più bassi; le piene disastrose sono rare; contano solo se toccano il villaggio).
+const PROB_PIENA_STAGIONALE := 0.3
+const PROB_PIENA_DISASTROSA := 0.011
 ## Distanza in celle del prototipo dalla palude più vicina, per pixel.
 var _d_palude := PackedFloat32Array()
 var _prossimo_id := 1
@@ -211,6 +216,10 @@ func _scrivi(testo: String, tipo := "") -> void:
 		cronaca.pop_back()
 
 
+func _notifica(testo: String, pericolo := false, punto := Vector2(-1, -1)) -> void:
+	avvisi.append({"testo": testo, "pericolo": pericolo, "punto": punto})
+
+
 func _decidi(tipo: String, titolo: String, testo: String, opzioni: Array) -> void:
 	decisioni.append({"id": _prossimo_id, "tipo": tipo, "titolo": titolo, "testo": testo, "opzioni": opzioni})
 	_prossimo_id += 1
@@ -305,10 +314,51 @@ func a_portata(p: Vector2i) -> bool:
 		return false
 	if cheb(p, centro) <= raggio_campi():
 		return true
-	for s in sentieri:
+	# Solo i sentieri collegati al villaggio allungano il raggio dei campi.
+	for s in sentieri_collegati():
 		if cheb(p, px_di(s)) <= 2 * PX_CELLA:
 			return true
 	return false
+
+
+## Sentieri collegati al centro del villaggio (punti contigui, anche in diagonale). I sentieri
+## sono liberi come in Cities: Skylines (decisione di Fede del 24/11/2026): un tratto isolato si
+## può costruire, ma porta i campi più lontano solo quando è collegato.
+var _collegati := {}
+var _firma_collegati := 0
+
+func sentieri_collegati() -> Dictionary:
+	var firma := hash([sentieri.hash(), centro])
+	if firma == _firma_collegati:
+		return _collegati
+	_firma_collegati = firma
+	_collegati = {}
+	if not fondato:
+		return _collegati
+	var presenti := {}
+	for s in sentieri:
+		presenti[s] = true
+	var coda: Array[Vector2i] = []
+	for s in sentieri:
+		if cheb(px_di(s), centro) <= 1:
+			_collegati[s] = true
+			coda.append(px_di(s))
+	while not coda.is_empty():
+		var q: Vector2i = coda.pop_back()
+		for oy in [-1, 0, 1]:
+			for ox in [-1, 0, 1]:
+				var v := q + Vector2i(ox, oy)
+				if v.x < 0 or v.y < 0 or v.x >= n or v.y >= n:
+					continue
+				var i := px(v)
+				if presenti.has(i) and not _collegati.has(i):
+					_collegati[i] = true
+					coda.append(v)
+	return _collegati
+
+
+func collegato(p: Vector2i) -> bool:
+	return fondato and (cheb(p, centro) <= 1 or sentieri_collegati().has(px(p)))
 
 
 func _lotti_del_px(p: Vector2i) -> Rect2i:
@@ -359,39 +409,77 @@ func togli_campi(lista: Array[Vector2i]) -> int:
 	return tolti
 
 
-## Prolunga i sentieri dal punto più vicino della rete (centro o sentieri) fino a `p`, in linea
-## retta. Restituisce "" se fatto, altrimenti il motivo.
-func traccia_sentiero(p: Vector2i) -> String:
-	if not fondato:
-		return "Prima bisogna fondare il villaggio."
-	var partenza := centro
-	var migliore := cheb(p, centro)
+## Il punto della rete (centro o sentieri) più vicino a `p`: da qui parte un sentiero quando è
+## acceso "Collega alla rete".
+func punto_rete_vicino(p: Vector2i) -> Vector2i:
+	var migliore := centro
+	var d := cheb(p, centro)
 	for s in sentieri:
 		var q := px_di(s)
-		if cheb(p, q) < migliore:
-			migliore = cheb(p, q)
-			partenza = q
-	if migliore == 0:
-		return "Il sentiero passa già da qui."
-	var tratto: Array[int] = []
-	var passi := migliore
-	for k in range(1, passi + 1):
-		var q := Vector2i(roundi(lerpf(partenza.x, p.x, float(k) / passi)), roundi(lerpf(partenza.y, p.y, float(k) / passi)))
+		if cheb(p, q) < d:
+			d = cheb(p, q)
+			migliore = q
+	return migliore
+
+
+## Punti della mappa toccati da un tratto dritto da `a` a `b` (compresi gli estremi).
+func punti_tratto(a: Vector2i, b: Vector2i) -> Array[Vector2i]:
+	var passi := maxi(cheb(a, b), 1)
+	var out: Array[Vector2i] = []
+	for k in range(0, passi + 1):
+		var q := Vector2i(roundi(lerpf(a.x, b.x, float(k) / passi)), roundi(lerpf(a.y, b.y, float(k) / passi)))
+		if out.is_empty() or out[-1] != q:
+			out.append(q)
+	return out
+
+
+## Perché un sentiero da `a` a `b` non si può tracciare: "" se va bene.
+func motivo_sentiero(a: Vector2i, b: Vector2i) -> String:
+	if not fondato:
+		return "Prima bisogna fondare il villaggio."
+	if a == b:
+		return "Scegli dove finisce il sentiero."
+	var nuovi := 0
+	for q in punti_tratto(a, b):
+		if q.x < 0 or q.y < 0 or q.x >= n or q.y >= n:
+			return "Fuori dalla mappa."
 		var t := dati.tipo[px(q)]
 		if t == MappaDati.FIUME or t == MappaDati.PALUDE:
-			return "Il sentiero non attraversa il fiume né la palude."
-		if not sentieri.has(px(q)) and not tratto.has(px(q)):
+			return "Non attraversa il fiume né la palude."
+		if q != centro and not sentieri.has(px(q)):
+			nuovi += 1
+	if nuovi == 0:
+		return "Il sentiero passa già da qui."
+	if sentieri.size() + nuovi > MAX_SENTIERO:
+		return "Sentieri lunghi al massimo %d km in tutto." % roundi(MAX_SENTIERO * dati.metri_per_px / 1000.0)
+	return ""
+
+
+## Traccia un sentiero dritto da `a` a `b` (come in Cities: Skylines, l'inizio è libero).
+## Restituisce "" se fatto, altrimenti il motivo.
+func traccia_sentiero_da(a: Vector2i, b: Vector2i) -> String:
+	var m := motivo_sentiero(a, b)
+	if m != "":
+		return m
+	var tratto: Array[int] = []
+	for q in punti_tratto(a, b):
+		if q != centro and not sentieri.has(px(q)) and not tratto.has(px(q)):
 			tratto.append(px(q))
-	if sentieri.size() + tratto.size() > MAX_SENTIERO:
-		return "Per ora i sentieri sono lunghi al massimo %d km." % (MAX_SENTIERO * dati.metri_per_px / 1000.0)
 	sentieri.append_array(tratto)
-	tratti_sentiero.append([partenza, p])
+	tratti_sentiero.append([a, b])
 	# Le case sul nuovo sentiero si spostano.
 	var prima := case.size()
 	case = case.filter(func(c: Vector2i) -> bool: return not tratto.has(px(px_da_mondo(centro_lotto(c).x, centro_lotto(c).y))))
 	if case.size() != prima:
 		disponi_case()
 	return ""
+
+
+## Prolunga la rete dal suo punto più vicino fino a `p` (come "Collega alla rete").
+func traccia_sentiero(p: Vector2i) -> String:
+	if not fondato:
+		return "Prima bisogna fondare il villaggio."
+	return traccia_sentiero_da(punto_rete_vicino(p), p)
 
 
 func motivo_granaio(punto: Vector2) -> String:
@@ -625,8 +713,10 @@ func passo() -> void:
 		return
 	allagati = {}
 	clima = 0.75 + rng.randf() * 0.4
-	if rng.randf() < 0.045:
-		_piena()
+	if rng.randf() < PROB_PIENA_DISASTROSA:
+		_piena(true)
+	elif rng.randf() < PROB_PIENA_STAGIONALE:
+		_piena(false)
 	# Siccità.
 	if siccita > 0:
 		siccita -= 1
@@ -641,7 +731,7 @@ func passo() -> void:
 	elif siccita == 0 and siccita_tra < 0 and presagio_vero.is_empty() and rng.randf() < 0.007:
 		_inizia_siccita()
 	# Presagi.
-	if siccita == 0 and siccita_tra < 0 and cometa.is_empty() and rng.randf() < 0.012:
+	if siccita == 0 and siccita_tra < 0 and cometa.is_empty() and rng.randf() < 0.006:
 		siccita_tra = 2 + rng.randi() % 2
 		sorgenti_basse = true
 		presagio_vero = {"scelta": ""}
@@ -668,8 +758,8 @@ func passo() -> void:
 				bonus -= 3.0
 				_scrivi("Nessuna carestia dopo la cometa: il digiuno è stato inutile.")
 			cometa = {}
-	# Stranieri: in media un gruppo ogni 40 anni, dopo i primi anni del villaggio.
-	if anno > ANNO_INIZIO + 10 and not in_attesa() and rng_stranieri.randf() < 0.025:
+	# Stranieri: in media un gruppo ogni 70 anni, dopo i primi anni del villaggio.
+	if anno > ANNO_INIZIO + 10 and not in_attesa() and rng_stranieri.randf() < 0.014:
 		_arrivo_stranieri()
 	if anni_sapere > 0:
 		anni_sapere -= 1
@@ -699,7 +789,7 @@ func passo() -> void:
 		stat["carestie"] += 1
 		_scrivi("Carestia: manca il %d%% del cibo necessario." % roundi(carestia * 100.0), "allarme")
 		if carestia > 0.25:
-			avvisi.append("Carestia: manca il %d%% del cibo necessario." % roundi(carestia * 100.0))
+			_notifica("Carestia: manca il %d%% del cibo necessario." % roundi(carestia * 100.0), true, mondo_di_px(centro))
 	else:
 		cibo *= 0.9 if granaio.x >= 0 else 0.75
 	if not gia_primo_cattivo and raccolto < consumo and anno > ANNO_INIZIO + 2:
@@ -750,7 +840,7 @@ func passo() -> void:
 		legittimita = 35.0
 		anni_legittimita_bassa = 0
 		_scrivi("Il villaggio si divide: molte famiglie se ne vanno.", "allarme")
-		_decidi("crisi", "Il villaggio si divide", "Gli anziani hanno perso ogni autorità. Molte famiglie lasciano il villaggio.", [{"id": "ok", "testo": "Continua", "nota": ""}])
+		_notifica("Il villaggio si divide: gli anziani hanno perso ogni autorità e molte famiglie se ne vanno.", true, mondo_di_px(centro))
 	if pop < 6.0:
 		_abbandona()
 	for k in ["pop", "cibo", "salute", "legittimita"]:
@@ -775,8 +865,12 @@ func _resa(i: int) -> float:
 		* (1.08 if anni_sapere > 0 else 1.0) * RESA_TECNICA[tecnica_campo(i)] / AREA_CELLA
 
 
-func _piena() -> void:
-	# Dove arriva l'acqua: ogni pixel con la sua probabilità (rischio di piena della mappa).
+## Piene (decisione di Fede del 24/11/2026). Di stagione (disastrosa = false): frequenti, arrivano
+## solo dove il rischio di piena è alto e tolgono il raccolto dei campi più bassi, senza toccare
+## le case. Disastrose: rare, l'acqua arriva ovunque con la probabilità del rischio della mappa e
+## travolge anche le case. Nessuna delle due ferma il gioco; una piena che non tocca il villaggio
+## (campi, case, granaio) non si nota nemmeno nella cronaca.
+func _piena(disastrosa: bool) -> void:
 	var case_perse := 0
 	var campi_persi := 0
 	var colpiti := {}
@@ -784,34 +878,46 @@ func _piena() -> void:
 	for y in range(maxi(vicino.position.y, 0), mini(vicino.end.y, n)):
 		for x in range(maxi(vicino.position.x, 0), mini(vicino.end.x, n)):
 			var i := y * n + x
-			if edificabile(i) and piena(i) > 0.0 and rng.randf() < piena(i):
+			if not edificabile(i) or piena(i) <= 0.0:
+				continue
+			var prob := piena(i) if disastrosa else clampf((piena(i) - 0.55) / 0.45, 0.0, 1.0) * 0.6
+			if rng.randf() < prob:
 				colpiti[i] = true
-	var rimaste: Array[Vector2i] = []
-	for c in case:
-		var p := centro_lotto(c)
-		if colpiti.has(px(px_da_mondo(p.x, p.y))):
-			case_perse += 1
-		else:
-			rimaste.append(c)
-	case = rimaste
+	if disastrosa:
+		var rimaste: Array[Vector2i] = []
+		for c in case:
+			var p := centro_lotto(c)
+			if colpiti.has(px(px_da_mondo(p.x, p.y))):
+				case_perse += 1
+			else:
+				rimaste.append(c)
+		case = rimaste
+	var dove := Vector2.ZERO
 	for f in campi:
 		if colpiti.has(f):
 			campi_persi += 1
 			allagati[f] = true
-	if granaio.x >= 0 and colpiti.has(px(px_da_mondo(granaio.x, granaio.y))):
+			dove += mondo_di_px(px_di(f))
+	var granaio_colpito := disastrosa and granaio.x >= 0 and colpiti.has(px(px_da_mondo(granaio.x, granaio.y)))
+	if granaio_colpito:
 		cibo *= 0.6
+	if case_perse == 0 and campi_persi == 0 and not granaio_colpito:
+		return
+	dove = dove / campi_persi if campi_persi > 0 else mondo_di_px(centro)
 	pop -= minf(pop, case_perse * 2.5)
+	if not disastrosa:
+		_scrivi("Piena di stagione: %d campi allagati, il loro raccolto è perso." % campi_persi)
+		_notifica("Piena di stagione: %d campi allagati." % campi_persi, false, dove)
+		return
 	memoria = 100.0
 	stat["piene"] += 1
-	var nome := "Il fiume esce dal letto"
 	if case_perse > 0:
-		_scrivi("%s: %d case distrutte, %d campi allagati." % [nome, case_perse, campi_persi], "allarme")
 		bonus -= minf(8.0, case_perse)
-		_decidi("piena", nome, "L'acqua ha travolto %d case e allagato %d campi: il loro raccolto di quest'anno è perso.\nIl ricordo del pericolo torna vivo: per qualche generazione le nuove case si terranno lontane dall'acqua. Poi il ricordo sbiadirà." % [case_perse, campi_persi], [{"id": "ok", "testo": "Continua", "nota": ""}])
-	elif campi_persi > 0:
-		_scrivi("%s: %d campi allagati, raccolto perso." % [nome, campi_persi], "allarme")
+		_scrivi("Il fiume esce dal letto: %d case distrutte, %d campi allagati. Il ricordo del pericolo torna vivo." % [case_perse, campi_persi], "allarme")
+		_notifica("Piena disastrosa: %d case distrutte, %d campi allagati." % [case_perse, campi_persi], true, dove)
 	else:
-		_scrivi("%s, ma il villaggio non è toccato." % nome)
+		_scrivi("Il fiume esce dal letto: %d campi allagati, raccolto perso." % campi_persi, "allarme")
+		_notifica("Piena disastrosa: %d campi allagati." % campi_persi, true, dove)
 
 
 func _inizia_siccita() -> void:
@@ -829,7 +935,7 @@ func _inizia_siccita() -> void:
 		presagio_vero = {}
 	else:
 		_scrivi("Siccità improvvisa.", "allarme")
-	avvisi.append("Siccità per %s: rendono solo i campi vicini al fiume e alle sorgenti." % ("un anno" if siccita == 1 else "due anni"))
+	_notifica("Siccità per %s: rendono solo i campi vicini al fiume e alle sorgenti." % ("un anno" if siccita == 1 else "due anni"), true, mondo_di_px(centro))
 
 
 ## Abitato spontaneo (decisione di Fede): le case nascono da sole vicino al centro, all'acqua e

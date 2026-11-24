@@ -38,8 +38,9 @@ Il campo di gioco resta libero: l'interfaccia sta in una fascia in basso e in du
   I blocchi 3, 4 e 5 funzionano allo stesso modo, così il layout è pronto per le voci future: titolo piccolo in maiuscolo, in alto le schede, sotto i **tasti** della scheda aperta (quadrati: pittogramma al centro, nome sotto, lettera del tasto piccola e grigia nell'angolo), in fondo una riga che dice a cosa serve la scheda. Scegliere un comando, anche da tastiera, apre la sua scheda nel suo blocco senza toccare le schede degli altri blocchi. Un comando può essere uno strumento (resta scelto, si usa cliccando sulla mappa) o un'azione immediata. Il segno rosso nell'angolo vuol dire azione irreversibile. I blocchi hanno tutti la stessa altezza.
 - **In basso a destra, piccoli** (Fede: cliccabili ma non importanti, come i tasti attorno alla minimappa di Age of Empires IV): la minimappa (150 px) ruotata come la vista, con il riquadro di ciò che inquadra la camera e il centro del villaggio (un clic o un trascinamento spostano la camera); accanto, i bollini tondi delle cinque mappe tematiche (numero e colore, nome nel suggerimento) e i quadratini delle sovrapposizioni (G lotti, I isoipse). La mappa scelta ha un anello bianco. Sopra, solo quando è attiva una mappa tematica, una legenda sottile.
 - **Politiche** (decisione di Fede del 24/11/2026: le usanze non sono oggetti da costruire, sono politiche): pannello a parte, sopra la fascia, che si apre e si chiude con il tasto Politiche (P) nel blocco Gestione e non ferma il tempo; se le politiche non ci stanno, il pannello scorre (non copre la cronaca). Ogni politica ha un titolo, una riga che dice di cosa si tratta, le opzioni come tasti (quella in vigore è invertita) e sotto cosa comporta quella in vigore. Cambiarne una costa un po' di consenso. Una politica che per ora non ha effetto si vede ma è spenta, con una riga grigia che dice perché (decisione di Fede: il tasto c'è già, disattivato).
-- **Avvisi** (siccità, carestie gravi) sopra la minimappa, a destra, con un segno rosso.
-- **Scelte** (presagi, momenti decisivi, eventi): finestra al centro; il tempo si ferma finché non si sceglie.
+- **Notifiche** (decisione di Fede del 24/11/2026: il ritmo è meditativo, non incalzante): per ciò che non chiede un intervento (piene, carestie, siccità, crisi). Una colonna di righe sopra la minimappa, le più nuove in basso, al massimo quattro; si spengono da sole dopo circa 9 secondi; un clic porta la camera sul luogo. Segno rosso per i pericoli, grigio per il resto. Non fermano mai il tempo.
+- **Scelte** (solo le scelte vere: presagi, primo cattivo raccolto, affollamento, stranieri se la politica è "caso per caso"): finestra al centro; il tempo si ferma finché non si sceglie. Niente finestre con il solo tasto "Continua" (tranne abbandono e fine della partita).
+- **Anteprima dei sentieri** (come in Cities: Skylines): nastro trasparente dall'inizio al puntatore, bianco se si può tracciare, rosso se no, con accanto la lunghezza o il motivo ("non collegato al villaggio" se il tratto è staccato); un quadratino segna l'inizio; mentre lo strumento è attivo i sentieri esistenti si schiariscono.
 - **Strumento sulla mappa:** un cerchio sottile bianco (rosso se l'azione è irreversibile) segue il puntatore; per Fondare mostra fin dove arriveranno i campi. 
 - **Griglia magnetica** (idea di Fede, come in Cities: Skylines): mentre si pone qualcosa, attorno al puntatore compaiono i quadrati a cui lo strumento si aggancia, e si schiariscono quelli che verranno presi. Campi: celle da 40 m della simulazione, prese se il loro centro sta nel cerchio. Granaio: lotti da 20 m, l'edificio si aggancia al centro del lotto. Fondare: il cerchio si aggancia al punto della mappa più vicino (niente griglia, il cerchio è di 800 m). Fuori da questi momenti la griglia non si vede.
 
@@ -54,6 +55,8 @@ In `gioco/asset/icone/`, SVG fatti da noi: bianchi su trasparente, 28 px su una 
 | `granaio` | Granaio | casa delle scorte su pali |
 | `demolisci` | Demolisci | costruzione cancellata da una croce |
 | `politiche` | Politiche | anziani seduti in cerchio attorno al fuoco |
+| `ammodernamento_agricolo` | Ammodernamento · Agricolo | solchi di un campo e una freccia che sale |
+| `collega` | Collega alla rete | un tratto che si aggancia a un nodo della rete |
 | `anni` | +10 anni | clessidra |
 
 Sono una prima serie (proposta di Claude), da confermare con Fede.
@@ -72,6 +75,7 @@ Sono una prima serie (proposta di Claude), da confermare con Fede.
 | In comune / Alle famiglie | Politiche: divisione del raccolto | il raccolto si divide tra tutti (più legittimità) o ogni famiglia tiene il suo (più raccolto, meno legittimità) |
 | Aperta / Caso per caso / Chiusa | Politiche: accoglienza degli stranieri | chi arriva resta sempre; a ogni arrivo si decide; viene sempre mandato via |
 | Ammodernamento · Agricolo | Gestione | avvia o sospende il rifacimento dei campi vecchi con la tecnica nuova, un po' ogni anno pagando cibo (spento finché non c'è una tecnica nuova) |
+| Collega | Vie | acceso: ogni sentiero parte dal punto più vicino della rete (un clic dove finisce); spento: inizio libero come in Cities |
 | Demolizione, Prova | Strumenti | schede degli strumenti |
 | Demolisci | Strumenti | toglie ciò che si può demolire nel cerchio; non agisce su fiumi e paludi |
 | +10 anni | Prova | fa passare dieci anni subito, solo per provare la ricrescita del bosco |
@@ -80,10 +84,10 @@ Sono una prima serie (proposta di Claude), da confermare con Fede.
 | fps, alberi (livello), cache | in alto a destra | prestazioni, per le prove sui PC |
 
 ## Tasti
-1–5 mappe · G griglia · I isoipse · F fondare · C campi · V sentiero · H granaio · Spazio pausa o riprendi · + e − velocità del tempo · X demolisci · P politiche · Y +10 anni · [ e ] raggio dello strumento · Esc chiude le politiche o toglie lo strumento · Q E ruota · rotella zoom · tasto destro o WASD sposta · Home torna al sito.
+1–5 mappe · G griglia · I isoipse · F fondare · C campi · V sentiero · H granaio · Spazio pausa o riprendi · + e − velocità del tempo · X demolisci · P politiche · Y +10 anni · [ e ] raggio dello strumento · Esc chiude le politiche, chiude la catena dei sentieri o toglie lo strumento · Q E ruota · rotella zoom · tasto destro o WASD sposta · Home torna al sito.
 
 ## Partita (Prototipo 0 in Godot)
 - **Indicatori:** popolazione, cibo (scorta / consumo dell'anno), salute, legittimità. Rossi quando sono in pericolo (pochi abitanti, scorte sotto il 30% del consumo, salute sotto 45, legittimità sotto 30).
 - **Comandi:** Fondare, Campi, Sentiero, Granaio; politiche a parte (divisione del raccolto, accoglienza degli stranieri).
 - **Scelte:** finestra al centro, con tipo (presagio, momento decisivo, evento, crisi…), titolo, testo e opzioni con la loro conseguenza in grigio. Il tempo si ferma finché non si sceglie.
-- **Avvisi:** sopra la minimappa con un segno rosso, solo per gli eventi rilevanti (siccità, carestie gravi).
+- **Notifiche:** vedi sopra.

@@ -264,6 +264,19 @@ func _disegna_nastri(pezzi: Array) -> void:
 		_nastri = null
 	if pezzi.is_empty():
 		return
+	_nastri = MeshInstance3D.new()
+	_nastri.mesh = _mesh_nastro(pezzi, LARGHEZZA_SENTIERO, 0.35)
+	_nastri.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var m := ShaderMaterial.new()
+	m.shader = load("res://shader/sentiero.gdshader")
+	m.set_shader_parameter("macchie", load("res://asset/texture/macchie.png"))
+	m.set_shader_parameter("evidenzia", 1.0 if _evidenzia else 0.0)
+	_nastri.material_override = m
+	add_child(_nastri)
+
+
+## Nastro che segue il terreno lungo liste di punti (metri), largo `larghezza`, alzato di `alzo`.
+func _mesh_nastro(pezzi: Array, larghezza: float, alzo: float) -> ArrayMesh:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for pezzo in pezzi:
@@ -272,26 +285,89 @@ func _disegna_nastri(pezzi: Array) -> void:
 			var a: Vector2 = pezzo[k]
 			var b: Vector2 = pezzo[k + 1]
 			var d := (b - a).normalized()
-			var lato := Vector2(-d.y, d.x) * LARGHEZZA_SENTIERO * 0.5
+			var lato := Vector2(-d.y, d.x) * larghezza * 0.5
 			var l2 := lungo + a.distance_to(b)
 			var punti := [a - lato, a + lato, b + lato, b - lato]
 			var uv := [Vector2(0, lungo / 3.0), Vector2(1, lungo / 3.0), Vector2(1, l2 / 3.0), Vector2(0, l2 / 3.0)]
 			var v3 := []
 			for p in punti:
-				v3.append(Vector3(p.x, terreno.quota_mondo(p.x, p.y) + 0.35, p.y))
+				v3.append(Vector3(p.x, terreno.quota_mondo(p.x, p.y) + alzo, p.y))
 			for idx in [0, 1, 2, 0, 2, 3]:
 				st.set_normal(Vector3.UP)
 				st.set_uv(uv[idx])
 				st.add_vertex(v3[idx])
 			lungo = l2
-	_nastri = MeshInstance3D.new()
-	_nastri.mesh = st.commit()
-	_nastri.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	var m := ShaderMaterial.new()
-	m.shader = load("res://shader/sentiero.gdshader")
-	m.set_shader_parameter("macchie", load("res://asset/texture/macchie.png"))
-	_nastri.material_override = m
-	add_child(_nastri)
+	return st.commit()
+
+
+# ---------- anteprima dei sentieri (come in Cities: Skylines) ----------
+var _anteprima: MeshInstance3D
+var _etichetta: Label3D
+var _segno_inizio: MeshInstance3D
+var _evidenzia := false
+
+## Nastro trasparente da `a` a `b` (metri) che segue il terreno: bianco se si può tracciare,
+## rosso se no; accanto alla fine la lunghezza o il motivo. Con a == b solo il punto d'inizio.
+func mostra_anteprima(a: Vector2, b: Vector2, valido: bool, testo: String) -> void:
+	if _anteprima == null:
+		_anteprima = MeshInstance3D.new()
+		_anteprima.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.cull_mode = BaseMaterial3D.CULL_DISABLED
+		m.no_depth_test = false
+		m.render_priority = 2
+		_anteprima.material_override = m
+		add_child(_anteprima)
+		_segno_inizio = MeshInstance3D.new()
+		_segno_inizio.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_segno_inizio.material_override = m
+		add_child(_segno_inizio)
+		_etichetta = Label3D.new()
+		_etichetta.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		_etichetta.fixed_size = true
+		_etichetta.pixel_size = 0.0012
+		_etichetta.font_size = 28
+		_etichetta.outline_size = 10
+		_etichetta.no_depth_test = true
+		_etichetta.render_priority = 3
+		_etichetta.font = load(Hud.INTER % "Medium")
+		add_child(_etichetta)
+	var colore := Hud.BIANCO if valido else Hud.PERICOLO
+	(_anteprima.material_override as StandardMaterial3D).albedo_color = Color(colore, 0.6)
+	_etichetta.modulate = Color.WHITE if valido else Hud.PERICOLO
+	_etichetta.outline_modulate = Color(Hud.NERO, 0.85)
+	# Punto d'inizio: un quadratino agganciato al punto della mappa.
+	_segno_inizio.mesh = _mesh_nastro([[a - Vector2(3, 0), a + Vector2(3, 0)]], 6.0, 0.7)
+	_segno_inizio.visible = true
+	if a.distance_to(b) > 1.0:
+		var punti: Array[Vector2] = []
+		var passi := maxi(1, ceili(a.distance_to(b) / PASSO_SENTIERO))
+		for k in passi + 1:
+			punti.append(a.lerp(b, float(k) / passi))
+		_anteprima.mesh = _mesh_nastro([punti], LARGHEZZA_SENTIERO + 1.5, 0.6)
+		_anteprima.visible = true
+	else:
+		_anteprima.visible = false
+	_etichetta.text = testo
+	_etichetta.position = Vector3(b.x, terreno.quota_mondo(b.x, b.y) + 8.0, b.y)
+	_etichetta.visible = testo != ""
+
+
+func nascondi_anteprima() -> void:
+	for nodo in [_anteprima, _etichetta, _segno_inizio]:
+		if nodo:
+			nodo.visible = false
+
+
+## Mentre lo strumento Sentiero è attivo la rete si schiarisce, per vedere a cosa agganciarsi.
+func evidenzia_sentieri(si: bool) -> void:
+	if si == _evidenzia:
+		return
+	_evidenzia = si
+	if _nastri:
+		(_nastri.material_override as ShaderMaterial).set_shader_parameter("evidenzia", 1.0 if si else 0.0)
 
 
 func _sincronizza_case() -> void:

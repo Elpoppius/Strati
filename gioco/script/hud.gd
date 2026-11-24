@@ -26,6 +26,8 @@ signal comando_scelto(id: String)
 signal azione(id: String)
 ## Il giocatore ha cambiato una politica nel pannello delle politiche.
 signal politica_scelta(id: String, valore: String)
+## Clic su una notifica con un luogo: (x, z) nel mondo.
+signal notifica_scelta(punto: Vector2)
 
 const NERO := Color("1b1b1b")
 const BIANCO := Color("f4f4f0")
@@ -64,8 +66,8 @@ var _righe_comandi := {}
 var _righe_azioni := {}
 var _cronaca: Label
 var _valori_indicatori := {}
-var _avviso: PanelContainer
-var _testo_avviso: Label
+var _notifiche: VBoxContainer
+var _colonna_mappe: Control
 var _modale: Control
 var _radice: Control
 var _comando := ""
@@ -125,7 +127,7 @@ func costruisci(nome_mappa: String, nomi_mappe: Array) -> void:
 	_striscia_alta(radice)
 	_cronaca_alta(radice)
 	_fascia_bassa(radice, nomi_mappe)
-	_crea_avviso(radice)
+	_crea_notifiche(radice)
 	_crea_politiche(radice)
 	seleziona_modo(0)
 
@@ -135,7 +137,7 @@ func costruisci(nome_mappa: String, nomi_mappe: Array) -> void:
 # libero; in alto al centro solo l'anno e il tempo; in alto a sinistra la cronaca, come gli
 # obiettivi; in basso a sinistra gli indicatori (come le risorse) e la scheda dello strumento
 # scelto; in basso al centro la griglia dei comandi; in basso a destra la minimappa con i
-# controlli delle mappe; gli avvisi sopra la minimappa.
+# controlli delle mappe; le notifiche sopra la minimappa.
 
 func _striscia_alta(radice: Control) -> void:
 	var p := PanelContainer.new()
@@ -253,6 +255,7 @@ func _fascia_bassa(radice: Control, nomi_mappe: Array) -> void:
 	colonna.add_theme_constant_override("separation", 2)
 	colonna.size_flags_vertical = Control.SIZE_SHRINK_END
 	fascia.add_child(colonna)
+	_colonna_mappe = colonna
 	_pannello_legenda = PanelContainer.new()
 	colonna.add_child(_pannello_legenda)
 	var cl := VBoxContainer.new()
@@ -625,36 +628,81 @@ func imposta_cronaca(righe: Array) -> void:
 	_cronaca.text = "\n".join(righe.slice(0, 4)) if not righe.is_empty() else "—"
 
 
-## Avviso breve sotto la barra in alto, per gli eventi rilevanti (siccità, carestie gravi).
-func avviso(testo: String) -> void:
-	_testo_avviso.text = testo
-	_avviso.visible = true
-	var t := get_tree().create_timer(4.0) if is_inside_tree() else null
-	if t:
-		t.timeout.connect(func() -> void: if _testo_avviso.text == testo: _avviso.visible = false)
+# ---------- notifiche ----------
+# Notifiche discrete (decisione di Fede del 24/11/2026: il ritmo è meditativo, non incalzante):
+# per ciò che non chiede un intervento (carestia, piena, siccità). Una colonna di righe sopra la
+# minimappa, le più nuove in basso; si spengono da sole; un clic porta la camera sul luogo.
+# Segno rosso solo per i pericoli, grigio per il resto. Non fermano mai il tempo.
+const MAX_NOTIFICHE := 4
+const DURATA_NOTIFICA := 9.0
 
-
-func _crea_avviso(radice: Control) -> void:
-	_avviso = PanelContainer.new()
-	_avviso.anchor_left = 1.0
-	_avviso.anchor_right = 1.0
-	_avviso.anchor_top = 1.0
-	_avviso.anchor_bottom = 1.0
-	_avviso.offset_right = 0
-	_avviso.offset_bottom = -ALTEZZA_FASCIA - 150
-	_avviso.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	_avviso.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	_avviso.visible = false
-	radice.add_child(_avviso)
+func notifica(testo: String, pericolo := false, punto := Vector2(-1, -1)) -> void:
+	if _colonna_mappe:
+		_notifiche.offset_bottom = -maxf(_colonna_mappe.size.y, LATO_MINIMAPPA) - 6
+	var p := PanelContainer.new()
+	p.custom_minimum_size.x = 300
+	p.mouse_filter = Control.MOUSE_FILTER_STOP
+	if punto.x >= 0.0:
+		p.tooltip_text = "Clic per andare sul luogo"
+		p.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	var riga := HBoxContainer.new()
-	riga.add_theme_constant_override("separation", 12)
-	_avviso.add_child(riga)
+	riga.add_theme_constant_override("separation", 10)
+	riga.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.add_child(riga)
 	var segno := ColorRect.new()
-	segno.color = PERICOLO
+	segno.color = PERICOLO if pericolo else GRIGIO
 	segno.custom_minimum_size = Vector2(4, 0)
+	segno.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	riga.add_child(segno)
-	_testo_avviso = Label.new()
-	riga.add_child(_testo_avviso)
+	var l := Label.new()
+	l.text = testo
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size.x = 266
+	l.add_theme_font_size_override("font_size", 12)
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	riga.add_child(l)
+	p.gui_input.connect(func(ev: InputEvent) -> void:
+		if ev is InputEventMouseButton and (ev as InputEventMouseButton).pressed and (ev as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+			if punto.x >= 0.0:
+				notifica_scelta.emit(punto)
+			p.queue_free())
+	_notifiche.add_child(p)
+	while _notifiche.get_child_count() > MAX_NOTIFICHE:
+		var vecchia := _notifiche.get_child(0)
+		_notifiche.remove_child(vecchia)
+		vecchia.queue_free()
+	if is_inside_tree():
+		var tw := p.create_tween()
+		tw.tween_interval(DURATA_NOTIFICA)
+		tw.tween_property(p, "modulate:a", 0.0, 0.8)
+		tw.tween_callback(p.queue_free)
+
+
+## Notifiche visibili ora (per le verifiche).
+func notifiche() -> Array[String]:
+	var out: Array[String] = []
+	for c in _notifiche.get_children():
+		if not c.is_queued_for_deletion():
+			out.append(((c as Control).get_child(0).get_child(1) as Label).text)
+	return out
+
+
+func avviso(testo: String) -> void:
+	notifica(testo, true)
+
+
+func _crea_notifiche(radice: Control) -> void:
+	_notifiche = VBoxContainer.new()
+	_notifiche.anchor_left = 1.0
+	_notifiche.anchor_right = 1.0
+	_notifiche.anchor_top = 1.0
+	_notifiche.anchor_bottom = 1.0
+	_notifiche.offset_bottom = -LATO_MINIMAPPA - 30
+	_notifiche.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_notifiche.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_notifiche.add_theme_constant_override("separation", 2)
+	_notifiche.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	radice.add_child(_notifiche)
 
 
 # ---------- politiche ----------

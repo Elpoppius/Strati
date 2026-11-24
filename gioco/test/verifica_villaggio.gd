@@ -117,6 +117,14 @@ func _initialize() -> void:
 	controlla(t.campi_da_ammodernare() == 0 and t._resa(vecchio) > resa_zappa, "alla fine tutti i campi sono rifatti e rendono di più")
 	t.tecnica_corrente = 0
 	t.imposta_ammodernamento("agricolo", false)
+	# Piene (decisione di Fede): non fermano mai il gioco; quelle di stagione non toccano le case.
+	var case_prima := t.case.size()
+	for k in 30:
+		t._piena(false)
+	controlla(t.case.size() == case_prima and not t.in_attesa(), "le piene di stagione non distruggono case e non fermano il gioco")
+	t._piena(true)
+	controlla(not t.in_attesa(), "nemmeno una piena disastrosa ferma il gioco")
+	t.avvisi.clear()
 	# Partite intere.
 	var sopravvissuti := 0
 	for s in d.siti:

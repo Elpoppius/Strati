@@ -1,7 +1,7 @@
 extends SceneTree
 ## Foto di controllo di una partita: fondazione sul sito 1, campi attorno, un secolo e mezzo di
 ## tempo con un giocatore automatico semplice, poi la foto.
-## Uso: xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto_partita.gd -- uscita.png [dimensione_vista] [anni] [mappa] [strumento | politiche | tecniche]
+## Uso: xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto_partita.gd -- uscita.png [dimensione_vista] [anni] [mappa] [strumento | politiche | tecniche | anteprima]
 
 var _s: Node
 var _f := 0
@@ -52,7 +52,16 @@ func _process(_d: float) -> bool:
 		_s.griglia_attiva = false
 		if args.size() > 3:
 			_s.imposta_modo(int(args[3]))
-		if args.size() > 4 and args[4] == "tecniche":
+		if args.size() > 4 and args[4] == "anteprima":
+			# Anteprima di un sentiero come in Cities: inizio al centro, puntatore a nord-est; più
+			# alcune notifiche di prova.
+			_s.hud.seleziona_comando("sentiero")
+			p.inizio_sentiero = sim.centro
+			_s.punto_corrente = Vector3(c.x + 160.0, 0.0, c.y - 80.0)
+			_s._aggiorna_pennello()
+			_s.hud.notifica("Piena di stagione: 6 campi allagati.", false, c)
+			_s.hud.notifica("Carestia: manca il 30% del cibo necessario.", true, c)
+		elif args.size() > 4 and args[4] == "tecniche":
 			# Prova del cambio d'epoca: tecnica nuova (strisce) e qualche anno di ammodernamento,
 			# così si vedono insieme campi vecchi e campi rifatti.
 			sim.tecnica_corrente = 3

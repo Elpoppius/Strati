@@ -4,6 +4,8 @@ shader_type spatial;
 render_mode blend_mix, cull_disabled, depth_draw_never, shadows_disabled;
 
 uniform sampler2D macchie : filter_linear_mipmap, repeat_enable;
+// 1 mentre lo strumento Sentiero è attivo: la rete si schiarisce per vedere a cosa agganciarsi.
+uniform float evidenzia = 0.0;
 
 varying vec3 pos_mondo;
 
@@ -20,7 +22,7 @@ void fragment() {
 	float solchi = smoothstep(0.08, 0.0, abs(dal_centro - 0.45)) * 0.35;
 	vec3 terra = mix(vec3(0.34, 0.28, 0.20), vec3(0.46, 0.38, 0.27), m2);
 	terra *= 1.0 - solchi;
-	ALBEDO = terra;
+	ALBEDO = mix(terra, vec3(0.92, 0.9, 0.84), evidenzia * 0.22);
 	// Normale verso l'alto qualunque sia il verso dei triangoli (con le facce rovesciate il
 	// nastro veniva illuminato da sotto e sembrava una riga scura).
 	NORMAL = normalize((VIEW_MATRIX * vec4(0.0, 1.0, 0.0, 0.0)).xyz);

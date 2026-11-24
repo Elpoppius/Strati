@@ -13,6 +13,10 @@ var sim: SimVillaggio
 var vista: VistaVillaggio
 var scena: Node  # la scena principale (hud, uso, camera, dati)
 var velocita := 0
+## Sentieri come in Cities: Skylines (decisione di Fede): inizio libero, oppure dal punto più vicino
+## della rete se è acceso "Collega alla rete".
+var inizio_sentiero := Vector2i(-1, -1)
+var collega_rete := false
 var _ultima_velocita := 1
 var _accumulo := 0.0
 
@@ -41,11 +45,13 @@ func avvia(s: Node, seme: int = -1) -> void:
 	])
 	hud.aggiungi_menu("territorio", "Territorio", "A cosa si destina la terra attorno al villaggio.", [
 		{"id": "campi", "icona": "campi", "testo": "Dissodare campi", "breve": "Campi", "tasto": "C",
-		 "descrizione": "Un clic dissoda la terra libera nel cerchio; un clic su un campo lo abbandona. Gli alberi sui nuovi campi si tagliano."},
+		 "descrizione": "Un clic dissoda la terra libera nel cerchio; i campi che ci sono già restano. Gli alberi sui nuovi campi si tagliano. Per abbandonare un campo: Demolisci."},
 	])
 	hud.aggiungi_menu("vie", "Vie", "Come ci si muove.", [
 		{"id": "sentiero", "icona": "sentiero", "testo": "Tracciare un sentiero", "breve": "Sentiero", "tasto": "V",
-		 "descrizione": "Un clic prolunga i sentieri dal villaggio fino a quel punto. Lungo un sentiero si possono coltivare campi più lontani."},
+		 "descrizione": "Come in Cities: un clic dove comincia, un clic dove finisce, poi si continua da lì; Esc chiude. Un sentiero collegato al villaggio porta i campi più lontano."},
+		{"id": "collega_rete", "icona": "collega", "testo": "Collega alla rete: ogni sentiero parte dal punto più vicino del villaggio o dei sentieri",
+		 "breve": "Collega", "tasto": "", "strumento": false},
 	])
 	hud.aggiungi_menu("edifici", "Edifici", "Costruzioni comuni. Le case nascono da sole.", [
 		{"id": "granaio", "icona": "granaio", "testo": "Granaio (30 di cibo)", "breve": "Granaio", "tasto": "H",
@@ -107,6 +113,12 @@ func _azione(id: String) -> void:
 	match id:
 		"politiche":
 			scena.hud.apri_politiche(not scena.hud.politiche_aperte())
+		"collega_rete":
+			collega_rete = not collega_rete
+			annulla_sentiero()
+			scena.hud.seleziona_comando("sentiero")
+			scena.hud.imposta_messaggio("Collega alla rete acceso: ogni sentiero parte dal punto più vicino del villaggio o dei sentieri; un clic dove finisce." if collega_rete
+				else "Collega alla rete spento: un clic dove comincia il sentiero, un clic dove finisce.")
 		"amm_agricolo":
 			var attivo: bool = not sim.ammodernamenti["agricolo"]
 			sim.imposta_ammodernamento("agricolo", attivo)
@@ -146,12 +158,14 @@ func _process(delta: float) -> void:
 		if passi > 0:
 			vista.sincronizza()
 			aggiorna_hud()
+	# Notifiche discrete: non fermano il gioco (decisione di Fede, ritmo meditativo).
 	while not sim.avvisi.is_empty():
-		hud.avviso(sim.avvisi.pop_front())
+		var a: Dictionary = sim.avvisi.pop_front()
+		hud.notifica(a["testo"], a["pericolo"], a["punto"])
 	if sim.in_attesa() and not hud.modale_aperta():
 		_accumulo = 0.0
 		var d: Dictionary = sim.decisioni[0]
-		var tipi := {"sorgenti": "Presagio", "cometa": "Presagio", "primo_cattivo": "Momento decisivo", "affollamento": "Momento decisivo", "piena": "Evento", "crisi": "Crisi", "abbandono": "Fallimento", "fine": "Fine del prototipo"}
+		var tipi := {"sorgenti": "Presagio", "cometa": "Presagio", "primo_cattivo": "Momento decisivo", "affollamento": "Momento decisivo", "stranieri": "Evento", "abbandono": "Fallimento", "fine": "Fine del prototipo"}
 		var opzioni: Array = d["opzioni"]
 		if d["tipo"] == "fine":
 			opzioni = [{"id": "nuova", "testo": "Nuova partita", "nota": ""}] + opzioni
@@ -219,17 +233,33 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 					var q := p + Vector2i(dx, dy)
 					if q.x >= 0 and q.y >= 0 and q.x < sim.n and q.y < sim.n and sim.mondo_di_px(q).distance_to(c) <= raggio:
 						celle.append(q)
-			if sim.campi.has(sim.px(p)):
-				hud.imposta_messaggio("Abbandonati %d campi." % sim.togli_campi(celle))
+			# Solo aggiungere: i campi che ci sono già restano (Fede: sovrapporre il cerchio ai campi
+			# esistenti li abbandonava). Per abbandonare un campo si usa Demolisci.
+			var aggiunti := sim.aggiungi_campi(celle)
+			if aggiunti == 0:
+				hud.imposta_messaggio(sim.motivo_campo(p) if sim.motivo_campo(p) != "" else "Qui i campi ci sono già.")
 			else:
-				var aggiunti := sim.aggiungi_campi(celle)
-				if aggiunti == 0:
-					hud.imposta_messaggio(sim.motivo_campo(p) if sim.motivo_campo(p) != "" else "Qui i campi ci sono già.")
-				else:
-					hud.imposta_messaggio("Dissodati %d campi (%s ha)." % [aggiunti, String.num(aggiunti * 0.16, 1).replace(".", ",")])
+				hud.imposta_messaggio("Dissodati %d campi (%s ha)." % [aggiunti, String.num(aggiunti * 0.16, 1).replace(".", ",")])
 		"sentiero":
-			var m := sim.traccia_sentiero(p)
-			hud.imposta_messaggio(m if m != "" else "Sentiero tracciato: allunga il raggio dei campi di 320 m.")
+			if not sim.fondato:
+				hud.imposta_messaggio("Prima bisogna fondare il villaggio.")
+				return
+			var a := inizio_sentiero
+			if collega_rete:
+				a = sim.punto_rete_vicino(p)
+			elif a.x < 0:
+				inizio_sentiero = p
+				hud.imposta_messaggio("Inizio del sentiero fissato. Clicca dove finisce (Esc per annullare).")
+				anteprima_sentiero(punto)
+				return
+			var m := sim.traccia_sentiero_da(a, p)
+			if m != "":
+				hud.imposta_messaggio(m)
+				return
+			hud.imposta_messaggio("Sentiero tracciato (%d m)%s Continua da qui o premi Esc." % [roundi(_lunghezza(a, p)),
+				": porta i campi più lontano." if sim.collegato(p) else ", non collegato al villaggio."])
+			if not collega_rete:
+				inizio_sentiero = p
 		"demolisci":
 			var w := Vector2(punto.x, punto.z)
 			var uso: UsoSuolo = scena.uso
@@ -263,6 +293,37 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 	aggiorna_hud()
 
 
+func _lunghezza(a: Vector2i, b: Vector2i) -> float:
+	return sim.mondo_di_px(a).distance_to(sim.mondo_di_px(b))
+
+
+## Anteprima del sentiero sotto il puntatore, come in Cities: nastro trasparente bianco se si può
+## tracciare, rosso se no, con la lunghezza o il motivo accanto.
+func anteprima_sentiero(punto: Vector3) -> void:
+	if not sim.fondato:
+		vista.nascondi_anteprima()
+		return
+	var b := sim.px_da_mondo(punto.x, punto.z)
+	var a := sim.punto_rete_vicino(b) if collega_rete else inizio_sentiero
+	if a.x < 0:
+		# Prima del primo clic: solo il punto agganciato dove comincerà.
+		vista.mostra_anteprima(sim.mondo_di_px(b), sim.mondo_di_px(b), true, "Inizio")
+		return
+	var m := sim.motivo_sentiero(a, b)
+	var testo := m
+	if m == "":
+		testo = "%d m" % roundi(_lunghezza(a, b))
+		if not (sim.collegato(a) or sim.collegato(b)):
+			testo += " · non collegato al villaggio"
+	vista.mostra_anteprima(sim.mondo_di_px(a), sim.mondo_di_px(b), m == "", testo)
+
+
+func annulla_sentiero() -> void:
+	inizio_sentiero = Vector2i(-1, -1)
+	if vista:
+		vista.nascondi_anteprima()
+
+
 ## Raggio del cerchio dello strumento sulla mappa (metri): per Fondare la portata dei campi.
 func raggio_strumento(comando: String, raggio: float) -> float:
 	match comando:
@@ -291,6 +352,7 @@ func aggiorna_hud() -> void:
 		righe.append("%s · %s" % [SimVillaggio.anno_testo(e["anno"]), e["testo"]])
 	hud.imposta_cronaca(righe)
 	hud.abilita("fonda", not on and not sim.finito)
+	hud.segna("collega_rete", collega_rete)
 	for id in ["campi", "sentiero", "comune", "famiglie"]:
 		hud.abilita(id, on and not sim.finito)
 	hud.abilita("granaio", on and sim.granaio.x < 0 and not sim.finito)

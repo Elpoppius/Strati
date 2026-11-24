@@ -19,6 +19,8 @@ Gestionale urbanistico-politico. Il giocatore governa una città europea verosim
 
 **Principio di produzione:** prima la profondità, poi l'ampiezza. Un'epoca giocabile bene vale più di sei abbozzate.
 
+**Ritmo (decisione di Fede del 24/11/2026):** il ritmo del gioco non è incalzante ma meditativo, strategico. Fermano il gioco solo le scelte vere; ciò che non chiede un intervento (piene, carestie) arriva come notifica discreta, sulla mappa e negli indicatori.
+
 ## Decisioni prese
 - **Visuale:** isometrico 3D con camera fissa ruotabile (scatti di 90°), con mappe tematiche.
 - **Gameplay di riferimento:** Cities: Skylines / SimCity; visuale vicina a Caesar III.
