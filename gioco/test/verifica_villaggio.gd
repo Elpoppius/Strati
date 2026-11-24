@@ -108,7 +108,7 @@ func _initialize() -> void:
 	controlla(t.tecnica_campo(t.px(nuovo_px)) == 1, "un campo nuovo nasce con la tecnica dell'epoca")
 	t.cibo = 1000.0
 	var n_campi := t.campi.size()
-	t.imposta_politica("ammodernamento", "attivo")
+	t.imposta_ammodernamento("agricolo", true)
 	t._ammoderna()
 	controlla(t.campi.size() == n_campi and t.campi_da_ammodernare() < n_campi - 1 and t.cibo < 1000.0, "l'ammodernamento rifà i campi vecchi pagando cibo, senza aggiungerne")
 	controlla(t.tecnica_campo(vecchio) == 0 or t._resa(vecchio) > resa_zappa, "un campo ammodernato rende di più")
@@ -116,7 +116,7 @@ func _initialize() -> void:
 		t._ammoderna()
 	controlla(t.campi_da_ammodernare() == 0 and t._resa(vecchio) > resa_zappa, "alla fine tutti i campi sono rifatti e rendono di più")
 	t.tecnica_corrente = 0
-	t.imposta_politica("ammodernamento", "sospeso")
+	t.imposta_ammodernamento("agricolo", false)
 	# Partite intere.
 	var sopravvissuti := 0
 	for s in d.siti:

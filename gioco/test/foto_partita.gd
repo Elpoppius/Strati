@@ -57,9 +57,12 @@ func _process(_d: float) -> bool:
 			# così si vedono insieme campi vecchi e campi rifatti.
 			sim.tecnica_corrente = 3
 			sim.cibo = 100000.0
+			sim.imposta_ammodernamento("agricolo", true)
 			for k in 4:
 				sim._ammoderna()
 			p.vista.sincronizza()
+			p.aggiorna_hud()
+			_s.hud.apri_menu("ammodernamento")
 		elif args.size() > 4 and args[4] == "politiche":
 			_s.hud.apri_politiche(true)
 		elif args.size() > 4:

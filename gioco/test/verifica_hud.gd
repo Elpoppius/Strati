@@ -60,7 +60,8 @@ func _process(_d: float) -> bool:
 	controlla(not h._menu.has("usanze") and not h._menu_di.has("comune"), "le politiche non stanno tra i menù delle costruzioni")
 	var sim: SimVillaggio = _s.partita.sim
 	controlla(not h.politiche_aperte(), "il pannello delle politiche parte chiuso")
-	controlla(h._politiche.has("ammodernamento") and not h.politica_attiva("ammodernamento"), "l'ammodernamento c'è già, spento finché non ci sono campi vecchi")
+	controlla(not h._politiche.has("ammodernamento") and h._menu["ammodernamento"]["blocco"] == "gestione", "l'ammodernamento è una scheda di Gestione, allo stesso livello delle politiche")
+	controlla(h._menu_di.get("amm_agricolo", "") == "ammodernamento" and (h._righe_azioni["amm_agricolo"] as Button).disabled, "il tasto Agricolo c'è già, spento finché non ci sono campi vecchi")
 	(h._righe_azioni["politiche"] as Button).emit_signal("pressed")
 	controlla(h.politiche_aperte(), "il tasto Politiche apre il pannello")
 	controlla(h.politica("raccolto") == sim.politica("raccolto") and h.politica("stranieri") == sim.politica("stranieri"), "il pannello mostra le politiche in vigore")

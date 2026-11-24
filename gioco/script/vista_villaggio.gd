@@ -15,9 +15,11 @@ var sim: SimVillaggio
 var uso: UsoSuolo
 var terreno: Terreno
 var _case := {}  # lotto -> nodo
-var _campi := {}  # indice del pixel -> tecnica del campo disegnata
-var _celle_sentieri := {}
+var _celle_campi := {}  # cella da 10 m -> tecnica del campo disegnato
+var _celle_sentieri := {}  # celle sotto i nastri segnate come costruite (fuori dai campi)
+var _celle_nastro := {}  # tutte le celle sotto i nastri
 var _firma_sentieri := ""
+var _firma_campi := 0
 var _nastri: MeshInstance3D
 var _granaio: Node3D
 var _granaio_pos := Vector2(-1, -1)
@@ -39,8 +41,7 @@ func numero_case() -> int:
 
 func sincronizza() -> void:
 	_sincronizza_centro()
-	_sincronizza_campi()
-	_sincronizza_sentieri()
+	_sincronizza_campi_e_sentieri()
 	_sincronizza_case()
 	_sincronizza_granaio()
 	_sincronizza_rovine()
@@ -96,18 +97,109 @@ func _celle_px(i: int) -> Array[Vector2i]:
 	return out
 
 
-func _sincronizza_campi() -> void:
-	var ora := {}
+## Campi e sentieri insieme, cella per cella (10 m). Un sentiero che passa tra i campi non deve
+## lasciare un corridoio d'erba a scalini largo un punto della mappa (40 m): Fede l'ha segnalato
+## il 24/11/2026. Per questo le celle di un punto di sentiero confinante con dei campi si
+## coltivano dalla parte dei campi rispetto alla linea vera del sentiero, e sotto il nastro dentro
+## i campi non si segna niente come costruito (il campo tiene già lontani gli alberi; il nastro è
+## disegnato sopra).
+func _sincronizza_campi_e_sentieri() -> void:
+	var nastri_cambiati := _aggiorna_nastri()
+	var firma := hash([sim.campi.hash(), sim._tecnica_campi.hash(), sim.sentieri.hash()])
+	if firma == _firma_campi and not nastri_cambiati:
+		return
+	_firma_campi = firma
+	var campi_ora := _calcola_celle_campi()
+	# Sotto i nastri: costruito solo fuori dai campi.
+	var nastro_ora := {}
+	for c in _celle_nastro:
+		if not campi_ora.has(c):
+			nastro_ora[c] = true
+	var nuove: Array[Vector2i] = []
+	for c in nastro_ora:
+		if not _celle_sentieri.has(c):
+			nuove.append(c)
+	var tolte: Array[Vector2i] = []
+	for c in _celle_sentieri:
+		if not nastro_ora.has(c):
+			tolte.append(c)
+	if not tolte.is_empty():
+		uso.libera(tolte)
+	if not nuove.is_empty():
+		uso.costruisci(nuove, "sentiero", false)
+	_celle_sentieri = nastro_ora
+	# Campi: nuovi o con una tecnica diversa (ammodernati), raggruppati per tecnica.
+	var per_tecnica := {}
+	for c in campi_ora:
+		if not _celle_campi.has(c) or _celle_campi[c] != campi_ora[c]:
+			if not per_tecnica.has(campi_ora[c]):
+				per_tecnica[campi_ora[c]] = [] as Array[Vector2i]
+			(per_tecnica[campi_ora[c]] as Array[Vector2i]).append(c)
+	for t in per_tecnica:
+		uso.coltiva(per_tecnica[t], t)
+	# Campi tolti: tornano liberi, tranne le celle ora sotto un nastro o non coltivate (cortili).
+	var via: Array[Vector2i] = []
+	for c in _celle_campi:
+		if not campi_ora.has(c) and not nastro_ora.has(c) and (uso.celle[c.y * uso.n + c.x] & UsoSuolo.MASCHERA_STATO) == UsoSuolo.COLTIVATO:
+			via.append(c)
+	if not via.is_empty():
+		uso.libera(via)
+	_celle_campi = campi_ora
+
+
+func _calcola_celle_campi() -> Dictionary:
+	var out := {}
+	var campi := {}
 	for i in sim.campi:
-		ora[i] = sim.tecnica_campo(i)
-	for i in ora:
-		# Campo nuovo, o campo ammodernato (stessa terra, tecnica nuova).
-		if not _campi.has(i) or _campi[i] != ora[i]:
-			uso.coltiva(_celle_px(i), ora[i])
-	for i in _campi.keys():
-		if not ora.has(i):
-			uso.libera(_celle_px(i))
-	_campi = ora
+		campi[i] = true
+		var t := sim.tecnica_campo(i)
+		for c in _celle_px(i):
+			out[c] = t
+	for s in sim.sentieri:
+		if campi.has(s):
+			continue
+		var p := sim.px_di(s)
+		var vicini: Array[Vector2i] = []
+		for oy in [-1, 0, 1]:
+			for ox in [-1, 0, 1]:
+				var q := p + Vector2i(ox, oy)
+				if q.x >= 0 and q.y >= 0 and q.x < sim.n and q.y < sim.n and campi.has(sim.px(q)):
+					vicini.append(q)
+		if vicini.is_empty():
+			continue
+		var tratto := _tratto_vicino(sim.mondo_di_px(p))
+		var t := sim.tecnica_campo(sim.px(vicini[0]))
+		for c in _celle_px(s):
+			var lato := _lato(tratto, uso.centro(c))
+			for f in vicini:
+				var lf := _lato(tratto, sim.mondo_di_px(f))
+				if lato == 0 or lf == 0 or lf == lato:
+					out[c] = t
+					break
+	return out
+
+
+## Il tratto di sentiero (linea vera, in metri) più vicino a un punto.
+func _tratto_vicino(w: Vector2) -> Array:
+	var migliore := [w, w + Vector2(1, 0)]
+	var d_min := INF
+	for t in sim.tratti_sentiero:
+		var a := sim.mondo_di_px(t[0])
+		var b := sim.mondo_di_px(t[1])
+		var d := w.distance_to(Geometry2D.get_closest_point_to_segment(w, a, b))
+		if d < d_min:
+			d_min = d
+			migliore = [a, b]
+	return migliore
+
+
+## Da che parte della linea del tratto sta un punto: 1, -1, oppure 0 se ci sta quasi sopra.
+func _lato(tratto: Array, w: Vector2) -> int:
+	var a: Vector2 = tratto[0]
+	var b: Vector2 = tratto[1]
+	var d := (b - a).normalized()
+	var x := d.cross(w - a)
+	return 0 if absf(x) < 3.0 else (1 if x > 0.0 else -1)
 
 
 ## Sentieri (rifatti il 24/11/2026: prima erano celle di terra battuta da 10 m, una fascia scura
@@ -117,10 +209,11 @@ func _sincronizza_campi() -> void:
 const LARGHEZZA_SENTIERO := 3.5
 const PASSO_SENTIERO := 4.0
 
-func _sincronizza_sentieri() -> void:
-	var firma := "%d|%d" % [sim.sentieri.size(), sim.tratti_sentiero.size()]
+## Ricalcola i nastri quando cambiano i sentieri; restituisce vero se sono cambiati.
+func _aggiorna_nastri() -> bool:
+	var firma := "%d|%d|%d" % [sim.sentieri.hash(), sim.tratti_sentiero.size(), sim.centro.x]
 	if firma == _firma_sentieri:
-		return
+		return false
 	_firma_sentieri = firma
 	var presenti := {}
 	for i in sim.sentieri:
@@ -160,20 +253,9 @@ func _sincronizza_sentieri() -> void:
 				pezzo = []
 		if pezzo.size() > 1:
 			pezzi.append(pezzo)
-	var nuove: Array[Vector2i] = []
-	for c in celle_ora:
-		if not _celle_sentieri.has(c):
-			nuove.append(c)
-	if not nuove.is_empty():
-		uso.costruisci(nuove, "sentiero", false)
-	var tolte: Array[Vector2i] = []
-	for c in _celle_sentieri:
-		if not celle_ora.has(c):
-			tolte.append(c)
-	if not tolte.is_empty():
-		uso.libera(tolte)
-	_celle_sentieri = celle_ora
+	_celle_nastro = celle_ora
 	_disegna_nastri(pezzi)
+	return true
 
 
 func _disegna_nastri(pezzi: Array) -> void:

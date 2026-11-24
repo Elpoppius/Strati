@@ -32,7 +32,7 @@ Il campo di gioco resta libero: l'interfaccia sta in una fascia in basso e in du
   1. **Info:** gli indicatori (popolazione, cibo, salute, legittimità), come le risorse; il valore diventa rosso quando è in pericolo.
   2. **Descrizione:** la scheda dello strumento scelto (come la scheda dell'unità selezionata): nome, cosa fa o messaggio dell'ultima azione, lettura del lotto sotto il puntatore.
   3. **Costruzione:** schede Insediamento, Territorio, Vie, Edifici.
-  4. **Gestione:** scheda Politiche (tasto P, apre il pannello delle politiche); qui andranno le prossime voci di governo.
+  4. **Gestione:** scheda Politiche (tasto P, apre il pannello delle politiche) e, allo stesso livello, scheda **Ammodernamento** (decisione di Fede) con un tasto per settore: oggi Agricolo; poi Viario (strade), Abitativo e gli altri. Il tasto di un settore è spento finché non c'è niente da ammodernare e diventa invertito quando l'ammodernamento è attivo; un clic lo avvia o lo sospende.
   5. **Strumenti:** schede Demolizione (Demolisci, X: vale su tutto e non è una costruzione) e Prova (+10 anni, Y, solo per le prove).
 
   I blocchi 3, 4 e 5 funzionano allo stesso modo, così il layout è pronto per le voci future: titolo piccolo in maiuscolo, in alto le schede, sotto i **tasti** della scheda aperta (quadrati: pittogramma al centro, nome sotto, lettera del tasto piccola e grigia nell'angolo), in fondo una riga che dice a cosa serve la scheda. Scegliere un comando, anche da tastiera, apre la sua scheda nel suo blocco senza toccare le schede degli altri blocchi. Un comando può essere uno strumento (resta scelto, si usa cliccando sulla mappa) o un'azione immediata. Il segno rosso nell'angolo vuol dire azione irreversibile. I blocchi hanno tutti la stessa altezza.
@@ -71,7 +71,7 @@ Sono una prima serie (proposta di Claude), da confermare con Fede.
 | Politiche | Gestione | apre il pannello delle regole del villaggio (P) |
 | In comune / Alle famiglie | Politiche: divisione del raccolto | il raccolto si divide tra tutti (più legittimità) o ogni famiglia tiene il suo (più raccolto, meno legittimità) |
 | Aperta / Caso per caso / Chiusa | Politiche: accoglienza degli stranieri | chi arriva resta sempre; a ogni arrivo si decide; viene sempre mandato via |
-| Sospeso / Attivo | Politiche: ammodernamento tecnologico | i campi vecchi restano; ogni anno una parte passa alla tecnica nuova pagando cibo (spenta finché non c'è una tecnica nuova) |
+| Ammodernamento · Agricolo | Gestione | avvia o sospende il rifacimento dei campi vecchi con la tecnica nuova, un po' ogni anno pagando cibo (spento finché non c'è una tecnica nuova) |
 | Demolizione, Prova | Strumenti | schede degli strumenti |
 | Demolisci | Strumenti | toglie ciò che si può demolire nel cerchio; non agisce su fiumi e paludi |
 | +10 anni | Prova | fa passare dieci anni subito, solo per provare la ricrescita del bosco |

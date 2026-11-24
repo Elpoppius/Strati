@@ -53,6 +53,23 @@ func _process(_d: float) -> bool:
 	controlla(sim.campi.size() > 10, "un clic dissoda i campi nel cerchio (%d)" % sim.campi.size())
 	var f := sim.mondo_di_px(sim.px_di(sim.campi[0]))
 	controlla(_s.uso.stato(f.x, f.y) == UsoSuolo.COLTIVATO, "i campi sono suolo coltivato")
+	# Sentiero verso nord, poi campi attorno: niente corridoio d'erba a scalini lungo il sentiero
+	# (segnalato da Fede): accanto alla linea del sentiero il campo arriva fino al nastro.
+	var c0 := sim.mondo_di_px(sim.centro)
+	h.seleziona_comando("sentiero")
+	_s.punto_corrente = Vector3(c0.x, 0, c0.y - 480.0)
+	_s.applica_strumento()
+	h.seleziona_comando("campi")
+	_s.punto_corrente = Vector3(c0.x, 0, c0.y - 300.0)
+	_s.applica_strumento()
+	var lungo_sentiero := 0
+	var coltivate := 0
+	for dz in range(-60, 61, 20):
+		for dx in [-13.0, 13.0]:
+			lungo_sentiero += 1
+			if _s.uso.stato(c0.x + dx, c0.y - 300.0 + dz) == UsoSuolo.COLTIVATO:
+				coltivate += 1
+	controlla(sim.sentieri.size() > 0 and coltivate == lungo_sentiero, "i campi arrivano fino al sentiero, senza corridoio d'erba (%d su %d)" % [coltivate, lungo_sentiero])
 	# Tempo: 15 anni al secondo per qualche secondo simulato, rispondendo alle scelte.
 	p.imposta_velocita(3)
 	var anno0 := sim.anno

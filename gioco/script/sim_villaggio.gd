@@ -42,15 +42,17 @@ var bonus := 0.0
 ## raccolto: "comune" (più consenso) o "famiglie" (più raccolto).
 ## stranieri (proposta di Claude): "aperta" (si accolgono sempre), "chiusa" (si respingono sempre),
 ## "caso" (ogni arrivo ferma il tempo e si decide).
-## ammodernamento (decisione di Fede del 24/11/2026): "sospeso" o "attivo". Attivo, ogni anno una
-## parte dei campi fatti con una tecnica vecchia passa alla tecnica dell'epoca, pagando cibo (le
-## braccia che ci lavorano); non si costruisce niente da zero, si sovrascrive il tipo vecchio.
-var politiche := {"raccolto": "comune", "stranieri": "caso", "ammodernamento": "sospeso"}
+var politiche := {"raccolto": "comune", "stranieri": "caso"}
 const POLITICHE := {
 	"raccolto": ["comune", "famiglie"],
 	"stranieri": ["aperta", "caso", "chiusa"],
-	"ammodernamento": ["sospeso", "attivo"],
 }
+## Ammodernamento tecnologico (decisione di Fede del 24/11/2026), nel blocco Gestione allo stesso
+## livello delle politiche, diviso per settore: agricolo ora; viario, abitativo… più avanti. Attivo,
+## ogni anno una parte di ciò che è fatto con una tecnica vecchia passa alla tecnica dell'epoca,
+## pagando cibo (le braccia che ci lavorano); non si costruisce niente da zero, si sovrascrive il
+## tipo vecchio.
+var ammodernamenti := {"agricolo": false}
 
 # ---------- tecniche dei campi ----------
 ## Il campo cambia con l'epoca (decisione di Fede del 24/11/2026): ogni campo ricorda la tecnica
@@ -488,6 +490,17 @@ func _ammoderna() -> int:
 	return quanti
 
 
+## Avvia o sospende l'ammodernamento di un settore. Non costa consenso: il costo è il cibo speso
+## ogni anno per il lavoro.
+func imposta_ammodernamento(settore: String, attivo: bool) -> bool:
+	if not ammodernamenti.has(settore) or ammodernamenti[settore] == attivo:
+		return false
+	ammodernamenti[settore] = attivo
+	if fondato and settore == "agricolo":
+		_scrivi("Si comincia a rifare i campi con la tecnica nuova." if attivo else "L'ammodernamento dei campi è sospeso.")
+	return true
+
+
 func politica(id: String) -> String:
 	return politiche.get(id, "")
 
@@ -499,10 +512,8 @@ func imposta_politica(id: String, valore: String) -> bool:
 	politiche[id] = valore
 	if not fondato:
 		return true
-	# Le abitudini pesano: cambiare una regola costa consenso. L'ammodernamento no, perché il suo
-	# costo è il cibo speso ogni anno per rifare i campi.
-	if id != "ammodernamento":
-		bonus -= 4.0
+	# Le abitudini pesano: cambiare una regola costa consenso.
+	bonus -= 4.0
 	match id + ":" + valore:
 		"raccolto:comune":
 			_scrivi("Il raccolto torna a essere diviso in comune.")
@@ -514,10 +525,6 @@ func imposta_politica(id: String, valore: String) -> bool:
 			_scrivi("Gli anziani decidono: gli stranieri non restano.")
 		"stranieri:caso":
 			_scrivi("Gli anziani decideranno ogni volta chi accogliere.")
-		"ammodernamento:attivo":
-			_scrivi("Si comincia a rifare i campi con la tecnica nuova.")
-		"ammodernamento:sospeso":
-			_scrivi("L'ammodernamento dei campi è sospeso.")
 	return true
 
 
@@ -666,7 +673,7 @@ func passo() -> void:
 		_arrivo_stranieri()
 	if anni_sapere > 0:
 		anni_sapere -= 1
-	if politica("ammodernamento") == "attivo":
+	if ammodernamenti["agricolo"]:
 		_ammoderna()
 	# Raccolto: le braccia lavorano prima i campi più fertili.
 	var braccia := pop * 0.55
