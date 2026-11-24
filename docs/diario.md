@@ -9,15 +9,20 @@ Voci più recenti in cima.
 - **Zona agricola, di nuovo** (Fede: restava accesa passando a un altro strumento, per esempio Sentiero): con il codice di stasera la zona si spegne sia dal tasto sia con V; probabilmente la prova era sulla versione di prima del Pull. Aggiunte comunque le verifiche.
 - **Tasto destro come Esc** (richiesta di Fede): un clic secco chiude le politiche, chiude la catena dei sentieri o toglie lo strumento; trascinato sposta la vista come prima (soglia di 5 px). Esc e clic destro usano la stessa funzione `annulla()` in `principale.gd`. Tasti aggiornati in `docs/hud.md`; due verifiche nuove in `test/verifica_partita.gd`.
 - **Todo del villaggio completo** (richiesta di Fede: imbastire la fase successiva partendo da un todo; scelta di Fede: chiudere la prima epoca prima del protourbano): nuovo `docs/todo.md` con ciò che c'è, la taratura, gli otto sistemi mancanti in ordine proposto (gruppi di consenso, luogo sacro, legna e disboscamento, pascolo e riserva, scorrerie, sentieri che diventano strade, recinto da decidere, evento soglia "il metallo e lo scambio"), mappe, base tecnica e proposte aperte. `CLAUDE.md` ora dice di leggerlo a inizio sessione.
+- **Sessioni di gioco a dieci livelli di bravura** (richiesta di Fede: lo scopo è creare una città, più abitanti è più successo; vedere come procedono gli abitanti a competenze diverse): nuovo `gioco/test/sessioni_giocatori.gd`, 180 partite (10 livelli × 6 siti × 3 semi). Livello 1: 229 abitanti di mediana a 500 anni; livello 10: 997. Crescita regolare con la bravura; primi 150 anni uguali per tutti; tetto verso i 300 anni (il contado di 800 m); il sito pesa quanto la bravura (gessi: 396 al massimo); una carestia ogni 20 anni circa dal livello 3. Corretto un difetto del giocatore automatico sul Dosso nelle paludi. Risultati, grafico e tre idee per gestire la crescita in `docs/sessioni-giocatori.md`.
+- **Todo aggiornato** con le risposte di Fede: luogo sacro come cerchio di pali confermato; recinto spostato al protourbano; gruppi di consenso ok.
 - Tutte le 9 verifiche superate. Il messaggio "3 resources still in use at exit" alla fine di `verifica_villaggio.gd` c'era già prima: da guardare quando capita.
 
 **Decisioni**
 - Fede: il clic destro deseleziona come Esc.
 - Fede: la fase successiva è completare il villaggio (prima epoca) prima dell'abitato protourbano; si parte da un todo. L'ordine in `docs/todo.md` è una proposta di Claude.
+- Fede: il luogo sacro è il cerchio di pali attorno a una pietra; il recinto appartiene al protourbano; ok ai tre gruppi di consenso (resta da chiarire se tre righe nel blocco Info o un indicatore con il dettaglio al passaggio).
+- Fede: lo scopo del gioco è creare una città; più abitanti è più successo, come in Cities: Skylines. Va trovata un'idea per gestirlo (proposte di Claude in `docs/sessioni-giocatori.md`).
 
 **Prossimo passo**
 - Fede: fare Pull e controllare zona agricola, blocco Info fermo e clic destro; rivedere `docs/todo.md` (ordine, e le voci con (?): come mostrare i tre gruppi di consenso, forma del luogo sacro, recinto nel villaggio o no).
-- Claude: dopo il via di Fede, la taratura e poi il primo sistema del todo (gruppi di consenso).
+- Fede: scegliere tra le idee per la crescita degli abitanti (`docs/sessioni-giocatori.md`) e dire come mostrare i gruppi di consenso.
+- Claude: dopo il via di Fede, l'idea scelta per la crescita, poi il primo sistema del todo (gruppi di consenso); rifare le sessioni dopo ogni modifica che tocca la crescita.
 
 ## 24/11/2026
 **Per riprendere (riepilogo di fine sessione, account di oggi)**
