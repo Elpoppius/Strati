@@ -36,7 +36,8 @@ const LARGHEZZA_PANNELLO := 248
 const MARGINE := 16
 ## Altezza della fascia in basso (indicatori, scheda, comandi, minimappa).
 const ALTEZZA_FASCIA := 196
-const LARGHEZZA_MAPPE := 344
+const LARGHEZZA_MAPPE := 232
+const LATO_MINIMAPPA := 150
 const LATO_TASTO := 58
 const NOMI_BREVI_MAPPE := ["Terreno", "Acqua", "Fertilità", "Piena", "Energia"]
 
@@ -47,10 +48,10 @@ const TESTO_SCURO_SU := [0, 4]
 ## Legende delle mappe: [testo a sinistra, testo a destra, colori del gradiente, nota].
 const LEGENDE := [
 	["", "", [], "Il rilievo si legge da luce e ombre. Boschi, paludi e gessi come sono in natura."],
-	["lontana", "vicina e affidabile", [Color("e9eef4"), Color("2a6db5")], "Acqua affidabile: fiume e sorgenti. Tratteggio chiaro: solo stagionale."],
-	["bassa", "alta", [Color("b08a3a"), Color("3e8e3a")], "Fertilità del suolo per i campi."],
-	["nullo", "alto", [Color("f4f4f0"), Color("c8102e")], "Rischio che l'acqua esca dagli argini."],
-	["1 kW", "1000 kW", [Color("2a6db5"), Color("f0a91c"), Color("c8102e")], "Potenza dell'acqua ogni 100 m di corso. Le etichette indicano i siti adatti alle dighe."],
+	["lontana", "vicina e affidabile", [Color("e9eef4"), Color("2a6db5")], "Acqua affidabile: fiume e sorgenti."],
+	["bassa", "alta", [Color("b08a3a"), Color("3e8e3a")], "Per i campi."],
+	["nullo", "alto", [Color("f4f4f0"), Color("c8102e")], "Acqua fuori dagli argini."],
+	["1 kW", "1000 kW", [Color("2a6db5"), Color("f0a91c"), Color("c8102e")], "Potenza ogni 100 m di corso. Etichette: siti per le dighe."],
 ]
 
 var tema: Theme
@@ -83,6 +84,7 @@ var _nome_mappa_scelta: Label
 var _nomi_mappe: Array = []
 var _testi := {}
 var minimappa: Minimappa
+var _pannello_legenda: PanelContainer
 ## Spazio al centro della barra in alto, per gli indicatori del gioco.
 var indicatori: VBoxContainer
 
@@ -225,24 +227,27 @@ func _fascia_bassa(radice: Control, nomi_mappe: Array) -> void:
 	spazio.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spazio.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fascia.add_child(spazio)
-	# Mappe: legenda sopra, elenco delle mappe e minimappa sotto.
+	# Mappe in basso a destra, piccole come i tasti attorno alla minimappa di Age of Empires IV
+	# (Fede: cliccabili ma non importanti): minimappa, bollini delle mappe tematiche e delle
+	# sovrapposizioni; sopra, solo quando serve, una legenda sottile.
 	var colonna := VBoxContainer.new()
 	colonna.add_theme_constant_override("separation", 2)
 	colonna.size_flags_vertical = Control.SIZE_SHRINK_END
 	fascia.add_child(colonna)
-	var pl := PanelContainer.new()
-	colonna.add_child(pl)
+	_pannello_legenda = PanelContainer.new()
+	colonna.add_child(_pannello_legenda)
 	var cl := VBoxContainer.new()
-	cl.add_theme_constant_override("separation", 4)
-	pl.add_child(cl)
+	cl.add_theme_constant_override("separation", 2)
+	_pannello_legenda.add_child(cl)
 	_nome_mappa_scelta = Label.new()
 	_nome_mappa_scelta.add_theme_font_override("font", _carattere(true))
+	_nome_mappa_scelta.add_theme_font_size_override("font_size", 12)
 	cl.add_child(_nome_mappa_scelta)
 	_legenda_riga = VBoxContainer.new()
-	(_legenda_riga as VBoxContainer).add_theme_constant_override("separation", 2)
+	(_legenda_riga as VBoxContainer).add_theme_constant_override("separation", 0)
 	cl.add_child(_legenda_riga)
 	_legenda_barra = TextureRect.new()
-	_legenda_barra.custom_minimum_size = Vector2(LARGHEZZA_MAPPE - 2 * MARGINE, 8)
+	_legenda_barra.custom_minimum_size = Vector2(LARGHEZZA_MAPPE - 2 * MARGINE, 6)
 	_legenda_barra.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_legenda_barra.stretch_mode = TextureRect.STRETCH_SCALE
 	_legenda_riga.add_child(_legenda_barra)
@@ -255,39 +260,78 @@ func _fascia_bassa(radice: Control, nomi_mappe: Array) -> void:
 	_legenda_nota = Label.new()
 	_legenda_nota.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_legenda_nota.custom_minimum_size.x = LARGHEZZA_MAPPE - 2 * MARGINE
-	_legenda_nota.add_theme_font_size_override("font_size", 12)
+	_legenda_nota.add_theme_font_size_override("font_size", 11)
 	_legenda_nota.add_theme_color_override("font_color", GRIGIO)
 	cl.add_child(_legenda_nota)
 	var pm := PanelContainer.new()
-	pm.custom_minimum_size.y = ALTEZZA_FASCIA
 	colonna.add_child(pm)
 	var rm := HBoxContainer.new()
-	rm.add_theme_constant_override("separation", 12)
+	rm.add_theme_constant_override("separation", 10)
 	pm.add_child(rm)
-	var elenco := VBoxContainer.new()
-	elenco.add_theme_constant_override("separation", 0)
-	rm.add_child(elenco)
+	var tasti := GridContainer.new()
+	tasti.columns = 2
+	tasti.add_theme_constant_override("h_separation", 4)
+	tasti.add_theme_constant_override("v_separation", 4)
+	tasti.size_flags_vertical = Control.SIZE_SHRINK_END
+	rm.add_child(tasti)
 	for i in nomi_mappe.size():
-		var b := _riga(elenco, NOMI_BREVI_MAPPE[i] if i < NOMI_BREVI_MAPPE.size() else nomi_mappe[i], str(i + 1), COLORI_MAPPE[i] if i < COLORI_MAPPE.size() else BIANCO, i in TESTO_SCURO_SU, false, 132)
-		b.toggle_mode = true
-		b.tooltip_text = nomi_mappe[i]
+		var b := _bollino(tasti, str(i + 1), COLORI_MAPPE[i] if i < COLORI_MAPPE.size() else BIANCO, i in TESTO_SCURO_SU, false)
+		b.tooltip_text = "%s (%d)" % [nomi_mappe[i], i + 1]
 		b.pressed.connect(func() -> void: seleziona_modo(i); modo_scelto.emit(i))
 		_righe_mappe.append(b)
 	_nomi_mappe = nomi_mappe
-	var sp := Control.new()
-	sp.custom_minimum_size.y = 4
-	elenco.add_child(sp)
-	_griglia = _riga(elenco, "Lotti", "G", Color(0, 0, 0, 0), false, true, 132)
-	_griglia.toggle_mode = true
-	_griglia.tooltip_text = "Griglia dei lotti da 20 m"
+	if nomi_mappe.size() % 2 == 1:
+		tasti.add_child(Control.new())
+	_griglia = _bollino(tasti, "G", Color(0, 0, 0, 0), false, true)
+	_griglia.tooltip_text = "Griglia dei lotti da 20 m (G)"
 	_griglia.toggled.connect(func(v: bool) -> void: griglia_cambiata.emit(v))
-	_isoipse = _riga(elenco, "Isoipse", "I", Color(0, 0, 0, 0), false, true, 132)
-	_isoipse.toggle_mode = true
-	_isoipse.tooltip_text = "Isoipse ogni 25 m"
+	_isoipse = _bollino(tasti, "I", Color(0, 0, 0, 0), false, true)
+	_isoipse.tooltip_text = "Isoipse ogni 25 m (I)"
 	_isoipse.toggled.connect(func(v: bool) -> void: isoipse_cambiate.emit(v))
 	minimappa = Minimappa.new()
-	minimappa.custom_minimum_size = Vector2(ALTEZZA_FASCIA - 26, ALTEZZA_FASCIA - 26)
+	minimappa.custom_minimum_size = Vector2(LATO_MINIMAPPA, LATO_MINIMAPPA)
 	rm.add_child(minimappa)
+
+
+## Tasto piccolo e tondo (mappe, con il loro colore) o quadrato (sovrapposizioni). Scelto: anello
+## bianco attorno al bollino; per i quadrati, inversione.
+func _bollino(padre: Control, sigla: String, colore: Color, sigla_scura: bool, quadrato: bool) -> Button:
+	var b := Button.new()
+	b.custom_minimum_size = Vector2(28, 28)
+	b.focus_mode = Control.FOCUS_NONE
+	b.toggle_mode = true
+	b.text = sigla
+	b.add_theme_font_override("font", _carattere(true))
+	b.add_theme_font_size_override("font_size", 12)
+	var vuoto := colore.a == 0.0
+	var normale := StyleBoxFlat.new()
+	normale.bg_color = colore if not vuoto else Color(0, 0, 0, 0)
+	normale.set_corner_radius_all(0 if quadrato else 14)
+	if vuoto:
+		normale.set_border_width_all(1)
+		normale.border_color = GRIGIO
+	var scelto := normale.duplicate() as StyleBoxFlat
+	if vuoto:
+		scelto.bg_color = BIANCO
+		scelto.border_color = BIANCO
+	else:
+		scelto.set_border_width_all(3)
+		scelto.border_color = BIANCO
+	var sopra := normale.duplicate() as StyleBoxFlat
+	sopra.set_border_width_all(1)
+	sopra.border_color = BIANCO
+	for stato in ["normal", "focus", "disabled"]:
+		b.add_theme_stylebox_override(stato, normale)
+	b.add_theme_stylebox_override("hover", sopra)
+	b.add_theme_stylebox_override("pressed", scelto)
+	b.add_theme_stylebox_override("hover_pressed", scelto)
+	var testo := NERO if sigla_scura else (BIANCO if not vuoto else GRIGIO)
+	for k in ["font_color", "font_hover_color", "font_focus_color"]:
+		b.add_theme_color_override(k, testo)
+	for k in ["font_pressed_color", "font_hover_pressed_color"]:
+		b.add_theme_color_override(k, NERO if (vuoto or sigla_scura) else BIANCO)
+	padre.add_child(b)
+	return b
 
 
 # ---------- comandi ----------
@@ -575,6 +619,8 @@ func seleziona_modo(i: int) -> void:
 		_righe_mappe[k].set_pressed_no_signal(k == i)
 	if _nome_mappa_scelta and i < _nomi_mappe.size():
 		_nome_mappa_scelta.text = _nomi_mappe[i]
+	if _pannello_legenda:
+		_pannello_legenda.visible = i != 0
 	var l: Array = LEGENDE[i] if i < LEGENDE.size() else ["", "", [], ""]
 	var colori: Array = l[2]
 	_legenda_barra.visible = not colori.is_empty()

@@ -16,13 +16,13 @@ func _process(_d: float) -> bool:
 		_s.griglia_attiva = false
 		u.abbatti(u.celle_nel_cerchio(p.x, p.y, 120.0))
 		u.coltiva(u.celle_nel_cerchio(p.x + 60, p.y - 60, 45.0))
-		u.edifica(u.celle_nel_cerchio(p.x - 70, p.y + 40, 25.0), false)
-		u.edifica(u.celle_nel_cerchio(p.x + 160, p.y + 100, 40.0), true)
+		u.costruisci(u.celle_nel_cerchio(p.x - 70, p.y + 40, 25.0), "casa_lunga")
+		u.costruisci(u.celle_nel_cerchio(p.x + 160, p.y + 100, 40.0), "strada_asfaltata")
 		u.abbatti(u.celle_nel_cerchio(p.x - 200, p.y - 150, 70.0))
 		u.avanza_anni(25)
 		u.abbatti(u.celle_nel_cerchio(p.x, p.y, 120.0))
 		u.coltiva(u.celle_nel_cerchio(p.x + 60, p.y - 60, 45.0))
-		u.edifica(u.celle_nel_cerchio(p.x - 70, p.y + 40, 25.0), false)
+		u.costruisci(u.celle_nel_cerchio(p.x - 70, p.y + 40, 25.0), "casa_lunga")
 		var cam: CameraIsometrica = _s.cam
 		cam.vai_a(p.x - 40, p.y - 20, float(OS.get_cmdline_user_args()[1]))
 	if _f == 3 + int(OS.get_cmdline_user_args()[2]):

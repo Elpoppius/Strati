@@ -166,14 +166,11 @@ func _crea_interfaccia() -> void:
 	hud.modo_scelto.connect(imposta_modo)
 	hud.griglia_cambiata.connect(func(v: bool) -> void: griglia_attiva = v)
 	hud.isoipse_cambiate.connect(func(v: bool) -> void: isoipse_attive = v)
-	# Strumenti di prova dell'uso del suolo (regole di Fede sul disboscamento), finché i comandi
-	# veri non arrivano con il Prototipo 0 in Godot.
-	hud.aggiungi_comandi("Prove · suolo", [
+	# Strumenti di prova: tagliare il bosco e far passare il tempo, per vedere la ricrescita.
+	# L'invasività delle costruzioni non è uno strumento: è una qualità nascosta dei loro
+	# materiali (chiarimento di Fede del 24/11/2026, vedi UsoSuolo).
+	hud.aggiungi_comandi("Prove", [
 		{"id": "abbatti", "testo": "Abbatti gli alberi", "breve": "Abbatti", "tasto": "T"},
-		{"id": "coltiva", "testo": "Suolo coltivato", "breve": "Coltiva", "tasto": ""},
-		{"id": "costruisci", "testo": "Costruisci con argilla e legno", "breve": "Argilla", "tasto": "B"},
-		{"id": "sigilla", "testo": "Costruisci con cemento e asfalto (irreversibile)", "breve": "Cemento", "tasto": "", "pericolo": true},
-		{"id": "libera", "testo": "Libera il terreno", "breve": "Libera", "tasto": "L"},
 		{"id": "anni", "testo": "Fai passare 10 anni", "breve": "+10 anni", "tasto": "Y", "strumento": false},
 	])
 	hud.comando_scelto.connect(func(_id: String) -> void: _aggiorna_pennello())
@@ -261,8 +258,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 				imposta_modo((ev as InputEventKey).keycode - KEY_1)
 			KEY_HOME:
 				torna_al_sito()
-			KEY_T, KEY_B, KEY_L, KEY_F, KEY_C, KEY_V, KEY_H:
-				var id: String = {KEY_T: "abbatti", KEY_B: "costruisci", KEY_L: "libera", KEY_F: "fonda", KEY_C: "campi", KEY_V: "sentiero", KEY_H: "granaio"}[(ev as InputEventKey).keycode]
+			KEY_T, KEY_F, KEY_C, KEY_V, KEY_H:
+				var id: String = {KEY_T: "abbatti", KEY_F: "fonda", KEY_C: "campi", KEY_V: "sentiero", KEY_H: "granaio"}[(ev as InputEventKey).keycode]
 				hud.seleziona_comando("" if hud.comando() == id else id)
 				_aggiorna_pennello()
 			KEY_ESCAPE:
@@ -296,15 +293,6 @@ func applica_strumento() -> void:
 	match hud.comando():
 		"abbatti":
 			hud.imposta_messaggio("Tagliati %d alberi e arbusti: legname. L'area ricorda di essere stata un bosco." % uso.abbatti(celle))
-		"coltiva":
-			hud.imposta_messaggio("Campi su %d celle (%d alberi tagliati). Finché sono coltivati, niente alberi." % [celle.size(), uso.coltiva(celle)])
-		"costruisci":
-			hud.imposta_messaggio("Costruito con argilla e legno (%d alberi tagliati). Tolto l'edificio, il terreno torna com'era." % uso.edifica(celle, false))
-		"sigilla":
-			hud.imposta_messaggio("Sigillato con cemento e asfalto (%d alberi tagliati). Qui non cresceranno più alberi." % uso.edifica(celle, true))
-		"libera":
-			uso.libera(celle)
-			hud.imposta_messaggio("Terreno liberato. Se era un bosco e attorno ci sono alberi, ricrescerà.")
 	hud.imposta_lettura(testo_lettura(p.x, p.z))
 
 
@@ -331,7 +319,7 @@ func _aggiorna_pennello() -> void:
 		if hud.comando() == "fonda" and partita.sim.fondato:
 			r = -1.0
 	terreno.materiale.set_shader_parameter("pennello", Vector3(p.x, p.z, r))
-	terreno.materiale.set_shader_parameter("colore_pennello", Hud.PERICOLO if hud.comando() == "sigilla" else Hud.BIANCO)
+	terreno.materiale.set_shader_parameter("colore_pennello", Hud.BIANCO)
 
 
 ## Legge il terreno sotto un punto dello schermo e aggiorna l'evidenziazione del lotto.

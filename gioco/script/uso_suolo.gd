@@ -14,6 +14,11 @@ extends RefCounted
 ## - se viene edificato con materiali invasivi (cemento, asfalto, fondamenta, fognature) l'area
 ##   non accoglie più alberi, ma resta in memoria che era un bosco;
 ## - gli effetti del taglio sono quelli naturali, come i vantaggi (legname, terreno libero).
+##
+## Chiarimento di Fede (24/11/2026): invasivo o no non è una scelta del giocatore né una
+## dinamica in più. È una qualità nascosta dei materiali di cui sono fatti edifici e strade:
+## una casa lunga (legno e argilla) tolta lascia ricrescere il bosco, nelle condizioni giuste;
+## un'autostrada (asfalto) no. Il catalogo è in COSTRUZIONI e MATERIALI, qui sotto.
 ##   Gli effetti sulla simulazione (erosione, piene, frane, selvaggina) arriveranno con il gioco.
 ##
 ## Tempi della ricrescita (proposta di Claude, da tarare): ceppi e terra nuda che si coprono
@@ -21,12 +26,33 @@ extends RefCounted
 ## maturo dopo 60 anni. Un'area in ricrescita fa da sorgente di semi dopo 15 anni, quindi il
 ## bosco si richiude dai margini verso l'interno.
 
+## Materiali: invasivo = sigilla il suolo per sempre (proposta di Claude per l'elenco).
+const MATERIALI := {
+	"legno": false, "argilla": false, "paglia": false, "pietra a secco": false, "terra battuta": false,
+	"ghiaia": false, "mattoni": false, "calce": false,
+	"cemento": true, "asfalto": true, "fondamenta": true, "fognature": true,
+}
+## Costruzioni e loro materiali. Una costruzione è invasiva se lo è almeno uno dei materiali.
+## Per ora quelle del villaggio; le altre si aggiungono con le epoche.
+const COSTRUZIONI := {
+	"casa_lunga": ["legno", "argilla", "paglia"],
+	"capanna": ["legno", "argilla", "paglia"],
+	"granaio": ["legno", "argilla", "paglia"],
+	"focolare": ["pietra a secco"],
+	"sentiero": ["terra battuta"],
+	"palizzata": ["legno"],
+	"strada_asfaltata": ["asfalto", "fondamenta"],
+	"palazzo_in_cemento": ["cemento", "fondamenta", "fognature"],
+}
+
 const NATURALE := 0  ## come dice la mappa
 const LIBERO := 1  ## alberi tolti, terreno libero
 const COLTIVATO := 2  ## campi: terreno tenuto libero, non invasivo
 const COSTRUITO := 3  ## edificato con materiali non invasivi (argilla, legno, paglia)
 const SIGILLATO := 4  ## edificato con materiali invasivi: non accoglie più alberi
-const NOMI_STATO := ["naturale", "libero", "coltivato", "costruito (non invasivo)", "sigillato (invasivo)"]
+## Nomi mostrati al giocatore: la differenza tra costruito e sigillato è nascosta (si vede solo
+## da ciò che succede dopo).
+const NOMI_STATO := ["naturale", "libero", "coltivato", "costruito", "costruito"]
 ## Bit di memoria: la cella era un bosco (resta anche quando il bosco ricresce o è sigillato).
 const MEMORIA_BOSCO := 0x80
 const MASCHERA_STATO := 0x0f
@@ -124,8 +150,23 @@ func abbatti(lista: Array[Vector2i]) -> int:
 	return tagliati
 
 
+## Vero se la costruzione (chiave di COSTRUZIONI) contiene almeno un materiale invasivo.
+static func invasiva(costruzione: String) -> bool:
+	for m in COSTRUZIONI.get(costruzione, []):
+		if MATERIALI.get(m, false):
+			return true
+	return false
+
+
+## Costruisce sulle celle: se la costruzione è invasiva (per i suoi materiali) il suolo resta
+## sigillato per sempre, altrimenti tornerà libero quando la costruzione sarà tolta.
+func costruisci(lista: Array[Vector2i], costruzione: String) -> int:
+	return edifica(lista, invasiva(costruzione))
+
+
 ## Edifica: con materiali invasivi la cella è sigillata per sempre; altrimenti è costruita ma
 ## può tornare libera. In entrambi i casi gli alberi spariscono e la memoria del bosco resta.
+## Da fuori si usa costruisci(), che ricava l'invasività dai materiali.
 func edifica(lista: Array[Vector2i], invasivo: bool) -> int:
 	var tagliati := _conta_alberi_in_piedi(lista)
 	for c in lista:
@@ -148,8 +189,8 @@ func coltiva(lista: Array[Vector2i]) -> int:
 	return tagliati
 
 
-## Toglie un edificio non invasivo o abbandona un campo: il terreno torna libero e, se era un
-## bosco, può ricrescere. Le celle sigillate restano sigillate.
+## Toglie una costruzione o abbandona un campo: il terreno torna libero e, se era un bosco,
+## può ricrescere. Le celle sigillate (materiali invasivi) restano sigillate.
 func libera(lista: Array[Vector2i]) -> void:
 	for c in lista:
 		var s := celle[c.y * n + c.x] & MASCHERA_STATO

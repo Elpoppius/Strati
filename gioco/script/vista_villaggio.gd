@@ -78,7 +78,7 @@ func _sincronizza_centro() -> void:
 		var c := sim.mondo_di_px(sim.centro)
 		_focolare = _istanza("focolare")
 		_posa(_focolare, c, 0.0)
-		uso.edifica(uso.celle_nel_cerchio(c.x, c.y, 14.0), false)
+		uso.costruisci(uso.celle_nel_cerchio(c.x, c.y, 14.0), "focolare")
 
 
 func _celle_px(i: int) -> Array[Vector2i]:
@@ -133,7 +133,7 @@ func _sincronizza_sentieri() -> void:
 			nuovi.append(uso.cella(q.x + 4.0, q.y))
 			nuovi.append(uso.cella(q.x, q.y + 4.0))
 	if not nuovi.is_empty():
-		uso.edifica(nuovi, false)
+		uso.costruisci(nuovi, "sentiero")
 	var tolte: Array[Vector2i] = []
 	for i in _sentieri.keys():
 		if not ora.has(i):
@@ -162,7 +162,7 @@ func _sincronizza_case() -> void:
 		var w := sim.centro_lotto(l)
 		_posa(nodo, w, roundf(_caso(l, 2) * 24.0) * 15.0)
 		_case[l] = nodo
-		uso.edifica(uso.celle_nel_cerchio(w.x, w.y, RAGGIO_CORTILE), false)
+		uso.costruisci(uso.celle_nel_cerchio(w.x, w.y, RAGGIO_CORTILE), "casa_lunga" if nome.begins_with("casa") else "capanna")
 	for l in _case.keys():
 		if not ora.has(l):
 			(_case[l] as Node3D).queue_free()
@@ -182,7 +182,7 @@ func _sincronizza_granaio() -> void:
 	if sim.granaio.x >= 0:
 		_granaio = _istanza("granaio_su_pali")
 		_posa(_granaio, sim.granaio, 0.0)
-		uso.edifica(uso.celle_nel_cerchio(sim.granaio.x, sim.granaio.y, 6.0), false)
+		uso.costruisci(uso.celle_nel_cerchio(sim.granaio.x, sim.granaio.y, 6.0), "granaio")
 
 
 ## Rovine: qualche sasso dove c'erano il centro e le case (il fallimento come strato).

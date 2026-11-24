@@ -67,6 +67,7 @@ func _process(_d: float) -> bool:
 	var u: UsoSuolo = _s.uso
 	var v: VistaAlberi = _s.vista_alberi
 	controlla(u != null and v.uso == u, "uso del suolo creato e collegato alla vista")
+	controlla(not UsoSuolo.invasiva("casa_lunga") and not UsoSuolo.invasiva("sentiero") and UsoSuolo.invasiva("strada_asfaltata"), "l'invasività viene dai materiali: casa lunga e sentiero no, strada asfaltata sì")
 	var p := _bosco_fitto(a, Vector2.ZERO)
 	controlla(p.x > 0.0, "trovato un bosco fitto per le prove (%d, %d)" % [p.x, p.y])
 	if p.x < 0.0:
@@ -106,7 +107,7 @@ func _process(_d: float) -> bool:
 	for c in u.celle_nel_cerchio(q.x, q.y, 240.0):
 		if u.centro(c).distance_to(q) > 120.0:
 			fascia.append(c)
-	u.edifica(fascia, true)
+	u.costruisci(fascia, "strada_asfaltata")
 	u.abbatti(u.celle_nel_cerchio(q.x, q.y, 120.0))
 	u.avanza_anni(100)
 	controlla(u.stato(q.x, q.y) == UsoSuolo.LIBERO and u.anni_libero(q.x, q.y) == 0, "senza alberi attorno l'area non ricresce")
@@ -114,19 +115,19 @@ func _process(_d: float) -> bool:
 	controlla(u.stato(f2.x, f2.y) == UsoSuolo.SIGILLATO and u.memoria_bosco(f2.x, f2.y), "la fascia sigillata ricorda di essere stata un bosco")
 	u.libera(fascia)
 	u.avanza_anni(100)
-	controlla(u.stato(f2.x, f2.y) == UsoSuolo.SIGILLATO and _alberi_nel_cerchio(a, u, q, 240.0) == 0, "con materiali invasivi l'area non accoglie più alberi, nemmeno liberandola")
+	controlla(u.stato(f2.x, f2.y) == UsoSuolo.SIGILLATO and _alberi_nel_cerchio(a, u, q, 240.0) == 0, "una strada asfaltata (materiali invasivi) sigilla il suolo: niente più alberi, nemmeno togliendola")
 	# 4. Costruzione non invasiva tolta: si torna alla condizione di prima.
 	var r := _bosco_fitto(a, Vector2(400.0, p.y + 1200.0), [p, q])
 	controlla(r.x > 0.0, "trovato un terzo bosco (%d, %d)" % [r.x, r.y])
 	var capanna := u.celle_nel_cerchio(r.x, r.y, 30.0)
 	var prima := _alberi_nel_cerchio(a, u, r, 30.0)
-	u.edifica(capanna, false)
-	controlla(u.stato(r.x, r.y) == UsoSuolo.COSTRUITO and _alberi_nel_cerchio(a, u, r, 30.0) == 0, "una capanna d'argilla toglie gli alberi")
+	u.costruisci(capanna, "casa_lunga")
+	controlla(u.stato(r.x, r.y) == UsoSuolo.COSTRUITO and _alberi_nel_cerchio(a, u, r, 30.0) == 0, "una casa lunga (legno e argilla) toglie gli alberi")
 	u.avanza_anni(40)
-	controlla(u.stato(r.x, r.y) == UsoSuolo.COSTRUITO, "finché la capanna c'è, non ricresce nulla")
+	controlla(u.stato(r.x, r.y) == UsoSuolo.COSTRUITO, "finché la casa c'è, non ricresce nulla")
 	u.libera(capanna)
 	u.avanza_anni(80)
-	controlla(u.stato(r.x, r.y) == UsoSuolo.NATURALE and _alberi_nel_cerchio(a, u, r, 30.0) == prima, "tolta la capanna, il bosco torna com'era (%d alberi)" % prima)
+	controlla(u.stato(r.x, r.y) == UsoSuolo.NATURALE and _alberi_nel_cerchio(a, u, r, 30.0) == prima, "tolta la casa, il bosco torna com'era (%d alberi)" % prima)
 	# 5. Campi su un ex bosco: liberi finché coltivati; abbandonati ricrescono.
 	u.coltiva(capanna)
 	u.avanza_anni(30)

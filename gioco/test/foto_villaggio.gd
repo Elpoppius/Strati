@@ -47,7 +47,7 @@ func _process(_d: float) -> bool:
 		var c := cam.bersaglio
 		var u: UsoSuolo = _s.uso
 		# Terra battuta dentro la palizzata, campi fuori: gli alberi spariscono da soli.
-		u.edifica(u.celle_nel_cerchio(c.x, c.z, RAGGIO_PALIZZATA + 4.0), false)
+		u.costruisci(u.celle_nel_cerchio(c.x, c.z, RAGGIO_PALIZZATA + 4.0), "casa_lunga")
 		for k in 4:
 			var a := 0.4 + k * 0.5
 			u.coltiva(u.celle_nel_cerchio(c.x + cos(a) * 80.0, c.z + sin(a) * 80.0, 24.0))
