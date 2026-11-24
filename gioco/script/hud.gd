@@ -385,7 +385,13 @@ func _bollino(padre: Control, sigla: String, colore: Color, sigla_scura: bool, q
 ## usa cliccando sulla mappa; altrimenti è un'azione immediata).
 ## Aggiunge un menù logico (una scheda in alto, i suoi comandi sotto).
 ## voci: come in aggiungi_comandi, più "descrizione" (cosa fa, mostrata nella scheda dello strumento).
-func aggiungi_menu(id_menu: String, titolo: String, descrizione: String, voci: Array) -> void:
+## a_destra: scheda staccata dalle altre da un piccolo spazio (Strumenti, l'ultima a destra).
+func aggiungi_menu(id_menu: String, titolo: String, descrizione: String, voci: Array, a_destra := false) -> void:
+	if a_destra:
+		var spazio := Control.new()
+		spazio.custom_minimum_size.x = 12
+		spazio.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_schede.add_child(spazio)
 	var scheda := Button.new()
 	scheda.text = titolo
 	scheda.toggle_mode = true

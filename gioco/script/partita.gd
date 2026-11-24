@@ -47,19 +47,20 @@ func avvia(s: Node, seme: int = -1) -> void:
 		{"id": "sentiero", "icona": "sentiero", "testo": "Tracciare un sentiero", "breve": "Sentiero", "tasto": "V",
 		 "descrizione": "Un clic prolunga i sentieri dal villaggio fino a quel punto. Lungo un sentiero si possono coltivare campi più lontani."},
 	])
-	hud.aggiungi_menu("edifici", "Edifici", "Costruzioni comuni del villaggio. Le case nascono da sole.", [
+	hud.aggiungi_menu("edifici", "Edifici", "Costruzioni comuni. Le case nascono da sole.", [
 		{"id": "granaio", "icona": "granaio", "testo": "Granaio (30 di cibo)", "breve": "Granaio", "tasto": "H",
 		 "descrizione": "Costa 30 di cibo e va vicino al centro: le scorte si conservano meglio."},
 	])
-	# Demolisci è trasversale: vale su tutto ciò che si può demolire e non è una costruzione.
-	hud.aggiungi_trasversali("Strumenti", [
+	# Strumenti: l'ultimo menù a destra, che funziona come gli altri (decisione di Fede). Demolisci
+	# resta trasversale: vale su tutto ciò che si può demolire e non è una costruzione.
+	hud.aggiungi_menu("strumenti", "Strumenti", "Valgono su tutto: non sono costruzioni.", [
 		{"id": "demolisci", "icona": "demolisci", "testo": "Demolisci (irreversibile)", "breve": "Demolisci", "tasto": "X", "pericolo": true,
 		 "descrizione": "Toglie nel cerchio alberi, case, campi, sentieri e granaio. Non agisce su fiumi e paludi."},
 	], true)
 	# Le politiche non sono costruzioni (decisione di Fede): un pannello a parte, aperto da qui.
 	hud.aggiungi_trasversali("Governo", [
 		{"id": "politiche", "icona": "politiche", "testo": "Politiche del villaggio", "breve": "Politiche", "tasto": "P", "strumento": false},
-	], false, 1)
+	], true)
 	hud.aggiungi_politiche([
 		{"id": "raccolto", "titolo": "Divisione del raccolto",
 		 "descrizione": "Chi tiene il frutto dei campi.",

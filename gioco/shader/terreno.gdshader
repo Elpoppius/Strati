@@ -58,10 +58,11 @@ uniform vec2 lotto_evidenziato = vec2(-1.0, -1.0);
 // Strumento dell'HUD: cerchio (x, z, raggio; raggio negativo = spento) e suo colore.
 uniform vec3 pennello = vec3(0.0, 0.0, -1.0);
 uniform vec3 colore_pennello : source_color = vec3(1.0);
-// Mentre si piazzano i campi: lato in metri dei quadrati della simulazione (celle da 40 m centrate
-// sui punti della mappa), disegnati solo dentro e attorno al cerchio. 0 = spenta. Fuori da questo
-// momento i campi restano parcelle irregolari (scelta di Fede: i quadrati servono solo a porre).
-uniform float griglia_campi = 0.0;
+// Griglia magnetica (idea di Fede, come in Cities: Skylines): mentre si pone qualcosa compaiono,
+// attorno al puntatore, i quadrati a cui lo strumento si aggancia e si riempiono quelli che verranno
+// presi. x = lato in metri (0 = spenta), y = scarto dell'origine (20 per le celle da 40 m centrate
+// sui punti della mappa, 0 per i lotti da 20 m), z = raggio in cui si vede la griglia.
+uniform vec3 griglia_magnetica = vec3(0.0);
 
 varying vec3 pos_mondo;
 varying vec3 normale_mondo;
@@ -180,62 +181,34 @@ void fragment() {
 		vec3 sigillo = vec3(0.3, 0.29, 0.27) * (0.9 + 0.2 * grana);
 		verosimile = mix(verosimile, sigillo, uso.a);
 	}
-	// Campi come parcelle irregolari (24/11/2026: i quadrati da 40 m della griglia facevano una
-	// scacchiera, segnalata da Fede). Le parcelle sono celle di Voronoi allungate (circa 82 × 24 m,
-	// strisce come i campi antichi), con centri mossi a caso; una parcella è campo se lo è il suolo
-	// nel suo centro, così anche il contorno dei campi segue le parcelle e non la griglia.
-	// Ognuna ha il suo stato (arata, seminata, stoppie) e il verso dei solchi; tra l'una e l'altra
-	// una proda erbosa.
-	if (uso_attivo > 0.5) {
-		vec2 du = 4.0 / vec2(textureSize(uso_suolo, 0));
-		float vicini = max(max(texture(uso_suolo, UV + vec2(du.x, 0.0)).b, texture(uso_suolo, UV - vec2(du.x, 0.0)).b),
-				max(texture(uso_suolo, UV + vec2(0.0, du.y)).b, texture(uso_suolo, UV - vec2(0.0, du.y)).b));
-		if (max(uso.b, vicini) > 0.002) {
-			const vec2 PARCELLA = vec2(82.0, 24.0);
-			const float ANGOLO = 0.35;
-			mat2 R = mat2(vec2(cos(ANGOLO), sin(ANGOLO)), vec2(-sin(ANGOLO), cos(ANGOLO)));
-			vec2 q = (R * pos_mondo.xz) / PARCELLA;
-			vec2 cq = floor(q);
-			float d1 = 1e9;
-			float d2 = 1e9;
-			vec2 migliore = vec2(0.0);
-			vec2 cella = vec2(0.0);
-			for (int j = -1; j <= 1; j++) {
-				for (int i = -1; i <= 1; i++) {
-					vec2 c = cq + vec2(float(i), float(j));
-					vec2 h = fract(sin(vec2(dot(c, vec2(127.1, 311.7)), dot(c, vec2(269.5, 183.3)))) * 43758.5453);
-					vec2 pc = c + 0.5 + (h - 0.5) * 0.78;
-					float d = length((pc - q) * PARCELLA);
-					if (d < d1) {
-						d2 = d1;
-						d1 = d;
-						migliore = pc;
-						cella = c;
-					} else if (d < d2) {
-						d2 = d;
-					}
-				}
-			}
-			vec2 centro_parcella = transpose(R) * (migliore * PARCELLA);
-			float e_campo = smoothstep(0.35, 0.65, texture(uso_suolo, centro_parcella * uv_da_mondo.x + uv_da_mondo.y).b);
-			if (e_campo > 0.0) {
-				float h1 = fract(sin(dot(cella, vec2(12.9898, 78.233))) * 43758.5453);
-				float h2 = fract(sin(dot(cella, vec2(39.3468, 11.135))) * 24634.6345);
-				vec2 lungo_striscia = transpose(R) * vec2(1.0, 0.0);
-				vec2 verso_solchi = h1 < 0.7 ? lungo_striscia : vec2(-lungo_striscia.y, lungo_striscia.x);
-				float grana_c = mix(m_fine, 0.5, lontano);
-				float solchi = 0.5 + 0.5 * sin(dot(pos_mondo.xz, verso_solchi) * 3.1 + (m_fine - 0.5) * 1.5);
-				solchi = mix(solchi, 0.5, lontano);
-				vec3 arato = mix(vec3(0.16, 0.12, 0.075), vec3(0.25, 0.19, 0.12), solchi * 0.6 + grana_c * 0.4);
-				vec3 seminato = mix(arato, verosimile * vec3(0.95, 1.0, 0.85), 0.55 * (0.6 + 0.4 * solchi));
-				vec3 stoppie = mix(vec3(0.36, 0.3, 0.17), vec3(0.45, 0.38, 0.22), solchi * 0.5 + grana_c * 0.5);
-				vec3 campo = h2 < 0.45 ? arato : (h2 < 0.8 ? seminato : stoppie);
-				// Proda: fascia d'erba larga un paio di metri lungo il confine tra due parcelle.
-				float proda = 1.0 - smoothstep(0.8, 2.2 + 3.0 * lontano, d2 - d1);
-				campo = mix(campo, verosimile * 0.92, proda * (1.0 - lontano * 0.6));
-				verosimile = mix(verosimile, campo, e_campo * (1.0 - uso.g) * (1.0 - uso.a));
-			}
-		}
+	// Campi (24/11/2026, seconda versione). Fede: dove non c'è un campo il terreno è normale; dove
+	// il giocatore pone un campo si vede il campo. Il campo occupa esattamente le celle poste con la
+	// griglia magnetica (contorno appena sfrangiato), senza bordi interni tra una cella e l'altra:
+	// le parcelle irregolari a toni casuali sembravano macchie di leopardo. Dentro, strisce lunghe
+	// e strette come i campi aperti antichi, tutte nello stesso verso, con toni vicini tra loro.
+	if (uso.b > 0.0) {
+		const float ANGOLO = 0.35;
+		vec2 lungo = vec2(cos(ANGOLO), sin(ANGOLO));
+		vec2 traverso = vec2(-lungo.y, lungo.x);
+		float s_lungo = dot(pos_mondo.xz, lungo);
+		float s_trav = dot(pos_mondo.xz, traverso);
+		// Strisce larghe 18 m e lunghe circa 110 m.
+		float striscia = floor(s_trav / 18.0);
+		float tratto = floor(s_lungo / 110.0 + fract(sin(striscia * 91.7) * 437.5));
+		float h = fract(sin(striscia * 12.9898 + tratto * 78.233) * 43758.5453);
+		float grana_c = mix(m_fine, 0.5, lontano);
+		float solchi = 0.5 + 0.5 * sin(s_trav * 3.1 + (m_fine - 0.5) * 1.5);
+		solchi = mix(solchi, 0.5, lontano);
+		vec3 arato = mix(vec3(0.17, 0.13, 0.085), vec3(0.25, 0.19, 0.12), solchi * 0.6 + grana_c * 0.4);
+		// Seminato: file verdi sulla terra, più scure e regolari dell'erba attorno.
+		vec3 germogli = vec3(0.16, 0.21, 0.08);
+		vec3 seminato = mix(arato, germogli, smoothstep(0.35, 0.75, solchi) * 0.75);
+		vec3 campo = mix(arato, seminato, step(0.6, h));
+		campo *= 0.93 + 0.14 * h;
+		// Tra una striscia e l'altra un solco di confine appena più scuro (non una proda d'erba).
+		float confine = 1.0 - smoothstep(0.0, 0.9 + 2.0 * lontano, abs(fract(s_trav / 18.0 + 0.5) - 0.5) * 18.0);
+		campo *= 1.0 - confine * 0.18 * (1.0 - lontano);
+		verosimile = mix(verosimile, campo, uso.b * (1.0 - uso.g) * (1.0 - uso.a));
 	}
 	// Zone speciali lette in otto punti attorno, come la copertura dei boschi: bordi senza gradini.
 	vec2 pz = 1.2 / vec2(textureSize(zone_speciali, 0));
@@ -325,12 +298,18 @@ void fragment() {
 		float anello = 1.0 - smoothstep(fw * 0.5, fw * 2.0, abs(dp - pennello.z));
 		col = mix(col, colore_pennello, anello * 0.9);
 		col = mix(col, colore_pennello, (1.0 - step(pennello.z, dp)) * 0.08);
-		if (griglia_campi > 0.0) {
-			vec2 gc = (pos_mondo.xz + griglia_campi * 0.5) / griglia_campi;
+		if (griglia_magnetica.x > 0.0) {
+			float lato = griglia_magnetica.x;
+			vec2 gc = (pos_mondo.xz + griglia_magnetica.y) / lato;
 			vec2 fwc = max(fwidth(gc), vec2(1e-4));
-			vec2 lc = 1.0 - smoothstep(vec2(0.0), fwc * 1.5, abs(fract(gc + 0.5) - 0.5));
-			float dentro = 1.0 - smoothstep(pennello.z * 0.85, pennello.z * 1.15, dp);
+			vec2 lc = 1.0 - smoothstep(vec2(0.0), fwc * 1.5, min(fract(gc), 1.0 - fract(gc)));
+			float rg = griglia_magnetica.z;
+			float dentro = 1.0 - smoothstep(rg * 0.85, rg * 1.1, dp);
 			col = mix(col, colore_pennello, max(lc.x, lc.y) * dentro * 0.55);
+			// Celle che verranno prese: quelle con il centro dentro il cerchio.
+			vec2 centro_cella = (floor(gc) + 0.5) * lato - griglia_magnetica.y;
+			float presa = step(distance(centro_cella, pennello.xy), pennello.z);
+			col = mix(col, colore_pennello, presa * 0.16);
 		}
 	}
 	// Acqua disegnata dal campo di distanza (d_acqua, calcolato all'inizio): bordi morbidi a qualunque zoom.

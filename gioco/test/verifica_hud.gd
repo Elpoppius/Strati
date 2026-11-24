@@ -71,7 +71,9 @@ func _process(_d: float) -> bool:
 	ev.pressed = true
 	_s._unhandled_input(ev)
 	controlla(not h.politiche_aperte(), "il tasto P chiude il pannello")
-	controlla(not h._menu_di.has("demolisci") and h._righe_comandi.has("demolisci"), "Demolisci è uno strumento trasversale, fuori dai menù delle costruzioni")
+	controlla(h._menu_di.get("demolisci", "") == "strumenti" and h._schede.get_child(h._schede.get_child_count() - 1) == h._menu["strumenti"]["scheda"], "Demolisci sta nel menù Strumenti, l'ultimo a destra")
+	h.seleziona_comando("demolisci")
+	controlla(h.menu_aperto() == "strumenti", "scegliere Demolisci (X) apre il menù Strumenti")
 	h.seleziona_comando("sentiero")
 	controlla(h.menu_aperto() == "vie" and (h._menu["vie"]["pagina"] as Control).visible and not (h._menu["territorio"]["pagina"] as Control).visible, "scegliere uno strumento (anche da tastiera) apre il suo menù")
 	controlla(h._messaggio.text.contains("sentieri"), "la scheda spiega cosa fa lo strumento scelto")

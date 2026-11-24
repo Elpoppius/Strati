@@ -310,7 +310,7 @@ func _aggiorna_pennello() -> void:
 		return
 	if hud.comando() == "" or punto_corrente == null:
 		terreno.materiale.set_shader_parameter("pennello", Vector3(0, 0, -1))
-		terreno.materiale.set_shader_parameter("griglia_campi", 0.0)
+		terreno.materiale.set_shader_parameter("griglia_magnetica", Vector3.ZERO)
 		return
 	var p: Vector3 = punto_corrente
 	var r := raggio_pennello
@@ -318,10 +318,23 @@ func _aggiorna_pennello() -> void:
 		r = partita.raggio_strumento(hud.comando(), raggio_pennello)
 		if hud.comando() == "fonda" and partita.sim.fondato:
 			r = -1.0
-	terreno.materiale.set_shader_parameter("pennello", Vector3(p.x, p.z, r))
-	# Quadrati della simulazione solo mentre si pongono o si tolgono campi.
-	var lato: float = dati.metri_per_px if hud.comando() == "campi" else 0.0
-	terreno.materiale.set_shader_parameter("griglia_campi", lato)
+	# Griglia magnetica (idea di Fede, come in Cities: Skylines): lo strumento si aggancia ai
+	# quadrati su cui ragiona la simulazione, che compaiono attorno al puntatore.
+	var griglia := Vector3.ZERO
+	var centro := Vector2(p.x, p.z)
+	match hud.comando():
+		"campi":
+			# Celle da 40 m centrate sui punti della mappa: si prendono quelle col centro nel cerchio.
+			griglia = Vector3(dati.metri_per_px, dati.metri_per_px * 0.5, r * 1.15)
+		"granaio":
+			# Lotti da 20 m: l'edificio si aggancia al centro del lotto sotto il puntatore.
+			centro = (Vector2(floorf(p.x / LATO_LOTTO), floorf(p.z / LATO_LOTTO)) + Vector2(0.5, 0.5)) * LATO_LOTTO
+			griglia = Vector3(LATO_LOTTO, 0.0, 70.0)
+		"fonda":
+			# Il villaggio nasce al centro di un punto della mappa: il cerchio vi si aggancia.
+			centro = Vector2(roundf(p.x / dati.metri_per_px), roundf(p.z / dati.metri_per_px)) * dati.metri_per_px
+	terreno.materiale.set_shader_parameter("pennello", Vector3(centro.x, centro.y, r))
+	terreno.materiale.set_shader_parameter("griglia_magnetica", griglia)
 	terreno.materiale.set_shader_parameter("colore_pennello", Hud.PERICOLO if hud.comando() == "demolisci" else Hud.BIANCO)
 
 

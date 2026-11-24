@@ -30,12 +30,13 @@ Il campo di gioco resta libero: l'interfaccia sta in una fascia in basso e in du
 - **In alto a destra:** le prestazioni (fotogrammi al secondo, alberi, cache), piccole, senza fondo.
 - **In basso a sinistra:** gli indicatori (popolazione, cibo, salute, legittimità), come le risorse; il valore diventa rosso quando è in pericolo.
 - **Accanto, la scheda dello strumento scelto** (come la scheda dell'unità selezionata): nome, messaggio dell'ultima azione, lettura del lotto sotto il puntatore.
-- **In basso al centro, i comandi su due livelli** (decisione di Fede: menù logici come in Cities: Skylines e Age of Empires): in alto le **schede dei menù** (Insediamento, Territorio, Vie, Edifici), sotto i **tasti** della scheda aperta (quadrati: pittogramma al centro, nome sotto, lettera del tasto piccola e grigia nell'angolo) e una riga che dice a cosa serve il menù. Scegliere uno strumento, anche da tastiera, apre la sua scheda. A destra, separati da una riga, gli **strumenti trasversali** (Demolisci), che valgono su tutto e non sono costruzioni, il **Governo** (Politiche) e la **Prova** (+10 anni, solo per vedere la ricrescita del bosco). Un comando può essere uno strumento (resta scelto, si usa cliccando sulla mappa) o un'azione immediata. Il segno rosso nell'angolo vuol dire azione irreversibile. Scelto uno strumento, la scheda a sinistra ne mostra il nome e cosa fa.
+- **In basso al centro, i comandi su due livelli** (decisione di Fede: menù logici come in Cities: Skylines e Age of Empires): in alto le **schede dei menù** (Insediamento, Territorio, Vie, Edifici e, ultima a destra e un po' staccata, **Strumenti**: decisione di Fede, funziona come gli altri menù), sotto i **tasti** della scheda aperta (quadrati: pittogramma al centro, nome sotto, lettera del tasto piccola e grigia nell'angolo) e una riga che dice a cosa serve il menù. Scegliere uno strumento, anche da tastiera, apre la sua scheda. Demolisci sta nel menù Strumenti: vale su tutto e non è una costruzione. A destra, separati da una riga, il **Governo** (Politiche) e la **Prova** (+10 anni, solo per vedere la ricrescita del bosco). Un comando può essere uno strumento (resta scelto, si usa cliccando sulla mappa) o un'azione immediata. Il segno rosso nell'angolo vuol dire azione irreversibile. Scelto uno strumento, la scheda a sinistra ne mostra il nome e cosa fa.
 - **In basso a destra, piccoli** (Fede: cliccabili ma non importanti, come i tasti attorno alla minimappa di Age of Empires IV): la minimappa (150 px) ruotata come la vista, con il riquadro di ciò che inquadra la camera e il centro del villaggio (un clic o un trascinamento spostano la camera); accanto, i bollini tondi delle cinque mappe tematiche (numero e colore, nome nel suggerimento) e i quadratini delle sovrapposizioni (G lotti, I isoipse). La mappa scelta ha un anello bianco. Sopra, solo quando è attiva una mappa tematica, una legenda sottile.
 - **Politiche** (decisione di Fede del 24/11/2026: le usanze non sono oggetti da costruire, sono politiche): pannello a parte, sopra la fascia, che si apre e si chiude con il tasto Politiche (P) e non ferma il tempo. Ogni politica ha un titolo, una riga che dice di cosa si tratta, le opzioni come tasti (quella in vigore è invertita) e sotto cosa comporta quella in vigore. Cambiarne una costa un po' di consenso.
 - **Avvisi** (siccità, carestie gravi) sopra la minimappa, a destra, con un segno rosso.
 - **Scelte** (presagi, momenti decisivi, eventi): finestra al centro; il tempo si ferma finché non si sceglie.
-- **Strumento sulla mappa:** un cerchio sottile bianco (rosso se l'azione è irreversibile) segue il puntatore; per Fondare mostra fin dove arriveranno i campi. Con Campi, dentro il cerchio compaiono i quadrati da 40 m su cui ragiona la simulazione: sono la guida per porre i campi (Fede: lo squadrettamento va bene nel momento in cui si pone una risorsa); fuori da quel momento i campi restano parcelle irregolari.
+- **Strumento sulla mappa:** un cerchio sottile bianco (rosso se l'azione è irreversibile) segue il puntatore; per Fondare mostra fin dove arriveranno i campi. 
+- **Griglia magnetica** (idea di Fede, come in Cities: Skylines): mentre si pone qualcosa, attorno al puntatore compaiono i quadrati a cui lo strumento si aggancia, e si schiariscono quelli che verranno presi. Campi: celle da 40 m della simulazione, prese se il loro centro sta nel cerchio. Granaio: lotti da 20 m, l'edificio si aggancia al centro del lotto. Fondare: il cerchio si aggancia al punto della mappa più vicino (niente griglia, il cerchio è di 800 m). Fuori da questi momenti la griglia non si vede.
 
 ## Pittogrammi
 In `gioco/asset/icone/`, SVG fatti da noi: bianchi su trasparente, 28 px su una griglia di 32, tratti pieni e squadrati, nessun colore (il colore resta per i significati: il segno rosso dell'irreversibile sta sul tasto, non nell'icona). Nell'HUD si tingono di nero quando il tasto è scelto. Si aggiungono a una voce con `"icona": "nome"`.
@@ -43,7 +44,7 @@ In `gioco/asset/icone/`, SVG fatti da noi: bianchi su trasparente, 28 px su una 
 | Icona | Comando | Figura |
 |---|---|---|
 | `fonda` | Fondare | palo piantato con la bandiera |
-| `campi` | Campi | due parcelle con i solchi in versi diversi |
+| `campi` | Campi | due appezzamenti con i solchi in versi diversi |
 | `sentiero` | Sentiero | traccia a tratti che serpeggia tra due punti |
 | `granaio` | Granaio | casa delle scorte su pali |
 | `demolisci` | Demolisci | costruzione cancellata da una croce |
@@ -64,6 +65,7 @@ Sono una prima serie (proposta di Claude), da confermare con Fede.
 | Politiche | Governo | apre il pannello delle regole del villaggio (P) |
 | In comune / Alle famiglie | Politiche: divisione del raccolto | il raccolto si divide tra tutti (più legittimità) o ogni famiglia tiene il suo (più raccolto, meno legittimità) |
 | Aperta / Caso per caso / Chiusa | Politiche: accoglienza degli stranieri | chi arriva resta sempre; a ogni arrivo si decide; viene sempre mandato via |
+| Strumenti | schede dei comandi | ultimo menù: comandi che valgono su tutto e non sono costruzioni |
 | Demolisci | Strumenti | toglie ciò che si può demolire nel cerchio; non agisce su fiumi e paludi |
 | +10 anni | Prova | fa passare dieci anni subito, solo per provare la ricrescita del bosco |
 | 1–5 | bollini accanto alla minimappa | mappe tematiche: terreno, acqua, fertilità, rischio di piena, energia dell'acqua |
