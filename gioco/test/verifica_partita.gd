@@ -120,6 +120,7 @@ func _process(_d: float) -> bool:
 	controlla(p.vista.numero_case() == sim.case.size(), "case disegnate allineate alla simulazione (%d)" % sim.case.size())
 	print("   %d abitanti, %d campi, %d case, abbandoni %d" % [roundi(sim.pop), sim.campi.size(), sim.case.size(), sim.stat["abbandoni"]])
 	controlla(sim.fondato and sim.stat["abbandoni"] == 0, "con i campi il villaggio vive")
+	controlla((h._valori_indicatori["Densità"] as Label).get_parent().tooltip_text.contains("ettaro"), "la densità spiega al passaggio cosa vuol dire ab/ha")
 	# Fonti di cibo nel blocco Info (Fede): da dove si attinge e quanto si usa di ciò che c'è.
 	controlla(h._sezione_fonti.visible and h._fonti_info.has("agricoltura") and h._fonti_info.has("caccia") and h._fonti_info.has("pesca")
 		and (h._fonti_info["caccia"]["valore"] as Label).text.contains("/"), "le fonti di cibo si leggono nel blocco Info: caccia " + (h._fonti_info["caccia"]["valore"] as Label).text)

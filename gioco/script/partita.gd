@@ -365,7 +365,8 @@ func aggiorna_hud() -> void:
 		["Cibo", ("%d / %d l'anno" % [roundi(sim.cibo), roundi(sim.pop)]) if on else trattino, on and sim.cibo < sim.pop * 0.3],
 		["Salute", str(roundi(sim.salute)) if on else trattino, on and sim.salute < 45.0],
 		["Legittimità", str(roundi(sim.legittimita)) if on else trattino, on and sim.legittimita < 30.0],
-		["Densità", ("%d ab/ha" % roundi(sim.densita())) if on else trattino, on and sim.affollamento > 0.3],
+		["Densità", ("%d ab/ha" % roundi(sim.densita())) if on else trattino, on and sim.affollamento > 0.3,
+			"Abitanti per ettaro (un ettaro è 100 × 100 m): la popolazione divisa per l'area dell'abitato, cioè il cerchio che contiene le case. Rossa quando le case non bastano per tutti (affollamento): la salute ne risente."],
 	])
 	# Fonti di cibo (Fede: deve essere ben leggibile da dove si attinge e quanto si usa la risorsa).
 	if on:

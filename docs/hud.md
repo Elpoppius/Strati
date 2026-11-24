@@ -80,7 +80,7 @@ Sono una prima serie (proposta di Claude), da confermare con Fede.
 | Fonti di cibo: Campi, Caccia, Pesca | blocco Info, sotto gli indicatori (richiesta di Fede: deve essere ben leggibile da dove si attinge e quanto si usa la risorsa) | per ogni fonte "preso / disponibile" dell'anno e una barra sottile con la quota usata: bianca; rossa se la risorsa si esaurisce (si caccia troppo); grigia con la scritta "spenta" se la fonte è spenta. Campi: raccolto / raccolto se si lavorassero tutti i campi. Un clic su una fonte apre le politiche |
 | Caccia 10 / 18 ↓ | Fonti di cibo | freccia: la selvaggina cala o cresce; rosso: si caccia troppo (selvaggina sotto il 40%); il suggerimento dice la selvaggina in percentuale |
 | Agricoltura, Caccia e raccolta, Pesca | Politiche: fonti di cibo | interruttori (più accesi insieme): una fonte spenta non si lavora e le sue braccia passano alle altre; almeno una resta accesa; cambiare costa −2 di consenso |
-| Densità | indicatori | abitanti per ettaro nell'abitato (rossa quando le case non bastano) |
+| Densità 38 ab/ha | indicatori | abitanti per ettaro (100 × 100 m) nell'abitato, il cerchio che contiene le case; rossa quando le case non bastano (affollamento). Spiegato nel suggerimento al passaggio |
 | Demolizione, Prova | Strumenti | schede degli strumenti |
 | Demolisci | Strumenti | toglie ciò che si può demolire nel cerchio; non agisce su fiumi e paludi |
 | +10 anni | Prova | fa passare dieci anni subito, solo per provare la ricrescita del bosco |
