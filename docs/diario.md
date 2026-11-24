@@ -82,7 +82,9 @@ Voci più recenti in cima.
 - In coda (Fede): prove sui PC dei tempi degli alberi ("alberi calcolati in … s" al primo avvio, "alberi dalla cache in … ms" al secondo) e dei fotogrammi al secondo a 150, 600, 2000 e 6000 m di vista.
 - Rimandati da Fede: taratura di dettaglio e densità degli alberi; prato da vicino in 3D.
 - Claude, prossime sessioni (proposte):
-  - bilanciamento del villaggio dopo le prove di Fede (popolazioni finali troppo alte, come nel prototipo web);
+  - bilanciamento del villaggio dopo le prove di Fede: area dei gessi forse troppo povera; case strette tra i campi (densità); carestie ancora numerose nelle partite automatiche;
+  - abitato e sprawl nel villaggio (case che crescono anche oltre il bordo, densità come pressione) e mappe tematiche distinte di abitato e contado;
+  - politica "Caccia regolata" o simili, solo se le fonti di cibo non bastano come leva;
   - effetti del disboscamento nella simulazione (erosione e frane sui pendii, piene più rapide, meno selvaggina; legname come risorsa);
   - mulini e dighe come costruzioni che usano la corrente e i dislivelli calcolati (dall'epoca in cui sono coerenti);
   - livelli dell'acqua che salgono con le piene nella grafica; cascate (servono salti nel letto dei torrenti);
