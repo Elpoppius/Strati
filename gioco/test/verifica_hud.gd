@@ -60,6 +60,7 @@ func _process(_d: float) -> bool:
 	controlla(not h._menu.has("usanze") and not h._menu_di.has("comune"), "le politiche non stanno tra i menù delle costruzioni")
 	var sim: SimVillaggio = _s.partita.sim
 	controlla(not h.politiche_aperte(), "il pannello delle politiche parte chiuso")
+	controlla(h._politiche.has("ammodernamento") and not h.politica_attiva("ammodernamento"), "l'ammodernamento c'è già, spento finché non ci sono campi vecchi")
 	(h._righe_azioni["politiche"] as Button).emit_signal("pressed")
 	controlla(h.politiche_aperte(), "il tasto Politiche apre il pannello")
 	controlla(h.politica("raccolto") == sim.politica("raccolto") and h.politica("stranieri") == sim.politica("stranieri"), "il pannello mostra le politiche in vigore")
@@ -71,9 +72,20 @@ func _process(_d: float) -> bool:
 	ev.pressed = true
 	_s._unhandled_input(ev)
 	controlla(not h.politiche_aperte(), "il tasto P chiude il pannello")
-	controlla(h._menu_di.get("demolisci", "") == "strumenti" and h._schede.get_child(h._schede.get_child_count() - 1) == h._menu["strumenti"]["scheda"], "Demolisci sta nel menù Strumenti, l'ultimo a destra")
+	# Cinque blocchi in basso (decisione di Fede): info, descrizione, costruzione, gestione,
+	# strumenti; gli ultimi tre con le schede.
+	controlla(h._blocchi.has("costruzione") and h._blocchi.has("gestione") and h._blocchi.has("strumenti"), "blocchi dei comandi: Costruzione, Gestione, Strumenti")
+	var ordine: Array = []
+	for b in ["costruzione", "gestione", "strumenti"]:
+		ordine.append((h._blocchi[b]["pannello"] as Control).get_index())
+	controlla(ordine[0] < ordine[1] and ordine[1] < ordine[2], "i blocchi sono in ordine da sinistra: Costruzione, Gestione, Strumenti")
+	controlla(h._menu["demolizione"]["blocco"] == "strumenti" and h._menu_di.get("demolisci", "") == "demolizione", "Demolisci sta nel blocco Strumenti")
+	controlla(h._menu["prova"]["blocco"] == "strumenti" and h._menu["politiche_menu"]["blocco"] == "gestione", "Prova dentro Strumenti, Politiche dentro Gestione")
+	var schede_str: Control = h._blocchi["strumenti"]["schede"]
+	controlla(schede_str.get_child(0) == h._menu["demolizione"]["scheda"], "Demolizione è la prima scheda degli Strumenti")
+	h.seleziona_comando("sentiero")
 	h.seleziona_comando("demolisci")
-	controlla(h.menu_aperto() == "strumenti", "scegliere Demolisci (X) apre il menù Strumenti")
+	controlla(h.menu_aperto("strumenti") == "demolizione" and h.menu_aperto("costruzione") == "vie", "scegliere Demolisci (X) apre la sua scheda senza chiudere quelle degli altri blocchi")
 	h.seleziona_comando("sentiero")
 	controlla(h.menu_aperto() == "vie" and (h._menu["vie"]["pagina"] as Control).visible and not (h._menu["territorio"]["pagina"] as Control).visible, "scegliere uno strumento (anche da tastiera) apre il suo menù")
 	controlla(h._messaggio.text.contains("sentieri"), "la scheda spiega cosa fa lo strumento scelto")

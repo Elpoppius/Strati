@@ -64,7 +64,19 @@ uniform vec3 colore_pennello : source_color = vec3(1.0);
 // sui punti della mappa, 0 per i lotti da 20 m), z = raggio in cui si vede la griglia.
 uniform vec3 griglia_magnetica = vec3(0.0);
 
+// Tecnica di ogni campo (UsoSuolo.tecniche, un byte per cella da 10 m, senza filtro): 0 zappa
+// (villaggio), 1 aratro in croce, 2 centuriazione, 3 strisce medievali, 4 meccanica.
+uniform sampler2D tecniche_campi : filter_nearest, repeat_disable;
+
 varying vec3 pos_mondo;
+
+float caso(vec2 c) {
+	return fract(sin(dot(c, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+vec2 caso2(vec2 c) {
+	return fract(sin(vec2(dot(c, vec2(127.1, 311.7)), dot(c, vec2(269.5, 183.3)))) * 43758.5453);
+}
 varying vec3 normale_mondo;
 varying float quota;
 
@@ -181,33 +193,104 @@ void fragment() {
 		vec3 sigillo = vec3(0.3, 0.29, 0.27) * (0.9 + 0.2 * grana);
 		verosimile = mix(verosimile, sigillo, uso.a);
 	}
-	// Campi (24/11/2026, seconda versione). Fede: dove non c'è un campo il terreno è normale; dove
-	// il giocatore pone un campo si vede il campo. Il campo occupa esattamente le celle poste con la
-	// griglia magnetica (contorno appena sfrangiato), senza bordi interni tra una cella e l'altra:
-	// le parcelle irregolari a toni casuali sembravano macchie di leopardo. Dentro, strisce lunghe
-	// e strette come i campi aperti antichi, tutte nello stesso verso, con toni vicini tra loro.
+	// Campi. Dove non c'è un campo il terreno è normale; dove il giocatore lo pone, il campo occupa
+	// le celle prese con la griglia magnetica (contorno appena sfrangiato, nessun bordo tra cella e
+	// cella). L'aspetto dipende dalla tecnica del campo, che cambia con l'epoca (decisione di Fede
+	// del 24/11/2026): i campi vecchi restano finché non si ammodernano.
 	if (uso.b > 0.0) {
-		const float ANGOLO = 0.35;
-		vec2 lungo = vec2(cos(ANGOLO), sin(ANGOLO));
-		vec2 traverso = vec2(-lungo.y, lungo.x);
-		float s_lungo = dot(pos_mondo.xz, lungo);
-		float s_trav = dot(pos_mondo.xz, traverso);
-		// Strisce larghe 18 m e lunghe circa 110 m.
-		float striscia = floor(s_trav / 18.0);
-		float tratto = floor(s_lungo / 110.0 + fract(sin(striscia * 91.7) * 437.5));
-		float h = fract(sin(striscia * 12.9898 + tratto * 78.233) * 43758.5453);
+		float tec = floor(texture(tecniche_campi, UV).r * 255.0 + 0.5);
 		float grana_c = mix(m_fine, 0.5, lontano);
-		float solchi = 0.5 + 0.5 * sin(s_trav * 3.1 + (m_fine - 0.5) * 1.5);
-		solchi = mix(solchi, 0.5, lontano);
-		vec3 arato = mix(vec3(0.17, 0.13, 0.085), vec3(0.25, 0.19, 0.12), solchi * 0.6 + grana_c * 0.4);
-		// Seminato: file verdi sulla terra, più scure e regolari dell'erba attorno.
-		vec3 germogli = vec3(0.16, 0.21, 0.08);
-		vec3 seminato = mix(arato, germogli, smoothstep(0.35, 0.75, solchi) * 0.75);
-		vec3 campo = mix(arato, seminato, step(0.6, h));
-		campo *= 0.93 + 0.14 * h;
-		// Tra una striscia e l'altra un solco di confine appena più scuro (non una proda d'erba).
-		float confine = 1.0 - smoothstep(0.0, 0.9 + 2.0 * lontano, abs(fract(s_trav / 18.0 + 0.5) - 0.5) * 18.0);
-		campo *= 1.0 - confine * 0.18 * (1.0 - lontano);
+		vec3 campo;
+		if (tec < 0.5) {
+			// Zappa (villaggio). Niente aratro nel 6000 a.C.: orti lavorati a mano in appezzamenti
+			// di famiglia di 20–40 m, con bordi d'erbacce appena visibili e toni vicini tra loro.
+			vec2 q = pos_mondo.xz / 30.0;
+			vec2 cq = floor(q);
+			float d1 = 1e9;
+			float d2 = 1e9;
+			vec2 cella = vec2(0.0);
+			for (int j = -1; j <= 1; j++) {
+				for (int i = -1; i <= 1; i++) {
+					vec2 c = cq + vec2(float(i), float(j));
+					vec2 pc = c + 0.5 + (caso2(c) - 0.5) * 0.8;
+					float d = length(pc - q) * 30.0;
+					if (d < d1) {
+						d2 = d1;
+						d1 = d;
+						cella = c;
+					} else if (d < d2) {
+						d2 = d;
+					}
+				}
+			}
+			float h1 = caso(cella + 0.31);
+			float h2 = caso(cella + 7.7);
+			float h3 = caso(cella + 3.1);
+			// File corte e ondulate lungo le curve di livello (in piano, un verso per appezzamento).
+			vec2 discesa = normale_mondo.xz;
+			float ripidezza = length(discesa);
+			vec2 verso_caso = vec2(cos(h1 * 6.283), sin(h1 * 6.283));
+			vec2 lungo = ripidezza > 1e-4 ? normalize(vec2(-discesa.y, discesa.x)) : verso_caso;
+			lungo = normalize(mix(verso_caso, lungo, smoothstep(0.02, 0.08, ripidezza)) + vec2(1e-4));
+			vec2 trav = vec2(-lungo.y, lungo.x);
+			float onda = (texture(macchie, pos_mondo.xz / 9.0).r - 0.5) * 2.5;
+			float file = 0.5 + 0.5 * sin((dot(pos_mondo.xz, trav) + onda) * 6.283 / 1.5);
+			// Segni di zappa: tratti brevi, non solchi continui.
+			float tratti = smoothstep(0.38, 0.62, texture(macchie, vec2(dot(pos_mondo.xz, lungo) / 3.5, dot(pos_mondo.xz, trav) / 4.1)).r);
+			file = mix(file * tratti, 0.5, lontano);
+			// Zolle: terra smossa a grana grossa.
+			float zolle = mix(texture(macchie, pos_mondo.xz / 1.3 + h2 * 5.0).r, 0.5, lontano);
+			vec3 terra = mix(vec3(0.19, 0.145, 0.095), vec3(0.27, 0.21, 0.14), zolle * 0.6 + grana_c * 0.4);
+			terra *= 0.96 + 0.08 * h2;
+			vec3 germogli = vec3(0.16, 0.21, 0.085);
+			if (h3 < 0.55) {
+				// Seminato: ciuffi di farro e orzo lungo le file.
+				campo = mix(terra, germogli, file * 0.55 * (0.6 + 0.4 * zolle));
+			} else if (h3 < 0.85) {
+				// Appena zappato.
+				campo = terra * (0.9 + 0.2 * file);
+			} else {
+				// A riposo: erbacce sulla terra.
+				campo = mix(terra, verosimile * 0.85, 0.25 + 0.2 * zolle);
+			}
+			// Chiazze bruciate: il bosco si apriva col fuoco.
+			if (h1 > 0.9) {
+				float bruciato = smoothstep(0.45, 0.75, texture(macchie, pos_mondo.xz / 31.0 + h2 * 3.0).r);
+				campo = mix(campo, vec3(0.09, 0.08, 0.07), bruciato * 0.3);
+			}
+			// Ceppi e sassi lasciati nel campo, uno ogni tanto (solo da vicino).
+			vec2 g = floor(pos_mondo.xz / 7.0);
+			float hp = caso(g + 0.57);
+			if (hp > 0.93) {
+				vec2 pp = (g + 0.2 + 0.6 * caso2(g + 1.3)) * 7.0;
+				float punto = 1.0 - smoothstep(0.3, 0.55, distance(pos_mondo.xz, pp));
+				vec3 colore_punto = hp > 0.965 ? vec3(0.11, 0.08, 0.055) : vec3(0.3, 0.29, 0.27);
+				campo = mix(campo, colore_punto, punto * (1.0 - lontano));
+			}
+			// Bordi tra gli appezzamenti: una fascia d'erbacce sottile, appena più verde.
+			float bordo = 1.0 - smoothstep(0.6, 1.6 + 2.5 * lontano, d2 - d1);
+			campo = mix(campo, verosimile * vec3(0.85, 0.95, 0.75), bordo * 0.35 * (1.0 - lontano * 0.6));
+		} else {
+			// Strisce lunghe e strette nello stesso verso (circa 110 × 18 m): campi aperti a solchi,
+			// per ora usati da tutte le tecniche successive (le altre si disegneranno con le loro epoche).
+			const float ANGOLO = 0.35;
+			vec2 lungo = vec2(cos(ANGOLO), sin(ANGOLO));
+			vec2 traverso = vec2(-lungo.y, lungo.x);
+			float s_lungo = dot(pos_mondo.xz, lungo);
+			float s_trav = dot(pos_mondo.xz, traverso);
+			float striscia = floor(s_trav / 18.0);
+			float tratto = floor(s_lungo / 110.0 + fract(sin(striscia * 91.7) * 437.5));
+			float h = fract(sin(striscia * 12.9898 + tratto * 78.233) * 43758.5453);
+			float solchi = 0.5 + 0.5 * sin(s_trav * 3.1 + (m_fine - 0.5) * 1.5);
+			solchi = mix(solchi, 0.5, lontano);
+			vec3 arato = mix(vec3(0.17, 0.13, 0.085), vec3(0.25, 0.19, 0.12), solchi * 0.6 + grana_c * 0.4);
+			vec3 germogli = vec3(0.16, 0.21, 0.08);
+			vec3 seminato = mix(arato, germogli, smoothstep(0.35, 0.75, solchi) * 0.75);
+			campo = mix(arato, seminato, step(0.6, h));
+			campo *= 0.93 + 0.14 * h;
+			float confine = 1.0 - smoothstep(0.0, 0.9 + 2.0 * lontano, abs(fract(s_trav / 18.0 + 0.5) - 0.5) * 18.0);
+			campo *= 1.0 - confine * 0.18 * (1.0 - lontano);
+		}
 		verosimile = mix(verosimile, campo, uso.b * (1.0 - uso.g) * (1.0 - uso.a));
 	}
 	// Zone speciali lette in otto punti attorno, come la copertura dei boschi: bordi senza gradini.

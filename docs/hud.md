@@ -28,11 +28,16 @@ Il campo di gioco resta libero: l'interfaccia sta in una fascia in basso e in du
 - **In alto al centro:** l'anno e i comandi del tempo (pausa, 2, 6 e 15 anni al secondo), come l'indicatore dell'età.
 - **In alto a sinistra:** la cronaca, gli ultimi quattro fatti, come gli obiettivi.
 - **In alto a destra:** le prestazioni (fotogrammi al secondo, alberi, cache), piccole, senza fondo.
-- **In basso a sinistra:** gli indicatori (popolazione, cibo, salute, legittimità), come le risorse; il valore diventa rosso quando è in pericolo.
-- **Accanto, la scheda dello strumento scelto** (come la scheda dell'unità selezionata): nome, messaggio dell'ultima azione, lettura del lotto sotto il puntatore.
-- **In basso al centro, i comandi su due livelli** (decisione di Fede: menù logici come in Cities: Skylines e Age of Empires): in alto le **schede dei menù** (Insediamento, Territorio, Vie, Edifici e, ultima a destra e un po' staccata, **Strumenti**: decisione di Fede, funziona come gli altri menù), sotto i **tasti** della scheda aperta (quadrati: pittogramma al centro, nome sotto, lettera del tasto piccola e grigia nell'angolo) e una riga che dice a cosa serve il menù. Scegliere uno strumento, anche da tastiera, apre la sua scheda. Demolisci sta nel menù Strumenti: vale su tutto e non è una costruzione. A destra, separati da una riga, il **Governo** (Politiche) e la **Prova** (+10 anni, solo per vedere la ricrescita del bosco). Un comando può essere uno strumento (resta scelto, si usa cliccando sulla mappa) o un'azione immediata. Il segno rosso nell'angolo vuol dire azione irreversibile. Scelto uno strumento, la scheda a sinistra ne mostra il nome e cosa fa.
+- **Fascia in basso a cinque blocchi** (decisione di Fede del 24/11/2026), da sinistra:
+  1. **Info:** gli indicatori (popolazione, cibo, salute, legittimità), come le risorse; il valore diventa rosso quando è in pericolo.
+  2. **Descrizione:** la scheda dello strumento scelto (come la scheda dell'unità selezionata): nome, cosa fa o messaggio dell'ultima azione, lettura del lotto sotto il puntatore.
+  3. **Costruzione:** schede Insediamento, Territorio, Vie, Edifici.
+  4. **Gestione:** scheda Politiche (tasto P, apre il pannello delle politiche); qui andranno le prossime voci di governo.
+  5. **Strumenti:** schede Demolizione (Demolisci, X: vale su tutto e non è una costruzione) e Prova (+10 anni, Y, solo per le prove).
+
+  I blocchi 3, 4 e 5 funzionano allo stesso modo, così il layout è pronto per le voci future: titolo piccolo in maiuscolo, in alto le schede, sotto i **tasti** della scheda aperta (quadrati: pittogramma al centro, nome sotto, lettera del tasto piccola e grigia nell'angolo), in fondo una riga che dice a cosa serve la scheda. Scegliere un comando, anche da tastiera, apre la sua scheda nel suo blocco senza toccare le schede degli altri blocchi. Un comando può essere uno strumento (resta scelto, si usa cliccando sulla mappa) o un'azione immediata. Il segno rosso nell'angolo vuol dire azione irreversibile. I blocchi hanno tutti la stessa altezza.
 - **In basso a destra, piccoli** (Fede: cliccabili ma non importanti, come i tasti attorno alla minimappa di Age of Empires IV): la minimappa (150 px) ruotata come la vista, con il riquadro di ciò che inquadra la camera e il centro del villaggio (un clic o un trascinamento spostano la camera); accanto, i bollini tondi delle cinque mappe tematiche (numero e colore, nome nel suggerimento) e i quadratini delle sovrapposizioni (G lotti, I isoipse). La mappa scelta ha un anello bianco. Sopra, solo quando è attiva una mappa tematica, una legenda sottile.
-- **Politiche** (decisione di Fede del 24/11/2026: le usanze non sono oggetti da costruire, sono politiche): pannello a parte, sopra la fascia, che si apre e si chiude con il tasto Politiche (P) e non ferma il tempo. Ogni politica ha un titolo, una riga che dice di cosa si tratta, le opzioni come tasti (quella in vigore è invertita) e sotto cosa comporta quella in vigore. Cambiarne una costa un po' di consenso.
+- **Politiche** (decisione di Fede del 24/11/2026: le usanze non sono oggetti da costruire, sono politiche): pannello a parte, sopra la fascia, che si apre e si chiude con il tasto Politiche (P) nel blocco Gestione e non ferma il tempo; se le politiche non ci stanno, il pannello scorre (non copre la cronaca). Ogni politica ha un titolo, una riga che dice di cosa si tratta, le opzioni come tasti (quella in vigore è invertita) e sotto cosa comporta quella in vigore. Cambiarne una costa un po' di consenso. Una politica che per ora non ha effetto si vede ma è spenta, con una riga grigia che dice perché (decisione di Fede: il tasto c'è già, disattivato).
 - **Avvisi** (siccità, carestie gravi) sopra la minimappa, a destra, con un segno rosso.
 - **Scelte** (presagi, momenti decisivi, eventi): finestra al centro; il tempo si ferma finché non si sceglie.
 - **Strumento sulla mappa:** un cerchio sottile bianco (rosso se l'azione è irreversibile) segue il puntatore; per Fondare mostra fin dove arriveranno i campi. 
@@ -62,10 +67,12 @@ Sono una prima serie (proposta di Claude), da confermare con Fede.
 | Legittimità | indicatori | da 0 a 100: quanto il villaggio riconosce l'autorità di chi governa (nella prima epoca gli anziani); sotto 5 per quattro anni il villaggio si divide |
 | ‖ 2 6 15 | in alto, accanto all'anno | pausa, oppure 2, 6, 15 anni al secondo |
 | Insediamento, Territorio, Vie, Edifici | schede dei comandi | menù logici: dove nasce il villaggio; a cosa si destina la terra; come ci si muove; costruzioni comuni |
-| Politiche | Governo | apre il pannello delle regole del villaggio (P) |
+| Costruzione, Gestione, Strumenti | blocchi in basso | cosa si costruisce; come si governa; comandi che valgono su tutto |
+| Politiche | Gestione | apre il pannello delle regole del villaggio (P) |
 | In comune / Alle famiglie | Politiche: divisione del raccolto | il raccolto si divide tra tutti (più legittimità) o ogni famiglia tiene il suo (più raccolto, meno legittimità) |
 | Aperta / Caso per caso / Chiusa | Politiche: accoglienza degli stranieri | chi arriva resta sempre; a ogni arrivo si decide; viene sempre mandato via |
-| Strumenti | schede dei comandi | ultimo menù: comandi che valgono su tutto e non sono costruzioni |
+| Sospeso / Attivo | Politiche: ammodernamento tecnologico | i campi vecchi restano; ogni anno una parte passa alla tecnica nuova pagando cibo (spenta finché non c'è una tecnica nuova) |
+| Demolizione, Prova | Strumenti | schede degli strumenti |
 | Demolisci | Strumenti | toglie ciò che si può demolire nel cerchio; non agisce su fiumi e paludi |
 | +10 anni | Prova | fa passare dieci anni subito, solo per provare la ricrescita del bosco |
 | 1–5 | bollini accanto alla minimappa | mappe tematiche: terreno, acqua, fertilità, rischio di piena, energia dell'acqua |

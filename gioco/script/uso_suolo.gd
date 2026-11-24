@@ -77,6 +77,13 @@ var anni := PackedByteArray()
 ## battuta, B campo, A superficie sigillata.
 var immagine: Image
 var texture: ImageTexture
+## Tecnica di ogni campo (indice in SimVillaggio.TECNICHE: 0 zappa, 1 aratro in croce, 2
+## centuriazione, 3 strisce medievali, 4 meccanica). Decisione di Fede del 24/11/2026: il campo
+## cambia con l'epoca e i campi vecchi restano finché non si ammodernano. Lo shader del terreno
+## la legge da una texture a parte (un byte per cella, senza filtro) e disegna il campo di quel tipo.
+var tecniche := PackedByteArray()
+var immagine_tecniche: Image
+var texture_tecniche: ImageTexture
 ## Celle libere con memoria di bosco ancora in ricrescita.
 var _in_ricrescita := {}
 ## Blocchi di alberi (Alberi.LATO_BLOCCO) toccati da modifiche, uno per byte: si leggono anche
@@ -96,6 +103,9 @@ func _init(a: Alberi) -> void:
 	immagine = Image.create(n, n, false, Image.FORMAT_RGBA8)
 	immagine.fill(Color(1, 0, 0, 0))
 	texture = ImageTexture.create_from_image(immagine)
+	tecniche.resize(n * n)
+	immagine_tecniche = Image.create(n, n, false, Image.FORMAT_R8)
+	texture_tecniche = ImageTexture.create_from_image(immagine_tecniche)
 	_nb = int(ceil(a.dati.lato_metri() / Alberi.LATO_BLOCCO))
 	_toccati.resize(_nb * _nb)
 
@@ -192,15 +202,29 @@ func edifica(lista: Array[Vector2i], invasivo: bool, dipinta := true) -> int:
 	return tagliati
 
 
-## Campi: terreno tenuto libero dagli alberi finché è coltivato.
-func coltiva(lista: Array[Vector2i]) -> int:
+## Campi: terreno tenuto libero dagli alberi finché è coltivato. `tecnica` dice come è lavorato;
+## su un campo che c'è già la cambia soltanto (ammodernamento: niente si costruisce da zero).
+func coltiva(lista: Array[Vector2i], tecnica := 0) -> int:
 	var tagliati := _conta_alberi_in_piedi(lista)
+	var cambiate := false
 	for c in lista:
-		var s := celle[c.y * n + c.x] & MASCHERA_STATO
+		var i := c.y * n + c.x
+		var s := celle[i] & MASCHERA_STATO
 		if s == NATURALE or s == LIBERO:
 			_imposta(c, COLTIVATO, true)
+		if (celle[i] & MASCHERA_STATO) == COLTIVATO and tecniche[i] != tecnica:
+			tecniche[i] = tecnica
+			immagine_tecniche.set_pixel(c.x, c.y, Color(tecnica / 255.0, 0, 0))
+			cambiate = true
+	if cambiate:
+		texture_tecniche.update(immagine_tecniche)
 	_aggiorna_immagine(lista)
 	return tagliati
+
+
+func tecnica(x: float, z: float) -> int:
+	var c := cella(x, z)
+	return tecniche[c.y * n + c.x]
 
 
 ## Toglie una costruzione o abbandona un campo: il terreno torna libero e, se era un bosco,

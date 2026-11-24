@@ -96,6 +96,27 @@ func _initialize() -> void:
 	controlla(t.in_attesa() and t.decisioni[0]["tipo"] == "stranieri", "caso per caso: il tempo si ferma e si decide")
 	t.scegli(t.decisioni[0]["id"], "accogliere")
 	controlla(t.pop > p0 and not t.in_attesa(), "accolti dopo la decisione")
+	# Tecniche dei campi e ammodernamento (decisione di Fede): i campi vecchi restano, quelli nuovi
+	# nascono con la tecnica dell'epoca e rendono di più; l'ammodernamento sovrascrive il tipo.
+	controlla(t.campi_da_ammodernare() == 0, "nel villaggio non c'è niente da ammodernare")
+	var vecchio: int = t.campi[0]
+	var resa_zappa := t._resa(vecchio)
+	t.tecnica_corrente = 1
+	controlla(t.campi_da_ammodernare() == t.campi.size() and t.tecnica_campo(vecchio) == 0, "al cambio di tecnica i campi vecchi restano com'erano")
+	var nuovo_px := c + Vector2i(0, 4)
+	t.aggiungi_campi([nuovo_px])
+	controlla(t.tecnica_campo(t.px(nuovo_px)) == 1, "un campo nuovo nasce con la tecnica dell'epoca")
+	t.cibo = 1000.0
+	var n_campi := t.campi.size()
+	t.imposta_politica("ammodernamento", "attivo")
+	t._ammoderna()
+	controlla(t.campi.size() == n_campi and t.campi_da_ammodernare() < n_campi - 1 and t.cibo < 1000.0, "l'ammodernamento rifà i campi vecchi pagando cibo, senza aggiungerne")
+	controlla(t.tecnica_campo(vecchio) == 0 or t._resa(vecchio) > resa_zappa, "un campo ammodernato rende di più")
+	for k in 50:
+		t._ammoderna()
+	controlla(t.campi_da_ammodernare() == 0 and t._resa(vecchio) > resa_zappa, "alla fine tutti i campi sono rifatti e rendono di più")
+	t.tecnica_corrente = 0
+	t.imposta_politica("ammodernamento", "sospeso")
 	# Partite intere.
 	var sopravvissuti := 0
 	for s in d.siti:

@@ -83,10 +83,12 @@ var _nome_mappa := ""
 var _anno: Label
 var _tempo: HBoxContainer
 var _nome_strumento: Label
-var _gruppi: HBoxContainer
-var _schede: HBoxContainer
-var _pagine: Control
-var _descrizione_menu: Label
+## Blocchi dei comandi nella fascia in basso (decisione di Fede del 24/11/2026): Costruzione,
+## Gestione, Strumenti, tutti con le schede, così il layout è pronto per le voci future.
+## id -> {"schede": HBoxContainer, "pagine": Control, "descrizione": Label, "colonne": int}
+var _blocchi := {}
+var _fascia: Control
+const BLOCCHI := [["costruzione", "Costruzione", 4], ["gestione", "Gestione", 2], ["strumenti", "Strumenti", 2]]
 ## Menù logici: id -> {"scheda": Button, "pagina": Control, "descrizione": String}.
 var _menu := {}
 var _menu_scelto := ""
@@ -100,6 +102,7 @@ var minimappa: Minimappa
 var _pannello_legenda: PanelContainer
 var _pannello_politiche: PanelContainer
 var _colonna_politiche: VBoxContainer
+var _scorri_politiche: ScrollContainer
 ## id politica -> {"opzioni": {valore: Button}, "nota": Label, "note": {valore: testo}}
 var _politiche := {}
 ## Spazio al centro della barra in alto, per gli indicatori del gioco.
@@ -195,10 +198,11 @@ func _fascia_bassa(radice: Control, nomi_mappe: Array) -> void:
 	fascia.alignment = BoxContainer.ALIGNMENT_BEGIN
 	fascia.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	radice.add_child(fascia)
+	_fascia = fascia
 	# Indicatori (come le risorse).
 	var pi := PanelContainer.new()
 	pi.custom_minimum_size = Vector2(190, ALTEZZA_FASCIA)
-	pi.size_flags_vertical = Control.SIZE_SHRINK_END
+	pi.size_flags_vertical = Control.SIZE_FILL
 	fascia.add_child(pi)
 	indicatori = VBoxContainer.new()
 	indicatori.add_theme_constant_override("separation", 6)
@@ -206,7 +210,7 @@ func _fascia_bassa(radice: Control, nomi_mappe: Array) -> void:
 	# Scheda dello strumento scelto: nome, messaggio, lettura del lotto.
 	var ps := PanelContainer.new()
 	ps.custom_minimum_size = Vector2(330, ALTEZZA_FASCIA)
-	ps.size_flags_vertical = Control.SIZE_SHRINK_END
+	ps.size_flags_vertical = Control.SIZE_FILL
 	fascia.add_child(ps)
 	var cs := VBoxContainer.new()
 	cs.add_theme_constant_override("separation", 6)
@@ -233,39 +237,11 @@ func _fascia_bassa(radice: Control, nomi_mappe: Array) -> void:
 	_lettura.add_theme_color_override("font_color", GRIGIO)
 	_lettura.text = "Passa sul terreno per leggere il lotto."
 	cs.add_child(_lettura)
-	# Griglia dei comandi.
-	var pc := PanelContainer.new()
-	pc.custom_minimum_size.y = ALTEZZA_FASCIA
-	pc.size_flags_vertical = Control.SIZE_SHRINK_END
-	fascia.add_child(pc)
-	# Due livelli, come in Cities: Skylines e Age of Empires: in alto le schede dei menù logici
-	# (Insediamento, Territorio, Vie, Edifici, Usanze…), sotto i comandi della scheda scelta.
-	# A destra, separati, gli strumenti trasversali (Demolisci), che non sono costruzioni.
-	var riga_comandi := HBoxContainer.new()
-	riga_comandi.add_theme_constant_override("separation", 14)
-	pc.add_child(riga_comandi)
-	var menu := VBoxContainer.new()
-	menu.add_theme_constant_override("separation", 8)
-	riga_comandi.add_child(menu)
-	_schede = HBoxContainer.new()
-	_schede.add_theme_constant_override("separation", 2)
-	menu.add_child(_schede)
-	_pagine = Control.new()
-	_pagine.custom_minimum_size = Vector2(4 * LATO_TASTO + 3 * 4, 2 * LATO_TASTO + 4)
-	menu.add_child(_pagine)
-	_descrizione_menu = Label.new()
-	_descrizione_menu.add_theme_font_size_override("font_size", 11)
-	_descrizione_menu.add_theme_color_override("font_color", GRIGIO)
-	_descrizione_menu.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_descrizione_menu.custom_minimum_size.x = 4 * LATO_TASTO + 3 * 4
-	menu.add_child(_descrizione_menu)
-	var separa := ColorRect.new()
-	separa.color = RIGA
-	separa.custom_minimum_size.x = 1
-	riga_comandi.add_child(separa)
-	_gruppi = HBoxContainer.new()
-	_gruppi.add_theme_constant_override("separation", 14)
-	riga_comandi.add_child(_gruppi)
+	# Blocchi dei comandi (decisione di Fede): Costruzione (Insediamento, Territorio, Vie,
+	# Edifici…), Gestione (Politiche…), Strumenti (Demolizione, Prova…). Ognuno ha in alto le sue
+	# schede, come i menù di Cities: Skylines e Age of Empires, e sotto i tasti della scheda aperta.
+	for b in BLOCCHI:
+		_crea_blocco(fascia, b[0], b[1], b[2])
 	var spazio := Control.new()
 	spazio.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spazio.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -336,6 +312,38 @@ func _fascia_bassa(radice: Control, nomi_mappe: Array) -> void:
 	rm.add_child(minimappa)
 
 
+func _crea_blocco(fascia: Control, id: String, titolo: String, colonne: int) -> void:
+	var pc := PanelContainer.new()
+	pc.custom_minimum_size.y = ALTEZZA_FASCIA
+	pc.size_flags_vertical = Control.SIZE_FILL
+	fascia.add_child(pc)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 4)
+	pc.add_child(col)
+	var t := Label.new()
+	t.text = titolo.to_upper()
+	t.add_theme_font_override("font", _carattere(true, 1.6))
+	t.add_theme_font_size_override("font_size", 11)
+	t.add_theme_color_override("font_color", GRIGIO)
+	col.add_child(t)
+	var schede := HBoxContainer.new()
+	schede.add_theme_constant_override("separation", 2)
+	col.add_child(schede)
+	var larghezza := colonne * LATO_TASTO + (colonne - 1) * 4
+	var pagine := Control.new()
+	pagine.custom_minimum_size = Vector2(larghezza, 2 * LATO_TASTO + 4)
+	col.add_child(pagine)
+	var d := Label.new()
+	d.add_theme_font_size_override("font_size", 11)
+	d.add_theme_color_override("font_color", GRIGIO)
+	d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	d.custom_minimum_size.x = larghezza
+	d.max_lines_visible = 2
+	d.size_flags_vertical = Control.SIZE_EXPAND | Control.SIZE_SHRINK_END
+	col.add_child(d)
+	_blocchi[id] = {"schede": schede, "pagine": pagine, "descrizione": d, "colonne": colonne, "pannello": pc}
+
+
 ## Tasto piccolo e tondo (mappe, con il loro colore) o quadrato (sovrapposizioni). Scelto: anello
 ## bianco attorno al bollino; per i quadrati, inversione.
 func _bollino(padre: Control, sigla: String, colore: Color, sigla_scura: bool, quadrato: bool) -> Button:
@@ -379,58 +387,57 @@ func _bollino(padre: Control, sigla: String, colore: Color, sigla_scura: bool, q
 
 # ---------- comandi ----------
 
-## Aggiunge un gruppo di comandi alla griglia in basso.
-## voci: dizionari con id, testo, breve (etichetta sotto il tasto, facoltativa), tasto,
-## pericolo (bool: azione irreversibile, segno rosso), strumento (bool: resta selezionato e si
-## usa cliccando sulla mappa; altrimenti è un'azione immediata).
-## Aggiunge un menù logico (una scheda in alto, i suoi comandi sotto).
-## voci: come in aggiungi_comandi, più "descrizione" (cosa fa, mostrata nella scheda dello strumento).
-## a_destra: scheda staccata dalle altre da un piccolo spazio (Strumenti, l'ultima a destra).
-func aggiungi_menu(id_menu: String, titolo: String, descrizione: String, voci: Array, a_destra := false) -> void:
-	if a_destra:
-		var spazio := Control.new()
-		spazio.custom_minimum_size.x = 12
-		spazio.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_schede.add_child(spazio)
+## Aggiunge un menù (una scheda) a un blocco dei comandi: costruzione, gestione o strumenti.
+## voci: dizionari con id, testo, breve (etichetta sotto il tasto), tasto, icona (nome in
+## asset/icone), descrizione (cosa fa, mostrata nella scheda dello strumento), pericolo (bool:
+## azione irreversibile, segno rosso), strumento (bool: resta selezionato e si usa cliccando sulla
+## mappa; altrimenti è un'azione immediata). in_testa: la scheda va per prima nel suo blocco.
+func aggiungi_menu(id_menu: String, titolo: String, descrizione: String, voci: Array, blocco := "costruzione", in_testa := false) -> void:
+	var bl: Dictionary = _blocchi[blocco]
 	var scheda := Button.new()
 	scheda.text = titolo
 	scheda.toggle_mode = true
 	scheda.focus_mode = Control.FOCUS_NONE
 	scheda.tooltip_text = descrizione
 	scheda.add_theme_font_size_override("font_size", 12)
-	_schede.add_child(scheda)
+	(bl["schede"] as Control).add_child(scheda)
+	if in_testa:
+		(bl["schede"] as Control).move_child(scheda, 0)
 	var griglia := GridContainer.new()
-	griglia.columns = 4
+	griglia.columns = bl["colonne"]
 	griglia.add_theme_constant_override("h_separation", 4)
 	griglia.add_theme_constant_override("v_separation", 4)
 	griglia.visible = false
-	_pagine.add_child(griglia)
-	_menu[id_menu] = {"scheda": scheda, "pagina": griglia, "descrizione": descrizione}
+	(bl["pagine"] as Control).add_child(griglia)
+	_menu[id_menu] = {"scheda": scheda, "pagina": griglia, "descrizione": descrizione, "blocco": blocco}
 	scheda.pressed.connect(func() -> void: apri_menu(id_menu))
 	for v in voci:
 		_aggiungi_voce(griglia, v)
 		_menu_di[v["id"]] = id_menu
-	if _menu_scelto == "":
+	if in_testa or String(bl.get("aperto", "")) == "":
 		apri_menu(id_menu)
 
 
+## Apre una scheda nel suo blocco (le schede degli altri blocchi restano come sono).
 func apri_menu(id_menu: String) -> void:
 	if not _menu.has(id_menu):
 		return
 	_menu_scelto = id_menu
+	var blocco: String = _menu[id_menu]["blocco"]
+	_blocchi[blocco]["aperto"] = id_menu
 	for k in _menu:
+		if _menu[k]["blocco"] != blocco:
+			continue
 		(_menu[k]["scheda"] as Button).set_pressed_no_signal(k == id_menu)
 		(_menu[k]["pagina"] as Control).visible = k == id_menu
-	_descrizione_menu.text = _menu[id_menu]["descrizione"]
+	(_blocchi[blocco]["descrizione"] as Label).text = _menu[id_menu]["descrizione"]
 
 
-func menu_aperto() -> String:
+## L'ultima scheda aperta, oppure quella aperta in un blocco.
+func menu_aperto(blocco := "") -> String:
+	if blocco != "":
+		return _blocchi[blocco].get("aperto", "")
 	return _menu_scelto
-
-
-## Strumenti trasversali (valgono su tutto, non sono costruzioni): gruppo a destra dei menù.
-func aggiungi_trasversali(titolo: String, voci: Array, in_testa := false, posizione := -1) -> void:
-	aggiungi_comandi(titolo, voci, in_testa, posizione)
 
 
 func _aggiungi_voce(griglia: Control, v: Dictionary) -> void:
@@ -445,29 +452,6 @@ func _aggiungi_voce(griglia: Control, v: Dictionary) -> void:
 	else:
 		b.pressed.connect(func() -> void: azione.emit(id))
 		_righe_azioni[id] = b
-
-
-func aggiungi_comandi(titolo: String, voci: Array, in_testa := false, posizione := -1) -> void:
-	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 6)
-	_gruppi.add_child(col)
-	if in_testa:
-		_gruppi.move_child(col, 0)
-	elif posizione >= 0:
-		_gruppi.move_child(col, mini(posizione, _gruppi.get_child_count() - 1))
-	var l := Label.new()
-	l.text = titolo.to_upper()
-	l.add_theme_font_override("font", _carattere(true, 1.6))
-	l.add_theme_font_size_override("font_size", 11)
-	l.add_theme_color_override("font_color", GRIGIO)
-	col.add_child(l)
-	var griglia := GridContainer.new()
-	griglia.columns = 4 if voci.size() > 6 else (3 if voci.size() > 4 else 2)
-	griglia.add_theme_constant_override("h_separation", 4)
-	griglia.add_theme_constant_override("v_separation", 4)
-	col.add_child(griglia)
-	for v in voci:
-		_aggiungi_voce(griglia, v)
 
 
 ## Comandi del tempo, piccoli, nella striscia in alto accanto all'anno.
@@ -688,9 +672,14 @@ func _crea_politiche(radice: Control) -> void:
 	_pannello_politiche.custom_minimum_size.x = 520
 	_pannello_politiche.visible = false
 	radice.add_child(_pannello_politiche)
+	# Le politiche cresceranno: il pannello scorre se non c'è spazio fino alla cronaca.
+	_scorri_politiche = ScrollContainer.new()
+	_scorri_politiche.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_pannello_politiche.add_child(_scorri_politiche)
 	_colonna_politiche = VBoxContainer.new()
-	_colonna_politiche.add_theme_constant_override("separation", 10)
-	_pannello_politiche.add_child(_colonna_politiche)
+	_colonna_politiche.add_theme_constant_override("separation", 8)
+	_colonna_politiche.custom_minimum_size.x = 504
+	_scorri_politiche.add_child(_colonna_politiche)
 	var testa := HBoxContainer.new()
 	_colonna_politiche.add_child(testa)
 	var k := Label.new()
@@ -768,6 +757,14 @@ func aggiungi_politiche(voci: Array) -> void:
 		effetto.add_theme_font_size_override("font_size", 12)
 		col.add_child(effetto)
 		voce["nota"] = effetto
+		var stato := Label.new()
+		stato.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		stato.custom_minimum_size.x = 488
+		stato.add_theme_font_size_override("font_size", 11)
+		stato.add_theme_color_override("font_color", GRIGIO)
+		stato.visible = false
+		col.add_child(stato)
+		voce["stato"] = stato
 		_politiche[id] = voce
 
 
@@ -781,6 +778,29 @@ func imposta_politica(id: String, valore: String) -> void:
 	(voce["nota"] as Label).text = voce["note"].get(valore, "")
 
 
+## Accende o spegne le opzioni di una politica (spenta: si vede ma non si può cambiare), con una
+## riga grigia che dice perché o a che punto è.
+func abilita_politica(id: String, attiva: bool, stato := "") -> void:
+	if not _politiche.has(id):
+		return
+	var voce: Dictionary = _politiche[id]
+	for k in voce["opzioni"]:
+		var b: Button = voce["opzioni"][k]
+		b.disabled = not attiva
+		b.modulate.a = 1.0 if attiva else 0.4
+	var l: Label = voce["stato"]
+	l.text = stato
+	l.visible = stato != ""
+
+
+func politica_attiva(id: String) -> bool:
+	if not _politiche.has(id):
+		return false
+	for k in _politiche[id]["opzioni"]:
+		return not (_politiche[id]["opzioni"][k] as Button).disabled
+	return false
+
+
 func politica(id: String) -> String:
 	if not _politiche.has(id):
 		return ""
@@ -791,6 +811,16 @@ func politica(id: String) -> String:
 
 
 func apri_politiche(aperto: bool) -> void:
+	# Appena sopra la fascia in basso, qualunque sia la sua altezza.
+	var sotto := maxf(_fascia.size.y, ALTEZZA_FASCIA) + 2
+	_pannello_politiche.offset_bottom = -sotto
+	# Altezza: quella del contenuto, ma senza coprire la cronaca in alto a sinistra.
+	var schermo := get_viewport().get_visible_rect().size.y if is_inside_tree() else 900.0
+	var spazio := schermo - sotto - 190.0
+	var alto := clampf(_colonna_politiche.get_combined_minimum_size().y, 120.0, maxf(spazio, 120.0))
+	_scorri_politiche.custom_minimum_size.y = alto
+	var bordi := _pannello_politiche.get_theme_stylebox("panel").get_minimum_size().y
+	_pannello_politiche.offset_top = -sotto - alto - bordi
 	_pannello_politiche.visible = aperto
 	segna("politiche", aperto)
 

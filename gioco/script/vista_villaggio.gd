@@ -15,7 +15,7 @@ var sim: SimVillaggio
 var uso: UsoSuolo
 var terreno: Terreno
 var _case := {}  # lotto -> nodo
-var _campi := {}  # indice del pixel -> true
+var _campi := {}  # indice del pixel -> tecnica del campo disegnata
 var _celle_sentieri := {}
 var _firma_sentieri := ""
 var _nastri: MeshInstance3D
@@ -99,10 +99,11 @@ func _celle_px(i: int) -> Array[Vector2i]:
 func _sincronizza_campi() -> void:
 	var ora := {}
 	for i in sim.campi:
-		ora[i] = true
+		ora[i] = sim.tecnica_campo(i)
 	for i in ora:
-		if not _campi.has(i):
-			uso.coltiva(_celle_px(i))
+		# Campo nuovo, o campo ammodernato (stessa terra, tecnica nuova).
+		if not _campi.has(i) or _campi[i] != ora[i]:
+			uso.coltiva(_celle_px(i), ora[i])
 	for i in _campi.keys():
 		if not ora.has(i):
 			uso.libera(_celle_px(i))

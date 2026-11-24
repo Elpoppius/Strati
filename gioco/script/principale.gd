@@ -72,6 +72,7 @@ func _ready() -> void:
 	vista_alberi.uso = uso
 	terreno.materiale.set_shader_parameter("uso_suolo", uso.texture)
 	terreno.materiale.set_shader_parameter("uso_attivo", 1.0)
+	terreno.materiale.set_shader_parameter("tecniche_campi", uso.texture_tecniche)
 	# Dal secondo avvio gli alberi si caricano dalla cache; la prima volta si calcolano in
 	# sottofondo su tutti i processori e poi si salvano (vedi Alberi).
 	var t0 := Time.get_ticks_msec()
@@ -169,9 +170,9 @@ func _crea_interfaccia() -> void:
 	# Strumento di prova: far passare il tempo, per vedere la ricrescita del bosco anche senza
 	# villaggio. Tagliare si fa con Demolisci (nella partita). L'invasività delle costruzioni non
 	# è uno strumento: è una qualità nascosta dei loro materiali (chiarimento di Fede, vedi UsoSuolo).
-	hud.aggiungi_trasversali("Prova", [
+	hud.aggiungi_menu("prova", "Prova", "Solo per le prove.", [
 		{"id": "anni", "icona": "anni", "testo": "Avanti di 10 anni (solo per prova: fa ricrescere il bosco anche senza villaggio)", "breve": "+10 anni", "tasto": "Y", "strumento": false},
-	])
+	], "strumenti")
 	hud.comando_scelto.connect(func(_id: String) -> void: _aggiorna_pennello())
 	hud.azione.connect(_azione)
 	hud.imposta_messaggio("Scegli uno strumento e clicca sulla mappa. Raggio %d m ( [ e ] per cambiarlo)." % roundi(raggio_pennello))

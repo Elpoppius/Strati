@@ -42,11 +42,28 @@ var bonus := 0.0
 ## raccolto: "comune" (più consenso) o "famiglie" (più raccolto).
 ## stranieri (proposta di Claude): "aperta" (si accolgono sempre), "chiusa" (si respingono sempre),
 ## "caso" (ogni arrivo ferma il tempo e si decide).
-var politiche := {"raccolto": "comune", "stranieri": "caso"}
+## ammodernamento (decisione di Fede del 24/11/2026): "sospeso" o "attivo". Attivo, ogni anno una
+## parte dei campi fatti con una tecnica vecchia passa alla tecnica dell'epoca, pagando cibo (le
+## braccia che ci lavorano); non si costruisce niente da zero, si sovrascrive il tipo vecchio.
+var politiche := {"raccolto": "comune", "stranieri": "caso", "ammodernamento": "sospeso"}
 const POLITICHE := {
 	"raccolto": ["comune", "famiglie"],
 	"stranieri": ["aperta", "caso", "chiusa"],
+	"ammodernamento": ["sospeso", "attivo"],
 }
+
+# ---------- tecniche dei campi ----------
+## Il campo cambia con l'epoca (decisione di Fede del 24/11/2026): ogni campo ricorda la tecnica
+## con cui è stato fatto; i campi nuovi nascono con la tecnica dell'epoca e rendono di più (progresso
+## tecnico); i vecchi restano finché non si ammodernano. Rese: proposta di Claude, da tarare.
+const TECNICHE := ["zappa", "aratro in croce", "centuriazione", "strisce medievali", "meccanica"]
+const RESA_TECNICA := [1.0, 1.3, 1.55, 1.8, 3.0]
+## Cibo speso per ammodernare un pixel di campo (0,16 ha) e quota dei campi lavorabili che si
+## possono ammodernare in un anno (proposta di Claude).
+const COSTO_AMMODERNAMENTO := 0.8
+const QUOTA_AMMODERNAMENTO := 0.1
+var tecnica_corrente := 0
+var _tecnica_campi := {}  # indice del pixel -> tecnica (assente = 0)
 ## Gli stranieri arrivano con un generatore a parte, così le altre vicende della partita restano
 ## quelle di prima a parità di seme.
 var rng_stranieri := RandomNumberGenerator.new()
@@ -324,6 +341,7 @@ func aggiungi_campi(lista: Array[Vector2i]) -> int:
 		var i := px(p)
 		if not campi.has(i) and motivo_campo(p) == "":
 			campi.append(i)
+			_tecnica_campi[i] = tecnica_corrente
 			aggiunti += 1
 	return aggiunti
 
@@ -334,6 +352,7 @@ func togli_campi(lista: Array[Vector2i]) -> int:
 		var k := campi.find(px(p))
 		if k >= 0:
 			campi.remove_at(k)
+			_tecnica_campi.erase(px(p))
 			tolti += 1
 	return tolti
 
@@ -434,6 +453,41 @@ func demolisci(punto: Vector2, raggio: float) -> Dictionary:
 	return esito
 
 
+func tecnica_campo(i: int) -> int:
+	return _tecnica_campi.get(i, 0)
+
+
+## Campi fatti con una tecnica più vecchia di quella dell'epoca.
+func campi_da_ammodernare() -> int:
+	var k := 0
+	for i in campi:
+		if tecnica_campo(i) < tecnica_corrente:
+			k += 1
+	return k
+
+
+## Un anno di ammodernamento: i campi vecchi più vicini al centro passano alla tecnica nuova,
+## finché basta il cibo. Restituisce quanti campi sono stati ammodernati.
+func _ammoderna() -> int:
+	var vecchi: Array[int] = []
+	for i in campi:
+		if tecnica_campo(i) < tecnica_corrente:
+			vecchi.append(i)
+	if vecchi.is_empty():
+		return 0
+	vecchi.sort_custom(func(a: int, b: int) -> bool: return cheb(px_di(a), centro) < cheb(px_di(b), centro))
+	var quanti := mini(vecchi.size(), maxi(1, int(pop * 0.55 / 3.0 * AREA_CELLA * QUOTA_AMMODERNAMENTO)))
+	quanti = mini(quanti, int(cibo / COSTO_AMMODERNAMENTO))
+	for k in quanti:
+		_tecnica_campi[vecchi[k]] = tecnica_corrente
+	cibo -= quanti * COSTO_AMMODERNAMENTO
+	if quanti > 0 and quanti == vecchi.size():
+		_scrivi("Tutti i campi sono lavorati con la tecnica nuova (%s)." % TECNICHE[tecnica_corrente], "buono")
+	elif quanti == 0:
+		_scrivi("Ammodernamento fermo: manca il cibo per pagare il lavoro.")
+	return quanti
+
+
 func politica(id: String) -> String:
 	return politiche.get(id, "")
 
@@ -445,7 +499,10 @@ func imposta_politica(id: String, valore: String) -> bool:
 	politiche[id] = valore
 	if not fondato:
 		return true
-	bonus -= 4.0
+	# Le abitudini pesano: cambiare una regola costa consenso. L'ammodernamento no, perché il suo
+	# costo è il cibo speso ogni anno per rifare i campi.
+	if id != "ammodernamento":
+		bonus -= 4.0
 	match id + ":" + valore:
 		"raccolto:comune":
 			_scrivi("Il raccolto torna a essere diviso in comune.")
@@ -457,6 +514,10 @@ func imposta_politica(id: String, valore: String) -> bool:
 			_scrivi("Gli anziani decidono: gli stranieri non restano.")
 		"stranieri:caso":
 			_scrivi("Gli anziani decideranno ogni volta chi accogliere.")
+		"ammodernamento:attivo":
+			_scrivi("Si comincia a rifare i campi con la tecnica nuova.")
+		"ammodernamento:sospeso":
+			_scrivi("L'ammodernamento dei campi è sospeso.")
 	return true
 
 
@@ -605,6 +666,8 @@ func passo() -> void:
 		_arrivo_stranieri()
 	if anni_sapere > 0:
 		anni_sapere -= 1
+	if politica("ammodernamento") == "attivo":
+		_ammoderna()
 	# Raccolto: le braccia lavorano prima i campi più fertili.
 	var braccia := pop * 0.55
 	var lavorabili := int(braccia / 3.0 * AREA_CELLA)
@@ -702,7 +765,7 @@ func _resa(i: int) -> float:
 	else:
 		fattore = clima * (0.85 + 0.15 * acqua_qualsiasi(i))
 	return 12.0 * fert(i) * fattore * (1.12 if politica("raccolto") == "famiglie" else 1.0) \
-		* (1.08 if anni_sapere > 0 else 1.0) / AREA_CELLA
+		* (1.08 if anni_sapere > 0 else 1.0) * RESA_TECNICA[tecnica_campo(i)] / AREA_CELLA
 
 
 func _piena() -> void:
@@ -847,6 +910,7 @@ func _abbandona() -> void:
 	centro = Vector2i(-1, -1)
 	case = []
 	campi = []
+	_tecnica_campi = {}
 	sentieri = []
 	tratti_sentiero = []
 	granaio = Vector2(-1, -1)

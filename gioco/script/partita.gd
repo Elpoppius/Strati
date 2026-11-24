@@ -53,14 +53,14 @@ func avvia(s: Node, seme: int = -1) -> void:
 	])
 	# Strumenti: l'ultimo menù a destra, che funziona come gli altri (decisione di Fede). Demolisci
 	# resta trasversale: vale su tutto ciò che si può demolire e non è una costruzione.
-	hud.aggiungi_menu("strumenti", "Strumenti", "Valgono su tutto: non sono costruzioni.", [
+	hud.aggiungi_menu("demolizione", "Demolizione", "Vale su tutto: non è una costruzione.", [
 		{"id": "demolisci", "icona": "demolisci", "testo": "Demolisci (irreversibile)", "breve": "Demolisci", "tasto": "X", "pericolo": true,
 		 "descrizione": "Toglie nel cerchio alberi, case, campi, sentieri e granaio. Non agisce su fiumi e paludi."},
-	], true)
+	], "strumenti", true)
 	# Le politiche non sono costruzioni (decisione di Fede): un pannello a parte, aperto da qui.
-	hud.aggiungi_trasversali("Governo", [
+	hud.aggiungi_menu("politiche_menu", "Politiche", "Le regole del villaggio.", [
 		{"id": "politiche", "icona": "politiche", "testo": "Politiche del villaggio", "breve": "Politiche", "tasto": "P", "strumento": false},
-	], true)
+	], "gestione")
 	hud.aggiungi_politiche([
 		{"id": "raccolto", "titolo": "Divisione del raccolto",
 		 "descrizione": "Chi tiene il frutto dei campi.",
@@ -73,6 +73,11 @@ func avvia(s: Node, seme: int = -1) -> void:
 			{"id": "aperta", "testo": "Aperta", "nota": "Chi arriva in pace resta: più braccia e tecniche nuove, qualche malattia e un po' di attrito."},
 			{"id": "caso", "testo": "Caso per caso", "nota": "A ogni arrivo il tempo si ferma e gli anziani decidono."},
 			{"id": "chiusa", "testo": "Chiusa", "nota": "Gli stranieri vengono mandati via: nulla cambia, il villaggio resta unito."}]},
+		{"id": "ammodernamento", "titolo": "Ammodernamento tecnologico",
+		 "descrizione": "Rifà con la tecnica dell'epoca i campi fatti con una tecnica vecchia: non costruisce niente di nuovo.",
+		 "opzioni": [
+			{"id": "sospeso", "testo": "Sospeso", "nota": "I campi vecchi restano come sono e rendono meno."},
+			{"id": "attivo", "testo": "Attivo", "nota": "Ogni anno una parte dei campi vecchi passa alla tecnica nuova, pagando cibo per il lavoro."}]},
 	])
 	hud.politica_scelta.connect(func(id: String, valore: String) -> void:
 		sim.imposta_politica(id, valore)
@@ -285,6 +290,11 @@ func aggiorna_hud() -> void:
 	hud.cambia_testo("granaio", "Granaio (già costruito)" if sim.granaio.x >= 0 else "Granaio (30 di cibo)", "Granaio")
 	for id in SimVillaggio.POLITICHE:
 		hud.imposta_politica(id, sim.politica(id))
+	# Ammodernamento: il tasto c'è già (decisione di Fede), spento finché non ci sono campi vecchi.
+	var vecchi := sim.campi_da_ammodernare()
+	hud.abilita_politica("ammodernamento", vecchi > 0,
+		"Ci sono %d campi da rifare con la tecnica nuova (%s)." % [vecchi, SimVillaggio.TECNICHE[sim.tecnica_corrente]] if vecchi > 0
+		else "Nessun campo da ammodernare: servirà dal primo cambio d'epoca, quando arriverà una tecnica nuova.")
 	for k in 4:
 		hud.segna("v%d" % k, velocita == k)
 		hud.abilita("v%d" % k, k == 0 or (on and not sim.finito))

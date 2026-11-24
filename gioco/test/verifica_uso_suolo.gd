@@ -132,6 +132,10 @@ func _process(_d: float) -> bool:
 	u.coltiva(capanna)
 	u.avanza_anni(30)
 	controlla(u.stato(r.x, r.y) == UsoSuolo.COLTIVATO and _alberi_nel_cerchio(a, u, r, 30.0) == 0, "i campi restano liberi dagli alberi")
+	controlla(u.tecnica(r.x, r.y) == 0, "un campo del villaggio è lavorato a zappa (tecnica 0)")
+	u.coltiva(capanna, 3)
+	controlla(u.tecnica(r.x, r.y) == 3 and u.stato(r.x, r.y) == UsoSuolo.COLTIVATO, "ammodernare un campo ne cambia solo la tecnica")
+	u.coltiva(capanna, 0)
 	# 6. Prato senza bosco: gli alberi sparsi tagliati non tornano da soli.
 	var prato := Vector2(-1, -1)
 	for z in range(1000, 9000, 53):

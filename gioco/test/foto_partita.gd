@@ -1,7 +1,7 @@
 extends SceneTree
 ## Foto di controllo di una partita: fondazione sul sito 1, campi attorno, un secolo e mezzo di
 ## tempo con un giocatore automatico semplice, poi la foto.
-## Uso: xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto_partita.gd -- uscita.png [dimensione_vista] [anni] [mappa] [strumento]
+## Uso: xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto_partita.gd -- uscita.png [dimensione_vista] [anni] [mappa] [strumento | politiche | tecniche]
 
 var _s: Node
 var _f := 0
@@ -52,7 +52,15 @@ func _process(_d: float) -> bool:
 		_s.griglia_attiva = false
 		if args.size() > 3:
 			_s.imposta_modo(int(args[3]))
-		if args.size() > 4 and args[4] == "politiche":
+		if args.size() > 4 and args[4] == "tecniche":
+			# Prova del cambio d'epoca: tecnica nuova (strisce) e qualche anno di ammodernamento,
+			# così si vedono insieme campi vecchi e campi rifatti.
+			sim.tecnica_corrente = 3
+			sim.cibo = 100000.0
+			for k in 4:
+				sim._ammoderna()
+			p.vista.sincronizza()
+		elif args.size() > 4 and args[4] == "politiche":
 			_s.hud.apri_politiche(true)
 		elif args.size() > 4:
 			# Strumento attivo con il cerchio al centro della vista (per vedere la guida dei campi).
