@@ -44,13 +44,25 @@ func _process(_d: float) -> bool:
 	controlla(h.modale_aperta(), "fondare chiede conferma mostrando la valutazione del sito")
 	_rispondi(h, "Fonda qui")
 	controlla(sim.fondato and h.comando() == "zona", "fondato; si passa alla zona agricola")
-	controlla(p.vista.numero_case() == sim.case.size() and sim.case.size() == 5, "le case della simulazione sono disegnate (%d)" % p.vista.numero_case())
+	controlla(p.vista.numero_case() == sim.case.size() and sim.case.size() == 6, "le case della simulazione sono disegnate (%d)" % p.vista.numero_case())
 	controlla(_s.uso.stato(sito.x, sito.y) == UsoSuolo.COSTRUITO, "terra battuta al centro del villaggio")
 	# Zona agricola a ovest: dentro, le famiglie dissodano da sole i campi che servono.
 	_s.raggio_pennello = 150.0
 	_s.punto_corrente = Vector3(sito.x - 250.0, 0, sito.y)
 	_s.applica_strumento()
 	controlla(sim.zona.size() > 20 and h._messaggio.text.contains("Zona agricola"), "la zona agricola si disegna (%d punti): %s" % [sim.zona.size(), h._messaggio.text])
+	# Pennello: tenendo premuto e trascinando si continua a stendere la zona.
+	var prima_z := sim.zona.size()
+	var ev_giu := InputEventMouseButton.new()
+	ev_giu.button_index = MOUSE_BUTTON_LEFT
+	ev_giu.pressed = true
+	_s._pennellando = true
+	p.inizia_pennellata()
+	for k in 4:
+		_s.punto_corrente = Vector3(sito.x - 250.0, 0, sito.y + 60.0 + k * 80.0)
+		_s.applica_strumento()
+	_s._pennellando = false
+	controlla(sim.zona.size() > prima_z and h._messaggio.text.contains("Tieni premuto"), "trascinando, la zona si stende come un pennello (%d → %d)" % [prima_z, sim.zona.size()])
 	h.seleziona_comando("campi")
 	# Campi a est del centro, entro il raggio.
 	_s.raggio_pennello = 120.0

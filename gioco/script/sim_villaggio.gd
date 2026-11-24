@@ -79,12 +79,13 @@ var _contado_annunciato := 0.0
 const BONUS_SENTIERO := 0.1
 ## Economia mista (decisione di Fede): caccia, raccolta e pesca accanto ai campi. Boschi e acque
 ## vicini danno cibo; ma l'acqua porta le piene e il bosco la selvaggina che rovina i campi al suo
-## margine (proposta di Claude). Numeri da tarare.
+## margine (proposta di Claude). Numeri da tarare; caccia e pesca pesano di più dal 24/11/2026
+## (Fede).
 const RAGGIO_RISORSE := 40  # pixel (1,6 km)
-const QUOTA_CACCIA := 0.4  # cibo per abitante che caccia e raccolta possono dare al massimo
-const QUOTA_PESCA := 0.2
-const RESA_BOSCO := 0.04
-const RESA_ACQUA := 0.15
+const QUOTA_CACCIA := 0.6  # cibo per abitante che caccia e raccolta possono dare al massimo
+const QUOTA_PESCA := 0.35
+const RESA_BOSCO := 0.12
+const RESA_ACQUA := 0.4
 var selvaggina := 1.0
 var ultima_caccia := 0.0
 var ultima_pesca := 0.0
@@ -138,10 +139,11 @@ var zona := {}
 const DISSODAMENTO_PER_ABITANTE := 0.05
 var _zona_piena_anno := -99999
 ## Resa di un pixel di campo (0,16 ha) su terra di fertilità 1, prima di clima e tecnica: circa
-## una persona sfamata all'anno su terra media (Fede: prima i campi erano troppi per la gente).
-const RESA_CAMPO := 24.0
-## Abitanti per casa (prima 8: case troppo poche rispetto ai campi).
-const ABITANTI_PER_CASA := 6.0
+## una persona e mezza sfamata all'anno su terra media (Fede: i campi erano troppi per la gente;
+## prima 12, poi 24, ora 36).
+const RESA_CAMPO := 36.0
+## Abitanti per casa (prima 8, poi 6: case troppo poche rispetto ai campi).
+const ABITANTI_PER_CASA := 5.0
 var memoria := 40.0
 var razionamento := 0
 var siccita := 0
@@ -502,7 +504,7 @@ func _resa_attesa(i: int) -> float:
 func _dissoda_zona() -> int:
 	if zona.is_empty() or not fonti["agricoltura"]:
 		return 0
-	var fabbisogno := pop * 1.1 - ultima_caccia - ultima_pesca
+	var fabbisogno := pop * 1.15 - ultima_caccia - ultima_pesca
 	var attesa := 0.0
 	for i in campi:
 		attesa += _resa_attesa(i)
@@ -1023,7 +1025,7 @@ func passo() -> void:
 	var portata_bosco: float = _risorse["bosco"] * RESA_BOSCO
 	offerta_caccia = portata_bosco * selvaggina
 	ultima_caccia = minf(pop * QUOTA_CACCIA * piu_braccia, offerta_caccia) if fonti["caccia"] else 0.0
-	selvaggina = clampf(selvaggina - ultima_caccia / maxf(portata_bosco * 8.0, 1.0) + (1.0 - selvaggina) * 0.1, 0.05, 1.0)
+	selvaggina = clampf(selvaggina - ultima_caccia / maxf(portata_bosco * 8.0, 1.0) + (1.0 - selvaggina) * 0.15, 0.05, 1.0)
 	offerta_pesca = float(_risorse["acqua"]) * RESA_ACQUA
 	ultima_pesca = minf(pop * QUOTA_PESCA * piu_braccia, offerta_pesca) if fonti["pesca"] else 0.0
 	_storia_selvaggina.append(selvaggina)

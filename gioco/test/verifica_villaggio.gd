@@ -67,7 +67,7 @@ func _initialize() -> void:
 	var t := SimVillaggio.new(d, 3)
 	var c := Vector2i(d.siti[0]["px"])
 	t.fonda(c)
-	controlla(t.fondato and t.pop == 30.0 and t.case.size() == 5, "fondazione: 30 abitanti, 5 case (una ogni 6 abitanti) (%d)" % t.case.size())
+	controlla(t.fondato and t.pop == 30.0 and t.case.size() == 6, "fondazione: 30 abitanti, 6 case (una ogni 5 abitanti) (%d)" % t.case.size())
 	controlla(t.motivo_campo(c + Vector2i(60, 0)) != "", "un campo troppo lontano non si può fare")
 	var lista: Array[Vector2i] = [c + Vector2i(3, 0), c + Vector2i(4, 0)]
 	controlla(t.aggiungi_campi(lista) == 2 and t.campi.size() == 2, "due campi vicini al villaggio")

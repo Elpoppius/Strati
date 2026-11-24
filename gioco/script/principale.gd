@@ -34,6 +34,10 @@ var hud: Hud
 var raggio_pennello := 40.0
 var _tempo_prestazioni := 0.0
 var _trascinando := false
+## Strumenti a pennello (Fede: la zona agricola si disegna tenendo premuto e trascinando).
+const STRUMENTI_PENNELLO := ["zona"]
+var _pennellando := false
+var _ultimo_pennello := Vector3.INF
 ## Etichette dei siti adatti alle dighe: visibili solo nella mappa dell'energia dell'acqua.
 var _segni_dighe: Array[Label3D] = []
 ## Stato degli alberi mostrato nel pannello: da dove vengono e quanto ci hanno messo.
@@ -238,12 +242,24 @@ func _unhandled_input(ev: InputEvent) -> void:
 			_trascinando = mb.pressed
 		elif mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed and hud.comando() != "":
 			aggiorna_lettura(mb.position)
+			if hud.comando() in STRUMENTI_PENNELLO and partita:
+				_pennellando = true
+				partita.inizia_pennellata()
+				_ultimo_pennello = punto_corrente if punto_corrente != null else Vector3.INF
 			applica_strumento()
+		elif mb.button_index == MOUSE_BUTTON_LEFT and not mb.pressed:
+			_pennellando = false
 	elif ev is InputEventMouseMotion:
 		var mm := ev as InputEventMouseMotion
 		if _trascinando:
 			cam.trascina(mm.relative, get_viewport().get_visible_rect().size.y)
 		aggiorna_lettura(mm.position)
+		# Pennello: tenendo premuto si continua a stendere, a passi di mezzo raggio.
+		if _pennellando and punto_corrente != null and hud.comando() in STRUMENTI_PENNELLO:
+			var q: Vector3 = punto_corrente
+			if _ultimo_pennello == Vector3.INF or Vector2(q.x - _ultimo_pennello.x, q.z - _ultimo_pennello.z).length() >= raggio_pennello * 0.5:
+				_ultimo_pennello = q
+				applica_strumento()
 	elif ev is InputEventKey and ev.pressed and not ev.echo:
 		match (ev as InputEventKey).keycode:
 			KEY_Q:

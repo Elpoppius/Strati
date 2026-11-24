@@ -17,6 +17,8 @@ var velocita := 0
 ## della rete se è acceso "Collega alla rete".
 var inizio_sentiero := Vector2i(-1, -1)
 var collega_rete := false
+## Ettari aggiunti alla zona agricola nella pennellata in corso (il messaggio dice il totale).
+var _pennellata := 0
 var _ultima_velocita := 1
 var _accumulo := 0.0
 
@@ -45,7 +47,7 @@ func avvia(s: Node, seme: int = -1) -> void:
 	])
 	hud.aggiungi_menu("territorio", "Territorio", "A cosa si destina la terra attorno al villaggio.", [
 		{"id": "zona", "icona": "zona_agricola", "testo": "Zona agricola", "breve": "Zona", "tasto": "Z",
-		 "descrizione": "Un clic destina alla coltivazione la terra nel cerchio. Dentro la zona le famiglie dissodano da sole i campi quando servono, dalla terra migliore e più vicina. Per toglierla: Demolisci."},
+		 "descrizione": "Tieni premuto e trascina, come un pennello: la terra sotto il cerchio è destinata alla coltivazione. Dentro la zona le famiglie dissodano da sole i campi quando servono, dalla terra migliore e più vicina. Per toglierla: Demolisci."},
 		{"id": "campi", "icona": "campi", "testo": "Campo", "breve": "Campo", "tasto": "C",
 		 "descrizione": "Un clic dissoda subito la terra libera nel cerchio, a mano; i campi che ci sono già restano. Gli alberi sui nuovi campi si tagliano. Per abbandonare un campo: Demolisci."},
 	])
@@ -245,7 +247,8 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 				if not sim.a_portata(q) and not sim.zona.has(sim.px(q)):
 					fuori_z += 1
 			var nuove := sim.aggiungi_zona(celle_z)
-			var testo_z := ("Zona agricola: %s ha in più (in tutto %s ha). Le famiglie dissoderanno qui i campi quando serviranno." % [_ettari(nuove), _ettari(sim.zona.size())]) if nuove > 0 else "Qui la terra è già nella zona agricola, oppure non si può coltivare."
+			_pennellata += nuove
+			var testo_z := ("Zona agricola: %s ha in più (in tutto %s ha). Tieni premuto e trascina per stenderla. Le famiglie dissoderanno qui i campi quando serviranno." % [_ettari(_pennellata), _ettari(sim.zona.size())]) if _pennellata > 0 else "Qui la terra è già nella zona agricola, oppure non si può coltivare."
 			if fuori_z > 0:
 				testo_z += " %d celle fuori dal contado (fino a %d m dal villaggio)." % [fuori_z, roundi(sim.raggio_contado())]
 			hud.imposta_messaggio(testo_z)
@@ -325,6 +328,10 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 				hud.imposta_messaggio(m)
 	vista.sincronizza()
 	aggiorna_hud()
+
+
+func inizia_pennellata() -> void:
+	_pennellata = 0
 
 
 func _ettari(px_n: int) -> String:
