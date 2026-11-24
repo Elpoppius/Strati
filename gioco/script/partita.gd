@@ -330,6 +330,45 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 	aggiorna_hud()
 
 
+## Modalità fondazione (Fede): con lo strumento Fondare, prima della fondazione, la fascia in basso
+## legge il terreno sotto il puntatore con indicatori grandi e chiari.
+var _px_letto := Vector2i(-1, -1)
+
+func in_fondazione() -> bool:
+	return scena.hud.comando() == "fonda" and not sim.fondato and not sim.finito
+
+
+func aggiorna_modalita() -> void:
+	scena.hud.mostra_lettura_sito(in_fondazione())
+
+
+func leggi_sito(punto: Vector3) -> void:
+	if not in_fondazione():
+		return
+	var p := sim.px_da_mondo(punto.x, punto.z)
+	if p == _px_letto:
+		return
+	_px_letto = p
+	var hud: Hud = scena.hud
+	if not sim.puo_fondare(p):
+		hud.imposta_lettura_sito("Qui non si può fondare", {}, "È acqua o palude. Muovi il puntatore sulla terra asciutta.")
+		return
+	var v := sim.valuta_sito(p)
+	var valori: Dictionary = v["valori"]
+	var voci := {}
+	for id in valori:
+		var testo: String = v[id][0]
+		voci[id] = [testo.substr(0, 1).to_upper() + testo.substr(1), valori[id], v[id][1]]
+	var titolo := ("Sito %d · %s" % [v["sito"]["n"], v["sito"]["nome"]]) if v["sito"] != null else "Terreno aperto"
+	var sfavorevoli := 0
+	for id in valori:
+		if v[id][1]:
+			sfavorevoli += 1
+	var nota := "Nessuna voce sfavorevole." if sfavorevoli == 0 else ("%d voci sfavorevoli (in rosso)." % sfavorevoli)
+	nota += " Clic per fondare qui: il cerchio mostra il contado iniziale (400 m). È la decisione più importante della partita."
+	hud.imposta_lettura_sito(titolo, voci, nota)
+
+
 func inizia_pennellata() -> void:
 	_pennellata = 0
 
@@ -394,6 +433,7 @@ func raggio_strumento(comando: String, raggio: float) -> float:
 
 func aggiorna_hud() -> void:
 	var hud: Hud = scena.hud
+	aggiorna_modalita()
 	var on := sim.fondato
 	var trattino := "—"
 	hud.imposta_indicatori([

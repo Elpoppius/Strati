@@ -337,7 +337,17 @@ func valuta_sito(p: Vector2i) -> Dictionary:
 	out["aria"] = ["malsana, paludi vicine", true] if dm <= 3.0 else (["paludi non lontane", true] if dm <= 6.0 else ["salubre", false])
 	var r := risorse_attorno(p)
 	out["bosco"] = ["ricchi, molta selvaggina", false] if r["bosco"] > 550.0 else (["presenti", false] if r["bosco"] > 300.0 else ["pochi", true])
-	out["pesca"] = ["fiume vicino, buona pesca", false] if r["acqua"] > 150.0 else (["torrenti o fiume a distanza", false] if r["acqua"] > 40.0 else ["scarsa", true])
+	out["pesca"] = ["buona, fiume vicino", false] if r["acqua"] > 150.0 else (["torrenti o fiume a distanza", false] if r["acqua"] > 40.0 else ["scarsa", true])
+	# Quanto, da 0 a 1, per le barre della lettura del sito (per la piena: quanto è alto il rischio).
+	out["valori"] = {
+		"acqua": clampf(maxf(a, s * 0.6), 0.0, 1.0),
+		"fertilita": clampf(fm / 1.2, 0.0, 1.0),
+		"bosco": clampf(r["bosco"] / 900.0, 0.0, 1.0),
+		"pesca": clampf(r["acqua"] / 300.0, 0.0, 1.0),
+		"piena": clampf(fl, 0.0, 1.0),
+		"difesa": clampf(difesa / 1.2, 0.0, 1.0),
+		"aria": clampf(dm / 8.0, 0.0, 1.0),
+	}
 	out["sito"] = null
 	for sito in dati.siti:
 		if cheb(Vector2i(sito["px"]), p) <= 8:

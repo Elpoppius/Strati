@@ -331,6 +331,8 @@ func _azione(id: String) -> void:
 func _aggiorna_pennello() -> void:
 	if terreno == null or hud == null:
 		return
+	if partita and partita.sim:
+		partita.aggiorna_modalita()
 	if hud.comando() == "" or punto_corrente == null:
 		terreno.materiale.set_shader_parameter("pennello", Vector3(0, 0, -1))
 		terreno.materiale.set_shader_parameter("griglia_magnetica", Vector3.ZERO)
@@ -397,6 +399,8 @@ func aggiorna_lettura(pos_schermo: Vector2) -> void:
 	lotto_corrente = Vector2i(floori(p.x / LATO_LOTTO), floori(p.z / LATO_LOTTO))
 	terreno.materiale.set_shader_parameter("lotto_evidenziato", Vector2(lotto_corrente))
 	hud.imposta_lettura(testo_lettura(p.x, p.z))
+	if partita and partita.sim:
+		partita.leggi_sito(p)
 	_aggiorna_pennello()
 
 

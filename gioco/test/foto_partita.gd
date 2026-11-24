@@ -1,7 +1,7 @@
 extends SceneTree
 ## Foto di controllo di una partita: fondazione sul sito 1, campi attorno, un secolo e mezzo di
 ## tempo con un giocatore automatico semplice, poi la foto.
-## Uso: xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto_partita.gd -- uscita.png [dimensione_vista] [anni] [mappa] [strumento | politiche | tecniche | anteprima]
+## Uso: xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto_partita.gd -- uscita.png [dimensione_vista] [anni] [mappa] [strumento | politiche | tecniche | anteprima | fondazione]
 
 var _s: Node
 var _f := 0
@@ -48,7 +48,16 @@ func _process(_d: float) -> bool:
 		_s.griglia_attiva = false
 		if args.size() > 3:
 			_s.imposta_modo(int(args[3]))
-		if args.size() > 4 and args[4] == "anteprima":
+		if args.size() > 4 and args[4] == "fondazione":
+			# Lettura del sito prima della fondazione: si riparte da zero, puntatore sul sito 2.
+			sim.fondato = false
+			_s.hud.seleziona_comando("fonda")
+			var s2: Vector2 = _s.dati.mondo_da_pixel(_s.dati.siti[1]["px"])
+			_s.punto_corrente = Vector3(s2.x, 0.0, s2.y)
+			p.leggi_sito(_s.punto_corrente)
+			p.aggiorna_modalita()
+			_s.cam.vai_a(s2.x, s2.y, float(args[1]) if args.size() > 1 else 600.0)
+		elif args.size() > 4 and args[4] == "anteprima":
 			# Anteprima di un sentiero come in Cities: inizio al centro, puntatore a nord-est; più
 			# alcune notifiche di prova.
 			_s.hud.seleziona_comando("sentiero")

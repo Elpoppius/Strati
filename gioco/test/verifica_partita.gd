@@ -38,12 +38,19 @@ func _process(_d: float) -> bool:
 	var h: Hud = _s.hud
 	var sim := p.sim
 	controlla(p != null and h.comando() == "fonda", "la partita comincia con lo strumento Fondare")
+	# Modalità fondazione (Fede): la lettura del sito prende il posto della descrizione e dei menù.
+	p.aggiorna_modalita()
+	var sito0: Vector2 = _s.dati.mondo_da_pixel(_s.dati.siti[0]["px"])
+	p.leggi_sito(Vector3(sito0.x, 0, sito0.y))
+	controlla(h.lettura_sito_visibile() and not (h._blocchi["costruzione"]["pannello"] as Control).visible and h._titolo_sito.text.contains("Sito 1"), "in fondazione la fascia legge il sito: " + h._titolo_sito.text)
+	controlla((h._voci_sito["acqua"]["valore"] as Label).text != "" and (h._voci_sito["bosco"]["valore"] as Label).text != "", "gli indicatori del sito hanno un valore")
 	var sito: Vector2 = _s.dati.mondo_da_pixel(_s.dati.siti[0]["px"])
 	_s.punto_corrente = Vector3(sito.x, 0, sito.y)
 	_s.applica_strumento()
 	controlla(h.modale_aperta(), "fondare chiede conferma mostrando la valutazione del sito")
 	_rispondi(h, "Fonda qui")
 	controlla(sim.fondato and h.comando() == "zona", "fondato; si passa alla zona agricola")
+	controlla(not h.lettura_sito_visibile() and (h._blocchi["costruzione"]["pannello"] as Control).visible, "dopo la fondazione tornano descrizione e menù")
 	controlla(p.vista.numero_case() == sim.case.size() and sim.case.size() == 6, "le case della simulazione sono disegnate (%d)" % p.vista.numero_case())
 	controlla(_s.uso.stato(sito.x, sito.y) == UsoSuolo.COSTRUITO, "terra battuta al centro del villaggio")
 	# Zona agricola a ovest: dentro, le famiglie dissodano da sole i campi che servono.

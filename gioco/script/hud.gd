@@ -67,6 +67,15 @@ var _righe_azioni := {}
 var _cronaca: Label
 var _valori_indicatori := {}
 var _notifiche: VBoxContainer
+var _pannello_descrizione: Control
+## Lettura del sito (Fede: al momento della fondazione gli indicatori del terreno devono essere
+## visibili e chiari; in quella modalità occupano lo spazio della descrizione e dei menù).
+var _pannello_sito: PanelContainer
+var _titolo_sito: Label
+var _nota_sito: Label
+var _voci_sito := {}  # id -> {valore: Label, riempimento: ColorRect}
+const VOCI_SITO := [["acqua", "Acqua"], ["fertilita", "Fertilità intorno"], ["bosco", "Boschi: caccia e raccolta"], ["pesca", "Pesca"],
+	["piena", "Rischio di piena"], ["difesa", "Difesa"], ["aria", "Aria"]]
 var _sezione_fonti: VBoxContainer
 var _fonti_info := {}  # id -> {valore: Label, riempimento: ColorRect, riga: Control}
 ## Clic su una fonte di cibo nel blocco Info.
@@ -236,6 +245,7 @@ func _fascia_bassa(radice: Control, nomi_mappe: Array) -> void:
 	ps.custom_minimum_size = Vector2(330, ALTEZZA_FASCIA)
 	ps.size_flags_vertical = Control.SIZE_FILL
 	fascia.add_child(ps)
+	_pannello_descrizione = ps
 	var cs := VBoxContainer.new()
 	cs.add_theme_constant_override("separation", 6)
 	ps.add_child(cs)
@@ -279,6 +289,7 @@ func _fascia_bassa(radice: Control, nomi_mappe: Array) -> void:
 	# schede, come i menù di Cities: Skylines e Age of Empires, e sotto i tasti della scheda aperta.
 	for b in BLOCCHI:
 		_crea_blocco(fascia, b[0], b[1], b[2])
+	_crea_lettura_sito(fascia)
 	var spazio := Control.new()
 	spazio.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spazio.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -380,6 +391,91 @@ func _crea_blocco(fascia: Control, id: String, titolo: String, colonne: int) -> 
 	d.size_flags_vertical = Control.SIZE_EXPAND | Control.SIZE_SHRINK_END
 	col.add_child(d)
 	_blocchi[id] = {"schede": schede, "pagine": pagine, "descrizione": d, "colonne": colonne, "pannello": pc}
+
+
+func _crea_lettura_sito(fascia: Control) -> void:
+	_pannello_sito = PanelContainer.new()
+	_pannello_sito.custom_minimum_size.y = ALTEZZA_FASCIA
+	_pannello_sito.size_flags_vertical = Control.SIZE_FILL
+	_pannello_sito.visible = false
+	fascia.add_child(_pannello_sito)
+	fascia.move_child(_pannello_sito, _pannello_descrizione.get_index() + 1)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 8)
+	_pannello_sito.add_child(col)
+	var k := Label.new()
+	k.text = "FONDAZIONE · IL TERRENO SOTTO IL PUNTATORE"
+	k.add_theme_font_override("font", _carattere(true, 1.6))
+	k.add_theme_font_size_override("font_size", 11)
+	k.add_theme_color_override("font_color", GRIGIO)
+	col.add_child(k)
+	_titolo_sito = Label.new()
+	_titolo_sito.add_theme_font_override("font", _carattere(true))
+	_titolo_sito.add_theme_font_size_override("font_size", 20)
+	col.add_child(_titolo_sito)
+	var griglia := GridContainer.new()
+	griglia.columns = 4
+	griglia.add_theme_constant_override("h_separation", 24)
+	griglia.add_theme_constant_override("v_separation", 10)
+	col.add_child(griglia)
+	for v in VOCI_SITO:
+		var c := VBoxContainer.new()
+		c.add_theme_constant_override("separation", 3)
+		c.custom_minimum_size.x = 200
+		griglia.add_child(c)
+		var e := Label.new()
+		e.text = String(v[1]).to_upper()
+		e.add_theme_font_override("font", _carattere(true, 1.6))
+		e.add_theme_font_size_override("font_size", 11)
+		e.add_theme_color_override("font_color", GRIGIO)
+		c.add_child(e)
+		var l := Label.new()
+		l.add_theme_font_override("font", _carattere(true))
+		l.add_theme_font_size_override("font_size", 15)
+		l.clip_text = true
+		l.custom_minimum_size.x = 200
+		c.add_child(l)
+		var fondo := ColorRect.new()
+		fondo.color = RIGA
+		fondo.custom_minimum_size = Vector2(200, 5)
+		c.add_child(fondo)
+		var pieno := ColorRect.new()
+		pieno.anchor_bottom = 1.0
+		fondo.add_child(pieno)
+		_voci_sito[v[0]] = {"valore": l, "riempimento": pieno}
+	_nota_sito = Label.new()
+	_nota_sito.add_theme_font_size_override("font_size", 12)
+	_nota_sito.add_theme_color_override("font_color", GRIGIO)
+	_nota_sito.size_flags_vertical = Control.SIZE_EXPAND | Control.SIZE_SHRINK_END
+	col.add_child(_nota_sito)
+
+
+## Modalità fondazione: la lettura del sito prende il posto della descrizione e dei menù.
+func mostra_lettura_sito(attiva: bool) -> void:
+	_pannello_sito.visible = attiva
+	_pannello_descrizione.visible = not attiva
+	for b in _blocchi.values():
+		(b["pannello"] as Control).visible = not attiva
+
+
+func lettura_sito_visibile() -> bool:
+	return _pannello_sito.visible
+
+
+## Valori del sito: titolo, nota in fondo e per ogni voce [testo, quanto (0–1), sfavorevole].
+func imposta_lettura_sito(titolo: String, voci: Dictionary, nota: String) -> void:
+	_titolo_sito.text = titolo
+	_nota_sito.text = nota
+	for id in _voci_sito:
+		var f: Dictionary = _voci_sito[id]
+		var v: Array = voci.get(id, ["—", 0.0, false])
+		(f["valore"] as Label).text = String(v[0])
+		var colore := PERICOLO if v[2] else BIANCO
+		(f["valore"] as Label).add_theme_color_override("font_color", colore)
+		var pieno: ColorRect = f["riempimento"]
+		pieno.color = colore
+		pieno.anchor_right = clampf(float(v[1]), 0.0, 1.0)
+		pieno.offset_right = 0.0
 
 
 ## Tasto piccolo e tondo (mappe, con il loro colore) o quadrato (sovrapposizioni). Scelto: anello
