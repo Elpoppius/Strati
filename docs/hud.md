@@ -21,7 +21,7 @@
   | giallo | Energia dell'acqua |
 
   Ogni mappa tematica ha il suo bollino tondo con il numero del tasto, come una linea della metropolitana. I comandi hanno un quadratino con la lettera del tasto, senza colore, tranne quelli irreversibili (bollino rosso). Le legende delle mappe usano gli stessi colori del bollino.
-- **Carattere:** per ora quello di Godot, con un grassetto simulato. Il carattere svizzero gratuito più vicino è Inter, con licenza OFL (libera ma non CC0): **da decidere con Fede** se si può usare.
+- **Carattere: Inter** (decisione di Fede del 24/11/2026: un carattere con licenza SIL Open Font License, rispettandone le regole), il più vicino all'Helvetica della grafica svizzera. Regular per i testi, Medium di base, Bold per titoli, valori e lettere dei tasti. File e licenza in `gioco/asset/caratteri/inter/`, elenco delle licenze in `docs/licenze.md`.
 
 ## Disposizione (esempi di Age of Empires IV mandati da Fede, 24/11/2026)
 Il campo di gioco resta libero: l'interfaccia sta in una fascia in basso e in due piccoli riquadri in alto.
@@ -30,14 +30,14 @@ Il campo di gioco resta libero: l'interfaccia sta in una fascia in basso e in du
 - **In alto a destra:** le prestazioni (fotogrammi al secondo, alberi, cache), piccole, senza fondo.
 - **In basso a sinistra:** gli indicatori (popolazione, cibo, salute, legittimità), come le risorse; il valore diventa rosso quando è in pericolo.
 - **Accanto, la scheda dello strumento scelto** (come la scheda dell'unità selezionata): nome, messaggio dell'ultima azione, lettura del lotto sotto il puntatore.
-- **In basso al centro, la griglia dei comandi:** tasti quadrati con la lettera del tasto in grande e il nome sotto, raggruppati (Villaggio; Prove: abbattere e +10 anni, per vedere la ricrescita del bosco). Un comando può essere uno strumento (resta scelto, si usa cliccando sulla mappa) o un'azione immediata. Il segno rosso nell'angolo vuol dire azione irreversibile.
+- **In basso al centro, la griglia dei comandi:** tasti quadrati con la lettera del tasto in grande e il nome sotto, raggruppati (Villaggio, con Demolisci; Prove: +10 anni, per vedere la ricrescita del bosco). Un comando può essere uno strumento (resta scelto, si usa cliccando sulla mappa) o un'azione immediata. Il segno rosso nell'angolo vuol dire azione irreversibile.
 - **In basso a destra, piccoli** (Fede: cliccabili ma non importanti, come i tasti attorno alla minimappa di Age of Empires IV): la minimappa (150 px) ruotata come la vista, con il riquadro di ciò che inquadra la camera e il centro del villaggio (un clic o un trascinamento spostano la camera); accanto, i bollini tondi delle cinque mappe tematiche (numero e colore, nome nel suggerimento) e i quadratini delle sovrapposizioni (G lotti, I isoipse). La mappa scelta ha un anello bianco. Sopra, solo quando è attiva una mappa tematica, una legenda sottile.
 - **Avvisi** (siccità, carestie gravi) sopra la minimappa, a destra, con un segno rosso.
 - **Scelte** (presagi, momenti decisivi, eventi): finestra al centro; il tempo si ferma finché non si sceglie.
 - **Strumento sulla mappa:** un cerchio sottile bianco (rosso se l'azione è irreversibile) segue il puntatore; per Fondare mostra fin dove arriveranno i campi.
 
 ## Tasti
-1–5 mappe · G griglia · I isoipse · F fondare · C campi · V sentiero · H granaio · Spazio pausa o riprendi · + e − velocità del tempo · T abbatti · Y +10 anni · [ e ] raggio dello strumento · Esc nessuno strumento · Q E ruota · rotella zoom · tasto destro o WASD sposta · Home torna al sito.
+1–5 mappe · G griglia · I isoipse · F fondare · C campi · V sentiero · H granaio · Spazio pausa o riprendi · + e − velocità del tempo · X demolisci · Y +10 anni · [ e ] raggio dello strumento · Esc nessuno strumento · Q E ruota · rotella zoom · tasto destro o WASD sposta · Home torna al sito.
 
 ## Partita (Prototipo 0 in Godot)
 - **Indicatori:** popolazione, cibo (scorta / consumo dell'anno), salute, legittimità. Rossi quando sono in pericolo (pochi abitanti, scorte sotto il 30% del consumo, salute sotto 45, legittimità sotto 30).

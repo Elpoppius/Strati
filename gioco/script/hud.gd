@@ -353,7 +353,7 @@ func aggiungi_comandi(titolo: String, voci: Array, in_testa := false) -> void:
 	l.add_theme_color_override("font_color", GRIGIO)
 	col.add_child(l)
 	var griglia := GridContainer.new()
-	griglia.columns = 3 if voci.size() > 4 else 2
+	griglia.columns = 4 if voci.size() > 6 else (3 if voci.size() > 4 else 2)
 	griglia.add_theme_constant_override("h_separation", 4)
 	griglia.add_theme_constant_override("v_separation", 4)
 	col.add_child(griglia)
@@ -727,11 +727,14 @@ func _etichetta_piccola(padre: Control) -> Label:
 	return l
 
 
+## Carattere dell'HUD: Inter (licenza SIL Open Font License, vedi
+## asset/caratteri/inter/LEGGIMI.md), il più vicino all'Helvetica della grafica svizzera.
+const INTER := "res://asset/caratteri/inter/Inter-%s.woff2"
+
+
 func _carattere(grassetto: bool, spaziatura := 0.0) -> Font:
 	var f := FontVariation.new()
-	f.base_font = ThemeDB.fallback_font
-	if grassetto:
-		f.variation_embolden = 0.55
+	f.base_font = load(INTER % ("Bold" if grassetto else "Regular"))
 	if spaziatura > 0.0:
 		f.spacing_glyph = int(spaziatura)
 	return f
@@ -739,6 +742,7 @@ func _carattere(grassetto: bool, spaziatura := 0.0) -> Font:
 
 func _crea_tema() -> Theme:
 	var t := Theme.new()
+	t.default_font = load(INTER % "Medium")
 	t.default_font_size = 14
 	var pannello := StyleBoxFlat.new()
 	pannello.bg_color = Color(NERO, 0.93)

@@ -21,6 +21,7 @@ Il prototipo ragionava a celle da 160 m. Qui:
 - **Sentiero:** un clic prolunga la rete in linea retta dal punto più vicino (centro o sentiero); non attraversa il fiume né la palude.
 - **Granaio:** 30 di cibo, vicino al centro; le scorte si conservano meglio.
 - **Usanza sul raccolto:** in comune (più legittimità) o per famiglia (più raccolto).
+- **Demolisci** (X, decisione di Fede): toglie nel cerchio alberi (legname), case, campi, sentieri e granaio; il focolare al centro resta. Sul lotto di una casa demolita non rinasce una casa per 20 anni (macerie). Fiumi e paludi non si demoliscono.
 - **Eventi e presagi:** piene dal rischio della mappa, siccità con presagio vero (le sorgenti calano), cometa come presagio falso, primo cattivo raccolto, affollamento (allargarsi o villaggio figlio), crisi di legittimità, abbandono (le rovine restano e si può rifondare), fine dopo 500 anni con il riepilogo.
 
 ## Verifiche

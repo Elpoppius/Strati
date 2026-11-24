@@ -137,9 +137,17 @@ func celle_nel_cerchio(cx: float, cz: float, raggio: float) -> Array[Vector2i]:
 
 # ---------- azioni ----------
 
-## Abbatte gli alberi nelle celle. Restituisce quanti alberi e arbusti sono stati tagliati
-## (il legname), contando solo quelli che erano in piedi.
+## Vero se nella cella si può demolire (non è acqua né palude).
+func demolibile(c: Vector2i) -> bool:
+	var p := centro(c)
+	return alberi.distanza_acqua(p.x, p.y) > 0.0 and alberi._campiona_fine(alberi.dati.palude_fine, p.x, p.y) < 128.0
+
+
+## Abbatte gli alberi nelle celle (strumento Demolisci). Restituisce quanti alberi e arbusti sono
+## stati tagliati (il legname), contando solo quelli che erano in piedi. Acqua e paludi non si
+## toccano: sono elementi naturali che si gestiscono con altri strumenti, secondo l'epoca.
 func abbatti(lista: Array[Vector2i]) -> int:
+	lista = lista.filter(func(c: Vector2i) -> bool: return demolibile(c))
 	var tagliati := _conta_alberi_in_piedi(lista)
 	for c in lista:
 		var i := c.y * n + c.x

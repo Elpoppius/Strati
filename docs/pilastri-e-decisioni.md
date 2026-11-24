@@ -27,6 +27,8 @@ Gestionale urbanistico-politico. Il giocatore governa una città europea verosim
 - **Struttura:** sandbox con indicatori. Si può scegliere l'epoca iniziale (come in Civilization o Age of Empires), ma il gioco è pensato per la progressione dall'inizio.
 - **Tempo:** cronologia scandita da eventi storici reali (vedi Eventi). Tempo continuo con pausa e velocità regolabili (impostazione di partenza, modificabile); la simulazione avanza per anni e si ferma da sola nei momenti decisivi.
 - **Le epoche fanno da tutorial:** i sistemi si sbloccano progressivamente.
+- **Strumenti (24/11/2026):** uno strumento **Demolisci**, come in Cities: Skylines, vale per tutti gli elementi demolibili (alberi, case, strade, campi…). Non si applica agli elementi naturali non demolibili: un fiume o una palude non si demoliscono, si governano con altri strumenti (dighe, canali, deviazioni, bonifiche). Ogni lavorazione dev'essere coerente con l'epoca in corso: deviare un fiume o bonificare una palude si potrà fare con i mezzi e nei modi della propria epoca.
+- **Materiali (24/11/2026):** edifici e strade hanno le qualità dei loro materiali, nascoste al giocatore. Una casa lunga (legno e argilla) tolta lascia ricrescere il bosco nelle condizioni giuste; un'autostrada (asfalto) sigilla il suolo per sempre, ma resta la memoria di ciò che c'era.
 - **Produzione:** Fede + Claude, budget zero. Godot 4.7.2 (renderer Compatibilità), Blender 5.3, asset creati da script o con licenza CC0 (stile verosimile: vedi `asset.md`), Git/GitHub.
 
 ## Epoche

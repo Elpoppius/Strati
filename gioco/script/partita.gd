@@ -5,7 +5,7 @@ extends Node
 ## Tempo continuo con pausa e tre velocità; si ferma da solo nei momenti decisivi
 ## (decisione di Fede del 23/11/2026).
 
-const STRUMENTI := ["fonda", "campi", "sentiero", "granaio"]
+const STRUMENTI := ["fonda", "campi", "sentiero", "granaio", "demolisci"]
 const VELOCITA := [0.0, 2.0, 6.0, 15.0]  # anni al secondo, come nel Prototipo 0
 const NOMI_VELOCITA := ["Pausa", "2 anni al secondo", "6 anni al secondo", "15 anni al secondo"]
 
@@ -40,6 +40,7 @@ func avvia(s: Node, seme: int = -1) -> void:
 		{"id": "granaio", "testo": "Granaio · 30 cibo", "breve": "Granaio", "tasto": "H"},
 		{"id": "comune", "testo": "Raccolto diviso in comune", "breve": "Comune", "tasto": "", "strumento": false},
 		{"id": "famiglie", "testo": "Raccolto per famiglia", "breve": "Famiglie", "tasto": "", "strumento": false},
+		{"id": "demolisci", "testo": "Demolisci: alberi, case, campi, sentieri, granaio (irreversibile)", "breve": "Demolisci", "tasto": "X", "pericolo": true},
 	], true)
 	hud.aggiungi_tempo([
 		{"id": "v0", "testo": "Pausa (Spazio)", "breve": "‖"},
@@ -182,6 +183,28 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 		"sentiero":
 			var m := sim.traccia_sentiero(p)
 			hud.imposta_messaggio(m if m != "" else "Sentiero tracciato: allunga il raggio dei campi di 320 m.")
+		"demolisci":
+			var w := Vector2(punto.x, punto.z)
+			var uso: UsoSuolo = scena.uso
+			var c0 := uso.cella(w.x, w.y)
+			if not uso.demolibile(c0):
+				hud.imposta_messaggio("Fiumi e paludi non si demoliscono: si governeranno con dighe, canali, deviazioni e bonifiche, quando l'epoca lo permetterà.")
+				return
+			var esito := sim.demolisci(w, raggio)
+			vista.sincronizza()
+			var tagliati := uso.abbatti(uso.celle_nel_cerchio(w.x, w.y, raggio))
+			var parti: Array[String] = []
+			if tagliati > 0:
+				parti.append("%d alberi (legname)" % tagliati)
+			if esito["case"] > 0:
+				parti.append("%d case" % esito["case"])
+			if esito["campi"] > 0:
+				parti.append("%d campi" % esito["campi"])
+			if esito["sentieri"] > 0:
+				parti.append("%d tratti di sentiero" % esito["sentieri"])
+			if esito["granaio"]:
+				parti.append("il granaio")
+			hud.imposta_messaggio(("Demoliti: " + ", ".join(parti) + ".") if not parti.is_empty() else "Qui non c'è niente da demolire.")
 		"granaio":
 			var m := sim.costruisci_granaio(Vector2(punto.x, punto.z))
 			if m == "":
@@ -198,7 +221,7 @@ func raggio_strumento(comando: String, raggio: float) -> float:
 	match comando:
 		"fonda":
 			return (5 + sim.raggio_extra) * SimVillaggio.PX_CELLA * sim.dati.metri_per_px
-		"campi":
+		"campi", "demolisci":
 			return raggio
 		"granaio":
 			return 8.0

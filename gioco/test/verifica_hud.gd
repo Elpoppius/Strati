@@ -38,10 +38,21 @@ func _process(_d: float) -> bool:
 			if punto == Vector3.ZERO and a.valore_bosco(x, z) > 0.8:
 				punto = Vector3(x, 0, z)
 	_s.punto_corrente = punto
-	h.seleziona_comando("abbatti")
+	h.seleziona_comando("demolisci")
 	_s.applica_strumento()
-	controlla(_s.uso.stato(punto.x, punto.z) == UsoSuolo.LIBERO and _s.uso.memoria_bosco(punto.x, punto.z), "lo strumento Abbatti taglia il bosco sotto il puntatore")
-	controlla(h._messaggio.text.contains("Tagliati"), "il messaggio dice quanto legname: " + h._messaggio.text)
+	controlla(_s.uso.stato(punto.x, punto.z) == UsoSuolo.LIBERO and _s.uso.memoria_bosco(punto.x, punto.z), "lo strumento Demolisci taglia il bosco sotto il puntatore")
+	controlla(h._messaggio.text.contains("legname"), "il messaggio dice quanto legname: " + h._messaggio.text)
+	# Sul fiume Demolisci non agisce.
+	var fiume := Vector3.ZERO
+	for i in _s.dati.lato * _s.dati.lato:
+		if fiume == Vector3.ZERO and _s.dati.tipo[i] == MappaDati.FIUME:
+			var w: Vector2 = _s.dati.mondo_da_pixel(Vector2(i % _s.dati.lato, i / _s.dati.lato))
+			if a.distanza_acqua(w.x, w.y) < -10.0:
+				fiume = Vector3(w.x, 0, w.y)
+	_s.punto_corrente = fiume
+	_s.applica_strumento()
+	controlla(h._messaggio.text.contains("non si demoliscono"), "fiumi e paludi non si demoliscono: " + h._messaggio.text)
+	_s.punto_corrente = punto
 	controlla(not h._righe_comandi.has("sigilla") and not h._righe_comandi.has("costruisci"), "nessuno strumento per scegliere il materiale: è una qualità nascosta delle costruzioni")
 	_s._azione("anni")
 	controlla(h._messaggio.text.contains("10 anni"), "l'azione Fai passare 10 anni funziona")

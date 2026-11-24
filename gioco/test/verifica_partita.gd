@@ -71,6 +71,17 @@ func _process(_d: float) -> bool:
 	controlla(sim.fondato and sim.stat["abbandoni"] == 0, "con i campi il villaggio vive")
 	controlla(h._valori_indicatori.has("Popolazione") and h._valori_indicatori["Popolazione"].text == str(roundi(sim.pop)), "gli indicatori seguono la simulazione")
 	controlla(h._cronaca.text != "—", "la cronaca si riempie")
+	# Demolisci: le case nel cerchio spariscono e per un po' non rinascono lì.
+	var prima := sim.case.size()
+	if prima > 0:
+		var w := sim.centro_lotto(sim.case[0])
+		h.seleziona_comando("demolisci")
+		_s.raggio_pennello = 15.0
+		_s.punto_corrente = Vector3(w.x, 0, w.y)
+		_s.applica_strumento()
+		var l := sim.lotto_da_mondo(w.x, w.y)
+		controlla(not sim.case.has(l) and sim.macerie.has(l) and h._messaggio.text.contains("case"), "Demolisci toglie la casa e il lotto resta libero per un po': " + h._messaggio.text)
+		controlla(p.vista.numero_case() == sim.case.size(), "la casa demolita sparisce anche dalla mappa")
 	p.imposta_velocita(0)
 	var anno1 := sim.anno
 	p._process(1.0)

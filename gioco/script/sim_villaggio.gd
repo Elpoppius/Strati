@@ -43,6 +43,9 @@ var campi: Array[int] = []  # indici dei pixel
 var sentieri: Array[int] = []
 var case: Array[Vector2i] = []  # lotti da 20 m
 var rovine: Array[Vector2] = []  # punti nel mondo
+## Lotti delle case demolite: per qualche anno non vi rinasce una casa (lotto -> anni rimasti).
+var macerie := {}
+const ANNI_MACERIE := 20
 var figli: Array[int] = []
 var memoria := 40.0
 var razionamento := 0
@@ -376,6 +379,40 @@ func costruisci_granaio(punto: Vector2) -> String:
 	return ""
 
 
+## Demolisce ciò che è demolibile dentro il cerchio (strumento Demolisci, decisione di Fede del
+## 24/11/2026, come in Cities: Skylines): case, campi, sentieri, granaio. Il centro del villaggio
+## (il focolare) non si demolisce. Fiumi e paludi non sono affare di questo strumento: si
+## gestiranno con dighe, canali, deviazioni e bonifiche, quando l'epoca lo permetterà.
+## Restituisce quanto è stato demolito.
+func demolisci(punto: Vector2, raggio: float) -> Dictionary:
+	var esito := {"case": 0, "campi": 0, "sentieri": 0, "granaio": false}
+	if not fondato:
+		return esito
+	var rimaste: Array[Vector2i] = []
+	for c in case:
+		if centro_lotto(c).distance_to(punto) <= raggio:
+			esito["case"] += 1
+			macerie[c] = ANNI_MACERIE
+		else:
+			rimaste.append(c)
+	case = rimaste
+	var dentro := func(i: int) -> bool: return mondo_di_px(px_di(i)).distance_to(punto) <= raggio
+	var n_campi := campi.size()
+	campi = campi.filter(func(i: int) -> bool: return not dentro.call(i))
+	esito["campi"] = n_campi - campi.size()
+	var n_sentieri := sentieri.size()
+	sentieri = sentieri.filter(func(i: int) -> bool: return not dentro.call(i))
+	esito["sentieri"] = n_sentieri - sentieri.size()
+	if granaio.x >= 0 and granaio.distance_to(punto) <= raggio:
+		granaio = Vector2(-1, -1)
+		esito["granaio"] = true
+		_scrivi("Il granaio è stato demolito.")
+	if esito["case"] > 0:
+		_scrivi("Demolite %d case: le famiglie cercano posto altrove." % esito["case"])
+	disponi_case()
+	return esito
+
+
 func imposta_usanza(u: String) -> void:
 	if not fondato or usanza == u:
 		return
@@ -544,6 +581,10 @@ func passo() -> void:
 		bonus = 0.0
 	legittimita = clampf(legittimita, 0.0, 100.0)
 	memoria = maxf(0.0, memoria - 1.5)
+	for l in macerie.keys():
+		macerie[l] -= 1
+		if macerie[l] <= 0:
+			macerie.erase(l)
 	disponi_case()
 	if not gia_affollato and pop >= 150.0:
 		gia_affollato = true
@@ -665,7 +706,7 @@ func disponi_case() -> void:
 		for dy in range(-r, r + 1):
 			for dx in range(-r, r + 1):
 				var l := lc + Vector2i(dx, dy)
-				if l == lc or cheb(l, granaio_l) <= 1:
+				if l == lc or cheb(l, granaio_l) <= 1 or macerie.has(l):
 					continue
 				var w := centro_lotto(l)
 				var p := px_da_mondo(w.x, w.y)

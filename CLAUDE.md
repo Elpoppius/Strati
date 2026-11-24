@@ -18,7 +18,7 @@ Aggiungi in cima a `docs/diario.md` una voce con data, cosa è stato fatto, deci
 - **Versioni:** Godot 4.7.2 (la stessa sui PC di Fede e nell'ambiente di Claude), Blender 5.3 (come modulo Python `bpy` nell'ambiente di Claude). Guida per i PC: `docs/setup-pc.md`.
 - **Renderer:** Compatibilità. Fede lavora da tre PC con schede video diverse, alcune forse integrate; il renderer Compatibilità funziona ovunque e permette di pubblicare il gioco nel browser.
 - **Verifica:** Claude non vede il gioco in movimento. Prima di consegnare, esegui i test senza grafica; poi Fede prova e riporta.
-- **Asset:** solo con licenza libera (CC0) o creati da noi. Niente marchi, personaggi o opere protette.
+- **Asset:** solo con licenza libera (CC0) o creati da noi. Per i caratteri è ammessa la SIL Open Font License 1.1, rispettandone le regole (decisione di Fede del 24/11/2026): testo della licenza accanto ai file, elenco in `docs/licenze.md`. Niente marchi, personaggi o opere protette.
 
 ## Struttura
 | Cartella | Contenuto |
