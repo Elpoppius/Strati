@@ -70,6 +70,22 @@ func _process(_d: float) -> bool:
 		_s.applica_strumento()
 	_s._pennellando = false
 	controlla(sim.zona.size() > prima_z and h._messaggio.text.contains("Tieni premuto"), "trascinando, la zona si stende come un pennello (%d → %d)" % [prima_z, sim.zona.size()])
+	# La zona si vede solo con Zona agricola o Campo (segnalato da Fede: restava accesa togliendo
+	# lo strumento, o col puntatore fuori dal terreno).
+	var mat: ShaderMaterial = _s.terreno.materiale
+	_s._aggiorna_pennello()
+	controlla(float(mat.get_shader_parameter("mostra_zona")) > 0.5, "con Zona agricola la zona si vede")
+	h.seleziona_comando("")
+	_s._aggiorna_pennello()
+	controlla(float(mat.get_shader_parameter("mostra_zona")) < 0.5, "senza strumento la zona non si vede più")
+	h.seleziona_comando("zona")
+	_s.punto_corrente = null
+	_s._aggiorna_pennello()
+	controlla(float(mat.get_shader_parameter("mostra_zona")) > 0.5, "con Zona agricola la zona resta visibile col puntatore fuori dal terreno")
+	h.seleziona_comando("sentiero")
+	_s._aggiorna_pennello()
+	controlla(float(mat.get_shader_parameter("mostra_zona")) < 0.5, "col puntatore fuori dal terreno e un altro strumento la zona si spegne")
+	_s.punto_corrente = Vector3(sito.x, 0, sito.y)
 	h.seleziona_comando("campi")
 	# Campi a est del centro, entro il raggio.
 	_s.raggio_pennello = 120.0
@@ -162,6 +178,14 @@ func _process(_d: float) -> bool:
 	h.apri_politiche(false)
 	controlla(h._valori_indicatori.has("Popolazione") and h._valori_indicatori["Popolazione"].text == str(roundi(sim.pop)), "gli indicatori seguono la simulazione")
 	controlla(h._cronaca.text != "—", "la cronaca si riempie")
+	# Blocco Info a larghezza fissa (segnalato da Fede: le colonne ballavano quando crescevano i
+	# numeri): anche con valori lunghi non si allarga, e le cifre hanno tutte la stessa larghezza.
+	var info := h._fascia.get_child(0) as Control
+	h.imposta_indicatori([["Cibo", "88888 / 88888 l'anno", false], ["Popolazione", "88888", false]])
+	controlla(is_equal_approx(info.get_combined_minimum_size().x, Hud.LARGHEZZA_INFO), "il blocco Info non si allarga con valori lunghi (%d px)" % roundi(info.get_combined_minimum_size().x))
+	var font_val := (h._valori_indicatori["Cibo"] as Label).get_theme_font("font") as FontVariation
+	controlla(font_val != null and font_val.opentype_features.size() == 1, "i valori del blocco Info hanno le cifre a larghezza fissa")
+	p.aggiorna_hud()
 	# Demolisci: le case nel cerchio spariscono e per un po' non rinascono lì.
 	var prima := sim.case.size()
 	if prima > 0:

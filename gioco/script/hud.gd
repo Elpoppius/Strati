@@ -40,6 +40,9 @@ const LARGHEZZA_PANNELLO := 248
 const MARGINE := 16
 ## Altezza della fascia in basso (indicatori, scheda, comandi, minimappa).
 const ALTEZZA_FASCIA := 196
+## Blocco Info: larghezza fissa e colonna dei nomi (misurate su "POPOLAZIONE" e "8888 / 8888 l'anno").
+const LARGHEZZA_INFO := 300
+const COLONNA_NOMI_INFO := 92
 const LARGHEZZA_MAPPE := 232
 const LATO_MINIMAPPA := 150
 const LATO_TASTO := 58
@@ -166,7 +169,7 @@ func _striscia_alta(radice: Control) -> void:
 	riga.add_theme_constant_override("separation", 14)
 	p.add_child(riga)
 	_anno = Label.new()
-	_anno.add_theme_font_override("font", _carattere(true))
+	_anno.add_theme_font_override("font", _carattere(true, 0.0, true))
 	_anno.add_theme_font_size_override("font_size", 18)
 	_anno.text = "—"
 	riga.add_child(_anno)
@@ -220,7 +223,9 @@ func _fascia_bassa(radice: Control, nomi_mappe: Array) -> void:
 	_fascia = fascia
 	# Indicatori (come le risorse).
 	var pi := PanelContainer.new()
-	pi.custom_minimum_size = Vector2(190, ALTEZZA_FASCIA)
+	# Larghezza fissa (Fede: le colonne ballavano quando i numeri crescevano): colonna dei nomi
+	# fissa, valori allineati a destra nello spazio che resta, mai più larghi del blocco.
+	pi.custom_minimum_size = Vector2(LARGHEZZA_INFO, ALTEZZA_FASCIA)
 	pi.size_flags_vertical = Control.SIZE_FILL
 	fascia.add_child(pi)
 	var colonna_info := VBoxContainer.new()
@@ -794,15 +799,12 @@ func imposta_indicatori(voci: Array) -> void:
 			var box := HBoxContainer.new()
 			var e := Label.new()
 			e.text = nome.to_upper()
-			e.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			e.custom_minimum_size.x = COLONNA_NOMI_INFO
 			e.add_theme_font_override("font", _carattere(true, 1.6))
 			e.add_theme_font_size_override("font_size", 11)
 			e.add_theme_color_override("font_color", GRIGIO)
 			box.add_child(e)
-			var l := Label.new()
-			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-			l.add_theme_font_override("font", _carattere(true))
-			l.add_theme_font_size_override("font_size", 16)
+			var l := _valore_info(16)
 			box.add_child(l)
 			box.mouse_filter = Control.MOUSE_FILTER_STOP
 			indicatori.add_child(box)
@@ -813,6 +815,19 @@ func imposta_indicatori(voci: Array) -> void:
 		# Quarto elemento facoltativo: cosa vuol dire l'indicatore (suggerimento al passaggio).
 		if v.size() > 3:
 			(lab.get_parent() as Control).tooltip_text = String(v[3])
+
+
+## Valore del blocco Info: cifre tabellari, allineato a destra nello spazio dopo la colonna dei
+## nomi; se un numero non ci sta si tronca con i puntini invece di allargare il blocco.
+func _valore_info(corpo: int) -> Label:
+	var l := Label.new()
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	l.clip_text = true
+	l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	l.add_theme_font_override("font", _carattere(true, 0.0, true))
+	l.add_theme_font_size_override("font_size", corpo)
+	return l
 
 
 ## Fonti di cibo nel blocco Info. voci: {id, nome, preso, offerta, accesa, allarme, freccia,
@@ -837,15 +852,12 @@ func imposta_fonti(voci: Array) -> void:
 			riga.add_child(box)
 			var e := Label.new()
 			e.text = String(v["nome"]).to_upper()
-			e.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			e.custom_minimum_size.x = COLONNA_NOMI_INFO
 			e.add_theme_font_override("font", _carattere(true, 1.6))
 			e.add_theme_font_size_override("font_size", 11)
 			e.add_theme_color_override("font_color", GRIGIO)
 			box.add_child(e)
-			var l := Label.new()
-			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-			l.add_theme_font_override("font", _carattere(true))
-			l.add_theme_font_size_override("font_size", 14)
+			var l := _valore_info(14)
 			box.add_child(l)
 			var fondo := ColorRect.new()
 			fondo.color = RIGA
@@ -1355,11 +1367,14 @@ func _etichetta_piccola(padre: Control) -> Label:
 const INTER := "res://asset/caratteri/inter/Inter-%s.woff2"
 
 
-func _carattere(grassetto: bool, spaziatura := 0.0) -> Font:
+func _carattere(grassetto: bool, spaziatura := 0.0, cifre_fisse := false) -> Font:
 	var f := FontVariation.new()
 	f.base_font = load(INTER % ("Bold" if grassetto else "Regular"))
 	if spaziatura > 0.0:
 		f.spacing_glyph = int(spaziatura)
+	# Cifre tabellari (tnum): tutte le cifre larghe uguali, così i numeri che cambiano non ballano.
+	if cifre_fisse:
+		f.opentype_features = {TextServerManager.get_primary_interface().name_to_tag("tnum"): 1}
 	return f
 
 

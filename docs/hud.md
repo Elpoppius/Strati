@@ -29,7 +29,7 @@ Il campo di gioco resta libero: l'interfaccia sta in una fascia in basso e in du
 - **In alto a sinistra:** la cronaca, gli ultimi quattro fatti, come gli obiettivi.
 - **In alto a destra:** le prestazioni (fotogrammi al secondo, alberi, cache), piccole, senza fondo.
 - **Fascia in basso a cinque blocchi** (decisione di Fede del 24/11/2026), da sinistra:
-  1. **Info:** gli indicatori (popolazione, cibo, salute, legittimità), come le risorse; il valore diventa rosso quando è in pericolo.
+  1. **Info:** gli indicatori (popolazione, cibo, salute, legittimità), come le risorse; il valore diventa rosso quando è in pericolo. Larghezza fissa di 300 px con la colonna dei nomi fissa e i valori allineati a destra; le cifre dei valori (e dell'anno in alto) sono tabellari, tutte larghe uguali, così i numeri che crescono non spostano le colonne né i blocchi accanto (segnalato da Fede il 24/11). Un valore che non ci sta si tronca con i puntini.
   2. **Descrizione:** la scheda dello strumento scelto (come la scheda dell'unità selezionata): nome, cosa fa o messaggio dell'ultima azione, lettura del lotto sotto il puntatore.
   3. **Costruzione:** schede Insediamento, Territorio (Zona agricola, Z; Campo, C), Vie, Edifici. Dopo la fondazione il tasto Fondare sparisce, e con lui la scheda Insediamento finché resta vuota (torna se il villaggio è abbandonato).
   4. **Gestione:** scheda Politiche (tasto P, apre il pannello delle politiche) e, allo stesso livello, scheda **Ammodernamento** (decisione di Fede) con un tasto per settore: oggi Agricolo; poi Viario (strade), Abitativo e gli altri. Il tasto di un settore è spento finché non c'è niente da ammodernare e diventa invertito quando l'ammodernamento è attivo; un clic lo avvia o lo sospende.

@@ -333,6 +333,9 @@ func _aggiorna_pennello() -> void:
 		return
 	if partita and partita.sim:
 		partita.aggiorna_modalita()
+	# La zona agricola si vede solo mentre si destina la terra (Zona agricola o Campo). Va decisa
+	# prima dell'uscita qui sotto: senza strumento o col puntatore fuori dal terreno restava accesa.
+	terreno.materiale.set_shader_parameter("mostra_zona", 1.0 if hud.comando() in ["campi", "zona"] else 0.0)
 	if hud.comando() == "" or punto_corrente == null:
 		terreno.materiale.set_shader_parameter("pennello", Vector3(0, 0, -1))
 		terreno.materiale.set_shader_parameter("griglia_magnetica", Vector3.ZERO)
@@ -373,8 +376,6 @@ func _aggiorna_pennello() -> void:
 		var cc := partita.sim.mondo_di_px(partita.sim.centro)
 		contado = Vector3(cc.x, cc.y, partita.sim.raggio_contado())
 	terreno.materiale.set_shader_parameter("contado", contado)
-	# La zona agricola si vede mentre si destina la terra (Zona agricola o Campo).
-	terreno.materiale.set_shader_parameter("mostra_zona", 1.0 if hud.comando() in ["campi", "zona"] else 0.0)
 	# Sentieri: anteprima come in Cities.
 	if partita:
 		if hud.comando() == "sentiero":

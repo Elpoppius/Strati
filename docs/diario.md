@@ -2,6 +2,18 @@
 
 Voci più recenti in cima.
 
+## 24/11/2026 (sera)
+**Fatto**
+- **Zona agricola che restava accesa** (segnalato da Fede): togliendo lo strumento (clic sul tasto o Esc) o con il puntatore fuori dal terreno, la funzione del pennello usciva prima di spegnere la zona. Ora la zona si vede solo con Zona agricola o Campo, in ogni caso. Quattro verifiche nuove in `test/verifica_partita.gd`.
+- **Colonne del blocco Info che ballavano** (segnalato da Fede): il blocco si allargava quando i numeri crescevano (per esempio "2147 / 833 l'anno") e spingeva gli altri blocchi; in più le cifre di Inter hanno larghezze diverse. Ora il blocco ha larghezza fissa (300 px), la colonna dei nomi è fissa, i valori sono allineati a destra con cifre tabellari (`tnum`), e un valore troppo lungo si tronca con i puntini invece di allargare il blocco. Cifre tabellari anche per l'anno in alto. Regola in `docs/hud.md`; due verifiche nuove in `test/verifica_partita.gd`.
+- Tutte le 9 verifiche superate. Il messaggio "3 resources still in use at exit" alla fine di `verifica_villaggio.gd` c'era già prima: da guardare quando capita.
+
+**Decisioni**
+- Nessuna decisione di design nuova: correzioni di difetti segnalati da Fede.
+
+**Prossimo passo**
+- Fede: fare Pull e controllare che la zona agricola sparisca togliendo lo strumento e che il blocco Info resti fermo mentre scorre il tempo; poi continuare le prove del villaggio (vedi la voce precedente).
+
 ## 24/11/2026
 **Per riprendere (riepilogo di fine sessione, account di oggi)**
 - Stato: Prototipo 0 giocabile in Godot con HUD a cinque blocchi (Info con fonti di cibo, Descrizione con opzioni dello strumento, Costruzione, Gestione con Politiche e Ammodernamento, Strumenti con Demolizione e Prova), lettura del sito in fondazione, zona agricola a pennello e campo a mano, sentieri liberi con anteprima, politiche (fonti di cibo, raccolto, stranieri), notifiche discrete. Tutte le 9 verifiche passano; ultimo lavoro caricato.
