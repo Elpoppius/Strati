@@ -2,7 +2,7 @@
 
 Riusa materiali e forme della prova di stile (prova_stile_verosimile.py): case lunghe in tre
 misure, capanne tonde in due, granaio su pali, palizzata (tratto e varco), luogo sacro,
-focolare, fossa-silo, recinto per gli animali, catasta di legna, rocce; legnaia (25/11/2026).
+focolare, fossa-silo, recinto per gli animali, catasta di legna, rocce; legnaia e capanno da pesca (25/11/2026).
 
 Uso:  blender-py strumenti/blender/villaggio.py gioco/asset/villaggio
 
@@ -197,12 +197,14 @@ def legnaia(nome, seme):
     for k in range(5):
         x = (k - 2) * lungo / 4
         parti.append(base.cilindro_tra("corrente", (x, -largo / 2 - 0.4, alto_davanti + 0.05), (x, largo / 2 + 0.4, alto_dietro + 0.05), 0.045, 0.045, m["legno"], lati=5))
-    falda = base.scatola("falda", (lungo + 0.7, largo + 1.0, 0.16), (0, 0, (alto_davanti + alto_dietro) / 2 + 0.16), m["paglia"], tagli=3)
-    # Davanti (y negativo) più alta: la falda scende verso il retro.
-    pendenza = math.atan2(alto_davanti - alto_dietro, largo + 0.8)
-    falda.rotation_euler = (-pendenza, 0, 0)
+    falda = base.scatola("falda", (lungo + 0.7, largo + 1.0, 0.16), (0, 0, 0), m["paglia"], tagli=3)
     for v in falda.data.vertices:
         v.co.z += rnd.uniform(-0.04, 0.04)
+    # Davanti (y negativo) più alta: la falda scende verso il retro; si inclina nell'origine e poi
+    # si mette al suo posto.
+    pendenza = math.atan2(alto_davanti - alto_dietro, largo + 0.8)
+    falda.rotation_euler = (-pendenza, 0, 0)
+    falda.location = (0, 0, (alto_davanti + alto_dietro) / 2 + 0.16)
     parti.append(falda)
     # Cataste sotto la tettoia: tronchi corti accatastati su due file, a piramide.
     r = 0.14
@@ -236,6 +238,88 @@ def legnaia(nome, seme):
     return base.unisci(nome, parti)
 
 
+def capanno_pesca(nome, seme):
+    """Capanno da pesca (decisione di Fede del 25/11/2026): capanno di canne e legno sulla riva,
+    rastrelliere con reti e pesce a seccare, una piroga scavata in un tronco tirata a riva e
+    qualche nassa di vimini. L'acqua è verso y positivo."""
+    m = materiali()
+    m["canne"] = base.materiale("canne", "paglia", tinta=(0.78, 0.74, 0.6))
+    m["pesce"] = base.materiale("pesce", "pietra", tinta=(0.72, 0.74, 0.76))
+    m["rete"] = base.materiale("rete", "legno", tinta=(0.55, 0.5, 0.42))
+    rnd = random.Random(seme)
+    parti = []
+    # Capanno: telaio di pali, pareti di canne in fasci verticali, tetto a due falde di canne.
+    lungo, largo, alto = 3.2, 2.4, 1.6
+    for x in (-lungo / 2, lungo / 2):
+        for y in (-largo / 2, largo / 2):
+            parti.append(base.cilindro_tra("palo", (x, y, -0.1), (x, y, alto), 0.07, 0.06, m["corteccia"], lati=6))
+    for lato in range(4):
+        n = 14 if lato % 2 == 0 else 10
+        for k in range(n):
+            t = (k + 0.5) / n
+            if lato == 0:
+                x, y = -lungo / 2 + t * lungo, -largo / 2
+            elif lato == 1:
+                x, y = lungo / 2, -largo / 2 + t * largo
+            elif lato == 2:
+                x, y = lungo / 2 - t * lungo, largo / 2
+            else:
+                x, y = -lungo / 2, largo / 2 - t * largo
+            # Una porta sul lato dell'acqua (lato 2, al centro).
+            if lato == 2 and 0.4 < t < 0.6:
+                continue
+            h = alto + rnd.uniform(-0.08, 0.06)
+            parti.append(base.cilindro_tra("canne", (x, y, 0.0), (x + rnd.uniform(-0.03, 0.03), y + rnd.uniform(-0.03, 0.03), h), 0.075, 0.06, m["canne"], lati=5, uv_tile=0.8))
+    colmo = alto + 0.95
+    for verso in (-1, 1):
+        # La falda nasce nell'origine, si inclina e poi si mette al suo posto (la rotazione è
+        # attorno all'origine dell'oggetto).
+        falda = base.scatola("falda", (lungo + 0.6, 1.75, 0.14), (0, 0, 0), m["canne"], tagli=3)
+        for v in falda.data.vertices:
+            v.co.z += rnd.uniform(-0.03, 0.03)
+        falda.rotation_euler = (-verso * math.atan2(colmo - alto, largo / 2 + 0.2), 0, 0)
+        falda.location = (0, verso * 0.72, (alto + colmo) / 2 + 0.05)
+        parti.append(falda)
+    parti.append(base.cilindro_tra("colmo", (-lungo / 2 - 0.35, 0, colmo), (lungo / 2 + 0.35, 0, colmo), 0.06, 0.06, m["corteccia"], lati=6))
+    # Rastrelliera: due cavalletti e due pertiche, con reti appese e pesci a seccare.
+    rx0, rx1, ry = -lungo / 2 - 2.6, -lungo / 2 - 0.6, 0.8
+    for x in (rx0, rx1):
+        parti.append(base.cilindro_tra("cavalletto", (x, ry - 0.5, 0.0), (x, ry, 1.6), 0.05, 0.045, m["corteccia"], lati=5))
+        parti.append(base.cilindro_tra("cavalletto", (x, ry + 0.5, 0.0), (x, ry, 1.6), 0.05, 0.045, m["corteccia"], lati=5))
+    for z in (1.55, 1.1):
+        parti.append(base.cilindro_tra("pertica", (rx0 - 0.2, ry, z), (rx1 + 0.2, ry, z), 0.035, 0.035, m["legno"], lati=5))
+    # Rete: una maglia di fili sottili che pende dalla pertica alta.
+    for k in range(9):
+        x = rx0 + 0.15 + k * (rx1 - rx0 - 0.3) / 8
+        parti.append(base.cilindro_tra("rete", (x, ry, 1.55), (x + rnd.uniform(-0.05, 0.05), ry + 0.04, 0.6), 0.012, 0.012, m["rete"], lati=3))
+    for z in (1.35, 1.1, 0.85, 0.62):
+        parti.append(base.cilindro_tra("rete", (rx0 + 0.15, ry + 0.02, z), (rx1 - 0.15, ry + 0.02, z - 0.03), 0.012, 0.012, m["rete"], lati=3))
+    # Pesci appesi per la coda alla pertica bassa.
+    for k in range(7):
+        x = rx0 + 0.2 + k * (rx1 - rx0 - 0.4) / 6
+        lung = rnd.uniform(0.28, 0.4)
+        parti.append(sasso("pesce", (0.06, 0.12, lung), (x, ry - 0.06, 1.1 - lung * 0.7), m["pesce"], seme + 10 + k, appoggiato=False))
+    # Piroga scavata in un tronco, tirata a riva verso l'acqua.
+    px, py = 1.0, largo / 2 + 2.2
+    scafo = sasso("piroga", (4.2, 0.62, 0.42), (px, py, 0.0), m["corteccia"], seme + 3)
+    for v in scafo.data.vertices:
+        # Punte affusolate e fondo appiattito.
+        f = 1.0 - min(1.0, abs(v.co.x - px) / 2.1) ** 2
+        v.co.y = py + (v.co.y - py) * (0.35 + 0.65 * f)
+        v.co.z = max(v.co.z, 0.02) * (0.6 + 0.4 * f)
+    parti.append(scafo)
+    parti.append(base.scatola("cavo", (3.2, 0.36, 0.06), (px, py, 0.36), m["vano"]))
+    parti.append(base.cilindro_tra("pagaia", (px - 1.0, py + 0.6, 0.05), (px + 0.6, py + 0.9, 0.08), 0.025, 0.025, m["legno"], lati=4))
+    parti.append(base.scatola("pala", (0.35, 0.14, 0.03), (px + 0.75, py + 0.93, 0.08), m["legno"]))
+    # Nasse di vimini: coni intrecciati appoggiati a terra.
+    for k in range(3):
+        nx, ny = lungo / 2 + 0.8 + k * 0.7, -0.6 + rnd.uniform(-0.3, 0.3)
+        a = rnd.uniform(0, 2 * math.pi)
+        fine = (nx + 0.9 * math.cos(a), ny + 0.9 * math.sin(a), 0.22)
+        parti.append(base.cilindro_tra("nassa", (nx, ny, 0.24), fine, 0.24, 0.05, m["legno"], lati=8, uv_tile=0.5))
+    return base.unisci(nome, parti)
+
+
 def roccia(nome, seme, dim):
     m = materiali()
     return base.unisci(nome, [sasso("roccia", dim, (0, 0, 0), m["pietra"], seme)])
@@ -256,6 +340,7 @@ ASSET = [
     ("recinto_animali", lambda n: recinto_animali(n, 26)),
     ("catasta_legna", lambda n: catasta_legna(n, 27)),
     ("legnaia", lambda n: legnaia(n, 31)),
+    ("capanno_pesca", lambda n: capanno_pesca(n, 32)),
     ("roccia_1", lambda n: roccia(n, 28, (1.6, 1.2, 0.9))),
     ("roccia_2", lambda n: roccia(n, 29, (2.4, 1.8, 1.3))),
     ("roccia_3", lambda n: roccia(n, 30, (0.9, 0.8, 0.6))),

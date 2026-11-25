@@ -17,7 +17,7 @@ Voci più recenti in cima.
 
 - Più tardi (Fede): il casual si lascia così per ora; pascolo deciso nelle sue cinque parti (zona a pennello, maggese spontaneo con il campo stanco visibile, capi con crescita da gestire, scorta viva, politica del raccolto); niente "Caccia regolata" per ora; orti più piccoli solo come aspetto nella fase grafica. Stime dei tempi nel todo.
 
-- Ultima ora: **icone** di Capanno da pesca, Posta di caccia e Pascolo (pronte per quando ci saranno gli strumenti) e **modello della Legnaia** (tettoia a una falda su pali, cataste sotto e di fianco, ceppo con l'ascia, tronchi e trucioli), ora usato nel gioco al posto della catasta provvisoria. Foto `docs/immagini/modello-legnaia-25-11.jpg`. Descrizioni dei modelli del capanno, della posta e dello stabbio del pascolo nel todo.
+- Ultima ora: **icone** di Capanno da pesca, Posta di caccia e Pascolo (pronte per quando ci saranno gli strumenti) e **modello della Legnaia** (tettoia a una falda su pali, cataste sotto e di fianco, ceppo con l'ascia, tronchi e trucioli), ora usato nel gioco al posto della catasta provvisoria. Foto `docs/immagini/modello-legnaia-25-11.jpg`. Poi il **modello del capanno da pesca** (canne, tetto a due falde, rastrelliera con rete e pesci, piroga, nasse; foto `docs/immagini/modello-capanno-pesca-25-11.jpg`), con la falda della legnaia corretta. Descrizioni della posta e dello stabbio del pascolo nel todo.
 
 **Prossimo passo**
 - Chi riprende: `docs/todo.md`, sezioni "A che punto siamo" e "Per chi riprende" (prima voce: Capanno da pesca e Posta di caccia). Prima di cominciare il pascolo, confermare con Fede la proposta sulla crescita dei capi e sul campo stanco visibile.
