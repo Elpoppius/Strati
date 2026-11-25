@@ -90,3 +90,15 @@ Le decisioni che ne sono venute (Fede, 25/11/2026) stanno in `pilastri-e-decisio
 - **I primi 100 anni sono ancora uguali per tutti** (circa 60 abitanti): è la fase in cui "si mettono le pedine" (Fede, 25/11/2026). Il giocatore automatico non usa le leve dei primi anni (campi a mano, scelta delle fonti); da controllare con le prove vere.
 - **Il sito pesa:** al livello 10 Pianura aperta 1168, Sperone 1098, Sbocco 914, Terrazzo 855; Dosso nelle paludi 481 (febbri, salute), Area dei gessi 452.
 - **Abitanti ancora sopra l'obiettivo** del nucleo (100–300): servono i casali (tappa dei 250), cioè la scelta su come contare gli abitanti sul territorio, rimandata a epoca completa.
+
+## Giocatori "umani" (25/11/2026)
+*Richiesta di Fede: verificare le carestie con un giocatore che non conosce le dinamiche interne, ma impara sbagliando o fermandosi a leggere.* Script `gioco/test/giocatore_umano.gd`: vede solo ciò che vede il giocatore (indicatori rossi, cause dei pannelli di focus, tappe, scelte), stende all'inizio una zona a metà del contado senza guardare il rischio di piena, guarda la partita ogni 10–30 anni, prova i rimedi che le cause suggeriscono, risponde d'istinto alle scelte. Due profili: "sbaglia" (apre i pannelli 3 volte su 10) e "legge" (8 su 10). 36 partite (6 siti × 3 semi × 2 profili).
+
+| Profilo | Abitanti a 500 anni (mediana) | Minimo | Carestie in tutto (18 partite) | Abbandoni | Senza granaio |
+|---|---|---|---|---|---|
+| Sbaglia | 516 | 216 | 2 | 0 | 9 |
+| Legge | 704 | 200 | 0 | 0 | 6 |
+
+- **Il risultato non cambia: le carestie restano quasi assenti** anche per chi sbaglia. Il motivo: quando la terra non basta, l'abbondanza ferma le nascite prima che arrivi la fame (il villaggio ristagna invece di morire), e le scorte coprono una siccità o una piena.
+- **Leggere conta:** chi legge i pannelli arriva a circa il 40% di abitanti in più.
+- **Un buco trovato:** la causa "mancano case: serve legna" non dice come procurarsela, e non c'è uno strumento per farlo (la legna viene da sola dai boschi vicini e dal dissodamento).
