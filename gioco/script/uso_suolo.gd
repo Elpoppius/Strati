@@ -41,6 +41,7 @@ const COSTRUZIONI := {
 	"legnaia": ["legno", "paglia"],
 	"capanno_pesca": ["legno", "paglia"],
 	"posta_caccia": ["legno"],
+	"luogo_sacro": ["legno", "pietra a secco"],
 	"focolare": ["pietra a secco"],
 	"sentiero": ["terra battuta"],
 	"palizzata": ["legno"],

@@ -117,6 +117,11 @@ func _gioca(d: MappaDati, sito: Vector2i, k: int, seme: int) -> Dictionary:
 			if sim.legnaie.is_empty() or (k >= 4 and AiutiGiocatori.legna_scarsa(sim) and sim.legnaie.size() < 1 + k / 3):
 				AiutiGiocatori.costruisci_legnaia(sim, caso, (k - 1) / 9.0)
 			_edifici_risorse(sim, caso, k, eta)
+			# Luogo sacro dal livello 3, bosco sacro dal livello 5 (i più bravi più grande).
+			if k >= 3 and sim.luogo_sacro.x < 0 and sim.sbloccato("luogo_sacro") and sim.legna >= SimVillaggio.COSTO_LUOGO_SACRO:
+				AiutiGiocatori.costruisci_luogo_sacro(sim)
+			if k >= 5 and sim.bosco_sacro.is_empty() and sim.sbloccato("bosco_sacro"):
+				AiutiGiocatori.stendi_bosco_sacro(sim, caso, (k - 1) / 9.0, 4.0 + k)
 			if k >= 5 and not sentieri_fatti and eta >= 20:
 				sentieri_fatti = true
 				for j in mini(k - 4, 6):

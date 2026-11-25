@@ -230,6 +230,29 @@ func _process(_d: float) -> bool:
 			finiti = false
 	var in_cantiere := (sim.poste + sim.capanni + sim.legnaie).filter(func(e: Dictionary) -> bool: return int(e["cantiere"]) > 0).size() + (1 if sim.cantiere_granaio > 0 else 0)
 	controlla(finiti and p.vista.barre_aperte() == in_cantiere, "finito il cantiere compare l'edificio e la barra sparisce (%d barre, %d cantieri)" % [p.vista.barre_aperte(), in_cantiere])
+	# Luogo sacro e bosco sacro dagli strumenti (decisioni di Fede del 24–25/11/2026).
+	if sim.fondato:
+		sim.pop = maxf(sim.pop, 160.0)
+		sim._aggiorna_tappa()
+		sim.legna = maxf(sim.legna, 60.0)
+		var cs := sim.mondo_di_px(sim.centro)
+		h.seleziona_comando("luogo_sacro")
+		for k in 16:
+			if sim.luogo_sacro.x < 0:
+				_s.punto_corrente = Vector3(cs.x + cos(TAU * k / 16.0) * 150.0, 0, cs.y + sin(TAU * k / 16.0) * 150.0)
+				_s.applica_strumento()
+		controlla(sim.luogo_sacro.x >= 0 and String(p.vista._edifici[sim.luogo_sacro]["modello"]) == "cantiere_luogo_sacro", "luogo sacro dallo strumento, con il suo scheletro")
+		h.seleziona_comando("bosco_sacro")
+		for r in range(100, 1000, 40):
+			for k in 16:
+				if sim.bosco_sacro.is_empty():
+					var q := Vector2(cs.x + cos(TAU * k / 16.0) * r, cs.y + sin(TAU * k / 16.0) * r)
+					if sim.motivo_bosco_sacro(sim.px_da_mondo(q.x, q.y)) == "":
+						_s.punto_corrente = Vector3(q.x, 0, q.y)
+						p.inizia_pennellata()
+						_s.applica_strumento()
+		controlla(not sim.bosco_sacro.is_empty() and p.vista._immagine_sacro != null, "bosco sacro a pennello (%s ha)" % String.num(sim.ettari_bosco_sacro(), 1))
+		h.seleziona_comando("")
 	var tagliati_visibili := 0
 	for i in sim.tagliati:
 		if sim.dati.tipo[i] == MappaDati.PALUDE:

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="miter">
+<!-- Bosco sacro: un albero dentro un cerchio -->
+<circle cx="16" cy="16" r="13"/>
+<circle cx="16" cy="13" r="6" fill="#ffffff" stroke="none"/>
+<line x1="16" y1="17" x2="16" y2="24"/>
+</svg>

@@ -3,7 +3,7 @@
 Riusa materiali e forme della prova di stile (prova_stile_verosimile.py): case lunghe in tre
 misure, capanne tonde in due, granaio su pali, palizzata (tratto e varco), luogo sacro,
 focolare, fossa-silo, recinto per gli animali, catasta di legna, rocce; legnaia, capanno da pesca e posta di caccia (25/11/2026);
-i cantieri di granaio, legnaia, capanno e posta (scheletri, 25/11/2026 sera).
+i cantieri di granaio, legnaia, capanno, posta e luogo sacro (scheletri, 25/11/2026 sera).
 
 Uso:  blender-py strumenti/blender/villaggio.py gioco/asset/villaggio
 
@@ -555,6 +555,39 @@ def cantiere_posta(nome, seme):
     return base.unisci(nome, parti)
 
 
+def cantiere_luogo_sacro(nome, seme):
+    """Luogo sacro in costruzione: quattro dei nove pali già eretti nel cerchio, gli altri stesi a
+    terra; la pietra ancora coricata su tre rulli, con una leva e una corda; le buche segnate."""
+    m = materiali()
+    m["corda"] = base.materiale("corda", "legno", tinta=(0.55, 0.48, 0.36))
+    rnd = random.Random(seme)
+    parti = []
+    n = 9
+    for k in range(n):
+        a = 2 * math.pi * k / n + rnd.uniform(-0.08, 0.08)
+        r = 4.2 + rnd.uniform(-0.2, 0.2)
+        x, y = r * math.cos(a), r * math.sin(a)
+        if k in (0, 1, 2, 5):
+            h = rnd.uniform(2.3, 2.9)
+            parti.append(base.cilindro_tra("palo", (x, y, -0.2), (x, y, h), 0.2, 0.15, m["corteccia"], lati=7))
+        else:
+            # Buca segnata da un anello di terra smossa.
+            parti.append(sasso("buca", (0.6, 0.6, 0.08), (x, y, 0), m["argilla"], seme + 60 + k))
+    # Pali ancora a terra, fuori dal cerchio.
+    for k in range(3):
+        y = -6.2 + k * 0.5
+        parti.append(base.cilindro_tra("palo_a_terra", (-1.6, y, 0.2), (1.4, y + rnd.uniform(-0.2, 0.2), 0.18), 0.2, 0.15, m["corteccia"], lati=7, uv_tile=1.2))
+    # La pietra coricata sui rulli, verso il centro del cerchio.
+    for k in range(3):
+        x = -0.9 + k * 0.9
+        parti.append(base.cilindro_tra("rullo", (x, -0.7, 0.12), (x, 0.7, 0.12), 0.12, 0.12, m["corteccia"], lati=7))
+    stele = sasso("stele", (2.6, 0.75, 0.5), (0, 0, 0.24), m["pietra"], seme + 1, appoggiato=False)
+    parti.append(stele)
+    parti.append(base.cilindro_tra("leva", (1.5, 0.3, 0.0), (2.6, 0.9, 1.4), 0.06, 0.05, m["legno"], lati=5))
+    parti.append(base.cilindro_tra("corda", (-1.3, 0.0, 0.5), (-3.2, 0.4, 0.1), 0.03, 0.03, m["corda"], lati=4))
+    return base.unisci(nome, parti)
+
+
 def roccia(nome, seme, dim):
     m = materiali()
     return base.unisci(nome, [sasso("roccia", dim, (0, 0, 0), m["pietra"], seme)])
@@ -581,6 +614,7 @@ ASSET = [
     ("cantiere_legnaia", lambda n: cantiere_legnaia(n, 35)),
     ("cantiere_capanno_pesca", lambda n: cantiere_capanno(n, 36)),
     ("cantiere_posta_caccia", lambda n: cantiere_posta(n, 37)),
+    ("cantiere_luogo_sacro", lambda n: cantiere_luogo_sacro(n, 38)),
     ("roccia_1", lambda n: roccia(n, 28, (1.6, 1.2, 0.9))),
     ("roccia_2", lambda n: roccia(n, 29, (2.4, 1.8, 1.3))),
     ("roccia_3", lambda n: roccia(n, 30, (0.9, 0.8, 0.6))),

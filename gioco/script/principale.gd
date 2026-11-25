@@ -39,7 +39,7 @@ var _trascinando := false
 var _destro_da := Vector2.ZERO
 const SOGLIA_CLIC_DESTRO := 5.0
 ## Strumenti a pennello (Fede: la zona agricola si disegna tenendo premuto e trascinando).
-const STRUMENTI_PENNELLO := ["zona"]
+const STRUMENTI_PENNELLO := ["zona", "bosco_sacro"]
 var _pennellando := false
 var _ultimo_pennello := Vector3.INF
 ## Etichette dei siti adatti alle dighe: visibili solo nella mappa dell'energia dell'acqua.
@@ -197,6 +197,7 @@ func imposta_modo(i: int) -> void:
 	if partita:
 		partita.aggiorna_mappe_tematiche()
 	aggiorna_zone_taglio()
+	_aggiorna_pennello()
 	for e in _segni_dighe:
 		e.visible = (i == 4)
 	if hud:
@@ -293,8 +294,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 				imposta_modo((ev as InputEventKey).keycode - KEY_1)
 			KEY_HOME:
 				torna_al_sito()
-			KEY_X, KEY_F, KEY_C, KEY_Z, KEY_V, KEY_H, KEY_L, KEY_K, KEY_T:
-				var id: String = {KEY_X: "demolisci", KEY_F: "fonda", KEY_C: "campi", KEY_Z: "zona", KEY_V: "sentiero", KEY_H: "granaio", KEY_L: "legnaia", KEY_K: "capanno", KEY_T: "posta"}[(ev as InputEventKey).keycode]
+			KEY_X, KEY_F, KEY_C, KEY_Z, KEY_V, KEY_H, KEY_L, KEY_K, KEY_T, KEY_O, KEY_B:
+				var id: String = {KEY_X: "demolisci", KEY_F: "fonda", KEY_C: "campi", KEY_Z: "zona", KEY_V: "sentiero", KEY_H: "granaio", KEY_L: "legnaia", KEY_K: "capanno", KEY_T: "posta", KEY_O: "luogo_sacro", KEY_B: "bosco_sacro"}[(ev as InputEventKey).keycode]
 				hud.seleziona_comando("" if hud.comando() == id else id)
 				_aggiorna_pennello()
 			KEY_P:
@@ -361,6 +362,7 @@ func _aggiorna_pennello() -> void:
 	# La zona agricola si vede solo mentre si destina la terra (Zona agricola o Campo). Va decisa
 	# prima dell'uscita qui sotto: senza strumento o col puntatore fuori dal terreno restava accesa.
 	terreno.materiale.set_shader_parameter("mostra_zona", 1.0 if hud.comando() in ["campi", "zona"] else 0.0)
+	terreno.materiale.set_shader_parameter("mostra_bosco_sacro", 1.0 if hud.comando() in ["bosco_sacro", "demolisci", "legnaia"] or modo in [5, 7] else 0.0)
 	if hud.comando() == "" or punto_corrente == null:
 		terreno.materiale.set_shader_parameter("pennello", Vector3(0, 0, -1))
 		terreno.materiale.set_shader_parameter("griglia_magnetica", Vector3.ZERO)
@@ -386,7 +388,7 @@ func _aggiorna_pennello() -> void:
 		"campi", "zona":
 			# Celle da 40 m centrate sui punti della mappa: si prendono quelle col centro nel cerchio.
 			griglia = Vector3(dati.metri_per_px, dati.metri_per_px * 0.5, r * 1.15)
-		"granaio":
+		"granaio", "luogo_sacro":
 			# Lotti da 20 m: l'edificio si aggancia al centro del lotto sotto il puntatore.
 			centro = (Vector2(floorf(p.x / LATO_LOTTO), floorf(p.z / LATO_LOTTO)) + Vector2(0.5, 0.5)) * LATO_LOTTO
 			griglia = Vector3(LATO_LOTTO, 0.0, 70.0)

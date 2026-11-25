@@ -81,6 +81,41 @@ static func risorsa_scarsa(sim: SimVillaggio, caccia: bool) -> bool:
 	return dagli_edifici < sim.pop * (SimVillaggio.QUOTA_CACCIA if caccia else SimVillaggio.QUOTA_PESCA) * 0.8
 
 
+## Erige il luogo sacro vicino al centro, sul primo lotto libero di un giro di prove. Vero se fatto.
+static func costruisci_luogo_sacro(sim: SimVillaggio) -> bool:
+	var c := sim.mondo_di_px(sim.centro)
+	for r: float in [60.0, 120.0, 200.0, 300.0]:
+		for k in 12:
+			var a := k * TAU / 12.0
+			if sim.costruisci_luogo_sacro(c + Vector2(cos(a), sin(a)) * r) == "":
+				return true
+	return false
+
+
+## Stende il bosco sacro: qualita 1 sceglie il bosco più vicino al villaggio e ne stende circa
+## `ettari`; qualita bassa ne stende meno, dove capita. Restituisce gli ettari stesi.
+static func stendi_bosco_sacro(sim: SimVillaggio, caso: RandomNumberGenerator, qualita: float, ettari: float) -> float:
+	var c := sim.centro
+	var candidati: Array[Vector2i] = []
+	var r := ceili(SimVillaggio.DISTANZA_BOSCO_SACRO / sim.dati.metri_per_px)
+	for dy in range(-r, r + 1):
+		for dx in range(-r, r + 1):
+			var p := c + Vector2i(dx, dy)
+			if sim.motivo_bosco_sacro(p) == "":
+				candidati.append(p)
+	if candidati.is_empty():
+		return 0.0
+	# Un punto di partenza (il bosco più vicino, o uno a caso) e i pixel di bosco attorno a lui.
+	var inizio: Vector2i = candidati[caso.randi() % candidati.size()]
+	if caso.randf() < qualita:
+		candidati.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return (a - c).length_squared() < (b - c).length_squared())
+		inizio = candidati[0]
+	candidati.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return (a - inizio).length_squared() < (b - inizio).length_squared())
+	var quanti := int(ettari * (0.4 + 0.6 * qualita) / SimVillaggio.AREA_PIXEL_HA)
+	sim.aggiungi_bosco_sacro(candidati.slice(0, quanti))
+	return sim.ettari_bosco_sacro()
+
+
 ## Vero se le legnaie raccolgono meno della metà di ciò che servirebbe.
 static func legna_scarsa(sim: SimVillaggio) -> bool:
 	return sim.offerta_legna < sim.consumo_legna * 1.2

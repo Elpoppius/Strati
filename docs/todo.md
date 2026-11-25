@@ -17,7 +17,7 @@ Fatte e collaudate le basi della prima epoca (ritmo, crescita, risorse e rischi,
 |---|---|
 | 1. Capanno da pesca e Posta di caccia | **fatto** (25/11/2026 sera) |
 | 2. Pascolo e bestiame visibile | 4–6 ore |
-| 3. Luogo sacro, sacerdote, bosco sacro | 2–3 ore |
+| 3. Luogo sacro, sacerdote, bosco sacro | **fatto** (25/11/2026 sera) |
 | 4. Scorrerie | 2–3 ore |
 | 5. Sentieri che diventano strade | 2–3 ore |
 | 6. Evento soglia e passo elastico | 4–6 ore (la più delicata: il passo a decenni tocca tutte le regole "per anno") |
@@ -63,7 +63,8 @@ Raggruppamento proposto: giornata 1 caccia e pesca con la mappa boschi e selvagg
 - **Icona già pronta:** `asset/icone/pascolo.svg` (graticcio con un ciuffo d'erba). **Modello da fare:** uno **stabbio**, recinto basso di graticcio per la notte, con un abbeveratoio di tronco scavato; qualche stabbio sparso nella zona la rende riconoscibile (è diverso dal recinto urbano dell'epoca 2). In `villaggio.py` c'è già `recinto_animali()` da cui partire.
 - **Come farlo:** zona di pascolo come `zona` in `sim_villaggio.gd` (`aggiungi_zona`, `zona_piena`) e nel pennello di `principale.gd`; `stanchezza` e `fattore_stanchezza` ci sono già. Modelli degli animali con Blender (`strumenti/blender/`, stile in `docs/asset.md`), disegno con MultiMesh e animazione dallo shader (come gli alberi). Prove: verifiche, giocatori "umani" (devono imparare a stendere il pascolo), registro.
 
-### 3. [ ] Luogo sacro, sacerdote e bosco sacro
+### 3. [x] Luogo sacro, sacerdote e bosco sacro
+**Fatto il 25/11/2026 sera** (regole e numeri in `prototipo0-godot.md`; numeri proposti da Claude e approvati da Fede): luogo sacro in Edifici (tasto O, 20 di legna, 3 anni, entro 400 m, uno solo, con il suo scheletro), sacerdote come terzo gruppo quando è finito, presagi più chiari o ambigui, bosco sacro a pennello in Territorio (tasto B, pieno da 10 ha), legnaie e famiglie che non lo toccano, offesa se si taglia, case attirate. Sotto, le decisioni di partenza.
 **Deciso:** cerchio di pali attorno a una pietra (forma confermata il 24/11/2026); si apre a 100 abitanti; costa legna e braccia con un cantiere. Il sacerdote diventa il terzo gruppo di consenso (`sacerdote_attivo` in `sim_villaggio.gd`, pesi 0,4/0,4/0,2 già pronti): contento, presagi più chiari; scontento, ambigui e con più voci false. Il **bosco sacro** (tappa dei 150) è la riserva: le legnaie non lo tagliano, tagliarlo offende il sacerdote. Il luogo sacro attira le case (germe della piazza).
 
 ### 4. [ ] Scorrerie

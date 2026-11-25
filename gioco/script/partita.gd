@@ -5,7 +5,7 @@ extends Node
 ## Tempo continuo con pausa e tre velocità; si ferma da solo nei momenti decisivi
 ## (decisione di Fede del 23/11/2026).
 
-const STRUMENTI := ["fonda", "zona", "campi", "sentiero", "granaio", "legnaia", "capanno", "posta", "demolisci"]
+const STRUMENTI := ["fonda", "zona", "campi", "sentiero", "granaio", "legnaia", "capanno", "posta", "luogo_sacro", "bosco_sacro", "demolisci"]
 const VELOCITA := [0.0, 1.0, 6.0, 15.0]  # anni al secondo (velocità 1 più calma: decisione di Fede del 25/11/2026)
 const NOMI_VELOCITA := ["Pausa", "1 anno al secondo", "6 anni al secondo", "15 anni al secondo"]
 
@@ -50,6 +50,10 @@ func avvia(s: Node, seme: int = -1) -> void:
 		 "descrizione": "Tieni premuto e trascina, come un pennello: la terra sotto il cerchio è destinata alla coltivazione. Dentro la zona le famiglie dissodano da sole i campi quando servono, dalla terra migliore e più vicina. Per toglierla: Demolisci."},
 		{"id": "campi", "icona": "campi", "testo": "Campo", "breve": "Campo", "tasto": "C",
 		 "descrizione": "Un clic dissoda subito la terra libera nel cerchio, a mano; i campi che ci sono già restano. Gli alberi sui nuovi campi si tagliano. Per abbandonare un campo: Demolisci."},
+		# Bosco sacro (decisione di Fede: tappa dei 150, la riserva); tasto B, proposta di Claude
+		# approvata da Fede il 25/11/2026 sera.
+		{"id": "bosco_sacro", "icona": "bosco_sacro", "testo": "Bosco sacro", "breve": "B. sacro", "tasto": "B",
+		 "descrizione": "Tieni premuto e trascina sul bosco, come un pennello: diventa bosco sacro. Le legnaie non lo tagliano e nessuno lo dissoda; il sacerdote lo vuole grande. Tagliarlo con Demolisci lo offende."},
 	])
 	hud.aggiungi_menu("vie", "Vie", "Come ci si muove.", [
 		{"id": "sentiero", "icona": "sentiero", "testo": "Tracciare un sentiero", "breve": "Sentiero", "tasto": "V",
@@ -62,6 +66,8 @@ func avvia(s: Node, seme: int = -1) -> void:
 		 "descrizione": "Senza legnaia non si raccoglie legna. I boscaioli abbattono gli alberi più vicini: più il bosco è vicino, più in fretta si raccoglie; la zona di taglio resta aperta finché la legnaia lavora. Clic su una legnaia: lasciar ricrescere il bosco o rimetterla al lavoro."},
 		# Capanno da pesca e Posta di caccia (decisioni di Fede del 25/11/2026): senza, caccia e pesca
 		# rendono un terzo. Tasti K e T: proposta di Claude.
+		{"id": "luogo_sacro", "icona": "luogo_sacro", "testo": "Luogo sacro (20 di legna)", "breve": "L. sacro", "tasto": "O",
+		 "descrizione": "Un cerchio di pali attorno a una pietra, vicino al villaggio. Costa 20 di legna e tre anni di lavoro. Finito, il sacerdote ha voce: contento, i presagi sono più chiari; scontento, ambigui. Le case gli crescono attorno."},
 		{"id": "capanno", "icona": "capanno_pesca", "testo": "Capanno da pesca", "breve": "Capanno", "tasto": "K",
 		 "descrizione": "Senza capanno le famiglie pescano come capita e rendono un terzo. Va sulla riva di un fiume o di un torrente: si aggancia da solo alla riva più vicina. Il fiume dà più pesce dei torrenti; più capanni vicini si dividono il pesce di quel tratto, e troppi lo fanno calare."},
 		{"id": "posta", "icona": "posta_caccia", "testo": "Posta di caccia", "breve": "Posta", "tasto": "T",
@@ -346,6 +352,10 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 				parti.append("il granaio")
 			if esito.get("legnaie", 0) > 0:
 				parti.append("la legnaia")
+			if esito.get("luogo_sacro", false):
+				parti.append("il luogo sacro")
+			if esito.get("bosco_sacro", 0) > 0:
+				parti.append("%d alberi del bosco sacro" % esito["bosco_sacro"])
 			if esito.get("poste", 0) > 0:
 				parti.append("la posta di caccia")
 			if esito.get("capanni", 0) > 0:
@@ -367,6 +377,19 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 				hud.imposta_messaggio("Legnaia in costruzione: tra %d anni i boscaioli cominciano a tagliare il bosco vicino." % SimVillaggio.ANNI_CANTIERE_LEGNAIA)
 			else:
 				hud.imposta_messaggio(m)
+		"luogo_sacro":
+			var m := sim.costruisci_luogo_sacro(Vector2(punto.x, punto.z))
+			hud.imposta_messaggio(("Il luogo sacro si comincia a erigere: tra %d anni il sacerdote avrà voce." % SimVillaggio.ANNI_CANTIERE_LUOGO_SACRO) if m == "" else m)
+		"bosco_sacro":
+			if not sim.fondato:
+				return
+			var celle_s := _celle_cerchio(p, Vector2(punto.x, punto.z), raggio)
+			var nuovi_s := sim.aggiungi_bosco_sacro(celle_s)
+			_pennellata += nuovi_s
+			if _pennellata > 0:
+				hud.imposta_messaggio("Bosco sacro: %s ha in più (in tutto %s ha in piedi). Tieni premuto e trascina sul bosco." % [_ettari(_pennellata), String.num(sim.ettari_bosco_sacro(), 1).replace(".", ",")])
+			else:
+				hud.imposta_messaggio(sim.motivo_bosco_sacro(p) if sim.motivo_bosco_sacro(p) != "" else "Qui il bosco è già sacro.")
 		"capanno":
 			var m := sim.costruisci_capanno(Vector2(punto.x, punto.z))
 			hud.imposta_messaggio(("Capanno da pesca in costruzione: tra %d anni si comincia a pescare in questo tratto." % SimVillaggio.ANNI_CANTIERE_RISORSE) if m == "" else m)
@@ -480,10 +503,12 @@ func raggio_strumento(comando: String, raggio: float) -> float:
 	match comando:
 		"fonda":
 			return SimVillaggio.CONTADO_MIN
-		"zona", "campi", "demolisci":
+		"zona", "campi", "demolisci", "bosco_sacro":
 			return raggio
 		"granaio", "legnaia", "capanno", "posta":
 			return 8.0
+		"luogo_sacro":
+			return 6.0
 	return -1.0
 
 
@@ -555,6 +580,16 @@ func aggiorna_hud() -> void:
 	elif not sim.sbloccato("granaio"):
 		testo_granaio = "Granaio (si apre a %d abitanti)" % SimVillaggio.TAPPE[SimVillaggio.tappa_di("granaio")]["abitanti"]
 	hud.cambia_testo("granaio", testo_granaio, "Granaio")
+	# Luogo sacro e bosco sacro seguono le loro tappe (100 e 150 abitanti).
+	hud.abilita("luogo_sacro", on and sim.luogo_sacro.x < 0 and not sim.finito and sim.sbloccato("luogo_sacro"))
+	var testo_sacro := "Luogo sacro (%d di legna, %d anni di lavoro)" % [roundi(SimVillaggio.COSTO_LUOGO_SACRO), SimVillaggio.ANNI_CANTIERE_LUOGO_SACRO]
+	if sim.luogo_sacro.x >= 0:
+		testo_sacro = ("Luogo sacro (in costruzione: ancora %d anni)" % sim.cantiere_luogo_sacro) if sim.cantiere_luogo_sacro > 0 else "Luogo sacro (già eretto)"
+	elif not sim.sbloccato("luogo_sacro"):
+		testo_sacro = "Luogo sacro (si apre a %d abitanti)" % SimVillaggio.TAPPE[SimVillaggio.tappa_di("luogo_sacro")]["abitanti"]
+	hud.cambia_testo("luogo_sacro", testo_sacro, "L. sacro")
+	hud.abilita("bosco_sacro", on and not sim.finito and sim.sbloccato("bosco_sacro"))
+	hud.cambia_testo("bosco_sacro", "Bosco sacro" if sim.sbloccato("bosco_sacro") else "Bosco sacro (si apre a %d abitanti)" % SimVillaggio.TAPPE[SimVillaggio.tappa_di("bosco_sacro")]["abitanti"], "B. sacro")
 	# Le tappe aprono le politiche (decisione di Fede del 25/11/2026).
 	for id in ["raccolto", "stranieri", "affollati"]:
 		var aperta := not on or sim.sbloccato(id)
@@ -727,11 +762,20 @@ func dati_focus(nome: String) -> Dictionary:
 func leggi_per_strumento(punto: Vector3) -> void:
 	var hud: Hud = scena.hud
 	var cmd := hud.comando()
-	if not sim.fondato or not cmd in ["zona", "campi", "granaio", "legnaia", "sentiero", "capanno", "posta"]:
+	if not sim.fondato or not cmd in ["zona", "campi", "granaio", "legnaia", "sentiero", "capanno", "posta", "luogo_sacro", "bosco_sacro"]:
 		hud.imposta_lettura_strumento([])
 		return
 	if cmd in ["capanno", "posta"]:
 		hud.imposta_lettura_strumento(_lettura_edificio_risorse(cmd, Vector2(punto.x, punto.z)))
+		return
+	if cmd == "bosco_sacro":
+		var q := sim.px_da_mondo(punto.x, punto.z)
+		var bosco := sim.bosco_in_piedi(sim.px(q))
+		var ha := sim.ettari_bosco_sacro()
+		var dist := Vector2(punto.x, punto.z).distance_to(sim.mondo_di_px(sim.centro))
+		hud.imposta_lettura_strumento([["Bosco", "sacro" if sim.bosco_sacro.has(sim.px(q)) else ("sì" if bosco else "nessuno"), 1.0 if bosco else 0.0, not bosco],
+			["Bosco sacro", "%s ha su %d" % [String.num(ha, 1).replace(".", ","), roundi(SimVillaggio.ETTARI_BOSCO_SACRO)], clampf(ha / SimVillaggio.ETTARI_BOSCO_SACRO, 0.0, 1.0), ha < SimVillaggio.ETTARI_BOSCO_SACRO * 0.5],
+			["Distanza dal centro", "%d m" % roundi(dist), 1.0 - clampf(dist / SimVillaggio.DISTANZA_BOSCO_SACRO, 0.0, 1.0), dist > SimVillaggio.DISTANZA_BOSCO_SACRO]])
 		return
 	var p := sim.px_da_mondo(punto.x, punto.z)
 	var i := sim.px(p)
@@ -766,6 +810,10 @@ func leggi_per_strumento(punto: Vector3) -> void:
 			voci.append(["Bosco vicino", ("a %d m" % roundi(vicino)) if vicino >= 0.0 else "nessuno", eff, eff < 0.4])
 			voci.append(["Bosco attorno", "%d%%" % roundi(float(b["quota"]) * 100.0), float(b["quota"]), float(b["quota"]) < 0.15])
 			voci.append(["Distanza dal centro", "%d m" % roundi(d), 1.0 - clampf(d / SimVillaggio.DISTANZA_MASSIMA_LEGNAIA, 0.0, 1.0), d > SimVillaggio.DISTANZA_MASSIMA_LEGNAIA])
+			voci.append(piena_voce)
+		"luogo_sacro":
+			voci.append(["Distanza dal centro", "%d m" % roundi(d), 1.0 - clampf(d / SimVillaggio.DISTANZA_LUOGO_SACRO, 0.0, 1.0), d > SimVillaggio.DISTANZA_LUOGO_SACRO])
+			voci.append(["Legna", "%d / %d" % [floori(sim.legna), roundi(SimVillaggio.COSTO_LUOGO_SACRO)], sim.legna / SimVillaggio.COSTO_LUOGO_SACRO, sim.legna < SimVillaggio.COSTO_LUOGO_SACRO])
 			voci.append(piena_voce)
 		"granaio":
 			voci.append(piena_voce)

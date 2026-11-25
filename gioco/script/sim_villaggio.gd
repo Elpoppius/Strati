@@ -19,6 +19,8 @@ const ANNO_FINE := -5500
 const PX_CELLA := 4
 const AREA_CELLA := 16
 const LOTTO := 20.0
+## Ettari di un pixel della mappa (40 × 40 m).
+const AREA_PIXEL_HA := 0.16
 const MAX_SENTIERO := 160  # pixel (6,4 km, come i 40 tratti da 160 m del prototipo)
 
 var dati: MappaDati
@@ -282,6 +284,24 @@ var scorta_pesce := {}
 ## luogo sacro; fino ad allora i presagi li leggono gli anziani.
 var consenso := {"anziani": 60.0, "famiglie": 60.0, "sacerdote": 60.0}
 var sacerdote_attivo := false
+## Luogo sacro (decisioni di Fede del 24–25/11/2026): cerchio di pali attorno a una pietra; si apre
+## a 100 abitanti, costa legna e braccia con un cantiere, attira le case (germe della piazza). Finito,
+## il sacerdote diventa il terzo gruppo di consenso: contento, presagi più chiari; scontento, presagi
+## ambigui e più voci false. Numeri: proposta di Claude approvata da Fede il 25/11/2026 sera.
+const COSTO_LUOGO_SACRO := 20.0
+const ANNI_CANTIERE_LUOGO_SACRO := 3
+const DISTANZA_LUOGO_SACRO := 400.0
+var luogo_sacro := Vector2(-1, -1)
+var cantiere_luogo_sacro := 0
+## Bosco sacro (tappa dei 150): la riserva, stesa a pennello sul bosco entro 1 km dal centro. Le
+## legnaie non lo tagliano e le famiglie non vi dissodano; tagliarlo (Demolisci) offende il sacerdote,
+## che lo vuole grande (pieno da circa 10 ettari).
+const ETTARI_BOSCO_SACRO := 10.0
+const DISTANZA_BOSCO_SACRO := 1000.0
+var bosco_sacro := {}  # indice del pixel -> true
+## Quota di presagi falsi: 25% di solito; con il sacerdote contento (60 o più) 15%, scontento
+## (sotto 40) 40%.
+const PRESAGI_FALSI := 0.25
 ## Piene che fertilizzano (decisione di Fede del 25/11/2026): i campi allagati da una piena di
 ## stagione ricevono limo e rendono di più per qualche anno.
 const BONUS_LIMO := 1.25
@@ -545,6 +565,10 @@ func fonda(p: Vector2i) -> void:
 	zona_attiva = {}
 	stanchezza = {}
 	consenso = {"anziani": 60.0, "famiglie": 60.0, "sacerdote": 60.0}
+	sacerdote_attivo = false
+	luogo_sacro = Vector2(-1, -1)
+	cantiere_luogo_sacro = 0
+	bosco_sacro = {}
 	cantiere_granaio = 0
 	limo = {}
 	piena_tra = -1
@@ -645,6 +669,8 @@ func motivo_campo(p: Vector2i) -> String:
 		return "Il terreno è occupato da case o dal granaio."
 	if not a_portata(p):
 		return "Fuori dal contado: oggi la gente va a lavorare fino a %d m dal villaggio. Il contado cresce con gli abitanti." % roundi(raggio_contado())
+	if bosco_sacro.has(i):
+		return "È bosco sacro: nessuno lo dissoda."
 	return ""
 
 
@@ -864,6 +890,112 @@ func costruisci_granaio(punto: Vector2) -> String:
 	return ""
 
 
+# ---------- luogo sacro, sacerdote, bosco sacro ----------
+
+func motivo_luogo_sacro(punto: Vector2) -> String:
+	if not fondato:
+		return "Prima bisogna fondare il villaggio."
+	if luogo_sacro.x >= 0:
+		return "Il luogo sacro c'è già."
+	if not sbloccato("luogo_sacro"):
+		return "Il luogo sacro si apre con la tappa \"%s\" (%d abitanti)." % [TAPPE[tappa_di("luogo_sacro")]["nome"], TAPPE[tappa_di("luogo_sacro")]["abitanti"]]
+	if legna < COSTO_LUOGO_SACRO:
+		return "Servono %d di legna per il luogo sacro (ora %d)." % [roundi(COSTO_LUOGO_SACRO), floori(legna)]
+	var p := px_da_mondo(punto.x, punto.y)
+	var i := px(p)
+	if not edificabile(i) or campi.has(i) or sentieri.has(i) or p == centro:
+		return "Il luogo sacro va su terra asciutta e libera, non su campi o sentieri."
+	if punto.distance_to(mondo_di_px(centro)) > DISTANZA_LUOGO_SACRO:
+		return "Il luogo sacro va vicino al villaggio, entro %d m dal centro." % roundi(DISTANZA_LUOGO_SACRO)
+	return ""
+
+
+func costruisci_luogo_sacro(punto: Vector2) -> String:
+	var m := motivo_luogo_sacro(punto)
+	if m != "":
+		return m
+	var l := lotto_da_mondo(punto.x, punto.y)
+	case = case.filter(func(c: Vector2i) -> bool: return cheb(c, l) > 1)
+	luogo_sacro = centro_lotto(l)
+	legna -= COSTO_LUOGO_SACRO
+	cantiere_luogo_sacro = ANNI_CANTIERE_LUOGO_SACRO
+	_scrivi("Si comincia a erigere il luogo sacro: servono %d anni di lavoro." % ANNI_CANTIERE_LUOGO_SACRO)
+	disponi_case()
+	return ""
+
+
+func luogo_sacro_pronto() -> bool:
+	return luogo_sacro.x >= 0 and cantiere_luogo_sacro <= 0
+
+
+## Ettari di bosco sacro ancora in piedi.
+func ettari_bosco_sacro() -> float:
+	var n_px := 0
+	for i in bosco_sacro:
+		if bosco_in_piedi(i):
+			n_px += 1
+	return n_px * AREA_PIXEL_HA
+
+
+## Perché il bosco sacro non si può stendere qui ("" se si può).
+func motivo_bosco_sacro(p: Vector2i) -> String:
+	if not fondato:
+		return "Prima bisogna fondare il villaggio."
+	if not sbloccato("bosco_sacro"):
+		return "Il bosco sacro si apre con la tappa \"%s\" (%d abitanti)." % [TAPPE[tappa_di("bosco_sacro")]["nome"], TAPPE[tappa_di("bosco_sacro")]["abitanti"]]
+	if p.x < 0 or p.y < 0 or p.x >= n or p.y >= n:
+		return "Fuori dalla mappa."
+	var i := px(p)
+	if not bosco_in_piedi(i) or campi.has(i):
+		return "Il bosco sacro va dove c'è il bosco."
+	if mondo_di_px(p).distance_to(mondo_di_px(centro)) > DISTANZA_BOSCO_SACRO:
+		return "Il bosco sacro va entro %d m dal villaggio." % roundi(DISTANZA_BOSCO_SACRO)
+	return ""
+
+
+## Stende il bosco sacro sui pixel di bosco indicati; restituisce quanti sono stati aggiunti.
+func aggiungi_bosco_sacro(lista: Array[Vector2i]) -> int:
+	var aggiunti := 0
+	for p in lista:
+		if motivo_bosco_sacro(p) == "" and not bosco_sacro.has(px(p)):
+			bosco_sacro[px(p)] = true
+			aggiunti += 1
+	return aggiunti
+
+
+## Cosa vuole il sacerdote: il luogo sacro, un bosco sacro grande (dalla sua tappa) e i presagi
+## ascoltati (questi passano dai bonus delle scelte).
+func obiettivo_sacerdote() -> float:
+	var o := 48.0
+	if luogo_sacro_pronto():
+		o += 10.0
+	if sbloccato("bosco_sacro"):
+		o += 14.0 * clampf(ettari_bosco_sacro() / ETTARI_BOSCO_SACRO, 0.0, 1.0)
+	else:
+		o += 7.0
+	return o
+
+
+func quota_presagi_falsi() -> float:
+	if not sacerdote_attivo:
+		return PRESAGI_FALSI
+	if consenso["sacerdote"] >= 60.0:
+		return 0.15
+	if consenso["sacerdote"] < 40.0:
+		return 0.4
+	return PRESAGI_FALSI
+
+
+## Il presagio delle sorgenti: più chiaro con il sacerdote contento, ambiguo se è scontento.
+func _testo_sorgenti() -> String:
+	if sacerdote_attivo and consenso["sacerdote"] < 40.0:
+		return "Le sorgenti danno un po' meno acqua. Il sacerdote, scontento, non dice cosa significhi; c'è chi parla di un'annata qualunque.\nControlla la mappa dell'acqua."
+	var t := "Le sorgenti danno meno acqua del solito e l'erba ingiallisce presto. Gli anziani chiedono di mettere da parte il raccolto."
+	if sacerdote_attivo and consenso["sacerdote"] >= 60.0:
+		t += " Il sacerdote conferma: l'acqua nei pozzi scende da settimane, e le rondini sono partite presto."
+	return t + "\nControlla la mappa dell'acqua."
+
+
 ## Bosco in piedi: c'è nella mappa (e nel gioco non è stato tagliato) e le legnaie non l'hanno
 ## abbattuto da meno di ANNI_RICRESCITA anni.
 func bosco_in_piedi(i: int) -> bool:
@@ -876,6 +1008,8 @@ func bosco_in_piedi(i: int) -> bool:
 
 ## Legno da tagliare per le legnaie: bosco in piedi, oppure palude non tagliata di recente.
 func legno_in_piedi(i: int) -> bool:
+	if bosco_sacro.has(i):
+		return false
 	if dati.tipo[i] == MappaDati.PALUDE:
 		return not (tagliati.has(i) and (zona_attiva.has(i) or anno - int(tagliati[i]) < ANNI_RICRESCITA))
 	return bosco_in_piedi(i) and not campi.has(i)
@@ -1538,6 +1672,22 @@ func demolisci(punto: Vector2, raggio: float) -> Dictionary:
 		_scrivi("Demolita la posta di caccia.")
 	if esito["capanni"] > 0:
 		_scrivi("Demolito il capanno da pesca.")
+	if luogo_sacro.x >= 0 and luogo_sacro.distance_to(punto) <= raggio:
+		luogo_sacro = Vector2(-1, -1)
+		cantiere_luogo_sacro = 0
+		esito["luogo_sacro"] = true
+		_cambia_consenso("sacerdote", -30.0)
+		_scrivi("Il luogo sacro è stato abbattuto: il sacerdote è furioso.", "allarme")
+	var sacri_tagliati := 0
+	for i in bosco_sacro.keys():
+		if dentro.call(i):
+			if bosco_in_piedi(i):
+				sacri_tagliati += 1
+			bosco_sacro.erase(i)
+	esito["bosco_sacro"] = sacri_tagliati
+	if sacri_tagliati > 0:
+		_cambia_consenso("sacerdote", -minf(25.0, 3.0 * sacri_tagliati))
+		_scrivi("Si è tagliato il bosco sacro: il sacerdote è offeso.", "allarme")
 	if granaio.x >= 0 and granaio.distance_to(punto) <= raggio:
 		granaio = Vector2(-1, -1)
 		esito["granaio"] = true
@@ -1717,8 +1867,10 @@ func _aggiorna_tappa() -> void:
 		var aperti: Array[String] = []
 		for a in t["apre"]:
 			aperti.append(nomi.get(a, a))
-		_scrivi("Nuova tappa: %s. Si aprono %s." % [String(t["nome"]).to_lower(), " e ".join(aperti)], "buono")
-		_notifica("Nuova tappa: %s (%d abitanti). Si aprono %s." % [t["nome"], t["abitanti"], " e ".join(aperti)], false, mondo_di_px(centro))
+		# Elenco in italiano: "a, b e c".
+		var elenco := aperti[-1] if aperti.size() < 2 else ", ".join(aperti.slice(0, -1)) + " e " + aperti[-1]
+		_scrivi("Nuova tappa: %s. Si aprono %s." % [String(t["nome"]).to_lower(), elenco], "buono")
+		_notifica("Nuova tappa: %s (%d abitanti). Si aprono %s." % [t["nome"], t["abitanti"], elenco], false, mondo_di_px(centro))
 
 
 func politica(id: String) -> String:
@@ -1808,6 +1960,7 @@ func _applica_scelta(tipo: String, o: String) -> void:
 			if o == "razionare":
 				razionamento = 3
 				_cambia_consenso("famiglie", -3.0)
+				_cambia_consenso("sacerdote", 3.0)
 				_scrivi("Gli anziani ordinano di razionare il cibo.")
 			else:
 				_scrivi("Il villaggio non dà peso alle sorgenti basse.")
@@ -1900,12 +2053,11 @@ func passo() -> void:
 	if presagio_possibile and rng.randf() < PROB_PRESAGIO:
 		_ultimo_presagio = anno
 		stat["presagi_totali"] += 1
-		if rng.randf() < 0.75:
+		if rng.randf() >= quota_presagi_falsi():
 			siccita_tra = 2 + rng.randi() % 2
 			sorgenti_basse = true
 			presagio_vero = {"scelta": ""}
-			_decidi("sorgenti", "Le sorgenti calano",
-				"Le sorgenti danno meno acqua del solito e l'erba ingiallisce presto. Gli anziani chiedono di mettere da parte il raccolto.\nControlla la mappa dell'acqua.",
+			_decidi("sorgenti", "Le sorgenti calano", _testo_sorgenti(),
 				[{"id": "razionare", "testo": "Razionare e accumulare", "nota": "Per tre anni si mangia meno: salute e consenso calano un poco."},
 				 {"id": "ignorare", "testo": "Ignorare", "nota": "Nessun costo oggi."}])
 		else:
@@ -1938,10 +2090,15 @@ func passo() -> void:
 		cantiere_granaio -= 1
 		if cantiere_granaio == 0:
 			_scrivi("Il granaio è finito: le scorte si conservano meglio.", "buono")
+	if cantiere_luogo_sacro > 0:
+		cantiere_luogo_sacro -= 1
+		if cantiere_luogo_sacro == 0:
+			sacerdote_attivo = true
+			_scrivi("Il luogo sacro è finito: il sacerdote ora ha voce tra gli anziani e le famiglie.", "buono")
 	# Raccolto: le braccia lavorano prima i campi più fertili. Famiglie contente lavorano di più
 	# (decisione di Fede del 25/11/2026); un cantiere aperto toglie un po' di braccia.
 	var in_cantiere := func(e: Dictionary) -> bool: return int(e["cantiere"]) > 0
-	var cantieri := (1 if cantiere_granaio > 0 else 0) + legnaie.filter(in_cantiere).size() + poste.filter(in_cantiere).size() + capanni.filter(in_cantiere).size()
+	var cantieri := (1 if cantiere_granaio > 0 else 0) + (1 if cantiere_luogo_sacro > 0 else 0) + legnaie.filter(in_cantiere).size() + poste.filter(in_cantiere).size() + capanni.filter(in_cantiere).size()
 	var lavoro: float = (0.9 + 0.2 * consenso["famiglie"] / 100.0) * (1.0 - 0.05 * mini(cantieri, 3))
 	var braccia: float = pop * 0.55 * lavoro * (1.0 + (0.0 if fonti["caccia"] else 0.2) + (0.0 if fonti["pesca"] else 0.1))
 	var lavorabili := int(braccia / 3.0 * AREA_CELLA) if fonti["agricoltura"] else 0
@@ -2156,7 +2313,7 @@ func _aggiorna_consenso() -> void:
 	var obiettivi := {
 		"anziani": 55.0 + (10.0 if cibo > pop * 0.5 else -6.0) + (8.0 if comune else -4.0),
 		"famiglie": 52.0 + (8.0 if affollamento < 0.15 else -8.0) + (-2.0 if comune else 8.0 * efficacia_usanze()) + (6.0 if abbondanza > 0.75 else 0.0),
-		"sacerdote": 55.0,
+		"sacerdote": obiettivo_sacerdote(),
 	}
 	for g in consenso:
 		consenso[g] = clampf(consenso[g] + (clampf(obiettivi[g], 0.0, 100.0) - consenso[g]) * 0.1 + bonus[g] * 0.4, 0.0, 100.0)
@@ -2345,6 +2502,7 @@ func _disponi_nucleo(servono: int, ci_sono: int, paga: bool) -> void:
 	for c in case:
 		occupati[c] = true
 	var granaio_l := lotto_da_mondo(granaio.x, granaio.y) if granaio.x >= 0 else Vector2i(-99999, -99999)
+	var sacro_l := lotto_da_mondo(luogo_sacro.x, luogo_sacro.y) if luogo_sacro.x >= 0 else Vector2i(-99999, -99999)
 	var tentativi := 0
 	while ci_sono < servono and tentativi < 200 and (not paga or legna >= COSTO_CASA):
 		tentativi += 1
@@ -2353,7 +2511,7 @@ func _disponi_nucleo(servono: int, ci_sono: int, paga: bool) -> void:
 		for dy in range(-r, r + 1):
 			for dx in range(-r, r + 1):
 				var l := lc + Vector2i(dx, dy)
-				if l == lc or cheb(l, granaio_l) <= 1 or macerie.has(l) or _vicino_a_legnaia(l):
+				if l == lc or cheb(l, granaio_l) <= 1 or cheb(l, sacro_l) <= 1 or macerie.has(l) or _vicino_a_legnaia(l):
 					continue
 				var w := centro_lotto(l)
 				var p := px_da_mondo(w.x, w.y)
@@ -2372,6 +2530,9 @@ func _disponi_nucleo(servono: int, ci_sono: int, paga: bool) -> void:
 				var d := Vector2(dx, dy).length() * LOTTO / 40.0
 				var caso := float((l.x * 73856093 ^ l.y * 19349663) & 0xffff) / 65536.0
 				var sc := -d * 1.2 - piena(i) * paura * 8.0 + acqua_qualsiasi(i) - (1.0 if dati.tipo[i] == MappaDati.GESSI else 0.0) + caso * 0.25
+				# Il luogo sacro attira le case (decisione di Fede del 24/11/2026: il germe della piazza).
+				if luogo_sacro.x >= 0:
+					sc += 2.5 * clampf(1.0 - w.distance_to(luogo_sacro) / 400.0, 0.0, 1.0)
 				if sc > punteggio:
 					punteggio = sc
 					migliore = l
@@ -2519,6 +2680,10 @@ func _abbandona() -> void:
 	legnaie = []
 	poste = []
 	capanni = []
+	luogo_sacro = Vector2(-1, -1)
+	cantiere_luogo_sacro = 0
+	bosco_sacro = {}
+	sacerdote_attivo = false
 	campi = []
 	_tecnica_campi = {}
 	zona = {}
@@ -2624,6 +2789,18 @@ func cause_di(nome: String) -> Array[String]:
 				out.append("Gli anziani sono scontenti: le usanze si rispettano meno.")
 			if consenso["famiglie"] < 30.0:
 				out.append("Le famiglie molto scontente cominciano ad andarsene.")
+			# Il sacerdote (decisioni di Fede del 24–25/11/2026).
+			if sbloccato("luogo_sacro") and luogo_sacro.x < 0:
+				out.append("Si può erigere il luogo sacro (Edifici): il sacerdote avrà voce, e i presagi saranno più chiari se è contento.")
+			elif cantiere_luogo_sacro > 0:
+				out.append("Il luogo sacro è in costruzione: ancora %d anni." % cantiere_luogo_sacro)
+			if sacerdote_attivo:
+				if consenso["sacerdote"] >= 60.0:
+					out.append("Il sacerdote è contento: i presagi sono chiari e le voci false poche.")
+				elif consenso["sacerdote"] < 40.0:
+					out.append("Il sacerdote è scontento: i presagi si fanno ambigui e girano più voci false.")
+				if sbloccato("bosco_sacro") and ettari_bosco_sacro() < ETTARI_BOSCO_SACRO:
+					out.append("Il sacerdote vuole un bosco sacro più grande (ora %s ha su %d)." % [String.num(ettari_bosco_sacro(), 1).replace(".", ","), roundi(ETTARI_BOSCO_SACRO)])
 		"Legna":
 			if legnaie.is_empty():
 				out.append("Senza legnaia non si raccoglie legna: costruiscine una vicino al bosco (Edifici). Ora arriva solo quella del dissodamento.")

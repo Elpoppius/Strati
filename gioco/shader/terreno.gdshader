@@ -75,6 +75,10 @@ uniform float forza_zone = 0.45;
 // mentre si destina la terra, come velo chiaro con un bordo sottile.
 uniform sampler2D zona_agricola : filter_linear, repeat_disable;
 uniform float mostra_zona = 0.0;
+// Bosco sacro (25/11/2026 sera): un byte per punto della mappa; velo dorato e bordo con lo strumento
+// Bosco sacro e nelle mappe Caccia e pesca e Memoria del suolo.
+uniform sampler2D bosco_sacro_mappa : filter_linear, repeat_disable;
+uniform float mostra_bosco_sacro = 0.0;
 
 // Tecnica di ogni campo (UsoSuolo.tecniche, un byte per cella da 10 m, senza filtro): 0 zappa
 // (villaggio), 1 aratro in croce, 2 centuriazione, 3 strisce medievali, 4 meccanica.
@@ -468,6 +472,13 @@ void fragment() {
 		float fz = max(fwidth(z), 1e-3);
 		float bordo_z = 1.0 - smoothstep(fz * 0.5, fz * 2.0, abs(z - 0.5));
 		col = mix(col, vec3(1.0), smoothstep(0.45, 0.55, z) * 0.1 + bordo_z * 0.6);
+	}
+	if (mostra_bosco_sacro > 0.5) {
+		float zs = texture(bosco_sacro_mappa, UV).r;
+		float fs = max(fwidth(zs), 1e-3);
+		float bordo_s = 1.0 - smoothstep(fs * 0.5, fs * 2.0, abs(zs - 0.5));
+		vec3 oro = pow(vec3(0.98, 0.86, 0.5), vec3(2.2));
+		col = mix(col, oro, smoothstep(0.45, 0.55, zs) * 0.22 + bordo_s * 0.8);
 	}
 	if (contado.z > 0.0) {
 		float dc = distance(pos_mondo.xz, contado.xy);

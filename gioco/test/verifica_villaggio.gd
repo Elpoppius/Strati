@@ -107,6 +107,71 @@ func _verifica_capanno_e_posta(d: MappaDati) -> void:
 	controlla(esito.get("capanni", 0) == 1 and s.capanni.is_empty(), "il capanno si demolisce")
 
 
+## Luogo sacro, sacerdote e bosco sacro (decisioni di Fede del 24–25/11/2026).
+func _verifica_sacro(d: MappaDati) -> void:
+	var s := SimVillaggio.new(d, 11)
+	var c := Vector2i(d.siti[0]["px"])
+	s.fonda(c)
+	var cm := s.mondo_di_px(c)
+	controlla(s.motivo_luogo_sacro(cm + Vector2(80, 0)).contains("si apre"), "il luogo sacro si apre con la tappa dei 100 abitanti")
+	s.pop = 110.0
+	s._aggiorna_tappa()
+	s.legna = 50.0
+	controlla(s.motivo_luogo_sacro(cm + Vector2(900, 0)) != "", "il luogo sacro va vicino al villaggio")
+	# A 300 m dal centro, per vedere le case che gli crescono attorno.
+	var fatto := false
+	for k in 16:
+		if not fatto and s.costruisci_luogo_sacro(cm + Vector2.from_angle(TAU * k / 16.0) * 300.0) == "":
+			fatto = true
+	controlla(fatto and s.cantiere_luogo_sacro == SimVillaggio.ANNI_CANTIERE_LUOGO_SACRO and is_equal_approx(s.legna, 30.0), "il luogo sacro costa 20 di legna e tre anni di cantiere")
+	controlla(not s.sacerdote_attivo and s.motivo_luogo_sacro(cm + Vector2(-80, 0)) != "", "uno solo, e il sacerdote non ha voce finché si costruisce")
+	for k in SimVillaggio.ANNI_CANTIERE_LUOGO_SACRO:
+		s.decisioni.clear()
+		s.passo()
+	controlla(s.sacerdote_attivo and s.luogo_sacro_pronto(), "finito il luogo sacro, il sacerdote diventa un gruppo di consenso")
+	# Le case nuove crescono attorno al luogo sacro.
+	var senza := SimVillaggio.new(d, 11)
+	senza.fonda(c)
+	senza.pop = 200.0
+	senza.disponi_case()
+	s.pop = 200.0
+	s.legna = 1000.0
+	s.disponi_case()
+	var media := func(t: SimVillaggio) -> float:
+		var somma := 0.0
+		for l in t.case:
+			somma += t.centro_lotto(l).distance_to(s.luogo_sacro)
+		return somma / maxf(1.0, t.case.size())
+	controlla(media.call(s) < media.call(senza), "il luogo sacro attira le case (distanza media %.0f m, senza %.0f m)" % [media.call(s), media.call(senza)])
+	# Presagi: chiari con il sacerdote contento, ambigui e più spesso falsi se è scontento.
+	s.consenso["sacerdote"] = 70.0
+	var chiaro := s._testo_sorgenti()
+	var falsi_contento := s.quota_presagi_falsi()
+	s.consenso["sacerdote"] = 30.0
+	controlla(falsi_contento < SimVillaggio.PRESAGI_FALSI and s.quota_presagi_falsi() > SimVillaggio.PRESAGI_FALSI and chiaro.contains("conferma") and s._testo_sorgenti().contains("non dice"), "sacerdote contento: presagi chiari (%d%% falsi); scontento: ambigui (%d%% falsi)" % [roundi(falsi_contento * 100.0), roundi(s.quota_presagi_falsi() * 100.0)])
+	s.consenso["sacerdote"] = 60.0
+	# Bosco sacro.
+	var bosco := Vector2i(-1, -1)
+	for r in range(1, 25):
+		for k in 32:
+			var q := c + Vector2i(roundi(cos(TAU * k / 32.0) * r), roundi(sin(TAU * k / 32.0) * r))
+			if bosco.x < 0 and s.bosco_in_piedi(s.px(q)) and not s.campi.has(s.px(q)):
+				bosco = q
+	controlla(bosco.x >= 0 and s.motivo_bosco_sacro(bosco).contains("si apre"), "il bosco sacro si apre con la tappa dei 150 abitanti")
+	var obiettivo_prima := s.obiettivo_sacerdote()
+	s.pop = 160.0
+	s._aggiorna_tappa()
+	var cg := RandomNumberGenerator.new()
+	cg.seed = 4
+	var ha := AiutiGiocatori.stendi_bosco_sacro(s, cg, 1.0, 10.0)
+	controlla(ha >= 5.0 and s.obiettivo_sacerdote() > obiettivo_prima - 7.0 + 7.0 * 0.5, "si stende il bosco sacro (%.1f ha) e il sacerdote lo apprezza (%.0f → %.0f)" % [ha, obiettivo_prima, s.obiettivo_sacerdote()])
+	var sacro: int = s.bosco_sacro.keys()[0]
+	controlla(not s.legno_in_piedi(sacro) and s.motivo_campo(s.px_di(sacro)) != "", "le legnaie non tagliano il bosco sacro e nessuno lo dissoda")
+	var prima: float = s.bonus["sacerdote"]
+	var esito := s.demolisci(s.mondo_di_px(s.px_di(sacro)), 60.0)
+	controlla(int(esito.get("bosco_sacro", 0)) > 0 and s.bonus["sacerdote"] < prima and s.cronaca[0]["testo"].contains("bosco sacro") or s.cronaca.any(func(e: Dictionary) -> bool: return String(e["testo"]).contains("bosco sacro")), "tagliare il bosco sacro offende il sacerdote")
+
+
 func _gioca(sim: SimVillaggio, sito: Vector2i, scelta_presagi := "") -> Dictionary:
 	_caso_giocatore.seed = 12345
 	sim.fonda(sito)
@@ -337,6 +402,7 @@ func _initialize() -> void:
 	controlla(fermate <= 1, "solo la prima piena disastrosa ferma il gioco (%d)" % fermate)
 	t.avvisi.clear()
 	_verifica_capanno_e_posta(d)
+	_verifica_sacro(d)
 	# Partite intere.
 	var sopravvissuti := 0
 	for s in d.siti:

@@ -2,6 +2,24 @@
 
 Voci più recenti in cima.
 
+## 25/11/2026 (notte, ancora più tardi)
+**Fatto**
+- **Luogo sacro, sacerdote, bosco sacro** (voce 3 del todo):
+  - **luogo sacro** in Edifici (tasto O): 20 di legna, 3 anni di cantiere, entro 400 m dal centro, uno solo, con il suo scheletro; le case gli crescono attorno;
+  - **sacerdote:** diventa il terzo gruppo di consenso quando il luogo sacro è finito. Vuole il luogo sacro, un bosco sacro grande e i presagi ascoltati. Se è contento i presagi falsi sono il 15% e il presagio delle sorgenti ha un indizio in più; se è scontento i falsi sono il 40% e il testo diventa vago;
+  - **bosco sacro** a pennello in Territorio (tasto B), pieno da 10 ettari: le legnaie e le famiglie non lo toccano, tagliarlo con Demolisci offende il sacerdote. Ha un velo dorato con il bordo;
+  - icone nuove `luogo_sacro.svg` e `bosco_sacro.svg`, cause del sacerdote nel pannello del Consenso;
+  - i giocatori automatici imparano i due strumenti; 11 verifiche nuove nella simulazione e 2 negli strumenti, tutte le 9 superate.
+- Giocatori "umani" e registro (`sessioni-giocatori.md`): mediane e carestie come prima, 3,6 pause per partita. Chi conosce il genere tiene il sacerdote a 71.
+- Le notifiche delle tappe ora elencano con le virgole ("la regola sugli stranieri, la regola per il villaggio affollato e il bosco sacro").
+
+**Decisioni** (Fede)
+- Ok al piano della voce 3, con le proposte di Claude: numeri, tasti O e B, presagi falsi al 15% e al 40%, bosco sacro pieno da 10 ettari.
+
+**Prossimo passo**
+- Fede: provare luogo sacro e bosco sacro; dire se chi legge deve avere un richiamo in più per erigere il luogo sacro.
+- Claude: voce 2, pascolo e bestiame (servono prima le conferme sulla crescita dei capi e sul campo stanco visibile), poi le voci 4 e 5.
+
 ## 25/11/2026 (notte, più tardi)
 **Fatto**
 - **Mappe tematiche** (voce 8 del todo), tasti 6–8 con bollino e legenda:

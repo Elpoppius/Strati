@@ -1,11 +1,11 @@
 extends SceneTree
-## Foto di controllo dei cantieri (decisione di Fede del 25/11/2026 sera): in alto i quattro
-## edifici finiti (granaio, legnaia, capanno da pesca, posta di caccia), sotto i loro scheletri in
+## Foto di controllo dei cantieri (decisione di Fede del 25/11/2026 sera): in alto i cinque
+## edifici finiti (granaio, legnaia, capanno da pesca, posta di caccia, luogo sacro), sotto i loro scheletri in
 ## costruzione, su un prato sgombro accanto al sito iniziale.
 ## Uso: xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto_cantieri.gd -- uscita.png [dimensione_vista] [rotazioni]
 
 const CARTELLA := "res://asset/villaggio"
-const EDIFICI := ["granaio_su_pali", "legnaia", "capanno_pesca", "posta_caccia"]
+const EDIFICI := ["granaio_su_pali", "legnaia", "capanno_pesca", "posta_caccia", "luogo_sacro"]
 
 var _s: Node
 var _f := 0
@@ -34,7 +34,7 @@ func _process(_d: float) -> bool:
 		var u: UsoSuolo = _s.uso
 		u.costruisci(u.celle_nel_cerchio(c.x, c.z, 30.0), "capanna", false)
 		for k in EDIFICI.size():
-			var x := c.x + (k - 1.5) * 10.0
+			var x := c.x + (k - 2.0) * 11.0
 			_posa(EDIFICI[k], x, c.z - 6.0)
 			_posa("cantiere_" + EDIFICI[k].replace("_su_pali", ""), x, c.z + 6.0)
 		_s.griglia_attiva = false

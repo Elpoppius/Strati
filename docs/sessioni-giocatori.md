@@ -151,3 +151,24 @@ Le decisioni che ne sono venute (Fede, 25/11/2026) stanno in `pilastri-e-decisio
 - **Le carestie salgono dove si vive di caccia:** quasi tutte all'Area dei gessi (fertilità scarsa) e allo Sperone collinare (bosco ricco, nessun fiume per il capanno): per chi legge 8 a partita ai gessi e 6 allo Sperone, quasi nessuna altrove. Chi legge costruisce la posta solo dopo aver visto il Cibo rosso, cioè dopo la prima fame. Anche chi conosce il genere, con tre poste, ai gessi ha circa 8 carestie a partita: la selvaggina attorno alle poste cala.
 - **Da decidere con Fede:** lasciare così (sono siti di caccia, sfavorevoli per scelta), oppure alzare la resa delle poste (oggi 35 di cibo l'anno al massimo) o la ripresa della selvaggina, oppure far dire alla fondazione che caccia e pesca chiedono gli edifici.
 - Foto nel gioco: `docs/immagini/capanno-nel-gioco-25-11.jpg` (capanno sulla riva del torrente al Terrazzo centrale, con la lettura dell'edificio) e `docs/immagini/posta-nel-gioco-25-11.jpg` (posta al margine del bosco).
+
+## Con luogo sacro, sacerdote e bosco sacro (25/11/2026, notte)
+*Decisioni di Fede del 24–25/11/2026, numeri proposti da Claude e approvati da Fede.* I giocatori automatici imparano i due strumenti:
+- chi conosce il genere erige il luogo sacro appena la tappa lo apre e c'è la legna, e stende circa 10 ettari di bosco sacro nel bosco più vicino;
+- gli altri lo fanno dopo la notifica della tappa (6 volte su 10, il casual 3) o dopo aver letto le cause del Consenso;
+- nelle sessioni a dieci livelli il luogo sacro arriva dal livello 3 e il bosco sacro dal 5.
+
+72 partite (500 anni).
+
+| Profilo | Abitanti (mediana) | Massimo | Minimo | Carestie per partita | Carestie gravi | Abbandoni | Luogo sacro eretto | Bosco sacro (mediana) | Sacerdote (mediana) |
+|---|---|---|---|---|---|---|---|---|---|
+| Impara sbagliando | 458 (prima 433) | 887 | 120 | 2.6 (2.5) | 3 | 0 | 6 su 18 | 0 ha | 58 |
+| Legge le spiegazioni | 599 (555) | 1112 | 112 | 2.3 (2.4) | 0 | 0 | 7 su 18 | 2,6 ha | 60 |
+| Conosce il genere | 729 (748) | 1006 | 252 | 2.7 (2.3) | 6 | 0 | 18 su 18 | 9,3 ha | 71 |
+| Casual | 117 (110) | 614 | 43 | 2.0 (2.7) | 0 | 0 | 2 su 18 | 0 ha | 63 |
+
+**Registro degli avvisi** (5 partite, livello 5), per partita: 3,6 pause (come prima), 1 notifica rossa (0,8), 4 grigie, 48 righe di cronaca (47).
+
+- **Le dinamiche reggono:** popolazioni, carestie e pause restano dove erano, con le differenze dovute al caso.
+- **Il sacerdote è contento quando lo si cura:** chi conosce il genere, con luogo sacro e bosco sacro di quasi 10 ettari, lo tiene a 71, quindi ha meno presagi falsi. Chi non lo cura lo lascia intorno a 58–60.
+- **Chi legge erige il luogo sacro poco** (7 su 18), perché la causa "si può erigere il luogo sacro" sta nel pannello del Consenso, che si apre solo quando il consenso è rosso. Va guardato con Fede se serve un richiamo in più, per esempio nella notifica della tappa, che oggi lo nomina già.

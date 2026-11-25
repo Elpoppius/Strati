@@ -72,6 +72,10 @@ func _gioca(d: MappaDati, sito: Vector2i, k: int, seme: int, nome: String) -> Di
 			for caccia in [true, false]:
 				if (sim.poste if caccia else sim.capanni).size() < 2 and AiutiGiocatori.risorsa_scarsa(sim, caccia):
 					AiutiGiocatori.costruisci_edificio_risorse(sim, caso, 0.5, caccia)
+			if sim.luogo_sacro.x < 0 and sim.sbloccato("luogo_sacro") and sim.legna >= SimVillaggio.COSTO_LUOGO_SACRO:
+				AiutiGiocatori.costruisci_luogo_sacro(sim)
+			if sim.bosco_sacro.is_empty() and sim.sbloccato("bosco_sacro"):
+				AiutiGiocatori.stendi_bosco_sacro(sim, caso, 0.5, 8.0)
 			if k >= 5 and not sentieri_fatti and eta >= 20:
 				sentieri_fatti = true
 				for j in mini(k - 4, 6):

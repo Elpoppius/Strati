@@ -59,8 +59,31 @@ func _sincronizza_zona() -> void:
 	_texture_zona.update(_immagine_zona)
 
 
+## Bosco sacro: un byte per punto della mappa, letto dallo shader del terreno.
+var _immagine_sacro: Image
+var _texture_sacro: ImageTexture
+var _firma_sacro := -1
+
+
+func _sincronizza_bosco_sacro() -> void:
+	if _immagine_sacro == null:
+		_immagine_sacro = Image.create(sim.n, sim.n, false, Image.FORMAT_L8)
+		_texture_sacro = ImageTexture.create_from_image(_immagine_sacro)
+		terreno.materiale.set_shader_parameter("bosco_sacro_mappa", _texture_sacro)
+	var firma := sim.bosco_sacro.hash()
+	if firma == _firma_sacro:
+		return
+	_firma_sacro = firma
+	_immagine_sacro.fill(Color(0, 0, 0))
+	for i in sim.bosco_sacro:
+		var p := sim.px_di(i)
+		_immagine_sacro.set_pixel(p.x, p.y, Color(1, 1, 1))
+	_texture_sacro.update(_immagine_sacro)
+
+
 func sincronizza() -> void:
 	_sincronizza_zona()
+	_sincronizza_bosco_sacro()
 	_sincronizza_centro()
 	_sincronizza_campi_e_sentieri()
 	_sincronizza_case()
@@ -426,7 +449,7 @@ func _sincronizza_case() -> void:
 ## Cantieri (decisione di Fede del 25/11/2026 sera): finché un edificio si costruisce si vede il suo
 ## scheletro, con sopra una barra discreta che avanza anno dopo anno; poi il modello finito.
 const CANTIERI := {"granaio_su_pali": "cantiere_granaio", "legnaia": "cantiere_legnaia",
-	"capanno_pesca": "cantiere_capanno_pesca", "posta_caccia": "cantiere_posta_caccia"}
+	"capanno_pesca": "cantiere_capanno_pesca", "posta_caccia": "cantiere_posta_caccia", "luogo_sacro": "cantiere_luogo_sacro"}
 const ALTEZZA_BARRA := 6.5
 var _edifici := {}  # punto -> {nodo, modello, raggio, barra}
 ## Cantieri aperti per le barre: punto -> [anni fatti, anni totali].
@@ -439,6 +462,8 @@ func _sincronizza_edifici() -> void:
 	var ora := {}
 	if sim.granaio.x >= 0:
 		ora[sim.granaio] = ["granaio_su_pali", 0.0, 6.0, "granaio", sim.cantiere_granaio, SimVillaggio.ANNI_CANTIERE_GRANAIO]
+	if sim.luogo_sacro.x >= 0:
+		ora[sim.luogo_sacro] = ["luogo_sacro", 0.0, 7.0, "luogo_sacro", sim.cantiere_luogo_sacro, SimVillaggio.ANNI_CANTIERE_LUOGO_SACRO]
 	for l in sim.legnaie:
 		var p: Vector2 = l["punto"]
 		ora[p] = ["legnaia", float(int(p.x * 7.0 + p.y * 13.0) % 360), 7.0, "legnaia", int(l["cantiere"]), SimVillaggio.ANNI_CANTIERE_LEGNAIA]
