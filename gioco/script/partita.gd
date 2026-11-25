@@ -195,6 +195,9 @@ func _process(delta: float) -> void:
 		if passi > 0:
 			vista.sincronizza()
 			aggiorna_hud()
+	# Le barre dei cantieri scorrono con la parte dell'anno già passata.
+	if velocita > 0:
+		vista.aggiorna_barre(_accumulo)
 	# Notifiche discrete: non fermano il gioco (decisione di Fede, ritmo meditativo).
 	while not sim.avvisi.is_empty():
 		var a: Dictionary = sim.avvisi.pop_front()

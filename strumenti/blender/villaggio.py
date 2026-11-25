@@ -2,7 +2,8 @@
 
 Riusa materiali e forme della prova di stile (prova_stile_verosimile.py): case lunghe in tre
 misure, capanne tonde in due, granaio su pali, palizzata (tratto e varco), luogo sacro,
-focolare, fossa-silo, recinto per gli animali, catasta di legna, rocce; legnaia, capanno da pesca e posta di caccia (25/11/2026).
+focolare, fossa-silo, recinto per gli animali, catasta di legna, rocce; legnaia, capanno da pesca e posta di caccia (25/11/2026);
+i cantieri di granaio, legnaia, capanno e posta (scheletri, 25/11/2026 sera).
 
 Uso:  blender-py strumenti/blender/villaggio.py gioco/asset/villaggio
 
@@ -431,6 +432,129 @@ def posta_caccia(nome, seme):
     return base.unisci(nome, parti)
 
 
+# ---------- cantieri (decisione di Fede del 25/11/2026 sera) ----------
+# Lo scheletro di ogni edificio mentre si costruisce: la stessa struttura del modello finito, solo
+# pali e travi, senza tetto né pareti, con accanto i materiali e gli attrezzi. Stessa orientazione
+# del modello finito, così nel gioco si sostituiscono senza girarli.
+
+def materiali_a_terra(parti, m, rnd, x, y, seme, fasci="paglia", pali=4, lungo=3.0):
+    """Mucchio di pali scortecciati stesi a terra e qualche fascio legato (paglia o canne)."""
+    for k in range(pali):
+        dy = (k - (pali - 1) / 2) * 0.2 + rnd.uniform(-0.03, 0.03)
+        z = 0.07 + (0.12 if k in (1, 2) and pali > 3 else 0.0)
+        dx = rnd.uniform(-0.25, 0.25)
+        parti.append(base.cilindro_tra("palo_a_terra", (x - lungo / 2 + dx, y + dy, z), (x + lungo / 2 + dx, y + dy + rnd.uniform(-0.1, 0.1), z), 0.07, 0.06, m["corteccia"], lati=6, uv_tile=1.2))
+    for k in range(3):
+        fx, fy = x + rnd.uniform(-0.8, 0.8), y + 0.9 + k * 0.45
+        parti.append(base.cilindro_tra("fascio", (fx - 0.7, fy, 0.18), (fx + 0.7, fy + rnd.uniform(-0.15, 0.15), 0.18), 0.18, 0.16, m[fasci], lati=8, uv_tile=0.8))
+        parti.append(base.cilindro_tra("legaccio", (fx - 0.05, fy, 0.18), (fx + 0.05, fy, 0.18), 0.19, 0.19, m["legno"], lati=8))
+    parti.append(sasso("pietra_lavoro", (0.4, 0.32, 0.22), (x + lungo / 2 + 0.4, y - 0.3, 0), m["pietra"], seme + 40))
+
+
+def cantiere_granaio(nome, seme):
+    """Granaio in costruzione: i quattro pali con i cappelli, il telaio del piano con poche assi e i
+    montanti della cella; accanto la scala, i pali, i fasci di paglia e un mucchio d'argilla."""
+    m = materiali()
+    rnd = random.Random(seme)
+    parti = []
+    for x in (-1.1, 1.1):
+        for y in (-1.1, 1.1):
+            parti.append(base.cilindro_tra("palo", (x, y, 0), (x, y, 1.05), 0.14, 0.12, m["corteccia"], lati=7))
+            parti.append(base.cilindro_tra("cappello", (x, y, 1.05), (x, y, 1.13), 0.32, 0.3, m["legno"], lati=8))
+            # Montanti della cella, ancora senza pareti.
+            parti.append(base.cilindro_tra("montante", (x * 1.05, y * 1.05, 1.2), (x * 1.05, y * 1.05, 2.75), 0.07, 0.06, m["corteccia"], lati=6))
+    for y in (-1.3, 1.3):
+        parti.append(base.cilindro_tra("trave", (-1.5, y, 1.22), (1.5, y, 1.22), 0.08, 0.08, m["corteccia"], lati=6))
+    for k in range(4):
+        parti.append(base.scatola("asse", (0.32, 2.9, 0.06), (-1.2 + k * 0.38, 0, 1.3), m["legno"]))
+    parti.append(base.cilindro_tra("architrave", (-1.25, -1.2, 2.75), (1.25, -1.2, 2.75), 0.06, 0.06, m["corteccia"], lati=6))
+    # Scala a pioli appoggiata al piano.
+    for dx in (-0.22, 0.22):
+        parti.append(base.cilindro_tra("staggio", (1.9 + dx * 0.2, dx, 0.0), (1.4 + dx * 0.2, dx, 1.6), 0.035, 0.03, m["legno"], lati=5))
+    for k in range(5):
+        t = (k + 0.5) / 5
+        parti.append(base.cilindro_tra("piolo", (1.9 - 0.5 * t, -0.22, 1.6 * t), (1.9 - 0.5 * t, 0.22, 1.6 * t), 0.025, 0.025, m["legno"], lati=4))
+    materiali_a_terra(parti, m, rnd, -0.2, -2.7, seme)
+    parti.append(sasso("argilla", (1.0, 0.8, 0.4), (-2.4, 0.6, 0), m["argilla"], seme + 50))
+    return base.unisci(nome, parti)
+
+
+def cantiere_legnaia(nome, seme):
+    """Legnaia in costruzione: pali e travi, metà dei correnti, niente falda; accanto i pali stesi,
+    i fasci di paglia e il ceppo con l'ascia."""
+    m = materiali()
+    rnd = random.Random(seme)
+    parti = []
+    lungo, largo = 4.6, 2.4
+    alto_davanti, alto_dietro = 2.3, 1.6
+    for fila, (y, h) in enumerate(((-largo / 2, alto_davanti), (largo / 2, alto_dietro))):
+        for k in range(3):
+            x = (k - 1) * lungo / 2 + rnd.uniform(-0.08, 0.08)
+            parti.append(base.cilindro_tra("palo", (x, y, -0.15), (x + rnd.uniform(-0.04, 0.04), y, h), 0.09, 0.08, m["corteccia"], lati=6))
+        parti.append(base.cilindro_tra("trave", (-lungo / 2 - 0.3, y, h - 0.05), (lungo / 2 + 0.3, y, h - 0.05), 0.07, 0.07, m["corteccia"], lati=6))
+    for k in range(3):
+        x = (k - 2) * lungo / 4
+        parti.append(base.cilindro_tra("corrente", (x, -largo / 2 - 0.4, alto_davanti + 0.05), (x, largo / 2 + 0.4, alto_dietro + 0.05), 0.045, 0.045, m["legno"], lati=5))
+    materiali_a_terra(parti, m, rnd, 0.0, -largo / 2 - 1.6, seme)
+    cx, cy = lungo / 2 + 1.0, 0.0
+    parti.append(base.cilindro_tra("ceppo", (cx, cy, 0.0), (cx, cy, 0.55), 0.32, 0.3, m["corteccia"], lati=9))
+    parti.append(base.cilindro_tra("manico", (cx - 0.05, cy + 0.05, 0.52), (cx - 0.55, cy - 0.35, 0.95), 0.03, 0.025, m["legno"], lati=5))
+    parti.append(sasso("lama", (0.22, 0.07, 0.12), (cx - 0.02, cy + 0.06, 0.5), m["pietra"], seme + 1, appoggiato=False))
+    return base.unisci(nome, parti)
+
+
+def cantiere_capanno(nome, seme):
+    """Capanno da pesca in costruzione: i quattro pali, le capriate e il colmo, un tratto di
+    parete di canne; accanto i fasci di canne e i pali. L'acqua è verso y positivo."""
+    m = materiali()
+    m["canne"] = base.materiale("canne", "paglia", tinta=(0.78, 0.74, 0.6))
+    rnd = random.Random(seme)
+    parti = []
+    lungo, largo, alto = 3.2, 2.4, 1.6
+    colmo = alto + 0.95
+    for x in (-lungo / 2, lungo / 2):
+        for y in (-largo / 2, largo / 2):
+            parti.append(base.cilindro_tra("palo", (x, y, -0.1), (x, y, alto), 0.07, 0.06, m["corteccia"], lati=6))
+        # Capriata in testa: due puntoni dai pali al colmo.
+        for y in (-largo / 2, largo / 2):
+            parti.append(base.cilindro_tra("puntone", (x, y, alto), (x, 0, colmo), 0.05, 0.05, m["corteccia"], lati=5))
+    for y in (-largo / 2, largo / 2):
+        parti.append(base.cilindro_tra("corrente", (-lungo / 2, y, alto - 0.05), (lungo / 2, y, alto - 0.05), 0.05, 0.05, m["corteccia"], lati=5))
+    parti.append(base.cilindro_tra("colmo", (-lungo / 2 - 0.35, 0, colmo), (lungo / 2 + 0.35, 0, colmo), 0.06, 0.06, m["corteccia"], lati=6))
+    # Un tratto di parete di canne, sul lato verso terra.
+    for k in range(6):
+        t = (k + 0.5) / 14
+        x = -lungo / 2 + t * lungo
+        h = alto + rnd.uniform(-0.08, 0.06)
+        parti.append(base.cilindro_tra("canne", (x, -largo / 2, 0.0), (x + rnd.uniform(-0.03, 0.03), -largo / 2, h), 0.075, 0.06, m["canne"], lati=5, uv_tile=0.8))
+    materiali_a_terra(parti, m, rnd, 0.2, -largo / 2 - 1.5, seme, fasci="canne", pali=3)
+    return base.unisci(nome, parti)
+
+
+def cantiere_posta(nome, seme):
+    """Posta di caccia in costruzione: le forcelle, il colmo e qualche corrente fino a terra,
+    senza frasche; accanto un mucchio di rami e i pali. La schiena è verso y positivo."""
+    m = materiali()
+    rnd = random.Random(seme)
+    parti = []
+    lungo, alto, fondo = 3.4, 1.45, 2.3
+    y0 = -0.9
+    for x in (-lungo / 2 + 0.2, lungo / 2 - 0.2):
+        parti.append(base.cilindro_tra("forcella", (x, y0, -0.15), (x, y0, alto + 0.05), 0.08, 0.07, m["corteccia"], lati=6))
+        parti.append(base.cilindro_tra("forca", (x, y0, alto - 0.15), (x + 0.15, y0 - 0.05, alto + 0.25), 0.04, 0.03, m["corteccia"], lati=5))
+    parti.append(base.cilindro_tra("colmo", (-lungo / 2 - 0.2, y0, alto + 0.08), (lungo / 2 + 0.2, y0, alto + 0.08), 0.07, 0.06, m["corteccia"], lati=6))
+    for k in (0, 2, 5):
+        x = -lungo / 2 + 0.1 + k * (lungo - 0.2) / 5 + rnd.uniform(-0.06, 0.06)
+        parti.append(base.cilindro_tra("corrente", (x, y0 - 0.25, alto + 0.22), (x + rnd.uniform(-0.1, 0.1), y0 + fondo + 0.15, -0.05), 0.04, 0.035, m["corteccia"], lati=5))
+    # Mucchio di rami tagliati, da stendere sulla falda.
+    for k in range(10):
+        a = rnd.uniform(-0.5, 0.5)
+        x, y = lungo / 2 + 1.0 + rnd.uniform(-0.4, 0.4), y0 + rnd.uniform(-0.5, 0.8)
+        parti.append(base.cilindro_tra("ramo", (x - math.cos(a) * 0.8, y - math.sin(a) * 0.8, 0.05 + k * 0.02), (x + math.cos(a) * 0.8, y + math.sin(a) * 0.8, 0.08 + k * 0.02), 0.04, 0.015, m["corteccia"], lati=4))
+    materiali_a_terra(parti, m, rnd, -0.3, y0 - 1.5, seme, pali=3, lungo=2.6)
+    return base.unisci(nome, parti)
+
+
 def roccia(nome, seme, dim):
     m = materiali()
     return base.unisci(nome, [sasso("roccia", dim, (0, 0, 0), m["pietra"], seme)])
@@ -453,6 +577,10 @@ ASSET = [
     ("legnaia", lambda n: legnaia(n, 31)),
     ("capanno_pesca", lambda n: capanno_pesca(n, 32)),
     ("posta_caccia", lambda n: posta_caccia(n, 33)),
+    ("cantiere_granaio", lambda n: cantiere_granaio(n, 34)),
+    ("cantiere_legnaia", lambda n: cantiere_legnaia(n, 35)),
+    ("cantiere_capanno_pesca", lambda n: cantiere_capanno(n, 36)),
+    ("cantiere_posta_caccia", lambda n: cantiere_posta(n, 37)),
     ("roccia_1", lambda n: roccia(n, 28, (1.6, 1.2, 0.9))),
     ("roccia_2", lambda n: roccia(n, 29, (2.4, 1.8, 1.3))),
     ("roccia_3", lambda n: roccia(n, 30, (0.9, 0.8, 0.6))),

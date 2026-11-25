@@ -21,10 +21,6 @@ var _celle_nastro := {}  # tutte le celle sotto i nastri
 var _firma_sentieri := ""
 var _firma_campi := 0
 var _nastri: MeshInstance3D
-var _granaio: Node3D
-var _granaio_pos := Vector2(-1, -1)
-var _legnaie := {}  # punto -> nodo
-var _edifici_risorse := {}  # punto -> [nodo, raggio degli alberi tolti]
 var _focolare: Node3D
 var _centro := Vector2i(-1, -1)
 var _rovine := 0
@@ -68,9 +64,7 @@ func sincronizza() -> void:
 	_sincronizza_centro()
 	_sincronizza_campi_e_sentieri()
 	_sincronizza_case()
-	_sincronizza_granaio()
-	_sincronizza_legnaie()
-	_sincronizza_edifici_risorse()
+	_sincronizza_edifici()
 	_sincronizza_rovine()
 
 
@@ -424,63 +418,107 @@ func _sincronizza_case() -> void:
 			uso.libera(uso.celle_nel_cerchio(w.x, w.y, RAGGIO_CORTILE))
 
 
-func _sincronizza_granaio() -> void:
-	if sim.granaio == _granaio_pos:
-		return
-	if _granaio:
-		_granaio.queue_free()
-		_granaio = null
-		uso.libera(uso.celle_nel_cerchio(_granaio_pos.x, _granaio_pos.y, 6.0))
-	_granaio_pos = sim.granaio
+## Edifici costruiti dal giocatore: granaio, legnaie (tettoia con le cataste, il ceppo e l'ascia),
+## capanni da pesca (sulla riva, rastrelliera e piroga verso l'acqua) e poste di caccia (schiena al
+## bosco); decisioni di Fede del 25/11/2026. Il lato +y del modello in Blender (-z in Godot) guarda
+## verso l'acqua o il bosco: rotazione atan2(-v.x, -v.y). Attorno si tolgono gli alberi, in un
+## cerchio largo per il capanno (i pioppi della riva lo nascondevano).
+## Cantieri (decisione di Fede del 25/11/2026 sera): finché un edificio si costruisce si vede il suo
+## scheletro, con sopra una barra discreta che avanza anno dopo anno; poi il modello finito.
+const CANTIERI := {"granaio_su_pali": "cantiere_granaio", "legnaia": "cantiere_legnaia",
+	"capanno_pesca": "cantiere_capanno_pesca", "posta_caccia": "cantiere_posta_caccia"}
+const ALTEZZA_BARRA := 6.5
+var _edifici := {}  # punto -> {nodo, modello, raggio, barra}
+## Cantieri aperti per le barre: punto -> [anni fatti, anni totali].
+var _cantieri := {}
+var _frazione_anno := 0.0
+
+
+func _sincronizza_edifici() -> void:
+	# punto -> [modello, gradi, raggio senza alberi, costruzione per l'uso del suolo, anni che mancano, anni totali]
+	var ora := {}
 	if sim.granaio.x >= 0:
-		_granaio = _istanza("granaio_su_pali")
-		_posa(_granaio, sim.granaio, 0.0)
-		uso.costruisci(uso.celle_nel_cerchio(sim.granaio.x, sim.granaio.y, 6.0), "granaio")
-
-
-## Legnaie (decisione di Fede del 25/11/2026): tettoia con le cataste, il ceppo e l'ascia.
-func _sincronizza_legnaie() -> void:
-	var ora := {}
+		ora[sim.granaio] = ["granaio_su_pali", 0.0, 6.0, "granaio", sim.cantiere_granaio, SimVillaggio.ANNI_CANTIERE_GRANAIO]
 	for l in sim.legnaie:
-		ora[l["punto"]] = true
-	for p in _legnaie.keys():
-		if not ora.has(p):
-			(_legnaie[p] as Node3D).queue_free()
-			_legnaie.erase(p)
-			uso.libera(uso.celle_nel_cerchio(p.x, p.y, 7.0))
-	for p in ora:
-		if _legnaie.has(p):
-			continue
-		var nodo := _istanza("legnaia")
-		_posa(nodo, p, float(int(p.x * 7.0 + p.y * 13.0) % 360))
-		_legnaie[p] = nodo
-		uso.costruisci(uso.celle_nel_cerchio(p.x, p.y, 7.0), "legnaia")
-
-
-## Capanni da pesca e poste di caccia (decisioni di Fede del 25/11/2026): il capanno sulla riva con
-## rastrelliera e piroga verso l'acqua, la posta con la schiena al bosco. Il lato +y del modello in
-## Blender (-z in Godot) guarda verso l'acqua o il bosco: rotazione atan2(-v.x, -v.y). Attorno si
-## tolgono gli alberi, in un cerchio largo per il capanno (i pioppi della riva lo nascondevano).
-func _sincronizza_edifici_risorse() -> void:
-	var ora := {}
+		var p: Vector2 = l["punto"]
+		ora[p] = ["legnaia", float(int(p.x * 7.0 + p.y * 13.0) % 360), 7.0, "legnaia", int(l["cantiere"]), SimVillaggio.ANNI_CANTIERE_LEGNAIA]
 	for e in sim.capanni:
-		ora[e["punto"]] = ["capanno_pesca", e["verso"], 14.0]
+		var v: Vector2 = e["verso"]
+		ora[e["punto"]] = ["capanno_pesca", rad_to_deg(atan2(-v.x, -v.y)), 14.0, "capanno_pesca", int(e["cantiere"]), SimVillaggio.ANNI_CANTIERE_RISORSE]
 	for e in sim.poste:
-		ora[e["punto"]] = ["posta_caccia", e["verso"], 8.0]
-	for p in _edifici_risorse.keys():
+		var v: Vector2 = e["verso"]
+		ora[e["punto"]] = ["posta_caccia", rad_to_deg(atan2(-v.x, -v.y)), 8.0, "posta_caccia", int(e["cantiere"]), SimVillaggio.ANNI_CANTIERE_RISORSE]
+	for p in _edifici.keys():
 		if not ora.has(p):
-			(_edifici_risorse[p][0] as Node3D).queue_free()
-			uso.libera(uso.celle_nel_cerchio(p.x, p.y, float(_edifici_risorse[p][1])))
-			_edifici_risorse.erase(p)
+			var e: Dictionary = _edifici[p]
+			(e["nodo"] as Node3D).queue_free()
+			if e["barra"] != null:
+				(e["barra"] as Node3D).queue_free()
+			uso.libera(uso.celle_nel_cerchio(p.x, p.y, float(e["raggio"])))
+			_edifici.erase(p)
+	_cantieri = {}
 	for p in ora:
-		if _edifici_risorse.has(p):
+		var v: Array = ora[p]
+		var in_cantiere := int(v[4]) > 0
+		var modello: String = CANTIERI[v[0]] if in_cantiere else v[0]
+		if not _edifici.has(p):
+			_edifici[p] = {"nodo": null, "modello": "", "raggio": v[2], "barra": null}
+			uso.costruisci(uso.celle_nel_cerchio(p.x, p.y, v[2]), v[3])
+		var e: Dictionary = _edifici[p]
+		if e["modello"] != modello:
+			if e["nodo"] != null:
+				(e["nodo"] as Node3D).queue_free()
+			var nodo := _istanza(modello)
+			_posa(nodo, p, v[1])
+			e["nodo"] = nodo
+			e["modello"] = modello
+		if in_cantiere:
+			if e["barra"] == null:
+				e["barra"] = _nuova_barra(p)
+			_cantieri[p] = [float(int(v[5]) - int(v[4])), float(v[5])]
+		elif e["barra"] != null:
+			(e["barra"] as Node3D).queue_free()
+			e["barra"] = null
+	aggiorna_barre(_frazione_anno)
+
+
+func _nuova_barra(p: Vector2) -> MeshInstance3D:
+	var barra := MeshInstance3D.new()
+	var quad := QuadMesh.new()
+	quad.size = Vector2.ONE
+	barra.mesh = quad
+	var m := ShaderMaterial.new()
+	m.shader = load("res://shader/barra_cantiere.gdshader")
+	m.render_priority = 4
+	barra.material_override = m
+	barra.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# I vertici si spostano nello shader: il riquadro di prova non deve tagliarla fuori.
+	barra.custom_aabb = AABB(Vector3(-20, -20, -20), Vector3(40, 40, 40))
+	barra.position = Vector3(p.x, terreno.quota_mondo(p.x, p.y) + ALTEZZA_BARRA, p.y)
+	add_child(barra)
+	return barra
+
+
+## Avanzamento delle barre: anni fatti più la parte dell'anno in corso (la partita la passa a ogni
+## fotogramma, così la barra scorre invece di andare a scatti).
+func aggiorna_barre(frazione: float) -> void:
+	_frazione_anno = clampf(frazione, 0.0, 1.0)
+	for p in _cantieri:
+		var e: Dictionary = _edifici[p]
+		if e["barra"] == null:
 			continue
-		var voce: Array = ora[p]
-		var v: Vector2 = voce[1]
-		var nodo := _istanza(voce[0])
-		_posa(nodo, p, rad_to_deg(atan2(-v.x, -v.y)))
-		_edifici_risorse[p] = [nodo, voce[2]]
-		uso.costruisci(uso.celle_nel_cerchio(p.x, p.y, voce[2]), voce[0])
+		var c: Array = _cantieri[p]
+		var progresso := clampf((float(c[0]) + _frazione_anno) / maxf(float(c[1]), 1.0), 0.0, 1.0)
+		((e["barra"] as MeshInstance3D).material_override as ShaderMaterial).set_shader_parameter("progresso", progresso)
+
+
+## Quanti cantieri hanno la barra (per le verifiche).
+func barre_aperte() -> int:
+	var n := 0
+	for p in _edifici:
+		if _edifici[p]["barra"] != null:
+			n += 1
+	return n
 
 
 ## Rovine: qualche sasso dove c'erano il centro e le case (il fallimento come strato).

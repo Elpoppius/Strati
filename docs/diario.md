@@ -2,6 +2,20 @@
 
 Voci più recenti in cima.
 
+## 25/11/2026 (notte)
+**Fatto**
+- **Cantieri visibili:**
+  - quattro **scheletri** in `strumenti/blender/villaggio.py`, che nascono dal modello finito: solo pali e travi, con materiali e attrezzi accanto. Il granaio ha il telaio del piano, i montanti, una scala e l'argilla; la legnaia pali e travi senza falda, con il ceppo e l'ascia; il capanno capriate e un tratto di canne; la posta forcelle, colmo e rami a terra. Foto: `docs/immagini/cantieri-25-11.jpg`;
+  - nel gioco, finché c'è il cantiere si vede lo scheletro con una **barra discreta** sopra, che scorre con l'anno in corso; poi compare il modello finito. Granaio, legnaie, capanni e poste si disegnano ora in un'unica funzione, `VistaVillaggio._sincronizza_edifici`. Foto: `docs/immagini/barra-cantiere-25-11.jpg`;
+  - 3 verifiche nuove in `verifica_partita.gd`, nuovo script `test/foto_cantieri.gd`. Tutte le 9 verifiche superate. Le dinamiche non cambiano, quindi niente nuove partite "umane".
+
+**Decisioni** (Fede)
+- Cantieri: barra più lo scheletro di ogni edificio (scartato il cantiere unico per tutti). Approvati gli scheletri della foto.
+
+**Prossimo passo**
+- Fede: guardare la barra nel gioco (misura e posizione). Le altre domande sono nella voce qui sotto.
+- Claude: voce 2, pascolo e bestiame. Il luogo sacro (voce 3) avrà anche il suo scheletro.
+
 ## 25/11/2026 (sera tardi)
 **Fatto**
 - **Capanno da pesca e Posta di caccia** (voce 1 del todo):

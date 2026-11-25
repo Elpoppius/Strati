@@ -192,7 +192,9 @@ func _process(_d: float) -> bool:
 			continue
 		var e: Dictionary = elenco[0]
 		var pe: Vector2 = e["punto"]
-		controlla(p.vista._edifici_risorse.has(pe) and _s.uso.stato(pe.x, pe.y) != UsoSuolo.NATURALE, "%s: il modello è sulla mappa e attorno non ci sono alberi" % cmd)
+		controlla(p.vista._edifici.has(pe) and _s.uso.stato(pe.x, pe.y) != UsoSuolo.NATURALE, "%s: il modello è sulla mappa e attorno non ci sono alberi" % cmd)
+		# Cantiere (decisione di Fede del 25/11/2026 sera): scheletro e barra finché si costruisce.
+		controlla(String(p.vista._edifici[pe]["modello"]).begins_with("cantiere_") and p.vista._edifici[pe]["barra"] != null, "%s: in costruzione si vede lo scheletro con la barra" % cmd)
 	# Lontano dall'acqua l'anteprima del capanno è rossa e dice perché.
 	h.seleziona_comando("capanno")
 	var asciutto := Vector2.INF
@@ -221,6 +223,13 @@ func _process(_d: float) -> bool:
 				_s.punto_corrente = Vector3(c.x + cos(a * 0.8) * 350.0, 0, c.y + sin(a * 0.8) * 350.0)
 				_s.applica_strumento()
 	controlla(sim.anno > anno0 + 150, "il tempo scorre (%s)" % SimVillaggio.anno_testo(sim.anno))
+	var finiti := true
+	for e in sim.poste + sim.capanni:
+		var m: String = p.vista._edifici[e["punto"]]["modello"]
+		if int(e["cantiere"]) <= 0 and m.begins_with("cantiere_"):
+			finiti = false
+	var in_cantiere := (sim.poste + sim.capanni + sim.legnaie).filter(func(e: Dictionary) -> bool: return int(e["cantiere"]) > 0).size() + (1 if sim.cantiere_granaio > 0 else 0)
+	controlla(finiti and p.vista.barre_aperte() == in_cantiere, "finito il cantiere compare l'edificio e la barra sparisce (%d barre, %d cantieri)" % [p.vista.barre_aperte(), in_cantiere])
 	var tagliati_visibili := 0
 	for i in sim.tagliati:
 		if sim.dati.tipo[i] == MappaDati.PALUDE:

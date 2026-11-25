@@ -29,8 +29,8 @@ Raggruppamento proposto: giornata 1 caccia e pesca con la mappa boschi e selvagg
 
 ## Per chi riprende: il lavoro in ordine
 
-### 0. [ ] Cantieri visibili (richiesta di Fede del 25/11/2026 sera)
-**Deciso** (Fede): sopra ogni edificio in costruzione una **barra discreta** che avanza anno dopo anno, e al posto dell'edificio finito un **modello del cantiere**, da creare in Blender. Oggi hanno un cantiere: granaio (3 anni), legnaia, capanno da pesca e posta di caccia (2 anni); poi il luogo sacro. Le case nascono da sole, senza cantiere. Prima di cominciare: proposta a Fede sulla forma del cantiere (vedi diario).
+### 0. [x] Cantieri visibili (richiesta di Fede del 25/11/2026 sera)
+**Fatto** il 25/11/2026 sera. Deciso da Fede: sopra ogni edificio in costruzione una **barra discreta** che avanza anno dopo anno, e al posto dell'edificio finito il suo **scheletro** (stessa struttura, solo pali e travi, con materiali e attrezzi accanto; scelto da Fede tra cantiere unico e scheletro di ogni edificio). Modelli `cantiere_granaio`, `cantiere_legnaia`, `cantiere_capanno_pesca`, `cantiere_posta_caccia` (`villaggio.py`, foto `docs/immagini/cantieri-25-11.jpg`); barra `shader/barra_cantiere.gdshader` (foto `docs/immagini/barra-cantiere-25-11.jpg`). **Il luogo sacro (voce 3) avrà il suo scheletro** in `VistaVillaggio.CANTIERI`. Le case nascono da sole, senza cantiere.
 *Ordine proposto da Claude il 25/11/2026; le voci sono già approvate da Fede nei contenuti, salvo dove c'è (?).*
 
 ### 1. [x] Capanno da pesca e Posta di caccia

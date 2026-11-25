@@ -1,7 +1,7 @@
 extends SceneTree
 ## Foto di controllo di una partita: fondazione sul sito 1, campi attorno, un secolo e mezzo di
 ## tempo con un giocatore automatico semplice, poi la foto.
-## Uso: xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto_partita.gd -- uscita.png [dimensione_vista] [anni] [mappa] [strumento | politiche | tecniche | anteprima | fondazione | focus:Indicatore | capanno | posta]
+## Uso: xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto_partita.gd -- uscita.png [dimensione_vista] [anni] [mappa] [strumento | politiche | tecniche | anteprima | fondazione | focus:Indicatore | capanno | posta | cantiere]
 ## Con capanno o posta la vista va sul primo capanno da pesca o sulla prima posta di caccia, con lo
 ## strumento scelto e il puntatore sopra (lettura dell'edificio).
 
@@ -60,6 +60,17 @@ func _process(_d: float) -> bool:
 		if args.size() > 4 and args[4] == "legnaia" and not sim.legnaie.is_empty():
 			c = sim.legnaie[0]["punto"]
 		var su_edificio := false
+		# Cantiere in corso (decisione di Fede del 25/11/2026 sera): una posta nuova a metà lavoro.
+		if args.size() > 4 and args[4] == "cantiere":
+			var ce := RandomNumberGenerator.new()
+			ce.seed = 3
+			sim.poste = []
+			AiutiGiocatori.costruisci_edificio_risorse(sim, ce, 1.0, true)
+			p.vista.sincronizza()
+			p.vista.aggiorna_barre(0.6)
+			if not sim.poste.is_empty():
+				c = sim.poste[0]["punto"]
+				su_edificio = true
 		if args.size() > 4 and args[4] in ["capanno", "posta"]:
 			var elenco: Array = sim.capanni if args[4] == "capanno" else sim.poste
 			if not elenco.is_empty():
@@ -111,6 +122,8 @@ func _process(_d: float) -> bool:
 		elif args.size() > 4 and args[4] == "legnaia":
 			_s.hud.seleziona_comando("legnaia")
 			_s.aggiorna_zone_taglio()
+		elif su_edificio and args[4] == "cantiere":
+			pass
 		elif su_edificio:
 			_s.hud.seleziona_comando(args[4])
 			_s.punto_corrente = Vector3(c.x, 0.0, c.y)
