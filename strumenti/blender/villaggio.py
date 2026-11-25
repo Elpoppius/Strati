@@ -2,7 +2,7 @@
 
 Riusa materiali e forme della prova di stile (prova_stile_verosimile.py): case lunghe in tre
 misure, capanne tonde in due, granaio su pali, palizzata (tratto e varco), luogo sacro,
-focolare, fossa-silo, recinto per gli animali, catasta di legna, rocce.
+focolare, fossa-silo, recinto per gli animali, catasta di legna, rocce; legnaia (25/11/2026).
 
 Uso:  blender-py strumenti/blender/villaggio.py gioco/asset/villaggio
 
@@ -178,6 +178,64 @@ def catasta_legna(nome, seme):
     return base.unisci(nome, parti)
 
 
+def legnaia(nome, seme):
+    """Legnaia (decisione di Fede del 25/11/2026): tettoia a una falda su pali, con le cataste di
+    tronchi sotto, un ceppo con l'ascia e i trucioli a terra."""
+    m = materiali()
+    rnd = random.Random(seme)
+    parti = []
+    lungo, largo = 4.6, 2.4
+    alto_davanti, alto_dietro = 2.3, 1.6
+    # Pali: tre davanti (alti) e tre dietro (bassi), appena storti.
+    for fila, (y, h) in enumerate(((-largo / 2, alto_davanti), (largo / 2, alto_dietro))):
+        for k in range(3):
+            x = (k - 1) * lungo / 2 + rnd.uniform(-0.08, 0.08)
+            parti.append(base.cilindro_tra("palo", (x, y, -0.15), (x + rnd.uniform(-0.04, 0.04), y, h), 0.09, 0.08, m["corteccia"], lati=6))
+        # Trave lungo la fila.
+        parti.append(base.cilindro_tra("trave", (-lungo / 2 - 0.3, y, h - 0.05), (lungo / 2 + 0.3, y, h - 0.05), 0.07, 0.07, m["corteccia"], lati=6))
+    # Correnti trasversali e falda di paglia appena irregolare.
+    for k in range(5):
+        x = (k - 2) * lungo / 4
+        parti.append(base.cilindro_tra("corrente", (x, -largo / 2 - 0.4, alto_davanti + 0.05), (x, largo / 2 + 0.4, alto_dietro + 0.05), 0.045, 0.045, m["legno"], lati=5))
+    falda = base.scatola("falda", (lungo + 0.7, largo + 1.0, 0.16), (0, 0, (alto_davanti + alto_dietro) / 2 + 0.16), m["paglia"], tagli=3)
+    # Davanti (y negativo) più alta: la falda scende verso il retro.
+    pendenza = math.atan2(alto_davanti - alto_dietro, largo + 0.8)
+    falda.rotation_euler = (-pendenza, 0, 0)
+    for v in falda.data.vertices:
+        v.co.z += rnd.uniform(-0.04, 0.04)
+    parti.append(falda)
+    # Cataste sotto la tettoia: tronchi corti accatastati su due file, a piramide.
+    r = 0.14
+    for blocco, x0 in enumerate((-1.2, 1.1)):
+        for fila, quanti in enumerate((5, 4, 3, 2)):
+            for k in range(quanti):
+                y = (k - (quanti - 1) / 2) * r * 2.05
+                z = r + fila * r * 1.75
+                dx = rnd.uniform(-0.08, 0.08)
+                parti.append(base.cilindro_tra("tronco", (x0 - 0.75 + dx, y, z), (x0 + 0.75 + dx, y, z), r * rnd.uniform(0.85, 1.05), r * rnd.uniform(0.85, 1.05), m["corteccia"], lati=7, uv_tile=1.0))
+    # Fuori, di fianco alla tettoia, una catasta che si vede dall'alto.
+    for fila, quanti in enumerate((4, 3, 2, 1)):
+        for k in range(quanti):
+            x = lungo / 2 + 1.0 + (k - (quanti - 1) / 2) * r * 2.05
+            z = r + fila * r * 1.75
+            dy = rnd.uniform(-0.08, 0.08)
+            parti.append(base.cilindro_tra("tronco", (x, -0.8 + dy, z), (x, 0.8 + dy, z), r * rnd.uniform(0.85, 1.05), r * rnd.uniform(0.85, 1.05), m["corteccia"], lati=7, uv_tile=1.0))
+    # Davanti: un ceppo con l'ascia (manico di legno, lama di pietra), tronchi interi e trucioli.
+    cx, cy = 0.6, -largo / 2 - 1.3
+    parti.append(base.cilindro_tra("ceppo", (cx, cy, 0.0), (cx, cy, 0.55), 0.32, 0.3, m["corteccia"], lati=9))
+    parti.append(base.cilindro_tra("manico", (cx - 0.05, cy + 0.05, 0.52), (cx - 0.55, cy - 0.35, 0.95), 0.03, 0.025, m["legno"], lati=5))
+    parti.append(sasso("lama", (0.22, 0.07, 0.12), (cx - 0.02, cy + 0.06, 0.5), m["pietra"], seme + 1, appoggiato=False))
+    for k in range(2):
+        y = cy - 0.9 - k * 0.5
+        parti.append(base.cilindro_tra("tronco_intero", (-2.4, y, 0.2), (-0.2, y + rnd.uniform(-0.3, 0.3), 0.18), 0.2, 0.16, m["corteccia"], lati=7, uv_tile=1.2))
+    for k in range(14):
+        a = rnd.uniform(0, 2 * math.pi)
+        d = rnd.uniform(0.4, 1.1)
+        x, y = cx + d * math.cos(a), cy + d * math.sin(a)
+        parti.append(base.scatola("truciolo", (rnd.uniform(0.12, 0.22), rnd.uniform(0.05, 0.09), 0.03), (x, y, 0.015), m["legno"]))
+    return base.unisci(nome, parti)
+
+
 def roccia(nome, seme, dim):
     m = materiali()
     return base.unisci(nome, [sasso("roccia", dim, (0, 0, 0), m["pietra"], seme)])
@@ -197,6 +255,7 @@ ASSET = [
     ("fossa_silo", lambda n: fossa_silo(n, 25)),
     ("recinto_animali", lambda n: recinto_animali(n, 26)),
     ("catasta_legna", lambda n: catasta_legna(n, 27)),
+    ("legnaia", lambda n: legnaia(n, 31)),
     ("roccia_1", lambda n: roccia(n, 28, (1.6, 1.2, 0.9))),
     ("roccia_2", lambda n: roccia(n, 29, (2.4, 1.8, 1.3))),
     ("roccia_3", lambda n: roccia(n, 30, (0.9, 0.8, 0.6))),

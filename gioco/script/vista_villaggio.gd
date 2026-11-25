@@ -436,7 +436,7 @@ func _sincronizza_granaio() -> void:
 		uso.costruisci(uso.celle_nel_cerchio(sim.granaio.x, sim.granaio.y, 6.0), "granaio")
 
 
-## Legnaie (decisione di Fede del 25/11/2026): la catasta di legna con un piccolo riparo accanto.
+## Legnaie (decisione di Fede del 25/11/2026): tettoia con le cataste, il ceppo e l'ascia.
 func _sincronizza_legnaie() -> void:
 	var ora := {}
 	for l in sim.legnaie:
@@ -449,14 +449,8 @@ func _sincronizza_legnaie() -> void:
 	for p in ora:
 		if _legnaie.has(p):
 			continue
-		var nodo := Node3D.new()
-		add_child(nodo)
-		var catasta := _istanza("catasta_legna")
-		_posa(catasta, p, 0.0)
-		var riparo := _istanza("capanna_tonda_piccola")
-		_posa(riparo, p + Vector2(6.0, 4.0), 30.0)
-		catasta.reparent(nodo)
-		riparo.reparent(nodo)
+		var nodo := _istanza("legnaia")
+		_posa(nodo, p, float(int(p.x * 7.0 + p.y * 13.0) % 360))
 		_legnaie[p] = nodo
 		uso.costruisci(uso.celle_nel_cerchio(p.x, p.y, 7.0), "legnaia")
 

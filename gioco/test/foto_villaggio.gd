@@ -15,7 +15,7 @@ const POSE := [
 	["capanna_tonda", 2.0, 18.0, 0.0], ["capanna_tonda_piccola", -4.0, 30.0, 40.0],
 	["granaio_su_pali", 6.0, -2.0, 0.0], ["granaio_su_pali", -4.0, 6.0, 15.0],
 	["fossa_silo", 12.0, -4.0, 0.0], ["fossa_silo", 0.0, 2.0, 0.0],
-	["focolare", -2.0, -2.0, 0.0], ["catasta_legna", 24.0, -6.0, 60.0],
+	["focolare", -2.0, -2.0, 0.0], ["catasta_legna", 24.0, -6.0, 60.0], ["legnaia", 34.0, 2.0, -20.0],
 	["luogo_sacro", 26.0, 22.0, 0.0], ["recinto_animali", -28.0, -24.0, 30.0],
 	["roccia_1", 34.0, -16.0, 0.0], ["roccia_3", 31.0, -18.0, 50.0], ["roccia_2", -58.0, 30.0, 10.0],
 ]
