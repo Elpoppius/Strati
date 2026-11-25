@@ -20,7 +20,7 @@ Legenda: `[x]` fatto · `[ ]` da fare · **(?)** serve una decisione di Fede pri
 - [ ] Prove di Fede sul villaggio e taratura: carestie, quantità di campi, peso di caccia e pesca, area dei gessi poverissima. Gli orti si calibrano sulla frustrazione e sulla crescita (decisione di Fede del 25/11/2026).
 
 ## 2. Sistemi della prima epoca
-*Decisioni di Fede del 25/11/2026, dettagli in `pilastri-e-decisioni.md`, sezione "La prima epoca: dinamiche". Regola: ogni sistema prende o dà qualcosa a un altro, muove un gruppo di consenso e lascia una traccia sulla mappa. L'ordine è una proposta di Claude.*
+*Decisioni di Fede del 25/11/2026, dettagli in `era-origini.md` e in `pilastri-e-decisioni.md`, sezione "La prima epoca: dinamiche". Regola: ogni sistema prende o dà qualcosa a un altro, muove un gruppo di consenso e lascia una traccia sulla mappa. L'ordine è una proposta di Claude.*
 1. [ ] **Ritmo meditativo:** annate magre senza avvisi; carestie solo da cause in gioco; siccità sempre annunciate; pause solo la prima volta di ogni evento, per i presagi e per l'evento soglia; stranieri attirati dall'abbondanza e governati dalla politica; niente avviso "zona agricola piena" (basta la mappa). Viene prima perché tocca tutto il resto e si misura subito con `registro_avvisi.gd`.
 2. [ ] **Abbondanza e tappe:** indicatore unico con tre parti al passaggio; nascite legate all'abbondanza; tappe permanenti (soglie di partenza in `pilastri-e-decisioni.md`).
 3. [ ] **Gruppi di consenso: anziani, famiglie, sacerdote**, un solo indicatore con il dettaglio al passaggio (decisione del 24/11/2026), con gli effetti graduali per gruppo (regole, lavoro, presagi).
@@ -48,8 +48,9 @@ Legenda: `[x]` fatto · `[ ]` da fare · **(?)** serve una decisione di Fede pri
 - Recinto o palizzata, con terrapieno e fossato: appartiene alla pianificazione urbana; nella prima epoca gli insediamenti sono spontanei, nella seconda cominciano a darsi delle regole (decisioni di Fede del 24 e 25/11/2026).
 
 ## Da decidere
-- **(?)** Nomenclatura delle popolazioni nei testi del gioco: un modo neutro di chiamarle, senza nomi di culture archeologiche o di popoli (richiesta di Fede del 25/11/2026; proposte in arrivo).
-- **(?)** Inizio della partita: oggi 6000 a.C.; il Neolitico antico della pianura padana si data soprattutto dalla seconda metà del VI millennio. E come scorre il tempo in un'epoca di circa 3000 anni.
+- Nomenclatura delle popolazioni: **decisa** il 25/11/2026 ("genti" più il luogo; vedi `era-origini.md`).
+- Inizio della partita: **resta il 6000 a.C.** (Fede, 25/11/2026: i primi quattro secoli servono a mettere le pedine).
+- **(?)** Come scorre il tempo in un'epoca di circa 3000 anni: proposta del passo elastico in `era-origini.md`, § 2.
 - **(?)** Politica "Caccia regolata", solo se le fonti di cibo non bastano come leva.
 - **(?)** Orti disegnati più piccoli dentro il quadrato da 40 m.
 - Prologo nomade: **bocciato** da Fede il 25/11/2026 (il gioco è prima di tutto urbanistico).

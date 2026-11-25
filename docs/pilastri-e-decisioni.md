@@ -35,9 +35,11 @@ Gestionale urbanistico-politico. Il giocatore governa una città europea verosim
 - **Produzione:** Fede + Claude, budget zero. Godot 4.7.2 (renderer Compatibilità), Blender 5.3, asset creati da script o con licenza CC0 (stile verosimile: vedi `asset.md`), Git/GitHub.
 
 ## Epoche
-Struttura simmetrica: **6 macro-ere × 2 epoche**. Il passaggio di macro-era sblocca nuovi sistemi; il passaggio di epoca cambia la sensibilità dominante. Le epoche prendono il nome dal tipo di città che producono, non da un popolo.
+*L'Era delle Origini (Villaggio e Abitato protourbano) è definita in dettaglio in `era-origini.md`.*
 
-| Macro-era | Epoca | Periodo indicativo | Si apre con | Chi governa | Sensibilità dominante |
+Struttura simmetrica: **6 Ere × 2 epoche** (fino al 25/11/2026 si chiamavano macro-ere: decisione di Fede). Il passaggio di Era sblocca nuovi sistemi; il passaggio di epoca cambia la sensibilità dominante. Le epoche prendono il nome dal tipo di città che producono, non da un popolo.
+
+| Era | Epoca | Periodo indicativo | Si apre con | Chi governa | Sensibilità dominante |
 |---|---|---|---|---|---|
 | Origini | Villaggio | Neolitico | Agricoltura, primi insediamenti stabili | Anziani, capi famiglia | Sopravvivenza, sacro naturale |
 | | Abitato protourbano | Età del Bronzo e del Ferro | Metalli, scambi a lunga distanza | Capi guerrieri, aristocrazie | Difesa, lignaggio |
@@ -63,7 +65,7 @@ Struttura simmetrica: **6 macro-ere × 2 epoche**. Il passaggio di macro-era sbl
 - dalla città del principe in poi la gestione diventa continua, con un tempo più lento e una quota maggiore del tempo di gioco;
 - la scelta dell'epoca iniziale nel sandbox permette di saltare direttamente alle epoche più complesse.
 
-| Macro-era | Velocità del tempo (ipotesi) | Quota del tempo di gioco (ipotesi) |
+| Era | Velocità del tempo (ipotesi) | Quota del tempo di gioco (ipotesi) |
 |---|---|---|
 | Origini | secoli o decenni | ~5% |
 | Antichità | decenni | ~10% |

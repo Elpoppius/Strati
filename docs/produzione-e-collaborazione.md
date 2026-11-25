@@ -57,7 +57,7 @@ Valutato e scartato. Cities: Skylines è a pagamento, centrato sul traffico mode
 |---|---|---|
 | 0 | Prototipo web dei sistemi del villaggio | 2–4 settimane |
 | 1 | Base in Godot: terreno, camera, lotti, edifici procedurali, mappe tematiche | 2–4 mesi |
-| 2 | Prima macro-era giocabile (origini) | 3–6 mesi |
+| 2 | Prima Era giocabile (Origini) | 3–6 mesi |
 | 3 | Un'epoca per volta fino all'età industriale | anni |
 
 Fede può lavorarci ogni giorno. Il gioco completo è un progetto di più anni; ogni fase produce qualcosa di giocabile, pubblicabile gratuitamente man mano (es. itch.io).
