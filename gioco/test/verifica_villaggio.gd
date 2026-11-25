@@ -38,7 +38,7 @@ func _gioca(sim: SimVillaggio, sito: Vector2i, scelta_presagi := "") -> Dictiona
 					for dx in range(-r, r + 1):
 						tutta.append(sim.centro + Vector2i(dx, dy))
 				sim.aggiungi_zona(tutta)
-			if sim.granaio.x < 0 and sim.cibo > 40.0:
+			if sim.granaio.x < 0 and sim.sbloccato("granaio") and sim.legna >= SimVillaggio.COSTO_GRANAIO:
 				var c := sim.mondo_di_px(sim.centro)
 				for prova in [Vector2(60, 0), Vector2(-60, 0), Vector2(0, 60), Vector2(0, -60), Vector2(100, 100)]:
 					if sim.costruisci_granaio(c + prova) == "":
@@ -111,14 +111,32 @@ func _initialize() -> void:
 	t.imposta_fonte("caccia", true)
 	t.imposta_fonte("pesca", true)
 	t.avvisi.clear()
-	t.cibo = 45.0
-	controlla(t.motivo_granaio(t.mondo_di_px(c) + Vector2(60, 0)) == "" and t.motivo_granaio(t.mondo_di_px(c) + Vector2(900, 0)) != "", "il granaio va vicino al centro (con %d di cibo si può)" % roundi(t.cibo))
+	# Tappe (decisione di Fede del 25/11/2026): il granaio e la divisione del raccolto si aprono a 60
+	# abitanti, e restano aperti anche se gli abitanti calano.
+	controlla(t.tappa == 0 and not t.sbloccato("granaio") and t.motivo_granaio(t.mondo_di_px(c) + Vector2(60, 0)) != "" and not t.imposta_politica("raccolto", "famiglie"), "alla fondazione granaio e divisione del raccolto sono ancora chiusi")
+	var pop_t := t.pop
+	t.pop = 160.0
+	t._aggiorna_tappa()
+	t.pop = pop_t
+	t._aggiorna_tappa()
+	controlla(t.tappa == 3 and t.sbloccato("granaio") and t.sbloccato("stranieri") and not t.sbloccato("casali"), "le tappe raggiunte restano anche se gli abitanti calano")
+	# Il granaio costa legna e si costruisce in qualche anno (decisione di Fede del 25/11/2026).
+	t.legna = 0.0
+	controlla(t.motivo_granaio(t.mondo_di_px(c) + Vector2(60, 0)) != "", "senza legna il granaio non si costruisce")
+	t.legna = 45.0
+	controlla(t.motivo_granaio(t.mondo_di_px(c) + Vector2(60, 0)) == "" and t.motivo_granaio(t.mondo_di_px(c) + Vector2(900, 0)) != "", "il granaio va vicino al centro (con %d di legna si può)" % roundi(t.legna))
 	# Politiche: cambiarle costa consenso, gli stranieri seguono la regola in vigore.
-	controlla(t.politica("raccolto") == "comune" and t.politica("stranieri") == "caso", "politiche iniziali: raccolto in comune, stranieri caso per caso")
-	var b0 := t.bonus
-	controlla(t.imposta_politica("raccolto", "famiglie") and t.bonus < b0, "cambiare una politica costa un po' di consenso")
+	controlla(t.politica("raccolto") == "comune" and t.politica("stranieri") == "aperta", "politiche iniziali: raccolto in comune, stranieri accolti")
+	var b0: float = t.bonus["anziani"]
+	controlla(t.imposta_politica("raccolto", "famiglie") and t.bonus["anziani"] < b0, "cambiare una politica costa un po' di consenso agli anziani")
 	controlla(not t.imposta_politica("raccolto", "famiglie") and not t.imposta_politica("stranieri", "boh"), "valori uguali o sconosciuti non cambiano nulla")
+	# Il primo arrivo di stranieri ferma il gioco una volta e la scelta diventa la regola.
 	var p0 := t.pop
+	t.imposta_politica("stranieri", "aperta")
+	t._arrivo_stranieri()
+	controlla(t.in_attesa() and t.decisioni[0]["tipo"] == "stranieri", "il primo arrivo di stranieri ferma il gioco")
+	t.scegli(t.decisioni[0]["id"], "respingere")
+	controlla(t.pop == p0 and t.politica("stranieri") == "chiusa" and not t.in_attesa(), "la prima scelta diventa la regola")
 	t.imposta_politica("stranieri", "aperta")
 	t._arrivo_stranieri()
 	controlla(t.pop > p0 and t.anni_sapere > 0 and not t.in_attesa(), "accoglienza aperta: gli stranieri restano senza fermare il tempo")
@@ -157,8 +175,17 @@ func _initialize() -> void:
 	for k in 30:
 		t._piena(false)
 	controlla(t.case.size() == case_prima and not t.in_attesa(), "le piene di stagione non distruggono case e non fermano il gioco")
-	t._piena(true)
-	controlla(not t.in_attesa(), "nemmeno una piena disastrosa ferma il gioco")
+	# Il limo: i campi allagati da una piena di stagione rendono di più per qualche anno.
+	controlla(t.limo.is_empty() or t._resa(t.limo.keys()[0]) > 0.0, "i campi con il limo tornano a rendere")
+	# La prima piena disastrosa che tocca il villaggio ferma il gioco una volta (decisione di Fede
+	# del 25/11/2026); le altre no.
+	for k in 20:
+		t._piena(true)
+	var fermate := 0
+	while t.in_attesa():
+		fermate += 1
+		t.scegli(t.decisioni[0]["id"], t.decisioni[0]["opzioni"][0]["id"])
+	controlla(fermate <= 1, "solo la prima piena disastrosa ferma il gioco (%d)" % fermate)
 	t.avvisi.clear()
 	# Partite intere.
 	var sopravvissuti := 0

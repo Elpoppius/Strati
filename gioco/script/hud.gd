@@ -85,6 +85,11 @@ var _fonti_info := {}  # id -> {valore: Label, riempimento: ColorRect, riga: Con
 signal fonte_scelta(id: String)
 ## Interruttore di una politica (per esempio una fonte di cibo) acceso o spento.
 signal interruttore_scelto(politica: String, voce: String, acceso: bool)
+## Clic su un indicatore del blocco Info: si apre il suo pannello di focus (decisione di Fede del
+## 25/11/2026: gli indicatori restano, e un pannello spiega cosa succede, perché e dove).
+signal indicatore_scelto(nome: String)
+## Dal pannello di focus: mostrare la mappa tematica indicata.
+signal mappa_richiesta(modo: int)
 var _opzioni: HBoxContainer
 var _opzioni_di := {}  # strumento -> [Button]
 var _colonna_mappe: Control
@@ -123,6 +128,13 @@ var _testi := {}
 var minimappa: Minimappa
 var _pannello_legenda: PanelContainer
 var _pannello_politiche: PanelContainer
+var _lettura_strumento: GridContainer
+var _voci_strumento: Array = []
+var _pannello_focus: PanelContainer
+var _colonna_focus: VBoxContainer
+var _focus := ""
+## Indicatori che aprono un pannello di focus con un clic.
+const INDICATORI_CON_FOCUS := ["Popolazione", "Cibo", "Salute", "Abbondanza", "Consenso", "Legna"]
 var _colonna_politiche: VBoxContainer
 var _scorri_politiche: ScrollContainer
 ## id politica -> {"opzioni": {valore: Button}, "nota": Label, "note": {valore: testo}}
@@ -281,6 +293,40 @@ func _fascia_bassa(radice: Control, nomi_mappe: Array) -> void:
 	titolo_opzioni.add_theme_color_override("font_color", GRIGIO)
 	titolo_opzioni.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_opzioni.add_child(titolo_opzioni)
+	# Lettura del terreno per lo strumento scelto (decisione di Fede del 25/11/2026: come in
+	# fondazione, ogni strumento mostra le voci che contano per lui, con barra e rosso se sfavorevole).
+	_lettura_strumento = GridContainer.new()
+	_lettura_strumento.columns = 2
+	_lettura_strumento.add_theme_constant_override("h_separation", 18)
+	_lettura_strumento.add_theme_constant_override("v_separation", 6)
+	_lettura_strumento.visible = false
+	cs.add_child(_lettura_strumento)
+	for k in 4:
+		var c := VBoxContainer.new()
+		c.add_theme_constant_override("separation", 2)
+		c.custom_minimum_size.x = 140
+		_lettura_strumento.add_child(c)
+		var e := Label.new()
+		e.add_theme_font_override("font", _carattere(true, 1.6))
+		e.add_theme_font_size_override("font_size", 10)
+		e.add_theme_color_override("font_color", GRIGIO)
+		e.clip_text = true
+		e.custom_minimum_size.x = 140
+		c.add_child(e)
+		var l := Label.new()
+		l.add_theme_font_override("font", _carattere(true))
+		l.add_theme_font_size_override("font_size", 13)
+		l.clip_text = true
+		l.custom_minimum_size.x = 140
+		c.add_child(l)
+		var fondo := ColorRect.new()
+		fondo.color = RIGA
+		fondo.custom_minimum_size = Vector2(140, 4)
+		c.add_child(fondo)
+		var pieno := ColorRect.new()
+		pieno.anchor_bottom = 1.0
+		fondo.add_child(pieno)
+		_voci_strumento.append({"box": c, "nome": e, "valore": l, "riempimento": pieno})
 	_lettura = Label.new()
 	_lettura.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_lettura.custom_minimum_size.x = 298
@@ -807,6 +853,11 @@ func imposta_indicatori(voci: Array) -> void:
 			var l := _valore_info(16)
 			box.add_child(l)
 			box.mouse_filter = Control.MOUSE_FILTER_STOP
+			if nome in INDICATORI_CON_FOCUS:
+				box.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+				box.gui_input.connect(func(ev: InputEvent) -> void:
+					if ev is InputEventMouseButton and (ev as InputEventMouseButton).pressed and (ev as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+						indicatore_scelto.emit(nome))
 			indicatori.add_child(box)
 			_valori_indicatori[nome] = l
 		var lab: Label = _valori_indicatori[nome]
@@ -1154,6 +1205,8 @@ func politica(id: String) -> String:
 
 
 func apri_politiche(aperto: bool) -> void:
+	if aperto:
+		chiudi_focus()
 	# Appena sopra la fascia in basso, qualunque sia la sua altezza.
 	var sotto := maxf(_fascia.size.y, ALTEZZA_FASCIA) + 2
 	_pannello_politiche.offset_bottom = -sotto
@@ -1408,3 +1461,219 @@ func _crea_tema() -> Theme:
 	t.set_color("font_focus_color", "Button", BIANCO)
 	t.set_color("font_disabled_color", "Button", GRIGIO)
 	return t
+
+
+# ---------- pannelli di focus (decisione di Fede del 25/11/2026) ----------
+# Un clic su un indicatore apre, sopra il blocco Info, un pannello che dice di cosa è fatto, perché
+# sale o scende (le cause scritte in chiaro), come è andato negli ultimi decenni e dove succede.
+# Non ferma il gioco e si aggiorna mentre il tempo scorre; Esc o un clic destro lo chiudono.
+
+## dati: {titolo, valore, allarme, descrizione, parti: [[nome, quota 0–1, testo]], cause: [String],
+## serie: Array (ultimi anni), mappa: indice della mappa tematica o -1, testo_mappa}.
+func mostra_focus(dati: Dictionary) -> void:
+	if _pannello_focus == null:
+		_crea_focus()
+	if politiche_aperte():
+		apri_politiche(false)
+	_focus = String(dati.get("titolo", ""))
+	_riempi_focus(dati)
+	_posiziona_focus()
+	_pannello_focus.visible = true
+	# La fascia può cambiare altezza nello stesso fotogramma: si ricontrolla dopo l'impaginazione.
+	call_deferred("_posiziona_focus")
+
+
+func aggiorna_focus(dati: Dictionary) -> void:
+	if focus_aperto() == String(dati.get("titolo", "")):
+		_riempi_focus(dati)
+		_posiziona_focus()
+
+
+## Appena sopra la fascia in basso, qualunque sia la sua altezza (come le politiche).
+func _posiziona_focus() -> void:
+	var sotto := maxf(_fascia.size.y, ALTEZZA_FASCIA) + 2
+	_pannello_focus.offset_bottom = -sotto
+	_pannello_focus.offset_top = -sotto - _pannello_focus.get_combined_minimum_size().y
+
+
+func chiudi_focus() -> void:
+	if _pannello_focus:
+		_pannello_focus.visible = false
+	_focus = ""
+
+
+func focus_aperto() -> String:
+	return _focus if _pannello_focus != null and _pannello_focus.visible else ""
+
+
+func _crea_focus() -> void:
+	_pannello_focus = PanelContainer.new()
+	_pannello_focus.anchor_top = 1.0
+	_pannello_focus.anchor_bottom = 1.0
+	_pannello_focus.offset_left = 2
+	_pannello_focus.offset_bottom = -ALTEZZA_FASCIA - 2
+	_pannello_focus.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_pannello_focus.custom_minimum_size.x = 380
+	_pannello_focus.mouse_filter = Control.MOUSE_FILTER_STOP
+	_pannello_focus.visible = false
+	_radice.add_child(_pannello_focus)
+	_colonna_focus = VBoxContainer.new()
+	_colonna_focus.add_theme_constant_override("separation", 8)
+	_colonna_focus.custom_minimum_size.x = 364
+	_pannello_focus.add_child(_colonna_focus)
+
+
+func _riempi_focus(dati: Dictionary) -> void:
+	for c in _colonna_focus.get_children():
+		_colonna_focus.remove_child(c)
+		c.queue_free()
+	var testa := HBoxContainer.new()
+	_colonna_focus.add_child(testa)
+	var k := Label.new()
+	k.text = "FOCUS"
+	k.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	k.add_theme_font_override("font", _carattere(true, 1.6))
+	k.add_theme_font_size_override("font_size", 11)
+	k.add_theme_color_override("font_color", GRIGIO)
+	testa.add_child(k)
+	var chiudi := Button.new()
+	chiudi.text = "Chiudi (Esc)"
+	chiudi.focus_mode = Control.FOCUS_NONE
+	chiudi.add_theme_font_size_override("font_size", 11)
+	chiudi.pressed.connect(chiudi_focus)
+	testa.add_child(chiudi)
+	var riga_titolo := HBoxContainer.new()
+	_colonna_focus.add_child(riga_titolo)
+	var t := Label.new()
+	t.text = String(dati.get("titolo", ""))
+	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	t.add_theme_font_override("font", _carattere(true))
+	t.add_theme_font_size_override("font_size", 18)
+	riga_titolo.add_child(t)
+	var v := Label.new()
+	v.text = String(dati.get("valore", ""))
+	v.add_theme_font_override("font", _carattere(true, 0.0, true))
+	v.add_theme_font_size_override("font_size", 18)
+	v.add_theme_color_override("font_color", PERICOLO if dati.get("allarme", false) else BIANCO)
+	riga_titolo.add_child(v)
+	if String(dati.get("descrizione", "")) != "":
+		_colonna_focus.add_child(_testo_focus(String(dati["descrizione"]), GRIGIO, 12))
+	var parti: Array = dati.get("parti", [])
+	if not parti.is_empty():
+		_colonna_focus.add_child(_titoletto_focus("DI COSA È FATTO"))
+		for p in parti:
+			var box := VBoxContainer.new()
+			box.add_theme_constant_override("separation", 2)
+			_colonna_focus.add_child(box)
+			var r := HBoxContainer.new()
+			box.add_child(r)
+			var n := Label.new()
+			n.text = String(p[0])
+			n.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			n.add_theme_font_size_override("font_size", 12)
+			r.add_child(n)
+			var q := Label.new()
+			q.text = String(p[2])
+			q.add_theme_font_override("font", _carattere(false, 0.0, true))
+			q.add_theme_font_size_override("font_size", 12)
+			r.add_child(q)
+			var fondo := ColorRect.new()
+			fondo.color = RIGA
+			fondo.custom_minimum_size = Vector2(364, 4)
+			box.add_child(fondo)
+			var barra := ColorRect.new()
+			var quota := clampf(float(p[1]), 0.0, 1.0)
+			barra.color = PERICOLO if quota < 0.35 else BIANCO
+			barra.size = Vector2(364.0 * quota, 4)
+			fondo.add_child(barra)
+	var cause: Array = dati.get("cause", [])
+	_colonna_focus.add_child(_titoletto_focus("PERCHÉ"))
+	if cause.is_empty():
+		_colonna_focus.add_child(_testo_focus("Niente di particolare: va tutto come al solito.", BIANCO, 12))
+	for c in cause:
+		_colonna_focus.add_child(_testo_focus("· " + String(c), BIANCO, 12))
+	var serie: Array = dati.get("serie", [])
+	if serie.size() >= 2:
+		_colonna_focus.add_child(_titoletto_focus("ULTIMI %d ANNI" % serie.size()))
+		var g := _GraficoFocus.new()
+		g.valori = serie
+		g.colore = BIANCO
+		g.custom_minimum_size = Vector2(364, 44)
+		_colonna_focus.add_child(g)
+	var mappa: int = int(dati.get("mappa", -1))
+	if mappa >= 0:
+		var b := Button.new()
+		b.text = String(dati.get("testo_mappa", "Mostra sulla mappa"))
+		b.focus_mode = Control.FOCUS_NONE
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.add_theme_font_size_override("font_size", 12)
+		b.pressed.connect(func() -> void: mappa_richiesta.emit(mappa))
+		_colonna_focus.add_child(b)
+
+
+func _titoletto_focus(testo: String) -> Label:
+	var l := Label.new()
+	l.text = testo
+	l.add_theme_font_override("font", _carattere(true, 1.6))
+	l.add_theme_font_size_override("font_size", 10)
+	l.add_theme_color_override("font_color", GRIGIO)
+	return l
+
+
+func _testo_focus(testo: String, colore: Color, corpo: int) -> Label:
+	var l := Label.new()
+	l.text = testo
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size.x = 364
+	l.add_theme_font_size_override("font_size", corpo)
+	l.add_theme_color_override("font_color", colore)
+	return l
+
+
+## Piccolo grafico a linea dell'andamento (stile svizzero: una linea bianca, una base sottile).
+class _GraficoFocus extends Control:
+	var valori: Array = []
+	var colore := Color.WHITE
+
+	func _draw() -> void:
+		var w := size.x
+		var h := size.y
+		draw_line(Vector2(0, h - 0.5), Vector2(w, h - 0.5), Color(1, 1, 1, 0.22), 1.0)
+		if valori.size() < 2:
+			return
+		var lo := INF
+		var hi := -INF
+		for x in valori:
+			lo = minf(lo, float(x))
+			hi = maxf(hi, float(x))
+		if hi - lo < 1e-6:
+			hi = lo + 1.0
+		var punti := PackedVector2Array()
+		for k in valori.size():
+			punti.append(Vector2(w * k / float(valori.size() - 1), h - 2.0 - (h - 6.0) * (float(valori[k]) - lo) / (hi - lo)))
+		draw_polyline(punti, colore, 1.5, true)
+
+
+## Lettura del terreno per lo strumento scelto: voci [nome, testo, quanto (0–1), sfavorevole]
+## (al massimo 4). Vuota: la lettura sparisce.
+func imposta_lettura_strumento(voci: Array) -> void:
+	_lettura_strumento.visible = not voci.is_empty()
+	# Con la lettura la descrizione dello strumento si accorcia, così la fascia non cambia altezza
+	# (il testo intero resta nel suggerimento del tasto).
+	_messaggio.max_lines_visible = 3 if _lettura_strumento.visible else -1
+	for k in _voci_strumento.size():
+		var f: Dictionary = _voci_strumento[k]
+		(f["box"] as Control).visible = k < voci.size()
+		if k >= voci.size():
+			continue
+		var v: Array = voci[k]
+		(f["nome"] as Label).text = String(v[0]).to_upper()
+		(f["valore"] as Label).text = String(v[1])
+		(f["valore"] as Label).add_theme_color_override("font_color", PERICOLO if v[3] else BIANCO)
+		var pieno: ColorRect = f["riempimento"]
+		pieno.color = PERICOLO if v[3] else BIANCO
+		pieno.size = Vector2(140.0 * clampf(float(v[2]), 0.0, 1.0), 4)
+
+
+func lettura_strumento_visibile() -> bool:
+	return _lettura_strumento.visible

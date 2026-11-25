@@ -59,7 +59,7 @@ func _gioca(d: MappaDati, sito: Vector2i, k: int, seme: int, nome: String) -> Di
 		var eta := sim.anno - anno0
 		if eta % attenzione == 0 and sim.fondato:
 			_stendi_zona(sim, copertura, limite_piena)
-			if k >= 3 and sim.granaio.x < 0 and sim.cibo > 40.0:
+			if k >= 3 and sim.granaio.x < 0 and sim.sbloccato("granaio") and sim.legna >= SimVillaggio.COSTO_GRANAIO:
 				var c := sim.mondo_di_px(sim.centro)
 				for prova in [Vector2(60, 0), Vector2(-60, 0), Vector2(0, 60), Vector2(0, -60)]:
 					if sim.costruisci_granaio(c + prova) == "":

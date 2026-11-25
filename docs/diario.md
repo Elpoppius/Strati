@@ -2,6 +2,23 @@
 
 Voci più recenti in cima.
 
+## 25/11/2026 (tarda mattina)
+**Fatto**
+- **Era delle Origini** definita in `docs/era-origini.md` (cronologia, nomenclatura, meccaniche, traguardi) e approvata da Fede; "macro-era" diventa "Era" in tutti i documenti.
+- **Meccaniche dell'epoca 1 nella simulazione** (`sim_villaggio.gd`): Abbondanza (cibo che avanza, salute, spazio) che guida le nascite; tappe permanenti (60, 100, 150, 250 abitanti); legna (raccolta, focolari, manutenzione, case che costano legna, dissodamento che dà legna, catasta limitata); granaio a legna con 3 anni di cantiere; consenso di anziani e famiglie con effetti graduali (usanze, braccia, famiglie che se ne vanno); annate magre senza avvisi; siccità solo annunciate; presagi al massimo uno ogni secolo; stranieri attirati dall'abbondanza (il primo arrivo decide la regola); piene disastrose rare, annunciate e legate al bosco tagliato, la prima ferma il gioco una volta; piene di stagione col limo e senza notifica; febbri; niente avviso "zona agricola piena".
+- **HUD:** indicatori Abbondanza, Consenso, Legna (Salute dentro Abbondanza); la tappa accanto all'anno; **pannelli di focus** con un clic su un indicatore (parti, perché, ultimi 100 anni, mappa); **lettura del terreno sotto il puntatore** per Zona, Campo, Granaio, Sentiero; granaio e politiche chiusi fino alla loro tappa. Immagini `docs/immagini/focus-consenso-25-11.jpg`, `docs/immagini/lettura-zona-25-11.jpg`.
+- **Misure:** per partita 4,8 pause (prima 14), 2 notifiche rosse (prima 12), 0 carestie; dieci livelli da 222 a 873 abitanti, senza il muro dei 300 anni. `docs/sessioni-giocatori.md`, grafico `docs/immagini/sessioni-giocatori-25-11.png`.
+- Verifiche aggiornate alle regole nuove (tappe, legna, stranieri, prima piena, pannelli di focus); tutte le 9 superate.
+
+**Decisioni** (Fede)
+- Approvato `era-origini.md` con le proposte: passo elastico, evento soglia a territorio pieno e dentro la finestra, dilemma e transizione, famiglie eminenti e comuni che nascono dalla disuguaglianza, crollo come evento dell'epoca 2.
+- Nomenclatura "genti" + luogo; inizio al 6000 a.C. (i primi quattro secoli per mettere le pedine); recinto nell'epoca 2 come regolazione dello spazio; gruppi dell'epoca 2 capi, lignaggi, sacerdote, con attenzione agli equilibri di potere.
+- Popolazione visibile come in Cities: Skylines, 3 modelli di uomini e 3 di donne con varianti, scala da verificare (800 persone a schermo sono troppe); pannelli di focus perché gli indicatori restano e servono a capire.
+
+**Prossimo passo**
+- Fede: guardare i risultati (carestie a zero: forse troppo facile; primi 100 anni uguali per tutti; abitanti sopra l'obiettivo del nucleo finché non ci sono i casali) e decidere se provare ora o dopo il pascolo.
+- Claude: pascolo e bestiame (meccanica e primi modelli), poi luogo sacro con il sacerdote, scorrerie, sentieri che diventano strade, popolazione visibile; passo elastico con l'evento soglia.
+
 ## 25/11/2026
 **Fatto**
 - **Lettura degli ultimi aggiornamenti** e analisi con Fede dei risultati delle sessioni a dieci livelli: perché i primi 150 anni sono uguali per tutti (la crescita dipende solo dalla salute finché la terra basta) e perché c'è il tetto a 300 anni (contado al massimo dopo circa 100 abitanti, poi carestie a ripetizione).

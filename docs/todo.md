@@ -2,7 +2,7 @@
 
 *Aperto il 24/11/2026 su richiesta di Fede: chiudere la prima epoca prima di passare all'abitato protourbano (principio: prima la profondità, poi l'ampiezza). Ordine e contenuti sono **proposte di Claude**: diventano decisioni quando Fede le conferma. Riferimento di design: `pilastri-e-decisioni.md`, sezione "Il villaggio (prima epoca)".*
 
-Legenda: `[x]` fatto · `[ ]` da fare · **(?)** serve una decisione di Fede prima di cominciare.
+Legenda: `[x]` fatto · `[~]` in parte · `[ ]` da fare · **(?)** serve una decisione di Fede prima di cominciare.
 
 ## Già nel gioco
 - [x] Fondare con la lettura del sito; rovine e rifondazione (il fallimento come strato)
@@ -21,17 +21,20 @@ Legenda: `[x]` fatto · `[ ]` da fare · **(?)** serve una decisione di Fede pri
 
 ## 2. Sistemi della prima epoca
 *Decisioni di Fede del 25/11/2026, dettagli in `era-origini.md` e in `pilastri-e-decisioni.md`, sezione "La prima epoca: dinamiche". Regola: ogni sistema prende o dà qualcosa a un altro, muove un gruppo di consenso e lascia una traccia sulla mappa. L'ordine è una proposta di Claude.*
-1. [ ] **Ritmo meditativo:** annate magre senza avvisi; carestie solo da cause in gioco; siccità sempre annunciate; pause solo la prima volta di ogni evento, per i presagi e per l'evento soglia; stranieri attirati dall'abbondanza e governati dalla politica; niente avviso "zona agricola piena" (basta la mappa). Viene prima perché tocca tutto il resto e si misura subito con `registro_avvisi.gd`.
-2. [ ] **Abbondanza e tappe:** indicatore unico con tre parti al passaggio; nascite legate all'abbondanza; tappe permanenti (soglie di partenza in `pilastri-e-decisioni.md`).
-3. [ ] **Gruppi di consenso: anziani, famiglie, sacerdote**, un solo indicatore con il dettaglio al passaggio (decisione del 24/11/2026), con gli effetti graduali per gruppo (regole, lavoro, presagi).
-4. [ ] **Risorse: legna e braccia.** Costi in legna e braccia per granaio e luogo sacro, cantieri di qualche anno, dissodamento che dà legna, case spontanee solo con la legna. Con gli **effetti del disboscamento** (erosione, piene, selvaggina).
-5. [ ] **Piene che distruggono e fertilizzano:** limo sui campi allagati; disastrose rare, legate a sito e azioni (bosco tagliato a monte), annunciate e visibili sulla mappa. Con le **febbri** (paludi, affollamento).
-6. [ ] **Lettura sotto il puntatore per ogni strumento**, come in fondazione.
+1. [x] **Ritmo meditativo** (fatto il 25/11/2026: 4,8 pause e 2 notifiche rosse per partita): annate magre senza avvisi; carestie solo da cause in gioco; siccità sempre annunciate; pause solo la prima volta di ogni evento, per i presagi e per l'evento soglia; stranieri attirati dall'abbondanza e governati dalla politica; niente avviso "zona agricola piena" (basta la mappa). Viene prima perché tocca tutto il resto e si misura subito con `registro_avvisi.gd`.
+2. [x] **Abbondanza e tappe** (fatto il 25/11/2026, con il pannello di focus e la tappa accanto all'anno): indicatore unico con tre parti al passaggio; nascite legate all'abbondanza; tappe permanenti (soglie di partenza in `pilastri-e-decisioni.md`).
+3. [~] **Gruppi di consenso: anziani, famiglie, sacerdote** (anziani e famiglie fatti il 25/11/2026; il sacerdote arriva con il luogo sacro), un solo indicatore con il dettaglio al passaggio (decisione del 24/11/2026), con gli effetti graduali per gruppo (regole, lavoro, presagi).
+4. [~] **Risorse: legna e braccia** (legna, costi, cantiere del granaio e case che chiedono legna fatti il 25/11/2026; resta il cantiere per il luogo sacro e l'erosione dei pendii). Costi in legna e braccia per granaio e luogo sacro, cantieri di qualche anno, dissodamento che dà legna, case spontanee solo con la legna. Con gli **effetti del disboscamento** (erosione, piene, selvaggina).
+5. [x] **Piene che distruggono e fertilizzano** (fatto il 25/11/2026, nella simulazione; l'acqua che sale nella grafica resta nella base tecnica): limo sui campi allagati; disastrose rare, legate a sito e azioni (bosco tagliato a monte), annunciate e visibili sulla mappa. Con le **febbri** (paludi, affollamento).
+6. [x] **Lettura sotto il puntatore per ogni strumento** (fatto il 25/11/2026: zona, campo, granaio, sentiero), come in fondazione.
 7. [ ] **Pascolo e animali:** campo che si stanca, maggese a pascolo, concime, scorta viva, radure aperte, erosione sui pendii.
 8. [ ] **Luogo sacro e bosco sacro** (cerchio di pali attorno a una pietra, forma confermata il 24/11/2026): peso al sacerdote, lettura dei presagi; la riserva diventa il bosco sacro.
 9. [ ] **Scorrerie** attirate dalla ricchezza e dai margini poco usati; segni prima; abitato compatto e sito come difesa.
 10. [ ] **I sentieri più usati diventano strade** (traffico di campi, pascoli, legna, luogo sacro). Con i **casali** nel contado.
 11. [ ] **Evento soglia "il metallo e lo scambio"**, che chiude l'epoca.
+
+- [ ] **Passo elastico** (deciso il 25/11/2026): un anno per passo nei primi quattro secoli, poi un decennio; da fare insieme all'evento soglia.
+- [ ] **Popolazione visibile** (decisa il 25/11/2026): 3 modelli di uomini e 3 di donne, bestiame, scala da misurare; prima il bestiame con il pascolo.
 
 ## 3. Leggere la mappa (ok di Fede del 25/11/2026)
 - [ ] Mappa tematica **boschi e selvaggina** (prevista dal design del villaggio).
@@ -50,7 +53,7 @@ Legenda: `[x]` fatto · `[ ]` da fare · **(?)** serve una decisione di Fede pri
 ## Da decidere
 - Nomenclatura delle popolazioni: **decisa** il 25/11/2026 ("genti" più il luogo; vedi `era-origini.md`).
 - Inizio della partita: **resta il 6000 a.C.** (Fede, 25/11/2026: i primi quattro secoli servono a mettere le pedine).
-- **(?)** Come scorre il tempo in un'epoca di circa 3000 anni: proposta del passo elastico in `era-origini.md`, § 2.
+- Come scorre il tempo nell'epoca 1: **deciso** il 25/11/2026 il passo elastico (un anno per passo nei primi quattro secoli, poi un decennio; `era-origini.md`, § 2).
 - **(?)** Politica "Caccia regolata", solo se le fonti di cibo non bastano come leva.
 - **(?)** Orti disegnati più piccoli dentro il quadrato da 40 m.
 - Prologo nomade: **bocciato** da Fede il 25/11/2026 (il gioco è prima di tutto urbanistico).

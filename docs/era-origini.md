@@ -25,7 +25,7 @@ La mappa è un archetipo pedecollinare emiliano; la cronologia di riferimento è
 | Prima età del Ferro | fine X – VIII secolo a.C. | attorno a Bologna almeno cinque abitati, abbandonati nell'VIII secolo a favore del centro protourbano: Felsina nasce dall'unione di più villaggi | epoca 2: casali che si uniscono nel centro; finestra dell'evento soglia 2 (~900–600 a.C.) |
 
 - **[Deciso, 25/11/2026]** La partita comincia nel **6000 a.C.** I primi quattro secoli servono a **mettere le pedine**: fondazione, prime tappe, il villaggio che prende forma con calma.
-- **(?) Il tempo dell'epoca 1.** L'evento soglia 1 ha la finestra dal 3000 a.C. circa: l'epoca 1 dura quindi almeno 3000 anni, mentre oggi il villaggio riempie il territorio in 300 e il prototipo ne gioca 500. **[Proposta]** Un passo della simulazione elastico: un anno per passo nei primi quattro secoli (le pedine), poi un decennio per passo quando il villaggio è avviato (i pilastri prevedono per le Origini un tempo "a secoli o decenni"). A 2 passi al secondo, 3000 anni durerebbero circa 5 minuti di gioco dopo i primi 400. In mezzo, gli eventi d'epoca del Neolitico (nuove colture, contatti, scorrerie) e il ciclo della terra tengono vivo il villaggio. Le regole del villaggio andrebbero scritte per anno e moltiplicate per il passo.
+- **[Deciso, 25/11/2026] Il tempo dell'epoca 1.** L'evento soglia 1 ha la finestra dal 3000 a.C. circa: l'epoca 1 dura quindi almeno 3000 anni, mentre oggi il villaggio riempie il territorio in 300 e il prototipo ne gioca 500. Un passo della simulazione elastico: un anno per passo nei primi quattro secoli (le pedine), poi un decennio per passo quando il villaggio è avviato (i pilastri prevedono per le Origini un tempo "a secoli o decenni"). A 2 passi al secondo, 3000 anni durerebbero circa 5 minuti di gioco dopo i primi 400. In mezzo, gli eventi d'epoca del Neolitico (nuove colture, contatti, scorrerie) e il ciclo della terra tengono vivo il villaggio. Le regole del villaggio andrebbero scritte per anno e moltiplicate per il passo.
 
 ## 3. Nomenclatura
 - **[Deciso, 25/11/2026]** Le popolazioni si chiamano dal luogo o da ciò che fanno, mai con un nome etnico (come le epoche, che prendono il nome dal tipo di città). La parola generale è **genti**.
@@ -134,10 +134,10 @@ Mappe tematiche da aggiungere [ok di Fede, 25/11/2026]: boschi e selvaggina, abi
 - **[Deciso, 24/11/2026]** La scelta tra "il tetto apre l'epoca" e "abitanti contati sul territorio" (`sessioni-giocatori.md`) si fa a epoca completa.
 
 ## 5. Evento soglia 1 — Il metallo e lo scambio (minore)
-- **Finestra:** ~3000–1800 a.C. **[Proposta]** Si apre quando il territorio è pieno ed è dentro la finestra; chi gioca bene ci arriva prima, nei limiti della finestra.
+- **Finestra:** ~3000–1800 a.C. **[Deciso, 25/11/2026]** Si apre quando il territorio è pieno ed è dentro la finestra; chi gioca bene ci arriva prima, nei limiti della finestra.
 - **Presagi:** oggetti di rame portati da stranieri, mercanti di passaggio, armi nuove nei villaggi vicini.
-- **Dilemma [Deciso, dai pilastri]:** aprirsi alle vie di passaggio o restare isolati. **[Proposta]** Aprirsi dà metallo, ricchezza e crescita, ma più razzie, più malattie e più potere a pochi; restare isolati è più sicuro, ma senza metallo il villaggio resta indietro. La scelta lascia un tratto nella cultura della città (più mercantile o più chiusa e agricola).
-- **Transizione [Proposta]:** riepilogo del villaggio; cambiano sensibilità, governo e gruppi; arrivano l'aratro (i campi nuovi rendono di più, l'ammodernamento agricolo si accende), il metallo, il recinto.
+- **Dilemma [Deciso, dai pilastri]:** aprirsi alle vie di passaggio o restare isolati. **[Deciso, 25/11/2026]** Aprirsi dà metallo, ricchezza e crescita, ma più razzie, più malattie e più potere a pochi; restare isolati è più sicuro, ma senza metallo il villaggio resta indietro. La scelta lascia un tratto nella cultura della città (più mercantile o più chiusa e agricola).
+- **Transizione [Deciso, 25/11/2026]:** riepilogo del villaggio; cambiano sensibilità, governo e gruppi; arrivano l'aratro (i campi nuovi rendono di più, l'ammodernamento agricolo si accende), il metallo, il recinto.
 - **Resta:** tutto ciò che c'è. I sentieri più usati diventano gli assi, il luogo sacro resta come centro, i campi a zappa restano finché non si ammodernano.
 
 ## 6. Epoca 2 — L'abitato protourbano (sulla carta)
@@ -153,12 +153,12 @@ Mappe tematiche da aggiungere [ok di Fede, 25/11/2026]: boschi e selvaggina, abi
 | Strumenti di espansione | recinto o palizzata, alleanze o razzie |
 | Risorse | cibo, legna, braccia, animali, **metallo** (solo con lo scambio), beni di prestigio |
 | Tecniche | aratro in croce; ammodernamento agricolo attivo |
-| Eventi d'epoca | razzie, guerre tra clan, morie del bestiame; **[Proposta]** il crollo, quando il ciclo della terra viene spinto oltre il limite (come per le terramare) |
+| Eventi d'epoca | razzie, guerre tra clan, morie del bestiame; **[Deciso, 25/11/2026]** il crollo, quando il ciclo della terra viene spinto oltre il limite (come per le terramare) |
 | Presagi | veri: mercanti stranieri, armi nuove nei villaggi vicini; falsi: profezie dei sacerdoti |
 | Crisi che la chiude | evento soglia 2, "la città si dà leggi" (~900–600 a.C.) |
 
-- **Famiglie eminenti e comuni [Deciso, 25/11/2026: gestire con attenzione gli equilibri di potere].** **[Proposta]** La divisione non si impone al cambio d'epoca: **nasce dalla partita.** Le famiglie si dividono in due solo quando la disuguaglianza supera una soglia, e la disuguaglianza viene da ciò che il giocatore ha fatto (raccolto alle famiglie, animali, metallo dallo scambio). Le eminenti vogliono prestigio, difesa e scambi; le comuni terra, cibo e protezione. Il rischio da governare è che le eminenti si prendano il potere (pilastro 3). Va pensato in modo che il giocatore veda la divisione crescere (indicatore di disuguaglianza, scheda della famiglia) e possa tenerla in equilibrio senza che diventi una punizione.
-- **Casali e centro [Proposta]:** i casali sparsi nel contado nell'epoca 1 si uniscono nel centro protourbano (come a Bologna nell'VIII secolo a.C.): è la strada verso l'evento soglia 2.
+- **Famiglie eminenti e comuni [Deciso, 25/11/2026: gestire con attenzione gli equilibri di potere].** **[Deciso, 25/11/2026]** La divisione non si impone al cambio d'epoca: **nasce dalla partita.** Le famiglie si dividono in due solo quando la disuguaglianza supera una soglia, e la disuguaglianza viene da ciò che il giocatore ha fatto (raccolto alle famiglie, animali, metallo dallo scambio). Le eminenti vogliono prestigio, difesa e scambi; le comuni terra, cibo e protezione. Il rischio da governare è che le eminenti si prendano il potere (pilastro 3). Va pensato in modo che il giocatore veda la divisione crescere (indicatore di disuguaglianza, scheda della famiglia) e possa tenerla in equilibrio senza che diventi una punizione.
+- **Casali e centro [Deciso, 25/11/2026]:** i casali sparsi nel contado nell'epoca 1 si uniscono nel centro protourbano (come a Bologna nell'VIII secolo a.C.): è la strada verso l'evento soglia 2.
 
 ## 7. Evento soglia 2 — La città si dà leggi (maggiore)
 - **Finestra:** ~900–600 a.C. Chiude l'Era delle Origini e apre l'Antichità (città-stato), con sistemi nuovi: leggi, tasse, spazio pubblico, templi.
@@ -178,6 +178,8 @@ Sentieri → strade → assi; luogo sacro → tempio, chiesa, piazza; appezzamen
 | Crescita visibile | dopo 150 anni | già nei primi decenni |
 | Abitanti | fino a circa 1000 nel nucleo | nucleo 100–300, territorio fino a 600–800 |
 | La bravura conta | sì | sì, senza schiacciare chi gioca poco |
+
+**Prima misura con le regole nuove (25/11/2026):** pause 4,8, notifiche rosse 2, carestie 0, nessun abbandono; livello 1: 222 abitanti, livello 10: 873; crescita già dalla prima tappa, primi 100 anni uguali per tutti (le pedine). Dettagli in `sessioni-giocatori.md`.
 
 ## 10. Ordine di lavoro (25/11/2026)
 1. Questo documento → ok di Fede.

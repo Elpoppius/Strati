@@ -1,7 +1,7 @@
 extends SceneTree
 ## Foto di controllo di una partita: fondazione sul sito 1, campi attorno, un secolo e mezzo di
 ## tempo con un giocatore automatico semplice, poi la foto.
-## Uso: xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto_partita.gd -- uscita.png [dimensione_vista] [anni] [mappa] [strumento | politiche | tecniche | anteprima | fondazione]
+## Uso: xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto_partita.gd -- uscita.png [dimensione_vista] [anni] [mappa] [strumento | politiche | tecniche | anteprima | fondazione | focus:Indicatore]
 
 var _s: Node
 var _f := 0
@@ -79,10 +79,16 @@ func _process(_d: float) -> bool:
 			_s.hud.apri_menu("ammodernamento")
 		elif args.size() > 4 and args[4] == "politiche":
 			_s.hud.apri_politiche(true)
+		elif args.size() > 4 and args[4].begins_with("focus"):
+			# Pannello di focus di un indicatore (per esempio focus:Abbondanza).
+			var nome := args[4].get_slice(":", 1) if args[4].contains(":") else "Abbondanza"
+			_s.partita.aggiorna_hud()
+			_s.hud.mostra_focus(_s.partita.dati_focus(nome))
 		elif args.size() > 4:
 			# Strumento attivo con il cerchio al centro della vista (per vedere la guida dei campi).
 			_s.hud.seleziona_comando(args[4])
 			_s.punto_corrente = Vector3(c.x + 60.0, 0.0, c.y + 40.0)
+			_s.partita.leggi_sito(_s.punto_corrente)
 			_s._aggiorna_pennello()
 		print("   %s: %d abitanti, %d case, %d campi" % [SimVillaggio.anno_testo(sim.anno), roundi(sim.pop), sim.case.size(), sim.campi.size()])
 	if _f == 60:

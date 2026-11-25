@@ -70,14 +70,18 @@ Sono una prima serie (proposta di Claude), da confermare con Fede.
 |---|---|---|
 | Popolazione | indicatori | abitanti del villaggio |
 | Cibo 543 / 121 l'anno | indicatori | scorte di cibo / quanto ne consuma il villaggio in un anno (rosso se le scorte sono sotto il 30% del consumo) |
-| Salute | indicatori | da 0 a 100: acqua, aria (paludi), affollamento, fame |
-| Legittimità | indicatori | da 0 a 100: quanto il villaggio riconosce l'autorità di chi governa (nella prima epoca gli anziani); sotto 5 per quattro anni il villaggio si divide |
+| Abbondanza | indicatori (dal 25/11/2026) | da 0 a 100: cibo che avanza (mesi di scorte), salute, spazio (case per tutti); le nascite la seguono: sopra 62 la popolazione cresce, sotto cala piano; rossa sotto 62. La salute non ha più una riga: è una parte dell'abbondanza |
+| Consenso | indicatori (al posto di Legittimità, dal 25/11/2026) | da 0 a 100: media del consenso degli anziani (le usanze) e delle famiglie (il lavoro), e del sacerdote dal luogo sacro; sotto 5 per quattro anni il villaggio si divide |
+| Legna 246  +16 −19 | indicatori (dal 25/11/2026) | legna in catasta, raccolta e consumata nell'anno; rossa se non basta per una casa e se ne consuma più di quanta se ne raccoglie |
+| 5850 a.C. · Villaggio | in alto | l'anno e la tappa raggiunta (la progressione si vede sempre) |
+| Focus | sopra il blocco Info, con un clic su un indicatore | pannello di focus (decisione di Fede del 25/11/2026): di cosa è fatto l'indicatore, perché sale o scende (cause in chiaro), gli ultimi 100 anni, un tasto per la mappa tematica giusta; non ferma il gioco; Esc o clic destro lo chiude. Immagine `immagini/focus-consenso-25-11.jpg` |
+| Fertilità, Rischio di piena, Distanza, Bosco | Descrizione, con Zona agricola o Campo | lettura del terreno sotto il puntatore per lo strumento scelto (decisione di Fede del 25/11/2026), come in fondazione: barra, rosso se sfavorevole. Granaio: rischio di piena, distanza dal centro, legna; Sentiero: pendenza, guado, rischio di piena. Immagine `immagini/lettura-zona-25-11.jpg` |
 | ‖ 2 6 15 | in alto, accanto all'anno | pausa, oppure 2, 6, 15 anni al secondo |
 | Insediamento, Territorio, Vie, Edifici | schede dei comandi | menù logici: dove nasce il villaggio; a cosa si destina la terra; come ci si muove; costruzioni comuni |
 | Costruzione, Gestione, Strumenti | blocchi in basso | cosa si costruisce; come si governa; comandi che valgono su tutto |
 | Politiche | Gestione | apre il pannello delle regole del villaggio (P) |
-| In comune / Alle famiglie | Politiche: divisione del raccolto | il raccolto si divide tra tutti (più legittimità) o ogni famiglia tiene il suo (più raccolto, meno legittimità) |
-| Aperta / Caso per caso / Chiusa | Politiche: accoglienza degli stranieri | chi arriva resta sempre; a ogni arrivo si decide; viene sempre mandato via |
+| In comune / Alle famiglie | Politiche: divisione del raccolto | il raccolto si divide tra tutti (piace agli anziani) o ogni famiglia tiene il suo (più raccolto, piace alle famiglie); si apre a 60 abitanti |
+| Aperta / Caso per caso / Chiusa | Politiche: accoglienza degli stranieri | chi arriva resta sempre; a ogni arrivo si decide; viene sempre mandato via. All'inizio vale la scelta fatta al primo arrivo; il pannello si apre a 150 abitanti |
 | Ammodernamento · Agricolo | Gestione | avvia o sospende il rifacimento dei campi vecchi con la tecnica nuova, un po' ogni anno pagando cibo (spento finché non c'è una tecnica nuova) |
 | Opzioni · Collega alla rete | Descrizione, con lo strumento Sentiero | acceso: ogni sentiero parte dal punto più vicino della rete (un clic dove finisce); spento: il sentiero comincia dove vuoi |
 | Fonti di cibo: Campi, Caccia, Pesca | blocco Info, sotto gli indicatori (richiesta di Fede: deve essere ben leggibile da dove si attinge e quanto si usa la risorsa) | per ogni fonte "preso / disponibile" dell'anno e una barra sottile con la quota usata: bianca; rossa se la risorsa si esaurisce (si caccia troppo); grigia con la scritta "spenta" se la fonte è spenta. Campi: raccolto / raccolto se si lavorassero tutti i campi. Un clic su una fonte apre le politiche |
@@ -92,10 +96,10 @@ Sono una prima serie (proposta di Claude), da confermare con Fede.
 | fps, alberi (livello), cache | in alto a destra | prestazioni, per le prove sui PC |
 
 ## Tasti
-1–5 mappe · G griglia · I isoipse · F fondare · Z zona agricola · C campo · V sentiero · H granaio · Spazio pausa o riprendi · + e − velocità del tempo · X demolisci · P politiche · Y +10 anni · [ e ] raggio dello strumento · Esc o clic destro chiude le politiche, chiude la catena dei sentieri o toglie lo strumento · Q E ruota · rotella zoom · tasto destro trascinato, tasto centrale o WASD sposta · Home torna al sito.
+1–5 mappe · G griglia · I isoipse · F fondare · Z zona agricola · C campo · V sentiero · H granaio · Spazio pausa o riprendi · + e − velocità del tempo · X demolisci · P politiche · Y +10 anni · [ e ] raggio dello strumento · Esc o clic destro chiude il pannello di focus o le politiche, chiude la catena dei sentieri o toglie lo strumento · Q E ruota · rotella zoom · tasto destro trascinato, tasto centrale o WASD sposta · Home torna al sito.
 
 ## Partita (Prototipo 0 in Godot)
-- **Indicatori:** popolazione, cibo (scorta / consumo dell'anno), salute, legittimità. Rossi quando sono in pericolo (pochi abitanti, scorte sotto il 30% del consumo, salute sotto 45, legittimità sotto 30).
+- **Indicatori** (dal 25/11/2026): popolazione, abbondanza, consenso, cibo (scorta / consumo dell'anno), legna, densità, più le fonti di cibo. Rossi quando sono in pericolo. Un clic apre il pannello di focus.
 - **Comandi:** Fondare, Campi, Sentiero, Granaio; politiche a parte (divisione del raccolto, accoglienza degli stranieri).
 - **Scelte:** finestra al centro, con tipo (presagio, momento decisivo, evento, crisi…), titolo, testo e opzioni con la loro conseguenza in grigio. Il tempo si ferma finché non si sceglie.
 - **Notifiche:** vedi sopra.

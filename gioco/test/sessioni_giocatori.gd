@@ -11,7 +11,7 @@ extends SceneTree
 ## Cosa cambia con la bravura (k da 1 a 10):
 ## - attenzione: ogni quanti anni il giocatore guarda la mappa (da 50 a 5);
 ## - zona agricola: quanta parte del contado copre (dal 46% al 100%); sotto il livello 3 la si
-##   allarga solo quando arriva la notifica "zona piena"; dal 6 si evitano le terre a rischio di
+##   allarga solo quando, guardando la mappa, la si vede piena; dal 6 si evitano le terre a rischio di
 ##   piena alto, dall'8 anche quelle a rischio medio, a meno che la terra sicura sia troppo poca;
 ## - granaio dal livello 3; sentieri radiali collegati dal 5 (uno in più per livello, fino a 6);
 ## - scelte: la risposta giusta con probabilità (k - 1) / 9, altrimenti a caso;
@@ -94,18 +94,15 @@ func _gioca(d: MappaDati, sito: Vector2i, k: int, seme: int) -> Dictionary:
 			sim.fonda(sito)
 			_stendi_zona(sim, copertura, limite_piena)
 		var eta := sim.anno - anno0
-		# Notifiche: chi gioca poco allarga la zona solo quando gli dicono che è piena.
-		var zona_piena := false
-		while not sim.avvisi.is_empty():
-			var a: Dictionary = sim.avvisi.pop_front()
-			if String(a["testo"]).contains("zona agricola è piena"):
-				zona_piena = true
-		if zona_piena and k < 3:
+		# Chi gioca poco allarga la zona solo quando, guardando la mappa, la vede piena (dal 25/11/2026
+		# non c'è più la notifica: lo dice la mappa).
+		sim.avvisi.clear()
+		if k < 3 and eta % attenzione == 0 and sim.zona_piena:
 			_stendi_zona(sim, copertura, limite_piena)
 		if eta % attenzione == 0 and sim.fondato:
 			if k >= 3:
 				_stendi_zona(sim, copertura, limite_piena)
-				if sim.granaio.x < 0 and sim.cibo > 40.0:
+				if sim.granaio.x < 0 and sim.sbloccato("granaio") and sim.legna >= SimVillaggio.COSTO_GRANAIO:
 					var c := sim.mondo_di_px(sim.centro)
 					for prova in [Vector2(60, 0), Vector2(-60, 0), Vector2(0, 60), Vector2(0, -60), Vector2(100, 100)]:
 						if sim.costruisci_granaio(c + prova) == "":

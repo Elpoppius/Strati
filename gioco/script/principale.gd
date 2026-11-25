@@ -313,7 +313,9 @@ func _unhandled_input(ev: InputEvent) -> void:
 ## Esc o clic destro: chiude le politiche, poi la catena del sentiero, poi deseleziona lo strumento.
 func annulla() -> void:
 	_pennellando = false
-	if hud.politiche_aperte():
+	if hud.focus_aperto() != "":
+		hud.chiudi_focus()
+	elif hud.politiche_aperte():
 		hud.apri_politiche(false)
 	elif partita and partita.inizio_sentiero.x >= 0:
 		partita.annulla_sentiero()

@@ -167,6 +167,9 @@ func _process(_d: float) -> bool:
 	for k in 40:
 		p._process(0.5)
 		_rispondi(h)
+		# Alcune scelte portano alla mappa e mettono in pausa (la prima piena grande): si riparte.
+		if p.velocita == 0:
+			p.imposta_velocita(3)
 		# Come farebbe un giocatore: ogni tanto nuovi campi attorno al villaggio.
 		if k % 10 == 0 and sim.fondato:
 			var c := sim.mondo_di_px(sim.centro)
@@ -222,6 +225,22 @@ func _process(_d: float) -> bool:
 	sim._notifica("Prova di notifica", false, c0)
 	p._process(0.01)
 	controlla(h.notifiche().has("Prova di notifica") and sim.decisioni.size() == d_prima and not h.modale_aperta(), "le notifiche compaiono senza fermare il gioco")
+	# Pannelli di focus (decisione di Fede del 25/11/2026): un clic su un indicatore apre il suo
+	# pannello, con le parti, il perché e l'andamento; si aggiorna con il tempo; Esc lo chiude.
+	p.aggiorna_hud()
+	h.indicatore_scelto.emit("Abbondanza")
+	controlla(h.focus_aperto() == "Abbondanza" and not h.modale_aperta(), "un clic su Abbondanza apre il suo pannello di focus senza fermare il gioco")
+	var testi := ""
+	for l in h._colonna_focus.find_children("*", "Label", true, false):
+		testi += (l as Label).text + "\n"
+	controlla(testi.contains("Cibo che avanza") and testi.contains("PERCHÉ"), "il pannello dice di cosa è fatta l'abbondanza e perché")
+	for nome in ["Cibo", "Salute", "Consenso", "Legna", "Popolazione"]:
+		h.indicatore_scelto.emit(nome)
+		controlla(h.focus_aperto() == nome and p.dati_focus(nome).has("valore"), "pannello di focus per %s" % nome)
+	_s.annulla()
+	controlla(h.focus_aperto() == "", "Esc chiude il pannello di focus")
+	# Tappe: il granaio è chiuso finché non si raggiunge la sua tappa.
+	controlla(sim.sbloccato("granaio") or p.scena.hud.find_children("*", "Button", true, false).size() > 0, "il granaio segue le tappe")
 	print("Verifica completata: " + ("nessun errore" if _errori == 0 else "%d errori" % _errori))
 	quit(1 if _errori > 0 else 0)
 	return true

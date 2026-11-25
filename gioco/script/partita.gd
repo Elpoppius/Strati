@@ -103,6 +103,13 @@ func avvia(s: Node, seme: int = -1) -> void:
 		if not sim.imposta_fonte(fonte, accesa):
 			hud.imposta_messaggio("Almeno una fonte di cibo resta accesa.")
 		aggiorna_hud())
+	# Pannelli di focus (decisione di Fede del 25/11/2026): un clic su un indicatore.
+	hud.indicatore_scelto.connect(func(nome: String) -> void:
+		if hud.focus_aperto() == nome:
+			hud.chiudi_focus()
+		elif sim.fondato:
+			hud.mostra_focus(dati_focus(nome)))
+	hud.mappa_richiesta.connect(func(m: int) -> void: scena.imposta_modo(m))
 	# Un clic su una fonte nel blocco Info apre le politiche (lì si accende e si spegne).
 	hud.fonte_scelta.connect(func(_id: String) -> void: hud.apri_politiche(true))
 	hud.politica_scelta.connect(func(id: String, valore: String) -> void:
@@ -181,7 +188,7 @@ func _process(delta: float) -> void:
 	if sim.in_attesa() and not hud.modale_aperta():
 		_accumulo = 0.0
 		var d: Dictionary = sim.decisioni[0]
-		var tipi := {"sorgenti": "Presagio", "cometa": "Presagio", "primo_cattivo": "Momento decisivo", "affollamento": "Momento decisivo", "stranieri": "Evento", "abbandono": "Fallimento", "fine": "Fine del prototipo"}
+		var tipi := {"sorgenti": "Presagio", "cometa": "Presagio", "primo_cattivo": "Momento decisivo", "affollamento": "Momento decisivo", "stranieri": "Evento", "piena": "Evento", "abbandono": "Fallimento", "fine": "Fine del prototipo"}
 		var opzioni: Array = d["opzioni"]
 		if d["tipo"] == "fine":
 			opzioni = [{"id": "nuova", "testo": "Nuova partita", "nota": ""}] + opzioni
@@ -196,6 +203,10 @@ func _scelto(opzione: String, id: int, tipo: String) -> void:
 	var hud: Hud = scena.hud
 	if tipo == "primo_cattivo" and opzione == "campi":
 		hud.seleziona_comando("zona")
+		imposta_velocita(0)
+	if tipo == "piena":
+		# La prima piena grande porta alla mappa del rischio di piena (decisione di Fede del 25/11/2026).
+		scena.imposta_modo(3)
 		imposta_velocita(0)
 	if tipo == "abbandono":
 		hud.seleziona_comando("fonda")
@@ -344,7 +355,9 @@ func aggiorna_modalita() -> void:
 
 func leggi_sito(punto: Vector3) -> void:
 	if not in_fondazione():
+		leggi_per_strumento(punto)
 		return
+	scena.hud.imposta_lettura_strumento([])
 	var p := sim.px_da_mondo(punto.x, punto.z)
 	if p == _px_letto:
 		return
@@ -437,11 +450,19 @@ func aggiorna_hud() -> void:
 	var on := sim.fondato
 	var trattino := "—"
 	hud.imposta_indicatori([
-		["Anno", SimVillaggio.anno_testo(sim.anno), false],
+		# La tappa accanto all'anno: la progressione si vede sempre (richiesta di Fede del 25/11/2026).
+		["Anno", (SimVillaggio.anno_testo(sim.anno) + "  ·  " + String(SimVillaggio.TAPPE[sim.tappa]["nome"])) if on else SimVillaggio.anno_testo(sim.anno), false],
 		["Popolazione", str(roundi(sim.pop)) if on else trattino, on and sim.pop < 20.0],
+		# Abbondanza e Consenso: un indicatore ciascuno, con le parti al passaggio (decisioni di Fede
+		# del 24–25/11/2026).
+		["Abbondanza", str(roundi(sim.abbondanza * 100.0)) if on else trattino, on and sim.abbondanza < SimVillaggio.SOGLIA_CRESCITA,
+			_testo_abbondanza() if on else "Cibo che avanza, salute e spazio: le nascite la seguono."],
+		["Consenso", str(roundi(sim.legittimita)) if on else trattino, on and sim.legittimita < 30.0,
+			_testo_consenso() if on else "Il consenso degli anziani e delle famiglie (e del sacerdote, dal luogo sacro)."],
 		["Cibo", ("%d / %d l'anno" % [roundi(sim.cibo), roundi(sim.pop)]) if on else trattino, on and sim.cibo < sim.pop * 0.3],
-		["Salute", str(roundi(sim.salute)) if on else trattino, on and sim.salute < 45.0],
-		["Legittimità", str(roundi(sim.legittimita)) if on else trattino, on and sim.legittimita < 30.0],
+		["Legna", ("%d  +%d −%d" % [floori(sim.legna), roundi(sim.ultima_legna), roundi(sim.consumo_legna)]) if on else trattino,
+			on and sim.legna < SimVillaggio.COSTO_CASA and sim.ultima_legna < sim.consumo_legna,
+			"Legna in catasta, poi quanta se ne raccoglie e quanta se ne consuma ogni anno (focolari e manutenzione delle case). Si raccoglie nei boschi vicini e si ricava dissodando; ogni casa nuova ne chiede %d, il granaio %d. Senza legna non nascono case." % [roundi(SimVillaggio.COSTO_CASA), roundi(SimVillaggio.COSTO_GRANAIO)]],
 		["Densità", ("%d ab/ha" % roundi(sim.densita())) if on else trattino, on and sim.affollamento > 0.3,
 			"Abitanti per ettaro (un ettaro è 100 × 100 m): la popolazione divisa per l'area dell'abitato, cioè il cerchio che contiene le case. Rossa quando le case non bastano per tutti (affollamento): la salute ne risente."],
 	])
@@ -465,6 +486,11 @@ func aggiorna_hud() -> void:
 		if sim.fonti[f]:
 			accese.append({"agricoltura": "campi", "caccia": "caccia e raccolta", "pesca": "pesca"}[f])
 	hud.imposta_interruttori("fonti", sim.fonti, "Il cibo viene da: %s." % ", ".join(accese))
+	if hud.focus_aperto() != "":
+		if on:
+			hud.aggiorna_focus(dati_focus(hud.focus_aperto()))
+		else:
+			hud.chiudi_focus()
 	var righe: Array = []
 	for e in sim.cronaca.slice(0, 6):
 		righe.append("%s · %s" % [SimVillaggio.anno_testo(e["anno"]), e["testo"]])
@@ -473,10 +499,21 @@ func aggiorna_hud() -> void:
 	# Dopo la fondazione il tasto non serve più (Fede): torna solo se il villaggio è abbandonato.
 	hud.mostra("fonda", not on)
 	hud.segna("collega_rete", collega_rete)
-	for id in ["zona", "campi", "sentiero", "comune", "famiglie"]:
+	for id in ["zona", "campi", "sentiero"]:
 		hud.abilita(id, on and not sim.finito)
-	hud.abilita("granaio", on and sim.granaio.x < 0 and not sim.finito)
-	hud.cambia_testo("granaio", "Granaio (già costruito)" if sim.granaio.x >= 0 else "Granaio (30 di cibo)", "Granaio")
+	for id in ["comune", "famiglie"]:
+		hud.abilita(id, on and not sim.finito and sim.sbloccato("raccolto"))
+	hud.abilita("granaio", on and sim.granaio.x < 0 and not sim.finito and sim.sbloccato("granaio"))
+	var testo_granaio := "Granaio (%d di legna, %d anni di lavoro)" % [roundi(SimVillaggio.COSTO_GRANAIO), SimVillaggio.ANNI_CANTIERE_GRANAIO]
+	if sim.granaio.x >= 0:
+		testo_granaio = ("Granaio (in costruzione: ancora %d anni)" % sim.cantiere_granaio) if sim.cantiere_granaio > 0 else "Granaio (già costruito)"
+	elif not sim.sbloccato("granaio"):
+		testo_granaio = "Granaio (si apre a %d abitanti)" % SimVillaggio.TAPPE[SimVillaggio.tappa_di("granaio")]["abitanti"]
+	hud.cambia_testo("granaio", testo_granaio, "Granaio")
+	# Le tappe aprono le politiche (decisione di Fede del 25/11/2026).
+	for id in ["raccolto", "stranieri"]:
+		var aperta := not on or sim.sbloccato(id)
+		hud.abilita_politica(id, aperta, "" if aperta else "Si apre con la tappa «%s» (%d abitanti)." % [SimVillaggio.TAPPE[SimVillaggio.tappa_di(id)]["nome"], SimVillaggio.TAPPE[SimVillaggio.tappa_di(id)]["abitanti"]])
 	for id in SimVillaggio.POLITICHE:
 		hud.imposta_politica(id, sim.politica(id))
 	# Ammodernamento agricolo: il tasto c'è già (decisione di Fede), spento finché non ci sono campi
@@ -490,3 +527,142 @@ func aggiorna_hud() -> void:
 	for k in 4:
 		hud.segna("v%d" % k, velocita == k)
 		hud.abilita("v%d" % k, k == 0 or (on and not sim.finito))
+
+
+## Suggerimenti degli indicatori composti: le parti e cosa vogliono dire.
+func _testo_abbondanza() -> String:
+	var p: Dictionary = sim.parti_abbondanza
+	var crescita := "cresce" if sim.abbondanza > SimVillaggio.SOGLIA_CRESCITA + 0.02 else ("cala" if sim.abbondanza < SimVillaggio.SOGLIA_CRESCITA - 0.02 else "è ferma")
+	return "Abbondanza: le nascite la seguono. Sopra %d la popolazione cresce, sotto cala; ora %s.\nCibo che avanza: %d%% (%.1f mesi di scorte)\nSalute: %d%%\nSpazio: %d%% (case per tutti; servono legna e terra per costruirne)" % [
+		roundi(SimVillaggio.SOGLIA_CRESCITA * 100.0), crescita, roundi(p["cibo"] * 100.0), sim.mesi_di_scorta(), roundi(p["salute"] * 100.0), roundi(p["spazio"] * 100.0)]
+
+
+func _testo_consenso() -> String:
+	var c: Dictionary = sim.consenso
+	var t := "Consenso del villaggio.\nAnziani: %d (le usanze%s)\nFamiglie: %d (il lavoro)" % [roundi(c["anziani"]),
+		"" if sim.efficacia_usanze() >= 1.0 else ": scontenti, le politiche valgono meno", roundi(c["famiglie"])]
+	if sim.sacerdote_attivo:
+		t += "\nSacerdote: %d (i presagi)" % roundi(c["sacerdote"])
+	return t
+
+
+func _testo_tappa() -> String:
+	var k := sim.tappa
+	if k + 1 >= SimVillaggio.TAPPE.size():
+		return "Tutte le tappe del villaggio sono raggiunte."
+	var dopo: Dictionary = SimVillaggio.TAPPE[k + 1]
+	return "Tappa raggiunta: %s. La prossima, «%s», arriva a %d abitanti. Le tappe raggiunte restano." % [SimVillaggio.TAPPE[k]["nome"], dopo["nome"], dopo["abitanti"]]
+
+
+## Contenuto del pannello di focus di un indicatore: parti, cause, andamento, mappa.
+func dati_focus(nome: String) -> Dictionary:
+	var d := {"titolo": nome, "cause": sim.cause_di(nome), "mappa": -1}
+	var serie_di := func(k: String, scala: float) -> Array:
+		var out: Array = []
+		for x in (sim.storia[k] as Array).slice(-100):
+			out.append(float(x) * scala)
+		return out
+	match nome:
+		"Abbondanza":
+			var p: Dictionary = sim.parti_abbondanza
+			d["valore"] = str(roundi(sim.abbondanza * 100.0))
+			d["allarme"] = sim.abbondanza < SimVillaggio.SOGLIA_CRESCITA
+			d["descrizione"] = "Le nascite seguono l'abbondanza: sopra %d la popolazione cresce, sotto cala piano." % roundi(SimVillaggio.SOGLIA_CRESCITA * 100.0)
+			d["parti"] = [["Cibo che avanza", p["cibo"], "%.1f mesi" % sim.mesi_di_scorta()],
+				["Salute", p["salute"], str(roundi(sim.salute))],
+				["Spazio (case per tutti)", p["spazio"], "%d%%" % roundi(p["spazio"] * 100.0)]]
+			d["serie"] = serie_di.call("abbondanza", 100.0)
+			d["mappa"] = 2
+			d["testo_mappa"] = "Mostra la fertilità del suolo"
+		"Popolazione":
+			d["valore"] = str(roundi(sim.pop))
+			d["allarme"] = sim.pop < 20.0
+			var dopo: String = ("La prossima tappa, «%s», arriva a %d abitanti." % [SimVillaggio.TAPPE[sim.tappa + 1]["nome"], SimVillaggio.TAPPE[sim.tappa + 1]["abitanti"]]) if sim.tappa + 1 < SimVillaggio.TAPPE.size() else "Tutte le tappe del villaggio sono raggiunte."
+			d["descrizione"] = "%d case, %d campi. Tappa: %s. %s" % [sim.case.size(), sim.campi.size(), SimVillaggio.TAPPE[sim.tappa]["nome"], dopo]
+			d["serie"] = serie_di.call("pop", 1.0)
+		"Cibo":
+			d["valore"] = "%d" % roundi(sim.cibo)
+			d["allarme"] = sim.cibo < sim.pop * 0.3
+			d["descrizione"] = "Scorte per %.1f mesi. Il granaio %s." % [sim.mesi_di_scorta(), "le conserva" if sim.granaio_pronto() else ("è in costruzione" if sim.granaio.x >= 0 else "manca: un quarto delle scorte si guasta ogni anno")]
+			d["parti"] = [["Campi", sim.ultimo_raccolto / maxf(1.0, sim.raccolto_potenziale), "%d / %d" % [roundi(sim.ultimo_raccolto), roundi(sim.raccolto_potenziale)]],
+				["Caccia e raccolta", sim.ultima_caccia / maxf(1.0, sim.offerta_caccia), "%d / %d" % [roundi(sim.ultima_caccia), roundi(sim.offerta_caccia)]],
+				["Pesca", sim.ultima_pesca / maxf(1.0, sim.offerta_pesca), "%d / %d" % [roundi(sim.ultima_pesca), roundi(sim.offerta_pesca)]]]
+			d["serie"] = serie_di.call("cibo", 1.0)
+			d["mappa"] = 2
+			d["testo_mappa"] = "Mostra la fertilità del suolo"
+		"Salute":
+			d["valore"] = str(roundi(sim.salute))
+			d["allarme"] = sim.salute < 45.0
+			d["descrizione"] = "Acqua, paludi, affollamento, fame e focolari decidono la salute; la salute pesa sulle nascite."
+			d["serie"] = serie_di.call("salute", 1.0)
+			d["mappa"] = 1
+			d["testo_mappa"] = "Mostra l'acqua"
+		"Consenso":
+			var c: Dictionary = sim.consenso
+			d["valore"] = str(roundi(sim.legittimita))
+			d["allarme"] = sim.legittimita < 30.0
+			d["descrizione"] = "Ogni gruppo vuole qualcosa: gli anziani il cibo e le usanze, le famiglie il raccolto e le case%s." % (", il sacerdote i presagi e il luogo sacro" if sim.sacerdote_attivo else "")
+			d["parti"] = [["Anziani: le usanze", c["anziani"] / 100.0, str(roundi(c["anziani"]))],
+				["Famiglie: il lavoro", c["famiglie"] / 100.0, str(roundi(c["famiglie"]))]]
+			if sim.sacerdote_attivo:
+				d["parti"].append(["Sacerdote: i presagi", c["sacerdote"] / 100.0, str(roundi(c["sacerdote"]))])
+			d["serie"] = serie_di.call("legittimita", 1.0)
+		"Legna":
+			d["valore"] = str(floori(sim.legna))
+			d["allarme"] = sim.legna < SimVillaggio.COSTO_CASA and sim.ultima_legna < sim.consumo_legna
+			d["descrizione"] = "Si raccoglie nei boschi vicini e si ricava dissodando. Ogni casa nuova ne chiede %d, il granaio %d." % [roundi(SimVillaggio.COSTO_CASA), roundi(SimVillaggio.COSTO_GRANAIO)]
+			d["parti"] = [["Raccolta / ciò che offrono i boschi", sim.ultima_legna / maxf(1.0, sim.offerta_legna), "%d / %d" % [roundi(sim.ultima_legna), roundi(sim.offerta_legna)]],
+				["Bosco rimasto attorno", 1.0 - sim.disboscamento, "%d%%" % roundi((1.0 - sim.disboscamento) * 100.0)]]
+			d["serie"] = serie_di.call("legna", 1.0)
+	return d
+
+
+## Lettura del terreno per gli strumenti della partita (decisione di Fede del 25/11/2026): le voci
+## che contano per ognuno, come in fondazione.
+func leggi_per_strumento(punto: Vector3) -> void:
+	var hud: Hud = scena.hud
+	var cmd := hud.comando()
+	if not sim.fondato or not cmd in ["zona", "campi", "granaio", "sentiero"]:
+		hud.imposta_lettura_strumento([])
+		return
+	var p := sim.px_da_mondo(punto.x, punto.z)
+	var i := sim.px(p)
+	if not sim.edificabile(i):
+		hud.imposta_lettura_strumento([["Terreno", "Acqua o palude", 0.0, true]])
+		return
+	var c := sim.mondo_di_px(sim.centro)
+	var d := Vector2(punto.x, punto.z).distance_to(c)
+	var fl := sim.piena(i)
+	var piena_voce := ["Rischio di piena", "alto" if fl > 0.5 else ("medio" if fl > 0.25 else ("basso" if fl > 0.0 else "nullo")), fl, fl > 0.25]
+	var voci: Array = []
+	match cmd:
+		"zona", "campi":
+			var f := sim.fert(i) / 1.2
+			voci.append(["Fertilità", "alta" if f > 0.7 else ("buona" if f > 0.55 else ("media" if f > 0.38 else "scarsa")), f, f <= 0.38])
+			voci.append(piena_voce)
+			var r := sim.raggio_contado()
+			voci.append(["Distanza", "%d m" % roundi(d), 1.0 - clampf(d / maxf(r, 1.0), 0.0, 1.0), d > r])
+			var bosco := sim.bosco_presente.call(i) as bool
+			voci.append(["Bosco", "si perde (dà legna)" if bosco else "nessuno", 1.0 if bosco else 0.0, false])
+		"granaio":
+			voci.append(piena_voce)
+			voci.append(["Distanza dal centro", "%d m" % roundi(d), 1.0 - clampf(d / 320.0, 0.0, 1.0), d > 320.0])
+			voci.append(["Legna", "%d / %d" % [floori(sim.legna), roundi(SimVillaggio.COSTO_GRANAIO)], sim.legna / SimVillaggio.COSTO_GRANAIO, sim.legna < SimVillaggio.COSTO_GRANAIO])
+		"sentiero":
+			var q0 := sim.dati.quota(punto.x - 20.0, punto.z)
+			var q1 := sim.dati.quota(punto.x + 20.0, punto.z)
+			var q2 := sim.dati.quota(punto.x, punto.z - 20.0)
+			var q3 := sim.dati.quota(punto.x, punto.z + 20.0)
+			var pend := Vector2(q1 - q0, q3 - q2).length() / 40.0 * 100.0
+			voci.append(["Pendenza", "%d%%" % roundi(pend), clampf(pend / 30.0, 0.0, 1.0), pend > 20.0])
+			var vicino_acqua := false
+			for dy in range(-1, 2):
+				for dx in range(-1, 2):
+					var q := p + Vector2i(dx, dy)
+					if q.x >= 0 and q.y >= 0 and q.x < sim.n and q.y < sim.n:
+						var t := sim.dati.tipo[sim.px(q)]
+						if t == MappaDati.FIUME or t == MappaDati.TORRENTE or t == MappaDati.TORRENTE_EST:
+							vicino_acqua = true
+			voci.append(["Acqua", "guado vicino" if vicino_acqua else "asciutto", 1.0 if vicino_acqua else 0.0, false])
+			voci.append(piena_voce)
+	hud.imposta_lettura_strumento(voci)

@@ -65,3 +65,28 @@ L'obiettivo di Fede: più abitanti è più successo. Le idee cercano di tenerlo 
 - Il consenso ha un solo effetto, la scissione sotto 5 per 4 anni; nelle cinque partite è sempre finito tra 56 e 63.
 
 Le decisioni che ne sono venute (Fede, 25/11/2026) stanno in `pilastri-e-decisioni.md`, sezione "La prima epoca: dinamiche".
+
+## Dopo le regole del 25/11/2026
+*Le dinamiche decise da Fede il 25/11 (`era-origini.md`): abbondanza, tappe, legna, consenso per gruppi, eventi dallo stato della partita.* I giocatori automatici sono gli stessi; ai livelli 1–2 la zona si allarga quando la si vede piena sulla mappa (non c'è più la notifica).
+
+**Registro degli avvisi** (5 partite, livello 5), per partita:
+| | 24/11 | 25/11 | Obiettivo |
+|---|---|---|---|
+| Pause | 14 | 4,8 | 4–5 |
+| Notifiche rosse | 12 | 2 | 3–4 |
+| Carestie | 10–28 | 0 | 0–3 |
+| Righe di cronaca | 86 | 37 | – |
+
+**Sessioni a dieci livelli** (180 partite):
+![Abitanti per livello di bravura, 25/11](immagini/sessioni-giocatori-25-11.png)
+
+| Livello | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Abitanti a 500 anni (mediana) | 222 | 278 | 419 | 459 | 540 | 591 | 695 | 722 | 811 | 873 |
+
+- **La bravura conta ancora, in modo regolare**, e senza schiacciare chi gioca poco (livello 1: 222, prima 229).
+- **Non c'è più il muro a 300 anni:** la crescita rallenta piano fino ai 450 anni, perché le nascite seguono l'abbondanza e la legna comincia a mancare sui siti con poco bosco.
+- **Nessuna carestia** a nessun livello, nessun abbandono: il villaggio non è più punitivo. Forse troppo facile: da guardare nelle prove di Fede (traguardo: 0–3 carestie, solo per cause leggibili).
+- **I primi 100 anni sono ancora uguali per tutti** (circa 60 abitanti): è la fase in cui "si mettono le pedine" (Fede, 25/11/2026). Il giocatore automatico non usa le leve dei primi anni (campi a mano, scelta delle fonti); da controllare con le prove vere.
+- **Il sito pesa:** al livello 10 Pianura aperta 1168, Sperone 1098, Sbocco 914, Terrazzo 855; Dosso nelle paludi 481 (febbri, salute), Area dei gessi 452.
+- **Abitanti ancora sopra l'obiettivo** del nucleo (100–300): servono i casali (tappa dei 250), cioè la scelta su come contare gli abitanti sul territorio, rimandata a epoca completa.
