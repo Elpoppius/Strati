@@ -19,6 +19,9 @@
   | verde | Fertilità |
   | rosso | Rischio di piena; in generale **pericolo o azione irreversibile** |
   | giallo | Energia dell'acqua |
+  | verde bosco | Caccia e pesca (25/11/2026) |
+  | ocra | Abitato e contado (25/11/2026) |
+  | viola | Memoria del suolo (25/11/2026) |
 
   Ogni mappa tematica ha il suo bollino tondo con il numero del tasto, come una linea della metropolitana. I comandi hanno un quadratino con la lettera del tasto, senza colore, tranne quelli irreversibili (bollino rosso). Le legende delle mappe usano gli stessi colori del bollino.
 - **Carattere: Inter** (decisione di Fede del 24/11/2026: un carattere con licenza SIL Open Font License, rispettandone le regole), il più vicino all'Helvetica della grafica svizzera. Regular per i testi, Medium di base, Bold per titoli, valori e lettere dei tasti. File e licenza in `gioco/asset/caratteri/inter/`, elenco delle licenze in `docs/licenze.md`.
@@ -92,7 +95,7 @@ Sono una prima serie (proposta di Claude), da confermare con Fede.
 | Demolizione, Prova | Strumenti | schede degli strumenti |
 | Demolisci | Strumenti | toglie ciò che si può demolire nel cerchio; non agisce su fiumi e paludi |
 | +10 anni | Prova | fa passare dieci anni subito, solo per provare la ricrescita del bosco |
-| 1–5 | bollini accanto alla minimappa | mappe tematiche: terreno, acqua, fertilità, rischio di piena, energia dell'acqua |
+| 1–8 | bollini accanto alla minimappa | mappe tematiche: terreno, acqua, fertilità, rischio di piena, energia dell'acqua, caccia e pesca, abitato e contado, memoria del suolo |
 | G, I | quadratini accanto alla minimappa | griglia dei lotti da 20 m, isoipse ogni 25 m |
 | fps, alberi (livello), cache | in alto a destra | prestazioni, per le prove sui PC |
 

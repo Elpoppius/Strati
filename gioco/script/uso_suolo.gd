@@ -82,6 +82,10 @@ var anni := PackedByteArray()
 ## Immagine per lo shader del terreno: R bosco presente (1 = come la mappa), G terra nuda o
 ## battuta, B campo, A superficie sigillata.
 var immagine: Image
+## Memoria del suolo per la mappa tematica (voce 8 del todo, 25/11/2026): un byte per cella, 255
+## dove c'era il bosco e la cella non è più com'era (campo, radura, costruzione, ricrescita).
+var immagine_memoria: Image
+var texture_memoria: ImageTexture
 var texture: ImageTexture
 ## Tecnica di ogni campo (indice in SimVillaggio.TECNICHE: 0 zappa, 1 aratro in croce, 2
 ## centuriazione, 3 strisce medievali, 4 meccanica). Decisione di Fede del 24/11/2026: il campo
@@ -113,6 +117,8 @@ func _init(a: Alberi) -> void:
 	immagine = Image.create(n, n, false, Image.FORMAT_RGBA8)
 	immagine.fill(Color(1, 0, 0, 0))
 	texture = ImageTexture.create_from_image(immagine)
+	immagine_memoria = Image.create(n, n, false, Image.FORMAT_R8)
+	texture_memoria = ImageTexture.create_from_image(immagine_memoria)
 	tecniche.resize(n * n)
 	immagine_tecniche = Image.create(n, n, false, Image.FORMAT_R8)
 	texture_tecniche = ImageTexture.create_from_image(immagine_tecniche)
@@ -439,4 +445,6 @@ func _aggiorna_immagine(lista: Array[Vector2i]) -> void:
 				bosco = 0.0
 				sigillo = 1.0
 		immagine.set_pixel(c.x, c.y, Color(bosco, nuda, campo, sigillo))
+		immagine_memoria.set_pixel(c.x, c.y, Color(1.0 if s != NATURALE and v & MEMORIA_BOSCO else 0.0, 0, 0))
 	texture.update(immagine)
+	texture_memoria.update(immagine_memoria)

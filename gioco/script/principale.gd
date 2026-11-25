@@ -5,7 +5,7 @@ extends Node3D
 const PERCORSO_MAPPA := "res://mappe/pedecollinare/mappa.res"
 const ESAGERAZIONE := 1.5
 const LATO_LOTTO := 20.0
-const NOMI_MODI := ["Terreno", "Acqua", "Fertilità", "Rischio piena", "Energia dell'acqua"]
+const NOMI_MODI := ["Terreno", "Acqua", "Fertilità", "Rischio piena", "Energia dell'acqua", "Caccia e pesca", "Abitato e contado", "Memoria del suolo"]
 const SITO_INIZIALE := 1
 
 ## Sole: altezza sull'orizzonte e angolo rispetto alla direzione in cui guarda la camera (gradi).
@@ -81,6 +81,7 @@ func _ready() -> void:
 	terreno.materiale.set_shader_parameter("uso_suolo", uso.texture)
 	terreno.materiale.set_shader_parameter("uso_attivo", 1.0)
 	terreno.materiale.set_shader_parameter("tecniche_campi", uso.texture_tecniche)
+	terreno.materiale.set_shader_parameter("memoria_suolo", uso.texture_memoria)
 	# Dal secondo avvio gli alberi si caricano dalla cache; la prima volta si calcolano in
 	# sottofondo su tutti i processori e poi si salvano (vedi Alberi).
 	var t0 := Time.get_ticks_msec()
@@ -193,6 +194,9 @@ func _crea_interfaccia() -> void:
 func imposta_modo(i: int) -> void:
 	modo = i
 	terreno.materiale.set_shader_parameter("modo", i)
+	if partita:
+		partita.aggiorna_mappe_tematiche()
+	aggiorna_zone_taglio()
 	for e in _segni_dighe:
 		e.visible = (i == 4)
 	if hud:
@@ -285,7 +289,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 			KEY_I:
 				isoipse_attive = not isoipse_attive
 				hud.imposta_sovrapposizioni(griglia_attiva, isoipse_attive)
-			KEY_1, KEY_2, KEY_3, KEY_4, KEY_5:
+			KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8:
 				imposta_modo((ev as InputEventKey).keycode - KEY_1)
 			KEY_HOME:
 				torna_al_sito()
@@ -496,4 +500,4 @@ func aggiorna_zone_taglio() -> void:
 	while zone.size() < 8:
 		zone.append(Vector4(0, 0, -1, 0))
 	terreno.materiale.set_shader_parameter("zone_taglio", zone)
-	terreno.materiale.set_shader_parameter("forza_zone", 1.0 if hud.comando() in ["legnaia", "demolisci"] else 0.45)
+	terreno.materiale.set_shader_parameter("forza_zone", 1.0 if hud.comando() in ["legnaia", "demolisci"] or modo == 5 else 0.45)

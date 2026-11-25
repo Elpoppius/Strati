@@ -79,6 +79,20 @@ uniform float mostra_zona = 0.0;
 // Tecnica di ogni campo (UsoSuolo.tecniche, un byte per cella da 10 m, senza filtro): 0 zappa
 // (villaggio), 1 aratro in croce, 2 centuriazione, 3 strisce medievali, 4 meccanica.
 uniform sampler2D tecniche_campi : filter_nearest, repeat_disable;
+// Mappe tematiche della partita (voce 8 del todo, 25/11/2026 sera).
+// 5 Caccia e pesca: scorte per riquadro di 200 m (R selvaggina, G pesce), cerchi delle poste di
+// caccia (w = 0) e dei capanni da pesca (w = 1): x, z, raggio, tipo.
+uniform sampler2D scorte : filter_linear, repeat_disable;
+uniform float lato_scorte = 10400.0;
+uniform float mezzo_pixel = 20.0;
+uniform vec4 cerchi_risorse[16];
+// 6 Abitato e contado: centro, raggio dell'abitato (le case del nucleo), raggio del contado; i
+// casali come cerchi (x, z, raggio).
+uniform vec4 abitato = vec4(0.0, 0.0, -1.0, -1.0);
+uniform vec4 casali[16];
+// 7 Memoria del suolo: dove c'era il bosco (R, sulla griglia dell'uso del suolo) e le rovine.
+uniform sampler2D memoria_suolo : filter_linear, repeat_disable;
+uniform vec4 rovine[16];
 
 varying vec3 pos_mondo;
 
@@ -368,6 +382,69 @@ void fragment() {
 			// La forma della fascia viene dalla distanza fine dall'acqua (niente quadretti da 40 m).
 			float vicino = (1.0 - smoothstep(12.0, 140.0, d_acqua)) * step(0.004, p);
 			col = mix(mix(base, vec3(1.0), 0.35), pow(rampa, vec3(2.2)), 0.85 * vicino);
+		} else if (modo == 5) {
+			// Caccia e pesca: il bosco di oggi colorato dalla selvaggina (verde pieno dove abbonda,
+			// bruno pallido dove è stata cacciata), le acque dal pesce (blu pieno, grigio dove
+			// manca). Sotto, la mappa schiarita.
+			vec2 sc = texture(scorte, (pos_mondo.xz + mezzo_pixel) / lato_scorte).rg;
+			vec3 c_selv = mix(vec3(0.72, 0.64, 0.48), vec3(0.12, 0.38, 0.22), sc.r);
+			col = mix(mix(base, vec3(1.0), 0.5), pow(c_selv, vec3(2.2)), 0.85 * bosco);
+			float pal = smoothstep(0.47, 0.53, texture(palude_fine, UV).r);
+			// Fiumi e torrenti si colorano più sotto, dove si disegna l'acqua; qui le paludi.
+			vec3 c_pesce = mix(vec3(0.72, 0.74, 0.76), vec3(0.16, 0.43, 0.71), sc.g);
+			col = mix(col, pow(c_pesce, vec3(2.2)), 0.6 * pal);
+			for (int k = 0; k < 16; k++) {
+				vec4 e = cerchi_risorse[k];
+				if (e.z <= 0.0) {
+					continue;
+				}
+				float de = distance(pos_mondo.xz, e.xy);
+				float fe = max(fwidth(de), 1e-3);
+				float anello = 1.0 - smoothstep(fe * 0.6, fe * 2.0, abs(de - e.z));
+				float segno = 1.0 - smoothstep(10.0, 10.0 + fe * 2.0, de);
+				vec3 c_anello = e.w > 0.5 ? vec3(0.1, 0.36, 0.64) : vec3(0.12, 0.38, 0.22);
+				col = mix(col, pow(c_anello, vec3(2.2)), max(anello * 0.7, segno * 0.9));
+			}
+		} else if (modo == 6) {
+			// Abitato e contado, distinti (decisione di Fede del 24/11/2026): abitato pieno, contado
+			// chiaro con i campi più marcati, casali come macchie piene.
+			col = mix(base, vec3(1.0), 0.45);
+			vec3 c_contado = pow(vec3(0.92, 0.78, 0.5), vec3(2.2));
+			vec3 c_abitato = pow(vec3(0.72, 0.45, 0.13), vec3(2.2));
+			if (abitato.w > 0.0) {
+				float da = distance(pos_mondo.xz, abitato.xy);
+				float fa = max(fwidth(da), 1e-3);
+				float nel_contado = 1.0 - smoothstep(abitato.w - fa, abitato.w + fa, da);
+				col = mix(col, c_contado, 0.45 * nel_contado + 0.35 * uso.b * nel_contado);
+				col = mix(col, c_abitato, 0.85 * (1.0 - smoothstep(abitato.z - fa, abitato.z + fa, da)));
+				col = mix(col, c_abitato, 0.8 * (1.0 - smoothstep(fa * 0.6, fa * 2.0, abs(da - abitato.w))));
+			}
+			for (int k = 0; k < 16; k++) {
+				vec4 e = casali[k];
+				if (e.z <= 0.0) {
+					continue;
+				}
+				float de = distance(pos_mondo.xz, e.xy);
+				float fe = max(fwidth(de), 1e-3);
+				col = mix(col, c_abitato, 0.85 * (1.0 - smoothstep(e.z - fe, e.z + fe, de)));
+			}
+		} else if (modo == 7) {
+			// Memoria del suolo: viola dove c'era il bosco (più chiaro dove ricresce), grigio scuro
+			// dove il suolo è sigillato per sempre, anelli sulle rovine; il bosco intatto tenue.
+			float mem = texture(memoria_suolo, UV).r;
+			col = mix(base, vec3(1.0), 0.5);
+			col = mix(col, pow(vec3(0.6, 0.66, 0.56), vec3(2.2)), 0.5 * bosco * (1.0 - mem));
+			col = mix(col, pow(vec3(0.48, 0.29, 0.62), vec3(2.2)), 0.8 * mem * (1.0 - 0.6 * bosco));
+			col = mix(col, pow(vec3(0.2, 0.2, 0.22), vec3(2.2)), 0.9 * uso.a);
+			for (int k = 0; k < 16; k++) {
+				vec4 e = rovine[k];
+				if (e.z <= 0.0) {
+					continue;
+				}
+				float de = distance(pos_mondo.xz, e.xy);
+				float fe = max(fwidth(de), 1e-3);
+				col = mix(col, pow(vec3(0.32, 0.16, 0.42), vec3(2.2)), 0.9 * (1.0 - smoothstep(fe * 0.8, fe * 2.5, abs(de - e.z))));
+			}
 		}
 	}
 	// Isoipse ogni passo_isoipse metri di quota.
@@ -509,6 +586,11 @@ void fragment() {
 	float ombra_sponda = smoothstep(0.1, 0.7, dot(verso_riva, sole_o)) * (1.0 - smoothstep(0.0, 7.0, -d_acqua));
 	acqua *= 1.0 - 0.35 * ombra_sponda * corrente;
 	acqua *= mix(1.0, rilievo_acqua, forza_rilievo);
+	if (modo == 5) {
+		// Caccia e pesca: l'acqua prende il colore del pesce del suo tratto (blu pieno, grigio scarso).
+		float pesce = texture(scorte, (pos_mondo.xz + mezzo_pixel) / lato_scorte).g;
+		acqua = mix(acqua, pow(mix(vec3(0.72, 0.74, 0.76), vec3(0.16, 0.43, 0.71), pesce), vec3(2.2)), 0.85);
+	}
 	col = mix(col, acqua, in_acqua);
 	// Luce: l'acqua è liscia e riflette, il terreno no. Le increspature inclinano la normale.
 	vec3 n_acqua = normalize(vec3((o1 - o4) * 0.25, 1.0, (o2 - 0.5) * 0.25));

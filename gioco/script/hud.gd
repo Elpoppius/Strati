@@ -48,10 +48,13 @@ const LATO_MINIMAPPA := 150
 const LATO_TASTO := 58
 const LATO_ICONA := 28
 const ICONE := "res://asset/icone/%s.svg"
-const NOMI_BREVI_MAPPE := ["Terreno", "Acqua", "Fertilità", "Piena", "Energia"]
+const NOMI_BREVI_MAPPE := ["Terreno", "Acqua", "Fertilità", "Piena", "Energia", "Caccia e pesca", "Abitato", "Memoria"]
 
 ## Colori delle mappe tematiche, ognuno con il suo significato (come le linee della metro).
-const COLORI_MAPPE := [Color("dcdcd6"), Color("2a6db5"), Color("3e8e3a"), Color("c8102e"), Color("f0a91c")]
+## Dal 25/11/2026 sera (voce 8 del todo): verde bosco per caccia e pesca, ocra per abitato e contado,
+## viola per la memoria del suolo.
+const COLORI_MAPPE := [Color("dcdcd6"), Color("2a6db5"), Color("3e8e3a"), Color("c8102e"), Color("f0a91c"),
+	Color("1f613a"), Color("c98a2b"), Color("7a4a9e")]
 ## Testo nel bollino: scuro sui colori chiari, bianco sugli altri.
 const TESTO_SCURO_SU := [0, 4]
 ## Legende delle mappe: [testo a sinistra, testo a destra, colori del gradiente, nota].
@@ -61,6 +64,9 @@ const LEGENDE := [
 	["bassa", "alta", [Color("b08a3a"), Color("3e8e3a")], "Per i campi."],
 	["nullo", "alto", [Color("f4f4f0"), Color("c8102e")], "Acqua fuori dagli argini."],
 	["1 kW", "1000 kW", [Color("2a6db5"), Color("f0a91c"), Color("c8102e")], "Potenza ogni 100 m di corso. Etichette: siti per le dighe."],
+	["scarsa", "abbondante", [Color("b8a37a"), Color("1f613a")], "Selvaggina nei boschi; pesce lungo fiumi e torrenti (blu se abbonda, grigio se scarso). Cerchi verdi e blu: dove cacciano le poste e pescano i capanni; bianchi: zone di taglio."],
+	["contado", "abitato", [Color("ebc781"), Color("b87321")], "Pieno: l'abitato, il cerchio delle case. Chiaro: il contado, fin dove arrivano i campi. Macchie piene: i casali."],
+	["bosco di oggi", "bosco perso", [Color("a3ac96"), Color("7a4a9e")], "Viola: dove c'era il bosco (più chiaro dove ricresce). Grigio scuro: suolo sigillato per sempre. Anelli: le rovine."],
 ]
 
 var tema: Theme

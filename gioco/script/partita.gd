@@ -530,6 +530,7 @@ func aggiorna_hud() -> void:
 			accese.append({"agricoltura": "campi", "caccia": "caccia e raccolta", "pesca": "pesca"}[f])
 	hud.imposta_interruttori("fonti", sim.fonti, "Il cibo viene da: %s." % ", ".join(accese))
 	scena.aggiorna_zone_taglio()
+	aggiorna_mappe_tematiche()
 	if hud.focus_aperto() != "":
 		if on:
 			hud.aggiorna_focus(dati_focus(hud.focus_aperto()))
@@ -571,6 +572,62 @@ func aggiorna_hud() -> void:
 	for k in 4:
 		hud.segna("v%d" % k, velocita == k)
 		hud.abilita("v%d" % k, k == 0 or (on and not sim.finito))
+
+
+## Mappe tematiche della partita (voce 8 del todo, 25/11/2026 sera): i dati vanno allo shader del
+## terreno. 5 Caccia e pesca: scorte per riquadro e cerchi di poste e capanni; 6 Abitato e contado:
+## centro, raggi e casali; 7 Memoria del suolo: le rovine (la memoria del bosco viene dall'uso del
+## suolo).
+var _immagine_scorte: Image
+var _texture_scorte: ImageTexture
+
+
+func aggiorna_mappe_tematiche() -> void:
+	var t: ShaderMaterial = scena.terreno.materiale
+	var nb := ceili(float(sim.n) / SimVillaggio.BLOCCO_RISORSE)
+	if _immagine_scorte == null:
+		_immagine_scorte = Image.create(nb, nb, false, Image.FORMAT_RG8)
+		_texture_scorte = ImageTexture.create_from_image(_immagine_scorte)
+		t.set_shader_parameter("scorte", _texture_scorte)
+		t.set_shader_parameter("lato_scorte", nb * SimVillaggio.BLOCCO_RISORSE * sim.dati.metri_per_px)
+		t.set_shader_parameter("mezzo_pixel", sim.dati.metri_per_px * 0.5)
+	# Solo con la mappa aperta: le scorte cambiano ogni anno.
+	if scena.modo == 5:
+		_immagine_scorte.fill(Color(1, 1, 0))
+		for c in sim.scorta_selvaggina:
+			_immagine_scorte.set_pixel(c.x, c.y, Color(float(sim.scorta_selvaggina[c]), 1, 0))
+		for c in sim.scorta_pesce:
+			var v := _immagine_scorte.get_pixel(c.x, c.y)
+			_immagine_scorte.set_pixel(c.x, c.y, Color(v.r, float(sim.scorta_pesce[c]), 0))
+		_texture_scorte.update(_immagine_scorte)
+	var cerchi: Array[Vector4] = []
+	for e in sim.poste:
+		cerchi.append(Vector4(e["punto"].x, e["punto"].y, SimVillaggio.RAGGIO_POSTA, 0.0))
+	for e in sim.capanni:
+		cerchi.append(Vector4(e["punto"].x, e["punto"].y, SimVillaggio.RAGGIO_CAPANNO, 1.0))
+	t.set_shader_parameter("cerchi_risorse", _sedici(cerchi))
+	var casali: Array[Vector4] = []
+	if sim.fondato:
+		var c := sim.mondo_di_px(sim.centro)
+		t.set_shader_parameter("abitato", Vector4(c.x, c.y, sim.raggio_case(), sim.raggio_contado()))
+		for l in sim.casali:
+			var p := sim.centro_lotto(l)
+			casali.append(Vector4(p.x, p.y, 45.0, 0.0))
+	else:
+		t.set_shader_parameter("abitato", Vector4(0, 0, -1, -1))
+	t.set_shader_parameter("casali", _sedici(casali))
+	var rovine: Array[Vector4] = []
+	for p in sim.rovine:
+		rovine.append(Vector4(p.x, p.y, 14.0, 0.0))
+	t.set_shader_parameter("rovine", _sedici(rovine))
+
+
+## Sedici voci per gli array dello shader: le prime sedici, il resto spento (raggio negativo).
+func _sedici(voci: Array[Vector4]) -> Array[Vector4]:
+	var out: Array[Vector4] = []
+	for k in 16:
+		out.append(voci[k] if k < voci.size() else Vector4(0, 0, -1, 0))
+	return out
 
 
 ## Suggerimenti degli indicatori composti: le parti e cosa vogliono dire.
@@ -624,6 +681,8 @@ func dati_focus(nome: String) -> Dictionary:
 			var dopo: String = ("La prossima tappa, «%s», arriva a %d abitanti." % [SimVillaggio.TAPPE[sim.tappa + 1]["nome"], SimVillaggio.TAPPE[sim.tappa + 1]["abitanti"]]) if sim.tappa + 1 < SimVillaggio.TAPPE.size() else "Tutte le tappe del villaggio sono raggiunte."
 			d["descrizione"] = "%d case, %d campi. Tappa: %s. %s" % [sim.case.size(), sim.campi.size(), SimVillaggio.TAPPE[sim.tappa]["nome"], dopo]
 			d["serie"] = serie_di.call("pop", 1.0)
+			d["mappa"] = 6
+			d["testo_mappa"] = "Mostra abitato e contado"
 		"Cibo":
 			d["valore"] = "%d" % roundi(sim.cibo)
 			d["allarme"] = sim.cibo < sim.pop * 0.3
@@ -658,6 +717,8 @@ func dati_focus(nome: String) -> Dictionary:
 			d["parti"] = [["Raccolta / ciò che offrono i boschi", sim.ultima_legna / maxf(1.0, sim.offerta_legna), "%d / %d" % [roundi(sim.ultima_legna), roundi(sim.offerta_legna)]],
 				["Bosco rimasto attorno", 1.0 - sim.disboscamento, "%d%%" % roundi((1.0 - sim.disboscamento) * 100.0)]]
 			d["serie"] = serie_di.call("legna", 1.0)
+			d["mappa"] = 5
+			d["testo_mappa"] = "Mostra boschi, selvaggina e zone di taglio"
 	return d
 
 

@@ -239,6 +239,31 @@ func _process(_d: float) -> bool:
 			tagliati_visibili += 1
 	controlla(sim.tagliati.is_empty() or tagliati_visibili > 0, "gli alberi abbattuti dalla legnaia spariscono dalla mappa (%d su %d)" % [tagliati_visibili, sim.tagliati.size()])
 	controlla(p.vista.numero_case() == sim.case.size(), "case disegnate allineate alla simulazione (%d)" % sim.case.size())
+	# Mappe tematiche della partita (voce 8 del todo, 25/11/2026 sera): 6 Caccia e pesca, 7 Abitato e
+	# contado, 8 Memoria del suolo (indici 5, 6, 7).
+	var mt: ShaderMaterial = _s.terreno.materiale
+	controlla(h._righe_mappe.size() == 8 and Hud.LEGENDE.size() == 8 and Hud.COLORI_MAPPE.size() == 8, "otto mappe tematiche con bollino e legenda")
+	_s.imposta_modo(5)
+	var scorte: ImageTexture = mt.get_shader_parameter("scorte")
+	var cerchi: Array = mt.get_shader_parameter("cerchi_risorse")
+	controlla(scorte != null and cerchi.size() == 16 and (cerchi[0] as Vector4).z > 0.0 == not (sim.poste + sim.capanni).is_empty(), "caccia e pesca: scorte per riquadro e cerchi di poste e capanni")
+	var scarsa := false
+	for cs in sim.scorta_selvaggina:
+		if p._immagine_scorte.get_pixel(cs.x, cs.y).r < 0.99:
+			scarsa = true
+	controlla(sim.scorta_selvaggina.is_empty() or scarsa, "caccia e pesca: la selvaggina cacciata si vede più scarsa")
+	_s.imposta_modo(6)
+	var ab: Vector4 = mt.get_shader_parameter("abitato")
+	controlla(ab.z > 0.0 and ab.w >= ab.z and is_equal_approx(ab.w, sim.raggio_contado()), "abitato e contado: abitato (%d m) dentro il contado (%d m)" % [roundi(ab.z), roundi(ab.w)])
+	_s.imposta_modo(7)
+	var ex_bosco := 0
+	for i in sim.tagliati:
+		var w := sim.mondo_di_px(sim.px_di(i))
+		var cu: Vector2i = _s.uso.cella(w.x, w.y)
+		if _s.uso.immagine_memoria.get_pixel(cu.x, cu.y).r > 0.5:
+			ex_bosco += 1
+	controlla(mt.get_shader_parameter("memoria_suolo") != null and (sim.tagliati.is_empty() or ex_bosco > 0), "memoria del suolo: il bosco tagliato resta nella memoria (%d)" % ex_bosco)
+	_s.imposta_modo(0)
 	print("   %d abitanti, %d campi, %d case, abbandoni %d" % [roundi(sim.pop), sim.campi.size(), sim.case.size(), sim.stat["abbandoni"]])
 	controlla(sim.fondato and sim.stat["abbandoni"] == 0, "con i campi il villaggio vive")
 	controlla((h._valori_indicatori["Densità"] as Label).get_parent().tooltip_text.contains("ettaro"), "la densità spiega al passaggio cosa vuol dire ab/ha")

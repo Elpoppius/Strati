@@ -1614,14 +1614,19 @@ func servito(i: int) -> bool:
 
 ## Abitanti per ettaro nell'abitato (il cerchio che contiene le case).
 func densita() -> float:
-	var nucleo := case_nel_nucleo()
-	if nucleo.is_empty():
+	if case_nel_nucleo().is_empty():
 		return 0.0
+	var r := raggio_case()
+	return abitanti_nucleo() / (PI * r * r / 10000.0)
+
+
+## Raggio in metri del cerchio che contiene le case del nucleo (l'abitato).
+func raggio_case() -> float:
 	var c := mondo_di_px(centro)
 	var r := 10.0
-	for l in nucleo:
+	for l in case_nel_nucleo():
 		r = maxf(r, centro_lotto(l).distance_to(c) + LOTTO * 0.5)
-	return abitanti_nucleo() / (PI * r * r / 10000.0)
+	return r
 
 
 func tecnica_campo(i: int) -> int:

@@ -2,6 +2,21 @@
 
 Voci più recenti in cima.
 
+## 25/11/2026 (notte, più tardi)
+**Fatto**
+- **Mappe tematiche** (voce 8 del todo), tasti 6–8 con bollino e legenda:
+  - **Caccia e pesca:** selvaggina e pesce per riquadro, cerchi di poste e capanni, zone di taglio;
+  - **Abitato e contado:** abitato, contado con i campi, casali;
+  - **Memoria del suolo:** dove c'era il bosco, suolo sigillato, rovine.
+- Nuova texture della memoria del bosco nell'uso del suolo e nuovo `SimVillaggio.raggio_case`. I pannelli Legna e Popolazione portano alle mappe nuove. 5 verifiche nuove in `verifica_partita.gd`, tutte le 9 superate. Foto in `docs/immagini/mappa-*-25-11.jpg`.
+
+**Decisioni** (Fede)
+- Si comincia dalla voce 8. Tre mappe: il pesce sta nella 6 "come cibo", quindi si chiama Caccia e pesca; abitato e contado distinti; memoria del suolo.
+
+**Prossimo passo**
+- Fede: provare le mappe nel gioco.
+- Claude: secondo l'ordine per durata, voce 3 (luogo sacro, sacerdote, bosco sacro, con il suo scheletro di cantiere), poi la 2 (pascolo; servono prima le conferme sulla crescita dei capi e sul campo stanco visibile).
+
 ## 25/11/2026 (notte)
 **Fatto**
 - **Cantieri visibili:**

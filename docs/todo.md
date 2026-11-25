@@ -22,7 +22,7 @@ Fatte e collaudate le basi della prima epoca (ritmo, crescita, risorse e rischi,
 | 5. Sentieri che diventano strade | 2–3 ore |
 | 6. Evento soglia e passo elastico | 4–6 ore (la più delicata: il passo a decenni tocca tutte le regole "per anno") |
 | 7. Popolazione visibile | 5–8 ore (serve una prova di Fede per i fotogrammi al secondo) |
-| 8. Mappe tematiche | 2–3 ore |
+| 8. Mappe tematiche | **fatto** (25/11/2026 sera) |
 | 9. Base tecnica | 4–6 ore |
 
 Raggruppamento proposto: giornata 1 caccia e pesca con la mappa boschi e selvaggina; 2–3 pascolo, bestiame e luogo sacro; 4 scorrerie e strade; 5–6 evento soglia e passo elastico; 7–8 popolazione visibile; 9 salvataggio, acqua, rifinitura, poi la prova di Fede. Rischi: domande aperte, correzioni dopo la prova fisica, passo elastico e popolazione visibile meno prevedibili.
@@ -78,10 +78,11 @@ Raggruppamento proposto: giornata 1 caccia e pesca con la mappa boschi e selvagg
 ### 7. [ ] Popolazione visibile
 **Deciso** (25/11/2026): ogni figura fa un lavoro vero della simulazione (campi, bosco, fiume, pascolo, cantieri, sentieri, luogo sacro); **3 modelli di uomini e 3 di donne** che si ripetono, con capelli, incarnato e vesti che variano; animazioni dallo shader; MultiMesh; si vedono solo da vicino; **scala da verificare con la simulazione** (800 persone a schermo sono troppe: tetto di figure visibili, una figura per 1, 2 o 5 persone). Clic su una persona: la scheda della sua famiglia. Prima il bestiame (voce 2), poi i lavoratori, poi chi cammina, poi la scheda.
 
-### 8. [ ] Mappe tematiche (ok di Fede del 25/11/2026)
-- Boschi e selvaggina (con la selvaggina locale della voce 1 e le zone di taglio).
-- Abitato e contado, distinte (decisione del 24/11/2026), con i casali.
-- Memoria del suolo (ex boschi, aree sigillate).
+### 8. [x] Mappe tematiche (ok di Fede del 25/11/2026)
+**Fatto il 25/11/2026 sera** (descrizione in `prototipo0-godot.md` e `hud.md`), tasti 6, 7, 8:
+- **6 · Caccia e pesca** (Fede: il pesce nella stessa mappa, come cibo): bosco colorato dalla selvaggina, acque dal pesce, cerchi di poste e capanni, zone di taglio marcate.
+- **7 · Abitato e contado**, distinti (decisione del 24/11/2026), con i casali.
+- **8 · Memoria del suolo**: dove c'era il bosco, suolo sigillato, rovine.
 
 ### 9. [ ] Base tecnica
 - Salvataggio della partita, con l'uso del suolo.
