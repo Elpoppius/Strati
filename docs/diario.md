@@ -15,10 +15,12 @@ Voci più recenti in cima.
 
 **Decisioni** (Fede)
 - Ok al piano della voce 3, con le proposte di Claude: numeri, tasti O e B, presagi falsi al 15% e al 40%, bosco sacro pieno da 10 ettari.
+- Più tardi, **necessità invertita:** il sacerdote ha voce dalla tappa dei 100 abitanti ed è contrariato finché il luogo sacro non è eretto, così il giocatore è spinto a costruirlo. Fatto e riprovato; le notifiche delle tappe lo annunciano in cronaca.
+- Domanda di Fede sul maggese: il campo resta un campo anche a maggese e torna coltivato da solo quando si è riposato. Per togliere il pascolo senza toccare i campi Claude propone un'opzione "Togli" nello strumento delle zone (da confermare).
 
 **Prossimo passo**
-- Fede: provare luogo sacro e bosco sacro; dire se chi legge deve avere un richiamo in più per erigere il luogo sacro.
-- Claude: voce 2, pascolo e bestiame (servono prima le conferme sulla crescita dei capi e sul campo stanco visibile), poi le voci 4 e 5.
+- Fede: provare luogo sacro e bosco sacro; confermare la crescita dei capi, il campo stanco visibile e l'opzione "Togli" per le zone.
+- Claude, alla prossima sessione: **rifare le partite "umane"** dopo il sacerdote contrariato. Sono state interrotte per il limite di utilizzo; registro e verifiche del villaggio sono già passati. Poi la voce 2, pascolo e bestiame: confermati da Fede i capi, l'opzione "Togli" e la convivenza tra zone (stoppie e maggese); resta da confermare il campo stanco visibile. Poi le voci 4 e 5.
 
 ## 25/11/2026 (notte, più tardi)
 **Fatto**

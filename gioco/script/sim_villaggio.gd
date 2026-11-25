@@ -285,9 +285,10 @@ var scorta_pesce := {}
 var consenso := {"anziani": 60.0, "famiglie": 60.0, "sacerdote": 60.0}
 var sacerdote_attivo := false
 ## Luogo sacro (decisioni di Fede del 24–25/11/2026): cerchio di pali attorno a una pietra; si apre
-## a 100 abitanti, costa legna e braccia con un cantiere, attira le case (germe della piazza). Finito,
-## il sacerdote diventa il terzo gruppo di consenso: contento, presagi più chiari; scontento, presagi
-## ambigui e più voci false. Numeri: proposta di Claude approvata da Fede il 25/11/2026 sera.
+## a 100 abitanti, costa legna e braccia con un cantiere, attira le case (germe della piazza). Il
+## sacerdote diventa il terzo gruppo di consenso con la tappa dei 100 abitanti ed è contrariato finché
+## il luogo sacro non è eretto (decisione di Fede del 25/11/2026 sera: così si è spinti a farlo);
+## contento, presagi più chiari; scontento, presagi ambigui e più voci false. Numeri: proposta di Claude approvata da Fede il 25/11/2026 sera.
 const COSTO_LUOGO_SACRO := 20.0
 const ANNI_CANTIERE_LUOGO_SACRO := 3
 const DISTANZA_LUOGO_SACRO := 400.0
@@ -565,7 +566,8 @@ func fonda(p: Vector2i) -> void:
 	zona_attiva = {}
 	stanchezza = {}
 	consenso = {"anziani": 60.0, "famiglie": 60.0, "sacerdote": 60.0}
-	sacerdote_attivo = false
+	# Le tappe raggiunte restano anche dopo una rifondazione: il sacerdote che ha già voce la tiene.
+	sacerdote_attivo = sbloccato("luogo_sacro")
 	luogo_sacro = Vector2(-1, -1)
 	cantiere_luogo_sacro = 0
 	bosco_sacro = {}
@@ -967,8 +969,8 @@ func aggiungi_bosco_sacro(lista: Array[Vector2i]) -> int:
 ## ascoltati (questi passano dai bonus delle scelte).
 func obiettivo_sacerdote() -> float:
 	var o := 48.0
-	if luogo_sacro_pronto():
-		o += 10.0
+	# Senza luogo sacro il sacerdote è contrariato (sotto 40): presagi ambigui, consenso più basso.
+	o += 10.0 if luogo_sacro_pronto() else -18.0
 	if sbloccato("bosco_sacro"):
 		o += 14.0 * clampf(ettari_bosco_sacro() / ETTARI_BOSCO_SACRO, 0.0, 1.0)
 	else:
@@ -1870,6 +1872,11 @@ func _aggiorna_tappa() -> void:
 		# Elenco in italiano: "a, b e c".
 		var elenco := aperti[-1] if aperti.size() < 2 else ", ".join(aperti.slice(0, -1)) + " e " + aperti[-1]
 		_scrivi("Nuova tappa: %s. Si aprono %s." % [String(t["nome"]).to_lower(), elenco], "buono")
+		# Il sacerdote ha voce dalla tappa del luogo sacro, ed è contrariato finché non c'è.
+		if "luogo_sacro" in t["apre"] and not sacerdote_attivo:
+			sacerdote_attivo = true
+			consenso["sacerdote"] = 45.0
+			_scrivi("Il sacerdote chiede un luogo sacro: finché non sarà eretto, è contrariato.")
 		_notifica("Nuova tappa: %s (%d abitanti). Si aprono %s." % [t["nome"], t["abitanti"], elenco], false, mondo_di_px(centro))
 
 
@@ -2093,8 +2100,7 @@ func passo() -> void:
 	if cantiere_luogo_sacro > 0:
 		cantiere_luogo_sacro -= 1
 		if cantiere_luogo_sacro == 0:
-			sacerdote_attivo = true
-			_scrivi("Il luogo sacro è finito: il sacerdote ora ha voce tra gli anziani e le famiglie.", "buono")
+			_scrivi("Il luogo sacro è finito: il sacerdote è soddisfatto.", "buono")
 	# Raccolto: le braccia lavorano prima i campi più fertili. Famiglie contente lavorano di più
 	# (decisione di Fede del 25/11/2026); un cantiere aperto toglie un po' di braccia.
 	var in_cantiere := func(e: Dictionary) -> bool: return int(e["cantiere"]) > 0
@@ -2683,7 +2689,6 @@ func _abbandona() -> void:
 	luogo_sacro = Vector2(-1, -1)
 	cantiere_luogo_sacro = 0
 	bosco_sacro = {}
-	sacerdote_attivo = false
 	campi = []
 	_tecnica_campi = {}
 	zona = {}
@@ -2791,7 +2796,7 @@ func cause_di(nome: String) -> Array[String]:
 				out.append("Le famiglie molto scontente cominciano ad andarsene.")
 			# Il sacerdote (decisioni di Fede del 24–25/11/2026).
 			if sbloccato("luogo_sacro") and luogo_sacro.x < 0:
-				out.append("Si può erigere il luogo sacro (Edifici): il sacerdote avrà voce, e i presagi saranno più chiari se è contento.")
+				out.append("Il sacerdote è contrariato finché non si erige il luogo sacro (Edifici): i presagi si fanno ambigui.")
 			elif cantiere_luogo_sacro > 0:
 				out.append("Il luogo sacro è in costruzione: ancora %d anni." % cantiere_luogo_sacro)
 			if sacerdote_attivo:

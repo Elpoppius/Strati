@@ -67,7 +67,7 @@ func avvia(s: Node, seme: int = -1) -> void:
 		# Capanno da pesca e Posta di caccia (decisioni di Fede del 25/11/2026): senza, caccia e pesca
 		# rendono un terzo. Tasti K e T: proposta di Claude.
 		{"id": "luogo_sacro", "icona": "luogo_sacro", "testo": "Luogo sacro (20 di legna)", "breve": "L. sacro", "tasto": "O",
-		 "descrizione": "Un cerchio di pali attorno a una pietra, vicino al villaggio. Costa 20 di legna e tre anni di lavoro. Finito, il sacerdote ha voce: contento, i presagi sono più chiari; scontento, ambigui. Le case gli crescono attorno."},
+		 "descrizione": "Un cerchio di pali attorno a una pietra, vicino al villaggio. Costa 20 di legna e tre anni di lavoro. Il sacerdote è contrariato finché non c'è; contento, i presagi sono più chiari, scontento, ambigui. Le case gli crescono attorno."},
 		{"id": "capanno", "icona": "capanno_pesca", "testo": "Capanno da pesca", "breve": "Capanno", "tasto": "K",
 		 "descrizione": "Senza capanno le famiglie pescano come capita e rendono un terzo. Va sulla riva di un fiume o di un torrente: si aggancia da solo alla riva più vicina. Il fiume dà più pesce dei torrenti; più capanni vicini si dividono il pesce di quel tratto, e troppi lo fanno calare."},
 		{"id": "posta", "icona": "posta_caccia", "testo": "Posta di caccia", "breve": "Posta", "tasto": "T",
@@ -379,7 +379,7 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 				hud.imposta_messaggio(m)
 		"luogo_sacro":
 			var m := sim.costruisci_luogo_sacro(Vector2(punto.x, punto.z))
-			hud.imposta_messaggio(("Il luogo sacro si comincia a erigere: tra %d anni il sacerdote avrà voce." % SimVillaggio.ANNI_CANTIERE_LUOGO_SACRO) if m == "" else m)
+			hud.imposta_messaggio(("Il luogo sacro si comincia a erigere: tra %d anni il sacerdote sarà soddisfatto." % SimVillaggio.ANNI_CANTIERE_LUOGO_SACRO) if m == "" else m)
 		"bosco_sacro":
 			if not sim.fondato:
 				return

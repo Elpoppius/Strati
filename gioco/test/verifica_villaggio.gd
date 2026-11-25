@@ -117,6 +117,8 @@ func _verifica_sacro(d: MappaDati) -> void:
 	s.pop = 110.0
 	s._aggiorna_tappa()
 	s.legna = 50.0
+	# Il sacerdote ha voce dalla tappa ed è contrariato finché non c'è il luogo sacro (Fede, 25/11/2026 sera).
+	controlla(s.sacerdote_attivo and s.obiettivo_sacerdote() < 40.0 and s.cause_di("Consenso").any(func(x: String) -> bool: return x.contains("finché non si erige")), "dalla tappa dei 100 il sacerdote ha voce ed è contrariato senza luogo sacro (%.0f)" % s.obiettivo_sacerdote())
 	controlla(s.motivo_luogo_sacro(cm + Vector2(900, 0)) != "", "il luogo sacro va vicino al villaggio")
 	# A 300 m dal centro, per vedere le case che gli crescono attorno.
 	var fatto := false
@@ -124,11 +126,11 @@ func _verifica_sacro(d: MappaDati) -> void:
 		if not fatto and s.costruisci_luogo_sacro(cm + Vector2.from_angle(TAU * k / 16.0) * 300.0) == "":
 			fatto = true
 	controlla(fatto and s.cantiere_luogo_sacro == SimVillaggio.ANNI_CANTIERE_LUOGO_SACRO and is_equal_approx(s.legna, 30.0), "il luogo sacro costa 20 di legna e tre anni di cantiere")
-	controlla(not s.sacerdote_attivo and s.motivo_luogo_sacro(cm + Vector2(-80, 0)) != "", "uno solo, e il sacerdote non ha voce finché si costruisce")
+	controlla(not s.luogo_sacro_pronto() and s.obiettivo_sacerdote() < 40.0 and s.motivo_luogo_sacro(cm + Vector2(-80, 0)) != "", "uno solo, e il sacerdote resta contrariato finché si costruisce")
 	for k in SimVillaggio.ANNI_CANTIERE_LUOGO_SACRO:
 		s.decisioni.clear()
 		s.passo()
-	controlla(s.sacerdote_attivo and s.luogo_sacro_pronto(), "finito il luogo sacro, il sacerdote diventa un gruppo di consenso")
+	controlla(s.luogo_sacro_pronto() and s.obiettivo_sacerdote() >= 60.0, "finito il luogo sacro, il sacerdote è soddisfatto (%.0f)" % s.obiettivo_sacerdote())
 	# Le case nuove crescono attorno al luogo sacro.
 	var senza := SimVillaggio.new(d, 11)
 	senza.fonda(c)

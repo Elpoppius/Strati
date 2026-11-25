@@ -142,7 +142,7 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 					elif (c.contains("Senza legnaia") or c.contains("il bosco è finito") or c.contains("vanno lontano")) and sim.legnaie.size() < 4:
 						AiutiGiocatori.costruisci_legnaia(sim, caso, 0.7)
 						imparato["legnaia"] = true
-					elif c.contains("Si può erigere il luogo sacro"):
+					elif c.contains("finché non si erige il luogo sacro"):
 						sacro_voluto = true
 						imparato["luogo_sacro"] = true
 					elif c.contains("bosco sacro più grande"):
