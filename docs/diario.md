@@ -2,6 +2,27 @@
 
 Voci più recenti in cima.
 
+## 25/11/2026
+**Fatto**
+- **Lettura degli ultimi aggiornamenti** e analisi con Fede dei risultati delle sessioni a dieci livelli: perché i primi 150 anni sono uguali per tutti (la crescita dipende solo dalla salute finché la terra basta) e perché c'è il tetto a 300 anni (contado al massimo dopo circa 100 abitanti, poi carestie a ripetizione).
+- **Registro degli avvisi di cinque partite** (richiesta di Fede): nuovo `gioco/test/registro_avvisi.gd`. Per partita: 14 pause (6 per gli stranieri), 12 notifiche rosse, 34 grigie, una ventina di "carestie" da pochi punti; piene disastrose circa 5 per partita ma leggere; piene di stagione circa il 2% del raccolto; il consenso non ha effetti tranne la scissione. Risultati in `docs/sessioni-giocatori.md`.
+- **Cronologia delle prime due epoche** per l'area emiliana, spiegata a Fede (Fiorano, vasi a bocca quadrata, Chassey, età del Rame; Polada, terramare e il loro crollo verso il 1150 a.C., Villanoviano e nascita di Felsina dall'unione di più villaggi). Da riportare nei documenti quando Fede avrà scelto la nomenclatura.
+- **Documenti:** nuova sezione "La prima epoca: dinamiche" in `pilastri-e-decisioni.md`; todo riscritto con il nuovo ordine dei sistemi; recinto tolto dal villaggio anche in `regolazione-dello-spazio.md`; prologo nomade segnato come bocciato; comando del registro in `CLAUDE.md`.
+- Tutte le 9 verifiche superate (nessun cambiamento al codice del gioco).
+
+**Decisioni** (tutte di Fede, su proposte di Claude dove non detto)
+- Il ritmo è l'ansia: il gioco deve restare meditativo, con Cities: Skylines come riferimento per il modo di gioco.
+- Abbondanza come indicatore unico (cibo che avanza, salute, spazio); tappe di abitanti permanenti.
+- Eventi che nascono dallo stato della partita: annate magre solo nell'accumulo del cibo, senza avvisi; carestie solo da cause in gioco; siccità sempre annunciate; piene che distruggono ma fertilizzano, disastrose rare e coerenti con sito e azioni; febbri; stranieri attirati dall'abbondanza; scorrerie. Niente avviso "zona agricola piena": basta la mappa (forse un indicatore, da pensare).
+- Lettura sotto il puntatore per ogni strumento, come in fondazione.
+- Risorse (cibo, legna, braccia, animali), case che crescono solo con la legna, cicli della terra e del rischio, pascolo, bosco sacro, effetti graduali del consenso per gruppo: approvati.
+- Prologo nomade bocciato (il gioco è prima di tutto urbanistico). Orti calibrati sulla frustrazione e sulla crescita. Recinto legato alla pianificazione: prima epoca spontanea, seconda con regole.
+- Mappe tematiche del todo: ok.
+
+**Prossimo passo**
+- Fede: scegliere la nomenclatura delle popolazioni nei testi del gioco (proposte di Claude in conversazione) e rispondere su inizio della partita e durata dell'epoca.
+- Claude: cominciare dal punto 2.1 del todo (ritmo meditativo), misurando con `registro_avvisi.gd` prima e dopo; poi Abbondanza e tappe. Prima di toccare il codice, riepilogo a Fede e attesa del suo ok.
+
 ## 24/11/2026 (sera)
 **Fatto**
 - **Zona agricola che restava accesa** (segnalato da Fede): togliendo lo strumento (clic sul tasto o Esc) o con il puntatore fuori dal terreno, la funzione del pennello usciva prima di spegnere la zona. Ora la zona si vede solo con Zona agricola o Campo, in ogni caso. Quattro verifiche nuove in `test/verifica_partita.gd`.

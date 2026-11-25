@@ -15,19 +15,25 @@ Legenda: `[x]` fatto · `[ ]` da fare · **(?)** serve una decisione di Fede pri
 
 ## 1. Prima di tutto
 - [x] **Sessioni di gioco automatiche a dieci livelli di bravura** (richiesta di Fede del 24/11/2026): 180 partite, dal livello 1 (229 abitanti di mediana a 500 anni) al 10 (997); tetto verso i 300 anni; primi 150 anni uguali per tutti. Script `gioco/test/sessioni_giocatori.gd`; risultati e idee in `docs/sessioni-giocatori.md`. Da rifare dopo ogni modifica che tocca la crescita.
-- [ ] **Come gestire la crescita degli abitanti** (Fede, 24/11/2026: lo scopo del gioco è creare una città; più abitanti è più successo, come in Cities: Skylines). Va trovata un'idea che tenga insieme il successo misurato in abitanti e la verosimiglianza di un villaggio neolitico (Çatalhöyük, il più grande, oggi è stimato a 600–800 abitanti; i nostri livelli 7–10 lo superano). Tre proposte di Claude in `docs/sessioni-giocatori.md`: il tetto di terra apre l'epoca successiva; abitanti contati sul territorio con i casali dello sprawl; bravura visibile fin dai primi anni. **Decisione di Fede (24/11/2026): la scelta tra 1 e 2 si fa dopo, con la prima epoca completa di tutte le dinamiche.** Fino ad allora la crescita non si ritocca.
-- [ ] Prove di Fede sul villaggio e taratura: carestie, quantità di campi, peso di caccia e pesca, area dei gessi poverissima.
+- [x] **Registro degli avvisi di cinque partite** (richiesta di Fede del 25/11/2026): 14 pause, 12 notifiche rosse e una ventina di piccole carestie per partita. Script `gioco/test/registro_avvisi.gd`, risultati in `docs/sessioni-giocatori.md`. Da rifare dopo ogni modifica al ritmo.
+- [ ] **Come gestire la crescita degli abitanti.** Decisioni di Fede del 25/11/2026: Abbondanza (cibo che avanza, salute, spazio) e tappe permanenti, vedi la sezione 2. La scelta tra le idee 1 e 2 di `docs/sessioni-giocatori.md` resta rimandata alla prima epoca completa (decisione del 24/11/2026).
+- [ ] Prove di Fede sul villaggio e taratura: carestie, quantità di campi, peso di caccia e pesca, area dei gessi poverissima. Gli orti si calibrano sulla frustrazione e sulla crescita (decisione di Fede del 25/11/2026).
 
-## 2. Sistemi mancanti dal design della prima epoca
-1. [ ] **Gruppi di consenso: anziani, famiglie, sacerdote** (Fede: ok). La legittimità unica si divide in tre, ognuno con le sue attese (anziani: cibo e usanze; famiglie: raccolto e case; sacerdote: presagi e luogo sacro). Viene prima perché luogo sacro, scorrerie e politiche ci si appoggiano. Nel blocco Info **un solo indicatore**, con il dettaglio dei tre gruppi al passaggio (decisione di Fede del 24/11/2026).
-2. [ ] **Luogo sacro** (il modello c'è già: cerchio di pali attorno a una pietra; forma confermata da Fede il 24/11/2026). Costruzione unica che dà peso al sacerdote e cambia come si accolgono i presagi; è il germe di tempio, chiesa e piazza nelle epoche successive.
-3. [ ] **Legna come risorsa.** Il legname di Demolisci diventa una scorta: serve per case, granaio e focolari; si prende dai boschi vicini. Con gli **effetti del disboscamento** nella simulazione: erosione sui pendii, piene più rapide, meno selvaggina.
-4. [ ] **Pascolo e animali** (il modello del recinto per gli animali c'è già). Nuova destinazione del territorio accanto alla zona agricola: rende meno dei campi ma regge le annate cattive. Più la **riserva**: un bosco da non toccare per la caccia e la legna.
-5. [ ] **Scorrerie** ai margini del contado, più probabili dove il contado è rivendicato e poco usato; la difesa del sito (già nella valutazione) conta davvero.
-6. [ ] **I sentieri più usati diventano strade:** traccia d'uso dei sentieri (case e campi serviti); i più battuti si allargano e restano come assi nelle epoche dopo. Primo segno visibile della stratificazione.
-7. [ ] **Evento soglia "il metallo e lo scambio"**, che chiude l'epoca: presagi (mercanti, oggetti di rame), la scelta di aprirsi agli scambi, il passaggio all'epoca successiva con il riepilogo del villaggio. Viene per ultimo perché riassume tutto il resto.
+## 2. Sistemi della prima epoca
+*Decisioni di Fede del 25/11/2026, dettagli in `pilastri-e-decisioni.md`, sezione "La prima epoca: dinamiche". Regola: ogni sistema prende o dà qualcosa a un altro, muove un gruppo di consenso e lascia una traccia sulla mappa. L'ordine è una proposta di Claude.*
+1. [ ] **Ritmo meditativo:** annate magre senza avvisi; carestie solo da cause in gioco; siccità sempre annunciate; pause solo la prima volta di ogni evento, per i presagi e per l'evento soglia; stranieri attirati dall'abbondanza e governati dalla politica; niente avviso "zona agricola piena" (basta la mappa). Viene prima perché tocca tutto il resto e si misura subito con `registro_avvisi.gd`.
+2. [ ] **Abbondanza e tappe:** indicatore unico con tre parti al passaggio; nascite legate all'abbondanza; tappe permanenti (soglie di partenza in `pilastri-e-decisioni.md`).
+3. [ ] **Gruppi di consenso: anziani, famiglie, sacerdote**, un solo indicatore con il dettaglio al passaggio (decisione del 24/11/2026), con gli effetti graduali per gruppo (regole, lavoro, presagi).
+4. [ ] **Risorse: legna e braccia.** Costi in legna e braccia per granaio e luogo sacro, cantieri di qualche anno, dissodamento che dà legna, case spontanee solo con la legna. Con gli **effetti del disboscamento** (erosione, piene, selvaggina).
+5. [ ] **Piene che distruggono e fertilizzano:** limo sui campi allagati; disastrose rare, legate a sito e azioni (bosco tagliato a monte), annunciate e visibili sulla mappa. Con le **febbri** (paludi, affollamento).
+6. [ ] **Lettura sotto il puntatore per ogni strumento**, come in fondazione.
+7. [ ] **Pascolo e animali:** campo che si stanca, maggese a pascolo, concime, scorta viva, radure aperte, erosione sui pendii.
+8. [ ] **Luogo sacro e bosco sacro** (cerchio di pali attorno a una pietra, forma confermata il 24/11/2026): peso al sacerdote, lettura dei presagi; la riserva diventa il bosco sacro.
+9. [ ] **Scorrerie** attirate dalla ricchezza e dai margini poco usati; segni prima; abitato compatto e sito come difesa.
+10. [ ] **I sentieri più usati diventano strade** (traffico di campi, pascoli, legna, luogo sacro). Con i **casali** nel contado.
+11. [ ] **Evento soglia "il metallo e lo scambio"**, che chiude l'epoca.
 
-## 3. Leggere la mappa
+## 3. Leggere la mappa (ok di Fede del 25/11/2026)
 - [ ] Mappa tematica **boschi e selvaggina** (prevista dal design del villaggio).
 - [ ] Mappe distinte di **abitato** e **contado** (decisione di Fede del 24/11/2026).
 - [ ] Mappa della **memoria del suolo** (ex boschi, aree sigillate).
@@ -39,9 +45,11 @@ Legenda: `[x]` fatto · `[ ]` da fare · **(?)** serve una decisione di Fede pri
 - [ ] Prove sui PC di Fede (in coda): tempi degli alberi e fotogrammi al secondo.
 
 ## Per l'abitato protourbano (dopo il villaggio)
-- Recinto o palizzata: appartiene al protourbano, non al villaggio (decisione di Fede del 24/11/2026).
+- Recinto o palizzata, con terrapieno e fossato: appartiene alla pianificazione urbana; nella prima epoca gli insediamenti sono spontanei, nella seconda cominciano a darsi delle regole (decisioni di Fede del 24 e 25/11/2026).
 
-## Proposte aperte (da decidere, fuori dall'ordine)
-- **(?)** Prologo nomade prima della fondazione (cacciatori-raccoglitori, accampamenti stagionali).
+## Da decidere
+- **(?)** Nomenclatura delle popolazioni nei testi del gioco: un modo neutro di chiamarle, senza nomi di culture archeologiche o di popoli (richiesta di Fede del 25/11/2026; proposte in arrivo).
+- **(?)** Inizio della partita: oggi 6000 a.C.; il Neolitico antico della pianura padana si data soprattutto dalla seconda metà del VI millennio. E come scorre il tempo in un'epoca di circa 3000 anni.
 - **(?)** Politica "Caccia regolata", solo se le fonti di cibo non bastano come leva.
 - **(?)** Orti disegnati più piccoli dentro il quadrato da 40 m.
+- Prologo nomade: **bocciato** da Fede il 25/11/2026 (il gioco è prima di tutto urbanistico).

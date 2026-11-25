@@ -19,7 +19,7 @@ Nelle epoche antiche la costruzione è in gran parte spontanea; con il tempo si 
 ## Strumenti per epoca
 | Epoca | Come si regola lo spazio |
 |---|---|
-| Villaggio | Crescita spontanea, orientata da elementi che attirano o respingono: luogo sacro, recinto, sentieri |
+| Villaggio | Crescita spontanea, orientata da elementi che attirano o respingono: luogo sacro, sentieri (il recinto passa al protourbano: decisione di Fede del 25/11/2026) |
 | Abitato protourbano | Mura o terrapieno: dentro e fuori |
 | Città-stato e città imperiale | Fondazione pianificata: reticolo, lotti assegnati, confine sacro, spazi pubblici riservati |
 | Città in contrazione | Ritorno allo spontaneo: occupazione e riuso delle rovine |

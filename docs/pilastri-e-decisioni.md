@@ -1,6 +1,6 @@
 # Strati — Pilastri e decisioni di base
 
-*Aggiornato al 23/11/2026*
+*Aggiornato al 25/11/2026*
 
 ## Concept
 Gestionale urbanistico-politico. Il giocatore governa una città europea verosimile (un archetipo, non una città reale) attraverso i secoli, dai primi insediamenti all'epoca contemporanea e oltre. Ispirazione centrale: lo sventramento di Parigi di Haussmann, riletto in chiave contemporanea (rigenerazione urbana, gentrificazione, turistificazione, grandi eventi, finanza immobiliare).
@@ -82,14 +82,14 @@ Struttura simmetrica: **6 macro-ere × 2 epoche**. Il passaggio di macro-era sbl
 - **Decidere:**
   - *Fondare:* scegliere il sito, la decisione più importante della partita.
   - *Destinare il territorio:* campi, pascolo, bosco, riserva (dentro il contado, che cresce con gli abitanti).
-  - *Costruire:* granaio, recinto, luogo sacro, sentiero. Le capanne non si piazzano: crescono da sole vicino a campi, acqua e sentieri. Il giocatore orienta la crescita.
+  - *Costruire:* granaio, luogo sacro, sentiero. Il recinto non c'è: appartiene all'abitato protourbano (decisione di Fede del 24–25/11/2026, vedi sotto). Le capanne non si piazzano: crescono da sole vicino a campi, acqua e sentieri. Il giocatore orienta la crescita.
   - *Politiche (le usanze):* divisione del raccolto (in comune: più coesione; per famiglia: più prosperità e più disuguaglianza), accoglienza degli stranieri. **Decisione di Fede (24/11/2026):** le usanze non sono oggetti da costruire ma politiche, regole che valgono finché non si cambiano; stanno in un pannello a parte, non tra i menù delle costruzioni, e da qui si comincia a introdurre questo genere di scelte.
 - **Simulare (ogni anno):** raccolto = suolo × campi × clima dell'anno × braccia; consumo e scorte; crescita o calo della popolazione; salute legata ad acqua e affollamento; legittimità degli anziani legata al cibo e al rispetto delle usanze.
 - **Conseguenze:** eventi locali (siccità, piena, scorrerie), presagi veri o falsi, variazione degli indicatori.
 - **Risorse:** cibo (scorte), legna, braccia, legittimità. Niente denaro: arriva in epoche successive.
 - **Gruppi di consenso:** anziani, famiglie, sacerdote.
 - **Momenti decisivi (pausa automatica):** fondazione; primo cattivo raccolto; arrivo di stranieri; soglia di popolazione (restare, con l'abitato che si allarga, oppure emigrare); presagi; evento soglia "il metallo e lo scambio".
-- **La stratificazione comincia qui:** i sentieri più usati diventano strade e poi assi; il luogo sacro diventa tempio, chiesa, piazza; il recinto traccia la linea delle future mura; gli appezzamenti delle famiglie sono i primi lotti.
+- **La stratificazione comincia qui:** i sentieri più usati diventano strade e poi assi; il luogo sacro diventa tempio, chiesa, piazza; gli appezzamenti delle famiglie sono i primi lotti.
 
 ### Il fallimento come strato
 Un insediamento abbandonato resta come rovina nel sottosuolo; si può rifondare altrove sulla stessa mappa. In modalità tutorial il fallimento è raro, in modalità normale è possibile.
@@ -195,7 +195,40 @@ Città reali gestite "in medias res". Da sviluppare dopo le basi del gioco. Idee
 
 ## Economia mista (decisione di Fede del 24/11/2026)
 Il gioco si basa molto sull'agricoltura, ma prima dell'agricoltura vengono caccia, pesca e raccolta, e i primi agricoltori continuarono a praticarle a lungo. Nel villaggio il cibo viene da campi, caccia e raccolta (boschi) e pesca (acque). La vicinanza a boschi e fiumi dà vantaggi ma espone ai rischi: le piene per l'acqua, la selvaggina che rovina i campi per il bosco. Storicamente la vicinanza ai fiumi è sempre stata premiata, ma pericolosa.
-- *Proposta di Claude, non ancora decisa:* un **prologo nomade** prima del villaggio, con un gruppo di cacciatori-raccoglitori tra accampamenti stagionali; la fondazione come scelta di fermarsi e l'agricoltura come primo evento soglia, con i suoi presagi.
+- **Prologo nomade bocciato** (decisione di Fede del 25/11/2026): Strati è prima di tutto un gioco urbanistico, un city builder con vocazione storica e stratificata; si comincia dalla fondazione.
+
+## La prima epoca: dinamiche (decisioni di Fede del 25/11/2026)
+Dopo le sessioni automatiche e il registro degli avvisi di cinque partite (`sessioni-giocatori.md`), Fede ha approvato le proposte di Claude qui sotto, con le correzioni indicate. **Il ritmo è l'ansia:** in una partita di 500 anni c'erano 14 pause, 12 notifiche rosse e una ventina di "carestie" da pochi punti; il gioco deve restare meditativo come un city builder (riferimento: Cities: Skylines).
+
+**Crescita**
+- **Abbondanza:** un solo indicatore con tre parti al passaggio (come il consenso): cibo che avanza (scorte), salute, spazio (case). Le nascite seguono l'abbondanza; vicino al limite calano da sole, senza passare per le carestie. Più risorse, più crescita.
+- **Tappe:** soglie di abitanti che aprono gli strumenti dell'epoca; una volta raggiunte restano (permanenti), anche se gli abitanti calano. Cambia solo l'effetto (per esempio il luogo sacro rende quanto è contento il sacerdote). Soglie di partenza, da tarare: 30 fondazione (zona agricola, campo, sentiero, fonti di cibo); 60 granaio e divisione del raccolto; 100 luogo sacro e pascolo; 150 restare o emigrare, bosco sacro, politica sugli stranieri; 250 casali nel contado e sentieri che diventano strade; territorio pieno: presagi del metallo ed evento soglia.
+- **Popolazioni verosimili:** obiettivo indicativo un nucleo di 100–300 abitanti e il territorio, con i casali, fino a 600–800 per chi gioca molto bene. La scelta tra le idee 1 e 2 di `sessioni-giocatori.md` resta rimandata a epoca completa (decisione del 24/11).
+- **Orti:** si calibrano sul livello di frustrazione e di crescita; se la crescita è troppo ripida o il gioco troppo "da fattoria", si cercano espedienti. La pianificazione dei cicli della terra e l'uso delle risorse rallentano la crescita in modo naturale.
+
+**Eventi: nascono dallo stato della partita, non dal caso**
+- **Annate magre:** fanno parte del ciclo normale; si contano solo nell'accumulo del cibo, **senza avvisi** (né notifiche né righe di cronaca).
+- **Carestia:** solo con scorte finite più un'annata cattiva più segnali ignorati; granaio, animali e presagi ascoltati la evitano. Obiettivo: poche per partita.
+- **Siccità:** sempre annunciata dalle sorgenti (niente più siccità improvvise).
+- **Piene:** distruggono ma fertilizzano. Le piene di stagione portano limo: il raccolto dell'anno si perde, i campi allagati rendono di più dopo. Le disastrose diventano rare e **coerenti con il sito e con le azioni del giocatore** (rischio della mappa, bosco tagliato a monte, costruzioni nelle terre a rischio), annunciate da segni; quando arrivano si devono vedere sulla mappa.
+- **Febbri:** da paludi e affollamento.
+- **Stranieri:** attirati dall'abbondanza; si governano con la politica (accogliere o respingere senza pausa; si ferma il gioco solo con "caso per caso").
+- **Scorrerie:** attirate dalla ricchezza visibile (animali, scorte) e dai margini del contado poco usati; difendono il sito e un abitato compatto, i casali sparsi sono più esposti; prima arrivano segni. Sono il ponte verso il protourbano, dove nascono il bisogno di regole e il recinto.
+- **Recinto:** appartiene alla logica della pianificazione urbana. Nella prima epoca gli insediamenti sono spontanei; nella seconda cominciano a darsi delle regole, e il recinto (con terrapieno e fossato) traccia la linea delle future mura.
+- **Pause:** si ferma solo la prima volta di ogni tipo di evento (fa da tutorial), per i presagi e per l'evento soglia.
+- **Zona agricola piena:** niente avviso. Basta la resa sulla mappa (eventualmente un indicatore che si accende e si spegne, da pensare: se il giocatore è soddisfatto delle sue zone lo ignorerebbe).
+
+**Leggere la terra**
+- **Lettura sotto il puntatore per ogni strumento**, come in fondazione: ogni strumento mostra le voci che contano per lui (zona agricola: fertilità, rischio di piena, distanza, bosco che si perde; granaio: rischio di piena, distanza; pascolo: erba, pendenza; sentiero: pendenza, guadi). Si vedono attivamente le qualità della terra e i suoi rischi.
+
+**Risorse e sistemi sinergici**
+- **Regola:** ogni sistema nuovo prende o dà qualcosa a un altro sistema, muove almeno un gruppo di consenso e lascia una traccia sulla mappa.
+- **Risorse della prima epoca:** cibo, legna, braccia, animali; niente denaro. Granaio e luogo sacro costano legna e braccia e si costruiscono in qualche anno; il sentiero solo braccia; la zona agricola è gratis da disegnare, ma dissodare consuma braccia e dà legna. **Le case spontanee crescono solo se c'è legna.**
+- **Ciclo della terra:** bosco → legna e radura → campo o pascolo → campo stanco → maggese a pascolo, concimato dagli animali → di nuovo campo, oppure bosco che ricresce. Il disboscamento dei pendii dà erosione, piene più rapide, meno selvaggina.
+- **Ciclo del rischio:** più ricchezza (animali, scorte) attira più scorrerie; disperdersi nei casali espone di più.
+- **Pascolo:** concime ai campi vicini, scorta viva per le annate cattive, tiene aperte le radure, troppo pascolo sui pendii dà erosione; ricchezza delle famiglie (e disuguaglianza); le vie degli animali fanno traffico sui sentieri.
+- **Luogo sacro e bosco sacro:** la riserva diventa il bosco sacro; tagliarlo offende il sacerdote.
+- **Consenso, effetti graduali per gruppo:** anziani → le regole (contenti: le politiche si cambiano a poco prezzo; scontenti: valgono a metà); famiglie → il lavoro (contente: braccia in più, cantieri più rapidi; scontente: qualche famiglia se ne va, poche alla volta); sacerdote → i presagi (contento: più chiari; scontento: ambigui, più voci false). Resta il caso estremo della scissione.
 
 ## Scala della città
 Struttura scalare a quattro livelli. I dati vivono sempre sul lotto; i livelli superiori sono aggregazioni.
