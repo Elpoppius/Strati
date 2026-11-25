@@ -851,9 +851,11 @@ func motivo_legnaia(punto: Vector2) -> String:
 		return "La legnaia va su terra asciutta e libera, non su campi o sentieri."
 	if punto.distance_to(mondo_di_px(centro)) > DISTANZA_MASSIMA_LEGNAIA:
 		return "Troppo lontano dal villaggio: la legnaia va entro %d m dal centro." % roundi(DISTANZA_MASSIMA_LEGNAIA)
+	# Nessuna distanza minima tra legnaie (Fede, 25/11/2026): chi ne mette tante nello stesso
+	# bosco lo esaurisce prima, ed è una scelta sua. Solo non due sullo stesso lotto.
 	for l in legnaie:
-		if (l["punto"] as Vector2).distance_to(punto) < 150.0:
-			return "C'è già una legnaia qui vicino."
+		if px_da_mondo((l["punto"] as Vector2).x, (l["punto"] as Vector2).y) == p:
+			return "C'è già una legnaia qui."
 	return ""
 
 

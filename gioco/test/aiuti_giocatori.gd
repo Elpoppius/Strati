@@ -12,7 +12,7 @@ static func costruisci_legnaia(sim: SimVillaggio, caso: RandomNumberGenerator, q
 		for k in 16:
 			var a := k * TAU / 16.0 + r * 0.01
 			var p := c + Vector2(cos(a), sin(a)) * r
-			if sim.motivo_legnaia(p) == "":
+			if sim.motivo_legnaia(p) == "" and not _vicino_a_legnaia(sim, p):
 				candidati.append(p)
 	if candidati.is_empty():
 		return false
@@ -31,6 +31,14 @@ static func costruisci_legnaia(sim: SimVillaggio, caso: RandomNumberGenerator, q
 				meglio = v
 				scelto = p
 	return sim.costruisci_legnaia(scelto) == ""
+
+
+## I giocatori automatici non ammassano le legnaie nello stesso bosco (il gioco lo permette).
+static func _vicino_a_legnaia(sim: SimVillaggio, p: Vector2) -> bool:
+	for l in sim.legnaie:
+		if (l["punto"] as Vector2).distance_to(p) < 150.0:
+			return true
+	return false
 
 
 ## Vero se le legnaie raccolgono meno della metà di ciò che servirebbe.
