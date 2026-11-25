@@ -15,9 +15,10 @@ Voci più recenti in cima.
 - Zona di taglio come zona di lavoro: resta tagliata finché la legnaia lavora, poi ricresce; riposo voluto, ceduo, peso su piene e selvaggina; all'esaurimento la scelta è del giocatore (nessun suggerimento).
 - Limare un po' le popolazioni con i campi che si stancano (la rotazione delle colture arriverà con le epoche dopo). Velocità più calma.
 
+- Più tardi (Fede): il casual si lascia così per ora; pascolo deciso nelle sue cinque parti (zona a pennello, maggese spontaneo con il campo stanco visibile, capi con crescita da gestire, scorta viva, politica del raccolto); niente "Caccia regolata" per ora; orti più piccoli solo come aspetto nella fase grafica. Stime dei tempi nel todo.
+
 **Prossimo passo**
-- Chi riprende: `docs/todo.md`, sezione "Per chi riprende" (prima voce: Capanno da pesca e Posta di caccia).
-- Fede: dire se il casual (mediana 103 abitanti) va aiutato.
+- Chi riprende: `docs/todo.md`, sezioni "A che punto siamo" e "Per chi riprende" (prima voce: Capanno da pesca e Posta di caccia). Prima di cominciare il pascolo, confermare con Fede la proposta sulla crescita dei capi e sul campo stanco visibile.
 
 ## 25/11/2026 (pomeriggio)
 **Fatto**

@@ -10,6 +10,23 @@ Legenda: `[x]` fatto · `[~]` in parte · `[ ]` da fare · **(?)** serve una dec
 3. **Traguardi** da rispettare (`era-origini.md`, § 9): circa 2–3 pause a partita (si ferma solo per le scelte), poche notifiche, carestie rare e leggibili, nessun abbandono al livello medio, nucleo 100–300 abitanti, territorio fino a 600–800 per chi gioca molto bene.
 4. **Alla fine:** voce in cima al diario, todo aggiornato, commit e push.
 
+## A che punto siamo (25/11/2026 sera)
+Fatte e collaudate le basi della prima epoca (ritmo, crescita, risorse e rischi, consenso di anziani e famiglie, HUD, strumenti di prova). Per chiudere il villaggio restano circa **27–40 ore di lavoro di Claude** (stima del 25/11/2026, prove comprese; non contano le conferme e le prove di Fede), cioè **7–9 giornate** alternando i due account, poi la prova fisica di Fede e 1–2 giornate di correzioni.
+
+| Voce | Stima |
+|---|---|
+| 1. Capanno da pesca e Posta di caccia | 2 ore circa |
+| 2. Pascolo e bestiame visibile | 4–6 ore |
+| 3. Luogo sacro, sacerdote, bosco sacro | 2–3 ore |
+| 4. Scorrerie | 2–3 ore |
+| 5. Sentieri che diventano strade | 2–3 ore |
+| 6. Evento soglia e passo elastico | 4–6 ore (la più delicata: il passo a decenni tocca tutte le regole "per anno") |
+| 7. Popolazione visibile | 5–8 ore (serve una prova di Fede per i fotogrammi al secondo) |
+| 8. Mappe tematiche | 2–3 ore |
+| 9. Base tecnica | 4–6 ore |
+
+Raggruppamento proposto: giornata 1 caccia e pesca con la mappa boschi e selvaggina; 2–3 pascolo, bestiame e luogo sacro; 4 scorrerie e strade; 5–6 evento soglia e passo elastico; 7–8 popolazione visibile; 9 salvataggio, acqua, rifinitura, poi la prova di Fede. Rischi: domande aperte, correzioni dopo la prova fisica, passo elastico e popolazione visibile meno prevedibili.
+
 ## Per chi riprende: il lavoro in ordine
 *Ordine proposto da Claude il 25/11/2026; le voci sono già approvate da Fede nei contenuti, salvo dove c'è (?).*
 
@@ -21,8 +38,16 @@ Legenda: `[x]` fatto · `[~]` in parte · `[ ]` da fare · **(?)** serve una dec
 - **Prove:** verifiche nuove in `test/verifica_villaggio.gd` (senza edificio un terzo, con l'edificio pieno, vicinanza); i giocatori automatici costruiscono gli edifici (aggiungere a `aiuti_giocatori.gd` e ai profili: chi conosce il genere subito e nel punto giusto, il casual dove capita); poi giocatori "umani" e registro. Attenzione: togliere due terzi di caccia e pesca a chi non costruisce cambia la crescita dei primi decenni.
 
 ### 2. [ ] Pascolo e animali (con il bestiame visibile)
-**Deciso** (Fede, 25/11/2026, `era-origini.md` § 4 "I cicli"): si apre a 100 abitanti. Concime ai campi vicini, **maggese a pascolo** (un campo stanco messo a pascolo si riposa più in fretta: si lega ai campi che si stancano, già fatti), scorta viva per le annate cattive (gli animali si macellano invece di patire la fame), radure che restano aperte (il bosco non ricresce sotto il pascolo), erosione e piene se troppo pascolo sui pendii, ricchezza delle famiglie (e disuguaglianza), vie degli animali come traffico sui sentieri, animali che attirano le scorrerie.
-- **(?) Da proporre a Fede prima di cominciare:** come si disegna il pascolo (pennello come la zona agricola?), quanti animali per ettaro, come si vedono (un modello per specie: pecora, capra, maiale, bue, con varianti di mantello; disegno con MultiMesh, animazione dallo shader).
+**Deciso** (Fede, 25/11/2026, `era-origini.md` § 4 "I cicli"): si apre a 100 abitanti. Concime ai campi vicini, scorta viva per le annate cattive, radure che restano aperte, erosione e piene se troppo pascolo sui pendii, ricchezza delle famiglie, vie degli animali come traffico sui sentieri, animali che attirano le scorrerie.
+**Deciso** (Fede, 25/11/2026 sera, sulle domande di Claude):
+1. **Zona di pascolo a pennello**, come la zona agricola: le famiglie portano gli animali da sole.
+2. **Dove:** prati e radure, margini del bosco (il pascolo impedisce la ricrescita), e i **campi stanchi dentro la zona di pascolo diventano maggese da soli** (concimati, si riposano più in fretta); zona di pascolo e zona agricola possono sovrapporsi. **Requisito di Fede: si deve vedere sulla mappa quando un campo è stanco.**
+3. **Un solo numero di "capi"**, con un misto di specie che si vede (pecore e capre soprattutto, maiali vicino al bosco, qualche bue). **Requisito di Fede: va gestito come cresce il numero dei capi.**
+4. **Scorta viva:** nelle annate cattive gli animali si macellano da soli (niente pausa, una riga in cronaca); la mandria si ricostituisce negli anni buoni.
+5. **Gli animali seguono la politica del raccolto** (in comune o alle famiglie): alle famiglie la mandria cresce di più, ma cresce la disuguaglianza (prepara le famiglie eminenti dell'epoca 2).
+- **[Proposta di Claude, da confermare con Fede] Crescita dei capi:** alla tappa dei 100 abitanti il villaggio ha una decina di capi (gli animali che i fondatori tengono attorno alle case); la mandria cresce di circa il 10% l'anno finché c'è erba, cioè fino alla portata della zona di pascolo (circa 2 capi per ettaro di prato, meno nel bosco, di più sui campi a maggese); oltre la portata smette di crescere, e sui pendii il troppo pascolo dà erosione; gli stranieri accolti portano i loro animali; nelle annate cattive se ne macella quanto serve. Pannello di focus "Animali" con capi, portata ed erba.
+- **[Proposta di Claude] Campo stanco sulla mappa:** il campo si schiarisce e si riempie di erbacce man mano che si stanca (un valore per cella passato allo shader del terreno, come le tecniche dei campi in `UsoSuolo.tecniche`); nella mappa della Fertilità i campi stanchi si vedono più poveri; un campo a maggese ha l'erba e gli animali.
+- **Come farlo:** zona di pascolo come `zona` in `sim_villaggio.gd` (`aggiungi_zona`, `zona_piena`) e nel pennello di `principale.gd`; `stanchezza` e `fattore_stanchezza` ci sono già. Modelli degli animali con Blender (`strumenti/blender/`, stile in `docs/asset.md`), disegno con MultiMesh e animazione dallo shader (come gli alberi). Prove: verifiche, giocatori "umani" (devono imparare a stendere il pascolo), registro.
 
 ### 3. [ ] Luogo sacro, sacerdote e bosco sacro
 **Deciso:** cerchio di pali attorno a una pietra (forma confermata il 24/11/2026); si apre a 100 abitanti; costa legna e braccia con un cantiere. Il sacerdote diventa il terzo gruppo di consenso (`sacerdote_attivo` in `sim_villaggio.gd`, pesi 0,4/0,4/0,2 già pronti): contento, presagi più chiari; scontento, ambigui e con più voci false. Il **bosco sacro** (tappa dei 150) è la riserva: le legnaie non lo tagliano, tagliarlo offende il sacerdote. Il luogo sacro attira le case (germe della piazza).
@@ -51,10 +76,10 @@ Legenda: `[x]` fatto · `[~]` in parte · `[ ]` da fare · **(?)** serve una dec
 - Prove sui PC di Fede: tempi degli alberi e fotogrammi al secondo.
 
 ## Da decidere con Fede
-- **(?)** Popolazioni: con i campi che si stancano le mediane sono rientrate (chi conosce il genere 763), i massimi restano a 1000–1080; il **casual resta piccolo** (mediana 103): va bene così o va aiutato? (`sessioni-giocatori.md`, ultima sezione).
+- **(?)** Popolazioni: con i campi che si stancano le mediane sono rientrate (chi conosce il genere 763), i massimi restano a 1000–1080; il casual resta piccolo (mediana 103): **si lascia così per ora** (Fede, 25/11/2026).
 - Carestie per chi impara sbagliando: 2,6 a partita, dentro l'obiettivo 1–3 (25/11/2026 sera); chi legge 1,3 (poco sopra 0–1).
-- **(?)** Politica "Caccia regolata", solo se le fonti di cibo non bastano come leva.
-- **(?)** Orti disegnati più piccoli dentro il quadrato da 40 m (si calibrano sulla frustrazione e sulla crescita: decisione del 25/11/2026).
+- Politica "Caccia regolata": **non si fa per ora** (Fede, 25/11/2026): con la Posta di caccia e la selvaggina locale il giocatore regola già la caccia; si riprende solo se le prove mostrano ancora troppa caccia.
+- **Orti più piccoli:** decisi (Fede, 25/11/2026) **solo come aspetto, nella fase grafica**: il quadrato da 40 m resta l'unità della simulazione, ma si disegna diviso in 2–4 appezzamenti con colture e colori diversi.
 - **(?)** Come contare gli abitanti sul territorio (idee 1 e 2 di `sessioni-giocatori.md`): con i casali la scelta è in parte fatta; il resto a epoca completa.
 - Prova fisica di Fede: al termine del villaggio (decisione del 25/11/2026), quando le voci sopra sono fatte e validate dalle prove di Claude.
 

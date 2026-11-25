@@ -97,7 +97,7 @@ Più risorse, più crescita; la pianificazione dei cicli e l'uso delle risorse r
 **[Deciso, 25/11/2026]** Regola per ogni sistema nuovo: prende o dà qualcosa a un altro sistema, muove almeno un gruppo di consenso e lascia una traccia sulla mappa.
 - **Ciclo della terra:** bosco → legna e radura → campo o pascolo → campo stanco → maggese a pascolo, concimato dagli animali → di nuovo campo, oppure bosco che ricresce. Il disboscamento dei pendii dà erosione, piene più rapide, meno selvaggina.
 - **Ciclo del rischio:** più ricchezza (animali, scorte) attira più scorrerie; disperdersi nei casali espone di più.
-- **Pascolo:** concime ai campi vicini, scorta viva per le annate cattive, radure che restano aperte, erosione se troppo sui pendii, ricchezza delle famiglie (e disuguaglianza), vie degli animali come traffico sui sentieri.
+- **Pascolo [Deciso, 25/11/2026 sera]:** zona a pennello come la zona agricola; prati, radure, margini del bosco e campi stanchi dentro la zona (maggese spontaneo, e il campo stanco si deve vedere sulla mappa); un solo numero di capi con un misto di specie visibile (la crescita dei capi va gestita); scorta viva che si macella da sola nelle annate cattive; gli animali seguono la politica del raccolto. Inoltre: concime ai campi vicini, scorta viva per le annate cattive, radure che restano aperte, erosione se troppo sui pendii, ricchezza delle famiglie (e disuguaglianza), vie degli animali come traffico sui sentieri.
 - **Luogo sacro e bosco sacro:** la riserva diventa il bosco sacro; tagliarlo offende il sacerdote.
 - **Sentieri e strade:** il traffico (campi, pascoli, legna, luogo sacro) fa dei sentieri più battuti le prime strade, che restano come assi.
 
