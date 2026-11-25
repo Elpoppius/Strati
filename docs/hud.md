@@ -81,6 +81,7 @@ Sono una prima serie (proposta di Claude), da confermare con Fede.
 | Costruzione, Gestione, Strumenti | blocchi in basso | cosa si costruisce; come si governa; comandi che valgono su tutto |
 | Politiche | Gestione | apre il pannello delle regole del villaggio (P) |
 | In comune / Alle famiglie | Politiche: divisione del raccolto | il raccolto si divide tra tutti (piace agli anziani) o ogni famiglia tiene il suo (più raccolto, piace alle famiglie); si apre a 60 abitanti |
+| Allargare l'abitato / Emigrare | Politiche: villaggio affollato (dal 25/11/2026, al posto della scelta che fermava il gioco) | quando mancano case per molte famiglie: l'abitato cresce verso i campi, oppure chi non trova posto parte; si apre a 150 abitanti |
 | Aperta / Caso per caso / Chiusa | Politiche: accoglienza degli stranieri | chi arriva resta sempre; a ogni arrivo si decide; viene sempre mandato via. All'inizio vale la scelta fatta al primo arrivo; il pannello si apre a 150 abitanti |
 | Ammodernamento · Agricolo | Gestione | avvia o sospende il rifacimento dei campi vecchi con la tecnica nuova, un po' ogni anno pagando cibo (spento finché non c'è una tecnica nuova) |
 | Opzioni · Collega alla rete | Descrizione, con lo strumento Sentiero | acceso: ogni sentiero parte dal punto più vicino della rete (un clic dove finisce); spento: il sentiero comincia dove vuoi |

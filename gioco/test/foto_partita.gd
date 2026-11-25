@@ -93,7 +93,8 @@ func _process(_d: float) -> bool:
 			_s.partita.aggiorna_hud()
 			_s.hud.mostra_focus(_s.partita.dati_focus(nome))
 		elif args.size() > 4 and args[4] == "legnaia":
-			pass
+			_s.hud.seleziona_comando("legnaia")
+			_s.aggiorna_zone_taglio()
 		elif args.size() > 4:
 			# Strumento attivo con il cerchio al centro della vista (per vedere la guida dei campi).
 			_s.hud.seleziona_comando(args[4])

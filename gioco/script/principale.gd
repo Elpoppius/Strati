@@ -181,7 +181,9 @@ func _crea_interfaccia() -> void:
 	hud.aggiungi_menu("prova", "Prova", "Solo per le prove.", [
 		{"id": "anni", "icona": "anni", "testo": "Avanti di 10 anni (solo per prova: fa ricrescere il bosco anche senza villaggio)", "breve": "+10 anni", "tasto": "Y", "strumento": false},
 	], "strumenti")
-	hud.comando_scelto.connect(func(_id: String) -> void: _aggiorna_pennello())
+	hud.comando_scelto.connect(func(_id: String) -> void:
+		_aggiorna_pennello()
+		aggiorna_zone_taglio())
 	hud.azione.connect(_azione)
 	# Un clic su una notifica porta la camera sul luogo.
 	hud.notifica_scelta.connect(func(punto: Vector2) -> void: cam.vai_a(punto.x, punto.y))
@@ -465,3 +467,23 @@ func _exit_tree() -> void:
 		alberi.interrompi()
 	if _salvataggio_alberi >= 0:
 		WorkerThreadPool.wait_for_task_completion(_salvataggio_alberi)
+
+
+## Zone di taglio delle legnaie (decisione di Fede del 25/11/2026): cerchi trasparenti che crescono
+## con il taglio; tenui sempre, più marcati con gli strumenti Legnaia e Demolisci; più chiari se
+## la legnaia è a riposo.
+func aggiorna_zone_taglio() -> void:
+	var zone: Array[Vector4] = []
+	if partita and partita.sim and partita.sim.fondato:
+		for l in partita.sim.legnaie:
+			if zone.size() >= 8:
+				break
+			var r := float(l["raggio"])
+			if r <= 0.0:
+				continue
+			var p: Vector2 = l["punto"]
+			zone.append(Vector4(p.x, p.y, r + 20.0, 1.0 if partita.sim.legnaia_attiva(l) else 0.0))
+	while zone.size() < 8:
+		zone.append(Vector4(0, 0, -1, 0))
+	terreno.materiale.set_shader_parameter("zone_taglio", zone)
+	terreno.materiale.set_shader_parameter("forza_zone", 1.0 if hud.comando() in ["legnaia", "demolisci"] else 0.45)

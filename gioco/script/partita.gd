@@ -6,8 +6,8 @@ extends Node
 ## (decisione di Fede del 23/11/2026).
 
 const STRUMENTI := ["fonda", "zona", "campi", "sentiero", "granaio", "legnaia", "demolisci"]
-const VELOCITA := [0.0, 2.0, 6.0, 15.0]  # anni al secondo, come nel Prototipo 0
-const NOMI_VELOCITA := ["Pausa", "2 anni al secondo", "6 anni al secondo", "15 anni al secondo"]
+const VELOCITA := [0.0, 1.0, 6.0, 15.0]  # anni al secondo (velocità 1 più calma: decisione di Fede del 25/11/2026)
+const NOMI_VELOCITA := ["Pausa", "1 anno al secondo", "6 anni al secondo", "15 anni al secondo"]
 
 var sim: SimVillaggio
 var vista: VistaVillaggio
@@ -59,7 +59,7 @@ func avvia(s: Node, seme: int = -1) -> void:
 		{"id": "granaio", "icona": "granaio", "testo": "Granaio (30 di legna)", "breve": "Granaio", "tasto": "H",
 		 "descrizione": "Costa 30 di legna e qualche anno di lavoro, e va vicino al centro: le scorte si conservano meglio."},
 		{"id": "legnaia", "icona": "legnaia", "testo": "Legnaia", "breve": "Legnaia", "tasto": "L",
-		 "descrizione": "Senza legnaia non si raccoglie legna. I boscaioli abbattono gli alberi più vicini: più il bosco è vicino, più in fretta si raccoglie. Man mano che la radura si allarga la raccolta rallenta."},
+		 "descrizione": "Senza legnaia non si raccoglie legna. I boscaioli abbattono gli alberi più vicini: più il bosco è vicino, più in fretta si raccoglie; la zona di taglio resta aperta finché la legnaia lavora. Clic su una legnaia: lasciar ricrescere il bosco o rimetterla al lavoro."},
 	])
 	# Opzione dello strumento Sentiero (Fede: un'opzione, non un tasto accanto): Collega alla rete.
 	hud.aggiungi_opzioni("sentiero", [
@@ -100,6 +100,11 @@ func avvia(s: Node, seme: int = -1) -> void:
 			{"id": "aperta", "testo": "Aperta", "nota": "Chi arriva in pace resta: più braccia e tecniche nuove, qualche malattia e un po' di attrito."},
 			{"id": "caso", "testo": "Caso per caso", "nota": "A ogni arrivo il tempo si ferma e gli anziani decidono."},
 			{"id": "chiusa", "testo": "Chiusa", "nota": "Gli stranieri vengono mandati via: nulla cambia, il villaggio resta unito."}]},
+		{"id": "affollati", "titolo": "Villaggio affollato",
+		 "descrizione": "Quando mancano case per molte famiglie.",
+		 "opzioni": [
+			{"id": "allargare", "testo": "Allargare l'abitato", "nota": "Le case si stringono e l'abitato cresce verso i campi; per qualche anno la salute ne risente."},
+			{"id": "emigrare", "testo": "Emigrare", "nota": "Chi non trova posto parte in cerca di terra altrove: meno bocche e meno braccia."}]},
 	])
 	hud.interruttore_scelto.connect(func(_politica: String, fonte: String, accesa: bool) -> void:
 		if not sim.imposta_fonte(fonte, accesa):
@@ -119,7 +124,7 @@ func avvia(s: Node, seme: int = -1) -> void:
 		aggiorna_hud())
 	hud.aggiungi_tempo([
 		{"id": "v0", "testo": "Pausa (Spazio)", "breve": "‖"},
-		{"id": "v1", "testo": NOMI_VELOCITA[1], "breve": "2"},
+		{"id": "v1", "testo": NOMI_VELOCITA[1], "breve": "1"},
 		{"id": "v2", "testo": NOMI_VELOCITA[2], "breve": "6"},
 		{"id": "v3", "testo": NOMI_VELOCITA[3], "breve": "15"},
 	])
@@ -336,6 +341,14 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 				parti.append("%s ha di zona agricola" % _ettari(esito["zona"]))
 			hud.imposta_messaggio(("Demoliti: " + ", ".join(parti) + ".") if not parti.is_empty() else "Qui non c'è niente da demolire.")
 		"legnaia":
+			# Clic su una legnaia che c'è già: "Lasciar ricrescere" o rimetterla al lavoro.
+			var k := sim.legnaia_vicina(Vector2(punto.x, punto.z))
+			if k >= 0:
+				var a_riposo := not bool(sim.legnaie[k]["riposo"])
+				sim.metti_a_riposo(k, a_riposo)
+				hud.imposta_messaggio("Legnaia a riposo: i boscaioli non tagliano e il bosco ricresce dalle ceppaie." if a_riposo else "La legnaia torna al lavoro.")
+				aggiorna_hud()
+				return
 			var m := sim.costruisci_legnaia(Vector2(punto.x, punto.z))
 			if m == "":
 				hud.imposta_messaggio("Legnaia in costruzione: tra %d anni i boscaioli cominciano a tagliare il bosco vicino." % SimVillaggio.ANNI_CANTIERE_LEGNAIA)
@@ -497,6 +510,7 @@ func aggiorna_hud() -> void:
 		if sim.fonti[f]:
 			accese.append({"agricoltura": "campi", "caccia": "caccia e raccolta", "pesca": "pesca"}[f])
 	hud.imposta_interruttori("fonti", sim.fonti, "Il cibo viene da: %s." % ", ".join(accese))
+	scena.aggiorna_zone_taglio()
 	if hud.focus_aperto() != "":
 		if on:
 			hud.aggiorna_focus(dati_focus(hud.focus_aperto()))
@@ -522,7 +536,7 @@ func aggiorna_hud() -> void:
 		testo_granaio = "Granaio (si apre a %d abitanti)" % SimVillaggio.TAPPE[SimVillaggio.tappa_di("granaio")]["abitanti"]
 	hud.cambia_testo("granaio", testo_granaio, "Granaio")
 	# Le tappe aprono le politiche (decisione di Fede del 25/11/2026).
-	for id in ["raccolto", "stranieri"]:
+	for id in ["raccolto", "stranieri", "affollati"]:
 		var aperta := not on or sim.sbloccato(id)
 		hud.abilita_politica(id, aperta, "" if aperta else "Si apre con la tappa «%s» (%d abitanti)." % [SimVillaggio.TAPPE[SimVillaggio.tappa_di(id)]["nome"], SimVillaggio.TAPPE[SimVillaggio.tappa_di(id)]["abitanti"]])
 	for id in SimVillaggio.POLITICHE:
@@ -656,6 +670,13 @@ func leggi_per_strumento(punto: Vector3) -> void:
 			var bosco := sim.bosco_presente.call(i) as bool
 			voci.append(["Bosco", "si perde (dà legna)" if bosco else "nessuno", 1.0 if bosco else 0.0, false])
 		"legnaia":
+			var k := sim.legnaia_vicina(Vector2(punto.x, punto.z))
+			if k >= 0:
+				var l: Dictionary = sim.legnaie[k]
+				hud.imposta_lettura_strumento([["Legnaia", sim.stato_legnaia(l), 1.0 if sim.legnaia_attiva(l) else 0.3, false],
+					["Raccolta", "%.0f l'anno" % sim.capacita_legnaia(l), sim.capacita_legnaia(l) / SimVillaggio.CAPACITA_LEGNAIA, sim.capacita_legnaia(l) < SimVillaggio.CAPACITA_LEGNAIA * 0.3],
+					["Clic", "rimetti al lavoro" if bool(l["riposo"]) else "lascia ricrescere", 0.0, false]])
+				return
 			var b := sim.bosco_per_legnaia(Vector2(punto.x, punto.z))
 			var vicino: float = b["vicino"]
 			var eff := clampf(1.0 - vicino / SimVillaggio.RAGGIO_LEGNAIA, 0.0, 1.0) if vicino >= 0.0 else 0.0
@@ -688,19 +709,43 @@ func leggi_per_strumento(punto: Vector3) -> void:
 
 
 ## Gli alberi abbattuti dalle legnaie spariscono dalla mappa (decisione di Fede del 25/11/2026: il
-## taglio si deve vedere); l'uso del suolo li fa ricrescere dai margini.
-func _abbatti_tagli() -> void:
-	if sim.tagli_anno.is_empty():
-		return
+## taglio si deve vedere) e ricacciano dalle ceppaie; finché la legnaia lavora, la sua zona di taglio
+## non ricresce. Quando va a riposo, la ricrescita riparte.
+var _zona_bloccata := {}
+
+
+func _celle_del_pixel(i: int) -> Array[Vector2i]:
 	var uso: UsoSuolo = scena.uso
 	var celle: Array[Vector2i] = []
 	var mezzo := sim.dati.metri_per_px * 0.5
-	for i in sim.tagli_anno:
-		var w := sim.mondo_di_px(sim.px_di(i))
-		var a := uso.cella(w.x - mezzo + 1.0, w.y - mezzo + 1.0)
-		var b := uso.cella(w.x + mezzo - 1.0, w.y + mezzo - 1.0)
-		for y in range(a.y, b.y + 1):
-			for x in range(a.x, b.x + 1):
-				celle.append(Vector2i(x, y))
-	uso.abbatti(celle)
-	sim.tagli_anno = []
+	var w := sim.mondo_di_px(sim.px_di(i))
+	var a := uso.cella(w.x - mezzo + 1.0, w.y - mezzo + 1.0)
+	var b := uso.cella(w.x + mezzo - 1.0, w.y + mezzo - 1.0)
+	for y in range(a.y, b.y + 1):
+		for x in range(a.x, b.x + 1):
+			celle.append(Vector2i(x, y))
+	return celle
+
+
+func _abbatti_tagli() -> void:
+	var uso: UsoSuolo = scena.uso
+	if not sim.tagli_anno.is_empty():
+		var celle: Array[Vector2i] = []
+		for i in sim.tagli_anno:
+			celle.append_array(_celle_del_pixel(i))
+		uso.abbatti_ceduo(celle)
+		sim.tagli_anno = []
+	# Zone di taglio: si bloccano le celle entrate, si sbloccano quelle uscite.
+	var entrate: Array[Vector2i] = []
+	var uscite: Array[Vector2i] = []
+	for i in sim.zona_attiva:
+		if not _zona_bloccata.has(i):
+			entrate.append_array(_celle_del_pixel(i))
+	for i in _zona_bloccata.keys():
+		if not sim.zona_attiva.has(i):
+			uscite.append_array(_celle_del_pixel(i))
+	if not entrate.is_empty():
+		uso.blocca_ricrescita(entrate, true)
+	if not uscite.is_empty():
+		uso.blocca_ricrescita(uscite, false)
+	_zona_bloccata = sim.zona_attiva.duplicate()

@@ -118,3 +118,19 @@ Le decisioni che ne sono venute (Fede, 25/11/2026) stanno in `pilastri-e-decisio
 - **La legna è un limite vero:** una legnaia lontana dal bosco tiene il villaggio affollato; chi conosce il genere ne costruisce subito una vicino al bosco e un'altra quando rende poco.
 - **Correzioni fatte durante la prova:** senza granaio le scorte si guastavano del 35% l'anno e le nascite in ritardo tenevano i villaggi sotto i 60 abitanti, la tappa del granaio (una trappola): ora il 30%; cibo che avanza pieno a 18 mesi (prima 24) e soglia della crescita a 60 (prima 62); le famiglie mettono nel conto il danno della selvaggina ai campi al margine del bosco; anche le paludi danno un po' di legna (metà del bosco).
 - **Da guardare:** chi conosce il genere arriva a 1172 abitanti in tutto, sopra l'obiettivo di 600–800; chi impara sbagliando ha 0,7 carestie a partita (obiettivo 1–3).
+
+## Dopo zona di taglio, campi che si stancano e ritmo calmo (25/11/2026, sera)
+*Decisioni di Fede del 25/11/2026 pomeriggio: si ferma solo per le scelte che chiedono un intervento, il resto in cronaca; velocità 1 a un anno al secondo; zona di taglio con ceduo; campi che si stancano per limare le popolazioni dei siti migliori.* 72 partite con i quattro giocatori "umani" (500 anni).
+
+| Profilo | Abitanti (mediana) | Massimo | Minimo | Carestie per partita | Abbandoni | Pause (mediana) |
+|---|---|---|---|---|---|---|
+| Impara sbagliando | 432 | 952 | 132 | 2.6 | 0 | 4 |
+| Legge le spiegazioni | 545 | 1019 | 203 | 1.3 | 0 | 4 |
+| Conosce il genere | 763 | 1081 | 227 | 2.1 | 0 | 4 |
+| Casual | 102 | 451 | 47 | 1.7 | 0 | 4 |
+
+**Registro degli avvisi** (5 partite, livello 5), per partita: **3,4 pause** (sorgenti 1,8, primo arrivo degli stranieri 1, cometa 0,6), 0,6 notifiche rosse (scorte quasi finite), 3,8 grigie (quasi tutte tappe), **42 righe di cronaca** (dopo aver tolto le righe delle legnaie che si fermano e ripartono da sole, 43 a partita, e alzato la soglia delle febbri gravi). A un anno al secondo una partita dura circa 8 minuti e mezzo: una pausa ogni due minuti e mezzo circa.
+
+- **Popolazioni rientrate:** la mediana di chi conosce il genere passa da 1172 a 763 (dentro l'obiettivo di 600–800); i massimi restano sopra (circa 1000–1080).
+- **Carestie:** chi impara sbagliando 2,6 a partita (obiettivo 1–3), chi legge 1,3 (obiettivo 0–1, poco sopra), nessun abbandono.
+- **Il casual** resta piccolo (mediana 103, minimo 47): la legna e i campi stanchi pesano su chi non costruisce e non allarga. Da guardare con Fede: il casual deve potersi divertire.

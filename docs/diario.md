@@ -2,6 +2,23 @@
 
 Voci più recenti in cima.
 
+## 25/11/2026 (sera)
+**Fatto**
+- **Ritmo:** il gioco si ferma solo per le scelte che chiedono un intervento (sorgenti, cometa, primo arrivo degli stranieri); primo cattivo raccolto come notifica; piene grandi, siccità, segni di piena e divisione del villaggio solo in cronaca; febbri lievi se la città è sana, in cronaca solo se gravi; niente righe per i casali (spiegazione nel pannello della Popolazione); affollamento come politica "Villaggio affollato" (allargare o emigrare); velocità 1 a un anno al secondo. Risultato: 3,4 pause per partita, una ogni due minuti e mezzo circa.
+- **Zona di taglio** della legnaia: cerchio trasparente che cresce con il taglio (shader del terreno), niente ricrescita dentro finché la legnaia lavora (`UsoSuolo.blocca_ricrescita`), riposo dopo 10 anni senza taglio, ceduo che torna bosco in 25 anni (`UsoSuolo.abbatti_ceduo`), clic sulla legnaia per "Lasciar ricrescere" o rimetterla al lavoro, stato di ogni legnaia nel pannello della legna (senza suggerimenti). Foto `docs/immagini/zona-taglio-25-11.jpg`.
+- **Campi che si stancano** dopo 40 anni di coltura di fila (fino a −35%), si riposano incolti, il limo li rinnova.
+- **Todo riorganizzato** per chi riprende con l'altro account: sezione "Per chi riprende" con le voci in ordine, decisioni, file e prove.
+- Prove con i quattro giocatori "umani" e registro degli avvisi: risultati in `docs/sessioni-giocatori.md`. Tutte le 9 verifiche superate.
+
+**Decisioni** (Fede)
+- Fermare il gioco solo per le scelte che chiedono un intervento; il resto in cronaca, che spiega i problemi senza chiedere decisioni. Una febbre in una città sana è solo una flessione. I casali si vedono sulla mappa; al massimo una voce sulla demografia.
+- Zona di taglio come zona di lavoro: resta tagliata finché la legnaia lavora, poi ricresce; riposo voluto, ceduo, peso su piene e selvaggina; all'esaurimento la scelta è del giocatore (nessun suggerimento).
+- Limare un po' le popolazioni con i campi che si stancano (la rotazione delle colture arriverà con le epoche dopo). Velocità più calma.
+
+**Prossimo passo**
+- Chi riprende: `docs/todo.md`, sezione "Per chi riprende" (prima voce: Capanno da pesca e Posta di caccia).
+- Fede: dire se il casual (mediana 103 abitanti) va aiutato.
+
 ## 25/11/2026 (pomeriggio)
 **Fatto**
 - **Giocatori "umani"** (`gioco/test/giocatore_umano.gd`): vedono solo ciò che vede il giocatore. Quattro profili: impara sbagliando, legge, conosce il genere ma non legge e va a tentativi, casual. Con le regole del mattino le carestie erano quasi assenti anche per chi sbaglia.

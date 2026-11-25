@@ -64,6 +64,9 @@ const NON_DIPINTA := 0x40
 const ANNI_ERBA := 6
 const ANNI_SEME := 15
 const ANNI_MATURO := 60
+## Ceduo (decisione di Fede del 25/11/2026): il bosco abbattuto dalle legnaie ricaccia dalle
+## ceppaie, senza bisogno di semi vicini, e torna bosco in questi anni.
+const ANNI_CEDUO := 25
 ## Distanza massima (in celle da 10 m) da cui arrivano i semi.
 const RAGGIO_SEMI := 6
 
@@ -87,6 +90,10 @@ var immagine_tecniche: Image
 var texture_tecniche: ImageTexture
 ## Celle libere con memoria di bosco ancora in ricrescita.
 var _in_ricrescita := {}
+## Celle tagliate a ceduo (ricacciano dalle ceppaie) e celle in una zona di taglio attiva, dove
+## non ricresce nulla finché la legnaia lavora (decisione di Fede del 25/11/2026).
+var ceppaie := {}
+var bloccate := {}
 ## Blocchi di alberi (Alberi.LATO_BLOCCO) toccati da modifiche, uno per byte: si leggono anche
 ## dai thread della vista, quindi niente dizionari (scriverci mentre un altro thread legge non
 ## è sicuro).
@@ -172,6 +179,33 @@ func abbatti(lista: Array[Vector2i]) -> int:
 	return tagliati
 
 
+## Taglio a ceduo delle legnaie: come abbatti, ma le celle ricacciano dalle ceppaie.
+func abbatti_ceduo(lista: Array[Vector2i]) -> int:
+	var t := abbatti(lista)
+	for c in lista:
+		if celle[c.y * n + c.x] & MASCHERA_STATO == LIBERO:
+			ceppaie[c] = true
+	return t
+
+
+## Zona di taglio attiva: sulle celle bloccate non ricresce nulla (e chi stava ricrescendo torna
+## a zero); sbloccate, la ricrescita riparte.
+func blocca_ricrescita(lista: Array[Vector2i], bloccate_ora: bool) -> void:
+	var cambiate: Array[Vector2i] = []
+	for c in lista:
+		if bloccate_ora:
+			bloccate[c] = true
+			var i := c.y * n + c.x
+			if celle[i] & MASCHERA_STATO == LIBERO and anni[i] > 0:
+				anni[i] = 0
+				cambiate.append(c)
+				_tocca_blocco(c)
+		else:
+			bloccate.erase(c)
+	if not cambiate.is_empty():
+		_aggiorna_immagine(cambiate)
+
+
 ## Vero se la costruzione (chiave di COSTRUZIONI) contiene almeno un materiale invasivo.
 static func invasiva(costruzione: String) -> bool:
 	for m in COSTRUZIONI.get(costruzione, []):
@@ -245,17 +279,20 @@ func avanza_anni(quanti: int) -> void:
 	for _a in quanti:
 		var crescono: Array[Vector2i] = []
 		for c in _in_ricrescita.keys():
-			if _semi_vicini(c):
+			if bloccate.has(c):
+				continue
+			if ceppaie.has(c) or _semi_vicini(c):
 				crescono.append(c)
 		for c in crescono:
 			var i: int = c.y * n + c.x
 			var eta := mini(int(anni[i]) + 1, 255)
 			anni[i] = eta
-			if eta >= ANNI_MATURO:
+			if eta >= (ANNI_CEDUO if ceppaie.has(c) else ANNI_MATURO):
 				# Il bosco è tornato: la cella torna naturale, con la memoria del taglio.
 				celle[i] = NATURALE | MEMORIA_BOSCO
 				anni[i] = 0
 				_in_ricrescita.erase(c)
+				ceppaie.erase(c)
 			toccate.append(c)
 	if toccate.is_empty():
 		return

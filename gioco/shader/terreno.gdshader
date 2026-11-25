@@ -67,6 +67,10 @@ uniform vec3 griglia_magnetica = vec3(0.0);
 // si vede il confine della terra coltivabile, con la zona fuori appena velata (decisione di Fede:
 // il limite c'è ma non si percepiva).
 uniform vec3 contado = vec3(0.0, 0.0, -1.0);
+// Zone di taglio delle legnaie (decisione di Fede del 25/11/2026): centro, raggio, 1 se la legnaia
+// lavora (0 a riposo); forza: tenue sempre, marcata con gli strumenti Legnaia e Demolisci.
+uniform vec4 zone_taglio[8];
+uniform float forza_zone = 0.45;
 // Zona agricola (un valore per punto della mappa, 1 = nella zona) e se mostrarla: si vede solo
 // mentre si destina la terra, come velo chiaro con un bordo sottile.
 uniform sampler2D zona_agricola : filter_linear, repeat_disable;
@@ -397,6 +401,18 @@ void fragment() {
 		linea_c *= step(0.4, fract(ang));
 		col = mix(col, vec3(1.0), linea_c * 0.75);
 		col *= 1.0 - 0.18 * smoothstep(contado.z, contado.z + fwc2 * 3.0, dc);
+	}
+	for (int k = 0; k < 8; k++) {
+		vec4 z = zone_taglio[k];
+		if (z.z <= 0.0) {
+			continue;
+		}
+		float dz = distance(pos_mondo.xz, z.xy);
+		float fz = max(fwidth(dz), 1e-3);
+		float bordo = 1.0 - smoothstep(fz * 0.8, fz * 2.2, abs(dz - z.z));
+		float dentro = 1.0 - smoothstep(z.z - fz, z.z + fz, dz);
+		float a_lavoro = mix(0.45, 1.0, z.w);
+		col = mix(col, vec3(1.0), (bordo * 0.55 + dentro * 0.05) * forza_zone * a_lavoro);
 	}
 	// Strumento dell'HUD: anello sottile e area appena schiarita.
 	if (pennello.z > 0.0) {

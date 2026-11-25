@@ -160,8 +160,25 @@ func _initialize() -> void:
 			uno = i
 			break
 	controlla(not tl.bosco_in_piedi(uno) or tl.anno - int(tl.tagliati.get(uno, tl.anno)) >= SimVillaggio.ANNI_RICRESCITA, "un pixel abbattuto non è bosco finché non ricresce")
+	# Zona di taglio (decisione di Fede del 25/11/2026): finché la legnaia lavora non ricresce nulla;
+	# a riposo il bosco ricaccia dalle ceppaie (ceduo) in ANNI_RICRESCITA anni.
+	controlla(tl.legnaia_attiva(l0) and tl.zona_attiva.has(uno), "la zona di taglio della legnaia al lavoro resta tagliata (%s)" % tl.stato_legnaia(l0))
+	tl.anno += SimVillaggio.ANNI_RICRESCITA + 5
+	controlla(not tl.bosco_in_piedi(uno), "finché la zona è attiva il bosco non ricresce")
+	tl.metti_a_riposo(0, true)
+	controlla(not tl.legnaia_attiva(l0) and not tl.zona_attiva.has(uno) and tl.capacita_legnaia(l0) == 0.0, "lasciar ricrescere: la legnaia si ferma e la zona va a riposo")
+	controlla(not tl.bosco_in_piedi(uno), "appena messa a riposo la zona è ancora tagliata")
 	tl.anno += SimVillaggio.ANNI_RICRESCITA
-	controlla(tl.bosco_in_piedi(uno), "dopo %d anni il bosco abbattuto ricresce" % SimVillaggio.ANNI_RICRESCITA)
+	controlla(tl.bosco_in_piedi(uno), "dopo %d anni a riposo il bosco abbattuto ricresce (ceduo)" % SimVillaggio.ANNI_RICRESCITA)
+	tl.metti_a_riposo(0, false)
+	controlla(tl.legnaia_attiva(l0), "la legnaia torna al lavoro")
+	# Campi che si stancano (decisione di Fede del 25/11/2026).
+	if not tl.campi.is_empty():
+		var cs: int = tl.campi[0]
+		var resa0 := tl._resa(cs)
+		tl.stanchezza[cs] = SimVillaggio.ANNI_PRIMA_STANCHEZZA + SimVillaggio.ANNI_STANCHEZZA
+		controlla(tl._resa(cs) < resa0 * 0.7 and tl.campi_stanchi() >= 1, "un campo coltivato per cento anni di fila rende meno (%.2f → %.2f)" % [resa0, tl._resa(cs)])
+		tl.stanchezza.erase(cs)
 	# Politiche: cambiarle costa consenso, gli stranieri seguono la regola in vigore.
 	controlla(t.politica("raccolto") == "comune" and t.politica("stranieri") == "aperta", "politiche iniziali: raccolto in comune, stranieri accolti")
 	var b0: float = t.bonus["anziani"]

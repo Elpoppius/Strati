@@ -74,6 +74,8 @@ Caso estremo: sotto il 5% per anni il villaggio si divide (c'è già).
 Più risorse, più crescita; la pianificazione dei cicli e l'uso delle risorse rallentano la crescita in modo naturale.
 
 **Edifici delle risorse [Deciso, 25/11/2026]**
+- **Zona di taglio [Deciso, 25/11/2026 pomeriggio]:** un cerchio trasparente attorno alla legnaia che cresce con il taglio; dentro non ricresce nulla finché la legnaia lavora. Se per 10 anni non abbatte nulla (demolita, messa a riposo, legna che non serve, bosco finito entro 600 m) la zona va a riposo e il bosco ricaccia dalle ceppaie (**ceduo**, utile di nuovo in circa 25 anni). Il comando **"Lasciar ricrescere"** (clic sulla legnaia con lo strumento) permette di alternare le legnaie. La zona attiva conta come bosco perso (piene, selvaggina). All'esaurimento nessun suggerimento: la scelta è del giocatore.
+- **Campi che si stancano [Deciso, 25/11/2026 pomeriggio]:** dopo molti anni di coltura di fila un campo rende meno; incolto si riposa, il limo lo rinnova. Serve anche a limare le popolazioni dei siti migliori. La rotazione delle colture arriverà con le tecniche delle epoche dopo.
 - **Legnaia:** senza legnaia non si raccoglie legna (resta quella del dissodamento). I boscaioli abbattono ogni anno gli alberi più vicini: più il bosco è vicino, più in fretta si raccoglie; la radura si allarga, la raccolta rallenta e conviene spostarsi o costruirne un'altra. **Il taglio si vede sulla mappa** e il bosco ricresce dai margini. Costa braccia (2 anni di cantiere); se ne possono fare più d'una.
 - **Capanno da pesca** (germe dell'approdo e del porto) e **Posta di caccia** (al margine del bosco): stessa dinamica, influenzati dalla vicinanza all'acqua (fiume più dei torrenti, poco le paludi) e al bosco fitto con selvaggina. Senza questi edifici caccia e pesca non spariscono ma rendono circa un terzo. *(Da costruire dopo la legnaia.)*
 
@@ -112,7 +114,8 @@ Più risorse, più crescita; la pianificazione dei cicli e l'uso delle risorse r
 | Stranieri | attirati dall'abbondanza | politica: accogliere o respingere senza pausa; "caso per caso" ferma il gioco | cronaca, figure che arrivano |
 | Scorrerie | ricchezza visibile, margini del contado poco usati | sito difeso, abitato compatto | segni prima (fuochi sulle colline, tracce, villaggi vicini razziati); animali e scorte persi |
 
-- **Pause:** il gioco si ferma solo la prima volta di ogni tipo di evento (fa da tutorial), per i presagi e per l'evento soglia.
+- **Pause [Deciso, 25/11/2026 pomeriggio]:** il gioco si ferma **solo per le scelte che chiedono un intervento** (presagi delle sorgenti e della cometa, primo arrivo degli stranieri, evento soglia). Tutto il resto va in cronaca, che spiega perché ci sono dei problemi senza chiedere decisioni; le notifiche restano solo quando serve un intervento (tappe con strumenti nuovi, caccia eccessiva, scorte quasi finite, carestie gravi). L'affollamento diventa una politica ("Villaggio affollato": allargare o emigrare). Una pausa al minuto non è rilassante: la velocità 1 passa a un anno al secondo.
+- **Febbri:** in una città sana sono solo una flessione; in cronaca solo se gravi. I casali non hanno righe di cronaca: si vedono sulla mappa e il pannello della Popolazione spiega la demografia.
 - **Zona agricola piena:** nessun avviso; basta la resa sulla mappa (forse un indicatore che si accende e si spegne, da pensare).
 - **Presagi** [Deciso, dai pilastri]: veri (sorgenti che calano, selvaggina in calo, segni di piena), falsi (comete, eclissi); i gruppi spingono la loro lettura.
 
