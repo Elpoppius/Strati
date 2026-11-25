@@ -27,9 +27,10 @@ Voci più recenti in cima.
   - 35 di cibo l'anno per edificio; posta fino a 1000 m, capanno fino a 600 m;
   - stato "pesce scarso" o "selvaggina scarsa" sotto il 40% della scorta.
 
+- Più tardi (Fede): le carestie nei siti di caccia sono normali, si lascia così; confermate le proposte qui sopra; **cantieri visibili**: barra discreta sopra l'edificio in costruzione e un modello del cantiere da creare (voce 0 del todo).
+
 **Prossimo passo**
 - Fede:
-  - decidere sulle carestie nei siti di caccia e sulle proposte qui sopra (todo, "Da decidere con Fede");
   - guardare le foto;
   - confermare la proposta sulla crescita dei capi e sul campo stanco visibile prima del pascolo.
 - Claude: voce 2, pascolo e bestiame.

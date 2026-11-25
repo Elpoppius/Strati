@@ -28,6 +28,9 @@ Fatte e collaudate le basi della prima epoca (ritmo, crescita, risorse e rischi,
 Raggruppamento proposto: giornata 1 caccia e pesca con la mappa boschi e selvaggina; 2–3 pascolo, bestiame e luogo sacro; 4 scorrerie e strade; 5–6 evento soglia e passo elastico; 7–8 popolazione visibile; 9 salvataggio, acqua, rifinitura, poi la prova di Fede. Rischi: domande aperte, correzioni dopo la prova fisica, passo elastico e popolazione visibile meno prevedibili.
 
 ## Per chi riprende: il lavoro in ordine
+
+### 0. [ ] Cantieri visibili (richiesta di Fede del 25/11/2026 sera)
+**Deciso** (Fede): sopra ogni edificio in costruzione una **barra discreta** che avanza anno dopo anno, e al posto dell'edificio finito un **modello del cantiere**, da creare in Blender. Oggi hanno un cantiere: granaio (3 anni), legnaia, capanno da pesca e posta di caccia (2 anni); poi il luogo sacro. Le case nascono da sole, senza cantiere. Prima di cominciare: proposta a Fede sulla forma del cantiere (vedi diario).
 *Ordine proposto da Claude il 25/11/2026; le voci sono già approvate da Fede nei contenuti, salvo dove c'è (?).*
 
 ### 1. [x] Capanno da pesca e Posta di caccia
@@ -87,8 +90,8 @@ Raggruppamento proposto: giornata 1 caccia e pesca con la mappa boschi e selvagg
 - Prove sui PC di Fede: tempi degli alberi e fotogrammi al secondo.
 
 ## Da decidere con Fede
-- **(?)** Carestie nei siti di caccia (25/11/2026 sera): con capanno e posta le mediane non cambiano, ma chi legge passa da 1,3 a 2,4 carestie a partita, quasi tutte all'Area dei gessi e allo Sperone collinare. Lasciare così, alzare la resa delle poste o la ripresa della selvaggina, o dirlo alla fondazione? Dati in `sessioni-giocatori.md`.
-- **(?)** Proposte di Claude da confermare: la posta si aggancia al margine del bosco entro 60 m (come il capanno alla riva); tasti K (capanno) e T (posta); 35 di cibo l'anno al massimo per edificio, posta fino a 1000 m, capanno fino a 600 m. Nelle foto la posta sta a qualche decina di metri dai primi alberi (valore 0,4 del margine, come nella posa provata): se Fede la vuole più a ridosso, si alza la soglia.
+- Carestie nei siti di caccia (25/11/2026 sera): chi legge passa da 1,3 a 2,4 carestie a partita, quasi tutte all'Area dei gessi e allo Sperone collinare. **Si lascia così** (Fede, 25/11/2026): nei siti che vivono di caccia le carestie sono normali.
+- **Confermate da Fede** (25/11/2026): la posta si aggancia al margine del bosco entro 60 m; tasti K (capanno) e T (posta); 35 di cibo l'anno al massimo per edificio, posta fino a 1000 m, capanno fino a 600 m.
 - **(?)** Popolazioni: con i campi che si stancano le mediane sono rientrate (chi conosce il genere 763), i massimi restano a 1000–1080; il casual resta piccolo (mediana 103): **si lascia così per ora** (Fede, 25/11/2026).
 - Carestie per chi impara sbagliando: 2,6 a partita, dentro l'obiettivo 1–3 (25/11/2026 sera); chi legge 1,3 (poco sopra 0–1).
 - Politica "Caccia regolata": **non si fa per ora** (Fede, 25/11/2026): con la Posta di caccia e la selvaggina locale il giocatore regola già la caccia; si riprende solo se le prove mostrano ancora troppa caccia.
