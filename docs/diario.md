@@ -2,6 +2,22 @@
 
 Voci più recenti in cima.
 
+## 25/11/2026 (pomeriggio)
+**Fatto**
+- **Giocatori "umani"** (`gioco/test/giocatore_umano.gd`): vedono solo ciò che vede il giocatore. Quattro profili: impara sbagliando, legge, conosce il genere ma non legge e va a tentativi, casual. Con le regole del mattino le carestie erano quasi assenti anche per chi sbaglia.
+- **Carestie B + C:** presagi ignorati che pesano di più (siccità più lunga e più dura), scorte che senza granaio si guastano di più, nascite che seguono l'abbondanza degli ultimi 15 anni circa (il villaggio può crescere oltre ciò che la terra regge).
+- **Legnaia:** senza legnaia non si raccoglie legna; i boscaioli abbattono gli alberi più vicini e il taglio si vede sulla mappa (il bosco ricresce dai margini); la raccolta rallenta con la radura. Strumento, icona, tasto L, lettura del bosco vicino, cause nel pannello della legna ("costruisci una legnaia vicino al bosco"). Anche le paludi danno un po' di legna.
+- **Casali** dalla tappa dei 250 abitanti: il nucleo tiene fino a 280 abitanti, le famiglie in più vanno in casali di 4 case nel contado.
+- **Taratura dopo le prove:** tolta una trappola (senza granaio i villaggi restavano sotto i 60 abitanti); cibo che avanza pieno a 18 mesi, soglia della crescita 60, danni della selvaggina messi nel conto dei campi. Risultati delle 72 partite in `docs/sessioni-giocatori.md`.
+- Gesti comuni dei giocatori automatici in `gioco/test/aiuti_giocatori.gd`; tutti i giocatori automatici costruiscono la legnaia, ognuno a modo suo. Verifiche nuove su legnaia e taglio visibile. Regola nuova in `CLAUDE.md`: le prove con i giocatori "umani" sono la base dei test futuri.
+
+**Decisioni** (Fede)
+- Carestie B + C; casali; nome Legnaia, con il taglio visibile; Capanno da pesca e Posta di caccia con la stessa dinamica (senza edificio un terzo); le prove "umane" come base dei test, con i due profili nuovi.
+
+**Prossimo passo**
+- Fede: guardare i risultati (chi conosce il genere supera l'obiettivo di 600–800 abitanti; chi impara sbagliando ha poche carestie).
+- Claude: Capanno da pesca e Posta di caccia; poi pascolo e bestiame, luogo sacro con il sacerdote, scorrerie, strade, popolazione visibile; passo elastico ed evento soglia. Da guardare con Fede la resa del taglio sulla mappa (nelle foto la radura si vede poco, perché ricresce presto di arbusti).
+
 ## 25/11/2026 (tarda mattina)
 **Fatto**
 - **Era delle Origini** definita in `docs/era-origini.md` (cronologia, nomenclatura, meccaniche, traguardi) e approvata da Fede; "macro-era" diventa "Era" in tutti i documenti.

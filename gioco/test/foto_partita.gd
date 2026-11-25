@@ -32,7 +32,11 @@ func _process(_d: float) -> bool:
 						tutta.append(sim.centro + Vector2i(dx, dy))
 				sim.aggiungi_zona(tutta)
 			if k % 5 == 0 and sim.fondato:
-				if sim.granaio.x < 0 and sim.cibo > 40.0:
+				if sim.legnaie.is_empty() or (AiutiGiocatori.legna_scarsa(sim) and sim.legnaie.size() < 3):
+					var cg := RandomNumberGenerator.new()
+					cg.seed = k
+					AiutiGiocatori.costruisci_legnaia(sim, cg, 1.0)
+				if sim.granaio.x < 0 and sim.sbloccato("granaio") and sim.legna >= SimVillaggio.COSTO_GRANAIO:
 					var c := sim.mondo_di_px(sim.centro)
 					sim.costruisci_granaio(c + Vector2(70, -30))
 				if k == 20:
@@ -40,10 +44,14 @@ func _process(_d: float) -> bool:
 			while sim.in_attesa():
 				sim.scegli(sim.decisioni[0]["id"], sim.decisioni[0]["opzioni"][0]["id"])
 			sim.passo()
+			p._abbatti_tagli()
 			_s.uso.avanza_anni(1)
 		p.vista.sincronizza()
 		p.aggiorna_hud()
 		var c := sim.mondo_di_px(sim.centro)
+		# Vista sulla prima legnaia (per vedere la radura dei boscaioli).
+		if args.size() > 4 and args[4] == "legnaia" and not sim.legnaie.is_empty():
+			c = sim.legnaie[0]["punto"]
 		_s.cam.vai_a(c.x + 60.0, c.y + 40.0, float(args[1]) if args.size() > 1 else 600.0)
 		_s.griglia_attiva = false
 		if args.size() > 3:
@@ -84,6 +92,8 @@ func _process(_d: float) -> bool:
 			var nome := args[4].get_slice(":", 1) if args[4].contains(":") else "Abbondanza"
 			_s.partita.aggiorna_hud()
 			_s.hud.mostra_focus(_s.partita.dati_focus(nome))
+		elif args.size() > 4 and args[4] == "legnaia":
+			pass
 		elif args.size() > 4:
 			# Strumento attivo con il cerchio al centro della vista (per vedere la guida dei campi).
 			_s.hud.seleziona_comando(args[4])

@@ -102,3 +102,19 @@ Le decisioni che ne sono venute (Fede, 25/11/2026) stanno in `pilastri-e-decisio
 - **Il risultato non cambia: le carestie restano quasi assenti** anche per chi sbaglia. Il motivo: quando la terra non basta, l'abbondanza ferma le nascite prima che arrivi la fame (il villaggio ristagna invece di morire), e le scorte coprono una siccità o una piena.
 - **Leggere conta:** chi legge i pannelli arriva a circa il 40% di abitanti in più.
 - **Un buco trovato:** la causa "mancano case: serve legna" non dice come procurarsela, e non c'è uno strumento per farlo (la legna viene da sola dai boschi vicini e dal dissodamento).
+
+## Quattro giocatori "umani", con legnaia, carestie B + C e casali (25/11/2026, pomeriggio)
+*Decisioni di Fede del 25/11/2026: legnaia obbligatoria per raccogliere legna, presagi ignorati che pesano di più e nascite in ritardo (carestie B + C), casali dalla tappa dei 250 abitanti; due profili nuovi: chi conosce il genere ma non legge e va a tentativi, e il casual che ripete gli errori e continua per il gusto di giocare. Le prove con i giocatori "umani" sono la base dei test futuri.* 72 partite (4 profili × 6 siti × 3 semi, 500 anni).
+
+| Profilo | Abitanti a 500 anni (mediana) | Minimo | Carestie per partita | Carestie gravi (in tutto) | Abbandoni | Nucleo (mediana) | Casali (mediana) |
+|---|---|---|---|---|---|---|---|
+| Impara sbagliando | 743 | 251 | 0.7 | 2 | 0 | 280 | 4.5 |
+| Legge le spiegazioni | 707 | 406 | 0.8 | 0 | 0 | 280 | 5 |
+| Conosce il genere | 1172 | 502 | 1.3 | 3 | 0 | 280 | 13.5 |
+| Casual | 162 | 83 | 2.7 | 0 | 0 | 162 | 0 |
+
+- **Le carestie ci sono, quasi sempre leggere e con una causa leggibile.** Chi conosce il genere ne ha di più perché spinge la crescita (le nascite in ritardo lo portano oltre ciò che la terra regge); il casual ne ha di più perché non allarga la zona e non costruisce il granaio, ma il villaggio non muore: cresce lento fino a circa 160 abitanti e si continua a giocare.
+- **Il nucleo resta entro i 280 abitanti**, il resto nei casali.
+- **La legna è un limite vero:** una legnaia lontana dal bosco tiene il villaggio affollato; chi conosce il genere ne costruisce subito una vicino al bosco e un'altra quando rende poco.
+- **Correzioni fatte durante la prova:** senza granaio le scorte si guastavano del 35% l'anno e le nascite in ritardo tenevano i villaggi sotto i 60 abitanti, la tappa del granaio (una trappola): ora il 30%; cibo che avanza pieno a 18 mesi (prima 24) e soglia della crescita a 60 (prima 62); le famiglie mettono nel conto il danno della selvaggina ai campi al margine del bosco; anche le paludi danno un po' di legna (metà del bosco).
+- **Da guardare:** chi conosce il genere arriva a 1172 abitanti in tutto, sopra l'obiettivo di 600–800; chi impara sbagliando ha 0,7 carestie a partita (obiettivo 1–3).

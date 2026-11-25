@@ -171,16 +171,23 @@ var allagati := {}
 ## Pesi e soglia: proposta di Claude, da tarare con le partite automatiche.
 const PESI_ABBONDANZA := {"cibo": 0.45, "salute": 0.3, "spazio": 0.25}
 ## Mesi di scorte che valgono "cibo che avanza" pieno.
-const MESI_PIENI := 24.0
+const MESI_PIENI := 18.0
 ## Sotto questa abbondanza (0–1) la popolazione non cresce; sopra cresce fino a CRESCITA_MASSIMA.
-const SOGLIA_CRESCITA := 0.62
+const SOGLIA_CRESCITA := 0.6
 const CRESCITA_MASSIMA := 0.014
 var abbondanza := 0.0
+## Le nascite reagiscono in ritardo (decisione di Fede del 25/11/2026, carestie B + C): seguono
+## l'abbondanza degli ultimi ANNI_NASCITE anni circa. Negli anni buoni il villaggio cresce oltre ciò
+## che la terra regge, e un'annata cattiva può portare la fame.
+const ANNI_NASCITE := 15.0
+var abbondanza_lenta := 0.0
+## Anni di fila in cui il cibo dell'anno non basta: lo dice il pannello di focus.
+var anni_deficit := 0
 var parti_abbondanza := {"cibo": 0.0, "salute": 0.0, "spazio": 0.0}
 ## Tappe (decisione di Fede del 25/11/2026): soglie di abitanti che aprono gli strumenti; una volta
 ## raggiunte restano anche se gli abitanti calano. Soglie di partenza, da tarare.
 const TAPPE := [
-	{"nome": "Fondazione", "abitanti": 0, "apre": ["zona", "campi", "sentiero", "fonti"]},
+	{"nome": "Fondazione", "abitanti": 0, "apre": ["zona", "campi", "sentiero", "fonti", "legnaia"]},
 	{"nome": "Gruppo di famiglie", "abitanti": 60, "apre": ["granaio", "raccolto"]},
 	{"nome": "Villaggio", "abitanti": 100, "apre": ["luogo_sacro", "pascolo"]},
 	{"nome": "Grande villaggio", "abitanti": 150, "apre": ["stranieri", "bosco_sacro"]},
@@ -193,12 +200,29 @@ var tappa := 0
 var legna := 0.0
 const LEGNA_INIZIALE := 40.0
 const LEGNA_PER_ABITANTE := 0.3  # quanta legna l'anno può raccogliere un abitante, se il bosco la offre
-const RESA_LEGNA := 0.08  # legna l'anno che un pixel di bosco vicino può dare senza consumarsi
 const CONSUMO_FOCOLARI := 0.08  # legna l'anno per abitante
 const MANUTENZIONE_CASA := 0.25  # legna l'anno per casa
 const COSTO_CASA := 12.0
 const LEGNA_DISSODAMENTO := 3.0  # legna da un pixel di bosco dissodato
 const COSTO_GRANAIO := 30.0
+## Legnaie (decisione di Fede del 25/11/2026): senza legnaia non si raccoglie legna. I boscaioli
+## abbattono ogni anno gli alberi più vicini alla legnaia: più il bosco è vicino, più in fretta si
+## raccoglie; man mano che la radura si allarga la raccolta rallenta, e conviene spostarsi o farne
+## un'altra. Gli alberi abbattuti spariscono anche dalla mappa e ricrescono dai margini.
+## Numeri: proposta di Claude, da tarare.
+const CAPACITA_LEGNAIA := 24.0  # legna l'anno con il bosco a ridosso
+const RAGGIO_LEGNAIA := 600.0  # metri: oltre, i boscaioli non vanno
+const LEGNA_PER_PIXEL := 4.0  # legna da un pixel di bosco abbattuto (0,16 ha)
+const ANNI_RICRESCITA := 60  # anni perché un taglio torni bosco (come il bosco maturo dell'uso del suolo)
+const ANNI_CANTIERE_LEGNAIA := 2
+const DISTANZA_MASSIMA_LEGNAIA := 1000.0  # dal centro del villaggio
+## Legnaie: {punto (metri), cantiere (anni che mancano), bosco (pixel di bosco attorno, dal più
+## vicino), debito (pixel da abbattere che si accumulano)}.
+var legnaie: Array = []
+## Pixel di bosco abbattuti dalle legnaie: indice -> anno del taglio.
+var tagliati := {}
+## Pixel abbattuti nell'ultimo anno: la partita li toglie dalla mappa.
+var tagli_anno: Array[int] = []
 const ANNI_CANTIERE_GRANAIO := 3
 var ultima_legna := 0.0
 var offerta_legna := 0.0
@@ -221,6 +245,17 @@ const ANNI_LIMO := 3
 var limo := {}  # indice del pixel -> anni rimasti
 ## Piena disastrosa annunciata: anni che mancano (-1: nessuna in arrivo).
 var piena_tra := -1
+## Siccità dopo un presagio ignorato: dura di più e i campi rendono meno (carestie B).
+var siccita_grave := false
+## Casali (decisione di Fede del 25/11/2026): dalla tappa "Territorio" il nucleo tiene fino a
+## NUCLEO_MASSIMO abitanti; la crescita in più va in casali di 2–4 case nel contado.
+const NUCLEO_MASSIMO := 280.0
+const CASE_PER_CASALE := 4
+const CASALE_DISTANZA_MIN := 300.0
+const CASALE_DISTANZA_MAX := 800.0
+const CASALE_SPAZIO := 200.0
+var casali: Array[Vector2i] = []  # lotto al centro di ogni casale
+var case_casale := {}  # lotto di una casa -> indice del casale
 var gia_piena_disastrosa := false
 ## Presagi: al massimo uno ogni secolo circa (proposta approvata da Fede il 25/11/2026).
 const ANNI_TRA_PRESAGI := 100
@@ -451,6 +486,8 @@ func fonda(p: Vector2i) -> void:
 	_caccia_eccessiva = false
 	_anni_risorse = 0
 	legna = LEGNA_INIZIALE
+	legnaie = []
+	tagli_anno = []
 	consenso = {"anziani": 60.0, "famiglie": 60.0, "sacerdote": 60.0}
 	cantiere_granaio = 0
 	limo = {}
@@ -460,6 +497,10 @@ func fonda(p: Vector2i) -> void:
 	bosco_iniziale = _risorse["bosco"]
 	disboscamento = 0.0
 	_aggiorna_abbondanza()
+	abbondanza_lenta = abbondanza
+	casali = []
+	case_casale = {}
+	anni_deficit = 0
 	_contado_annunciato = CONTADO_MIN
 	stat["fondazioni"] += 1
 	var v := valuta_sito(p)
@@ -585,13 +626,16 @@ func togli_zona(lista: Array[Vector2i]) -> int:
 
 ## Raggio dell'abitato in metri (dove nascono le case): i campi della zona agricola lo lasciano libero.
 func raggio_abitato() -> float:
-	var servono := ceili(pop / ABITANTI_PER_CASA)
+	var servono := ceili(abitanti_nucleo() / ABITANTI_PER_CASA)
 	return (3 + ceili(1.4 * sqrt(servono)) + raggio_extra * 3) * LOTTO
 
 
 ## Resa attesa di un campo in un anno normale (per decidere quanti campi dissodare).
 func _resa_attesa(i: int) -> float:
-	return RESA_CAMPO * fert(i) * 0.95 * (0.85 + 0.15 * acqua_qualsiasi(i)) * RESA_TECNICA[tecnica_corrente] / AREA_CELLA
+	# Le famiglie sanno quanto rende un campo al margine del bosco (la selvaggina lo rovina).
+	_aggiorna_campi_serviti()
+	var danni := 1.0 - 0.25 * selvaggina if _campi_al_bosco.has(i) else 1.0
+	return RESA_CAMPO * fert(i) * 0.95 * (0.85 + 0.15 * acqua_qualsiasi(i)) * RESA_TECNICA[tecnica_corrente] * danni / AREA_CELLA
 
 
 ## Le famiglie dissodano nella zona agricola i campi che mancano per sfamarsi: tanti quanti ne
@@ -762,6 +806,151 @@ func costruisci_granaio(punto: Vector2) -> String:
 	return ""
 
 
+## Bosco in piedi: c'è nella mappa (e nel gioco non è stato tagliato) e le legnaie non l'hanno
+## abbattuto da meno di ANNI_RICRESCITA anni.
+func bosco_in_piedi(i: int) -> bool:
+	if tagliati.has(i):
+		if anno - int(tagliati[i]) < ANNI_RICRESCITA:
+			return false
+		tagliati.erase(i)
+	return bosco_presente.call(i)
+
+
+## Legno da tagliare per le legnaie: bosco in piedi, oppure palude non tagliata di recente.
+func legno_in_piedi(i: int) -> bool:
+	if dati.tipo[i] == MappaDati.PALUDE:
+		return not (tagliati.has(i) and anno - int(tagliati[i]) < ANNI_RICRESCITA)
+	return bosco_in_piedi(i) and not campi.has(i)
+
+
+func motivo_legnaia(punto: Vector2) -> String:
+	if not fondato:
+		return "Prima bisogna fondare il villaggio."
+	var p := px_da_mondo(punto.x, punto.y)
+	var i := px(p)
+	if not edificabile(i) or campi.has(i) or sentieri.has(i) or p == centro:
+		return "La legnaia va su terra asciutta e libera, non su campi o sentieri."
+	if punto.distance_to(mondo_di_px(centro)) > DISTANZA_MASSIMA_LEGNAIA:
+		return "Troppo lontano dal villaggio: la legnaia va entro %d m dal centro." % roundi(DISTANZA_MASSIMA_LEGNAIA)
+	for l in legnaie:
+		if (l["punto"] as Vector2).distance_to(punto) < 150.0:
+			return "C'è già una legnaia qui vicino."
+	return ""
+
+
+## Bosco attorno a un punto, entro RAGGIO_LEGNAIA (per la lettura sotto il puntatore): quota da 0
+## a 1 dei pixel di bosco in piedi e distanza dal più vicino (metri, -1 se nessuno).
+func bosco_per_legnaia(punto: Vector2) -> Dictionary:
+	var p := px_da_mondo(punto.x, punto.y)
+	var r := ceili(RAGGIO_LEGNAIA / dati.metri_per_px)
+	var tot := 0
+	var bosco := 0
+	var vicino := -1.0
+	for dy in range(-r, r + 1):
+		for dx in range(-r, r + 1):
+			var q := p + Vector2i(dx, dy)
+			if q.x < 0 or q.y < 0 or q.x >= n or q.y >= n:
+				continue
+			var d := mondo_di_px(q).distance_to(punto)
+			if d > RAGGIO_LEGNAIA:
+				continue
+			tot += 1
+			if legno_in_piedi(px(q)):
+				bosco += 1
+				if vicino < 0.0 or d < vicino:
+					vicino = d
+	return {"quota": float(bosco) / maxf(1.0, tot), "vicino": vicino}
+
+
+func costruisci_legnaia(punto: Vector2) -> String:
+	var m := motivo_legnaia(punto)
+	if m != "":
+		return m
+	var p := px_da_mondo(punto.x, punto.y)
+	var r := ceili(RAGGIO_LEGNAIA / dati.metri_per_px)
+	var lista: Array = []
+	for dy in range(-r, r + 1):
+		for dx in range(-r, r + 1):
+			var q := p + Vector2i(dx, dy)
+			if q.x < 0 or q.y < 0 or q.x >= n or q.y >= n:
+				continue
+			var d := mondo_di_px(q).distance_to(punto)
+			# Anche le paludi danno legna (ontani, salici, canne), meno del bosco.
+			if d <= RAGGIO_LEGNAIA and (dati.copertura[px(q)] > 127 or dati.tipo[px(q)] == MappaDati.PALUDE):
+				lista.append([d, px(q)])
+	lista.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
+	var l := lotto_da_mondo(punto.x, punto.y)
+	case = case.filter(func(c: Vector2i) -> bool: return cheb(c, l) > 1)
+	legnaie.append({"punto": centro_lotto(l), "cantiere": ANNI_CANTIERE_LEGNAIA, "bosco": lista, "debito": 0.0})
+	_scrivi("Si comincia a costruire una legnaia: tra %d anni i boscaioli taglieranno il bosco attorno." % ANNI_CANTIERE_LEGNAIA)
+	disponi_case()
+	return ""
+
+
+## Distanza dalla legnaia al bosco in piedi più vicino (metri; -1 se non ce n'è più).
+func _bosco_vicino_legnaia(l: Dictionary) -> float:
+	for voce in l["bosco"]:
+		var i: int = voce[1]
+		if legno_in_piedi(i):
+			return float(voce[0])
+	return -1.0
+
+
+## Quanta legna l'anno può dare una legnaia: piena con il bosco a ridosso, poi meno man mano che i
+## boscaioli devono andare lontano.
+func capacita_legnaia(l: Dictionary) -> float:
+	if int(l["cantiere"]) > 0:
+		return 0.0
+	var d := _bosco_vicino_legnaia(l)
+	if d < 0.0:
+		return 0.0
+	return CAPACITA_LEGNAIA * clampf(1.0 - d / RAGGIO_LEGNAIA, 0.0, 1.0)
+
+
+## Un anno di lavoro delle legnaie: si raccoglie quanto serve (fino alle braccia e alla catasta) e
+## si abbattono gli alberi più vicini, uno per ogni LEGNA_PER_PIXEL di legna.
+func _lavora_legnaie() -> void:
+	tagli_anno = []
+	offerta_legna = 0.0
+	ultima_legna = 0.0
+	var capacita: Array[float] = []
+	for l in legnaie:
+		if int(l["cantiere"]) > 0:
+			l["cantiere"] = int(l["cantiere"]) - 1
+			if int(l["cantiere"]) == 0:
+				_scrivi("La legnaia è pronta: i boscaioli cominciano a tagliare il bosco vicino.", "buono")
+		var c := capacita_legnaia(l)
+		capacita.append(c)
+		offerta_legna += c
+	if offerta_legna <= 0.0:
+		return
+	var voluta := clampf(minf(pop * LEGNA_PER_ABITANTE, massimo_legna() - legna + consumo_legna), 0.0, offerta_legna)
+	ultima_legna = voluta
+	for k in legnaie.size():
+		var l: Dictionary = legnaie[k]
+		if capacita[k] <= 0.0:
+			continue
+		l["debito"] = float(l["debito"]) + voluta * capacita[k] / offerta_legna / LEGNA_PER_PIXEL
+		while float(l["debito"]) >= 1.0:
+			var tagliato := false
+			for voce in l["bosco"]:
+				var i: int = voce[1]
+				if legno_in_piedi(i):
+					tagliati[i] = anno
+					tagli_anno.append(i)
+					tagliato = true
+					# Un pixel di palude dà metà legna: conta come mezzo pixel di bosco.
+					if dati.tipo[i] == MappaDati.PALUDE:
+						l["debito"] = float(l["debito"]) + 0.5
+					break
+			l["debito"] = float(l["debito"]) - 1.0
+			if not tagliato:
+				l["debito"] = 0.0
+				break
+	if not tagli_anno.is_empty():
+		_anni_risorse = mini(_anni_risorse, 1)
+
+
 ## Demolisce ciò che è demolibile dentro il cerchio (strumento Demolisci, decisione di Fede del
 ## 24/11/2026, come in Cities: Skylines): case, campi, sentieri, granaio. Il centro del villaggio
 ## (il focolare) non si demolisce. Fiumi e paludi non sono affare di questo strumento: si
@@ -791,6 +980,11 @@ func demolisci(punto: Vector2, raggio: float) -> Dictionary:
 	var n_sentieri := sentieri.size()
 	sentieri = sentieri.filter(func(i: int) -> bool: return not dentro.call(i))
 	esito["sentieri"] = n_sentieri - sentieri.size()
+	var n_legnaie := legnaie.size()
+	legnaie = legnaie.filter(func(l: Dictionary) -> bool: return (l["punto"] as Vector2).distance_to(punto) > raggio)
+	esito["legnaie"] = n_legnaie - legnaie.size()
+	if esito["legnaie"] > 0:
+		_scrivi("Demolita la legnaia.")
 	if granaio.x >= 0 and granaio.distance_to(punto) <= raggio:
 		granaio = Vector2(-1, -1)
 		esito["granaio"] = true
@@ -828,7 +1022,7 @@ func risorse_attorno(p: Vector2i) -> Dictionary:
 			elif t == MappaDati.PALUDE:
 				acqua += w * 0.5
 				bosco += w * 0.3
-			elif bosco_presente.call(j) and not coltivati.has(j):
+			elif bosco_in_piedi(j) and not coltivati.has(j):
 				bosco += w
 	return {"bosco": bosco, "acqua": acqua}
 
@@ -867,13 +1061,14 @@ func servito(i: int) -> bool:
 
 ## Abitanti per ettaro nell'abitato (il cerchio che contiene le case).
 func densita() -> float:
-	if case.is_empty():
+	var nucleo := case_nel_nucleo()
+	if nucleo.is_empty():
 		return 0.0
 	var c := mondo_di_px(centro)
 	var r := 10.0
-	for l in case:
+	for l in nucleo:
 		r = maxf(r, centro_lotto(l).distance_to(c) + LOTTO * 0.5)
-	return pop / (PI * r * r / 10000.0)
+	return abitanti_nucleo() / (PI * r * r / 10000.0)
 
 
 func tecnica_campo(i: int) -> int:
@@ -1135,6 +1330,7 @@ func passo() -> void:
 		siccita -= 1
 		if siccita == 0:
 			sorgenti_basse = false
+			siccita_grave = false
 			_scrivi("Tornano le piogge. Le sorgenti si riempiono.", "buono")
 	if siccita_tra > 0:
 		siccita_tra -= 1
@@ -1187,7 +1383,8 @@ func passo() -> void:
 			_scrivi("Il granaio è finito: le scorte si conservano meglio.", "buono")
 	# Raccolto: le braccia lavorano prima i campi più fertili. Famiglie contente lavorano di più
 	# (decisione di Fede del 25/11/2026); un cantiere aperto toglie un po' di braccia.
-	var lavoro: float = (0.9 + 0.2 * consenso["famiglie"] / 100.0) * (0.95 if cantiere_granaio > 0 else 1.0)
+	var cantieri := (1 if cantiere_granaio > 0 else 0) + legnaie.filter(func(l: Dictionary) -> bool: return int(l["cantiere"]) > 0).size()
+	var lavoro: float = (0.9 + 0.2 * consenso["famiglie"] / 100.0) * (1.0 - 0.05 * mini(cantieri, 3))
 	var braccia: float = pop * 0.55 * lavoro * (1.0 + (0.0 if fonti["caccia"] else 0.2) + (0.0 if fonti["pesca"] else 0.1))
 	var lavorabili := int(braccia / 3.0 * AREA_CELLA) if fonti["agricoltura"] else 0
 	var ordinati := campi.duplicate()
@@ -1228,11 +1425,10 @@ func passo() -> void:
 	elif _caccia_eccessiva and selvaggina > SOGLIA_SELVAGGINA + 0.2:
 		_caccia_eccessiva = false
 		_scrivi("La selvaggina torna nei boschi.", "buono")
-	# Legna (decisione di Fede del 25/11/2026): si raccoglie nei boschi vicini quanto ne offrono senza
-	# consumarsi; serve ai focolari e a tenere in piedi le case.
-	offerta_legna = float(_risorse["bosco"]) * RESA_LEGNA
-	ultima_legna = minf(pop * LEGNA_PER_ABITANTE, offerta_legna)
+	# Legna (decisione di Fede del 25/11/2026): la raccolgono le legnaie, abbattendo il bosco vicino;
+	# serve ai focolari e a tenere in piedi le case.
 	consumo_legna = pop * CONSUMO_FOCOLARI + case.size() * MANUTENZIONE_CASA
+	_lavora_legnaie()
 	legna = clampf(legna + ultima_legna - consumo_legna, 0.0, massimo_legna())
 	# Cibo. Le annate magre fanno parte del ciclo normale: si vedono solo nelle scorte, senza avvisi
 	# (decisione di Fede del 25/11/2026). La carestia arriva quando le scorte finiscono.
@@ -1256,7 +1452,7 @@ func passo() -> void:
 		else:
 			carestia = 0.0
 	else:
-		cibo *= 0.9 if granaio_pronto() else 0.75
+		cibo *= 0.9 if granaio_pronto() else 0.7
 	# Il primo cattivo raccolto ferma il gioco una volta, quando la fame è davvero vicina.
 	if not gia_primo_cattivo and anno > ANNO_INIZIO + 2 and raccolto + ultima_caccia + ultima_pesca < consumo and cibo < consumo * 0.25:
 		gia_primo_cattivo = true
@@ -1278,8 +1474,10 @@ func passo() -> void:
 	salute = clampf(salute, 0.0, 100.0)
 	# Popolazione: le nascite seguono l'abbondanza (decisione di Fede del 25/11/2026).
 	_aggiorna_abbondanza()
+	abbondanza_lenta += (abbondanza - abbondanza_lenta) / ANNI_NASCITE
+	anni_deficit = anni_deficit + 1 if raccolto + ultima_caccia + ultima_pesca < consumo else 0
 	if carestia == 0.0:
-		pop *= 1.0 + CRESCITA_MASSIMA * (abbondanza - SOGLIA_CRESCITA) / (1.0 - SOGLIA_CRESCITA)
+		pop *= 1.0 + CRESCITA_MASSIMA * (abbondanza_lenta - SOGLIA_CRESCITA) / (1.0 - SOGLIA_CRESCITA)
 	if salute < 35.0:
 		pop *= 0.98
 	_aggiorna_consenso()
@@ -1394,7 +1592,7 @@ func _resa(i: int) -> float:
 		return 0.0
 	var fattore := 0.0
 	if siccita > 0:
-		fattore = 0.35 + 0.6 * acqua_affidabile(i)
+		fattore = (0.25 + 0.5 * acqua_affidabile(i)) if siccita_grave else (0.35 + 0.6 * acqua_affidabile(i))
 	else:
 		fattore = clima * (0.85 + 0.15 * acqua_qualsiasi(i))
 	_aggiorna_campi_serviti()
@@ -1476,9 +1674,14 @@ func _piena(disastrosa: bool) -> void:
 
 func _inizia_siccita() -> void:
 	siccita = 1 + rng.randi() % 2
+	siccita_grave = false
 	sorgenti_basse = true
 	stat["siccita"] += 1
 	if not presagio_vero.is_empty():
+		if presagio_vero["scelta"] != "razionare":
+			# Presagio ignorato: la siccità dura di più e morde di più (carestie B).
+			siccita = 2 + rng.randi() % 2
+			siccita_grave = true
 		if presagio_vero["scelta"] == "razionare":
 			_cambia_consenso("anziani", 6.0)
 			stat["presagi_letti"] += 1
@@ -1495,12 +1698,54 @@ func _inizia_siccita() -> void:
 ## crescita con campi, sentieri e granaio.
 ## Con `paga` le case nuove costano legna (decisione di Fede del 25/11/2026: le case spontanee
 ## crescono solo se c'è legna); senza, si ridispongono gratis (fondazione, case spostate).
+## Dalla tappa "Territorio" il nucleo tiene fino a NUCLEO_MASSIMO abitanti e le famiglie in più
+## vanno nei casali del contado (decisione di Fede del 25/11/2026).
 func disponi_case(paga := false) -> void:
 	if not fondato:
 		return
-	var servono := ceili(pop / ABITANTI_PER_CASA)
-	while case.size() > servono:
-		case.pop_back()
+	# Case tolte da altre parti (piene, demolizioni, sentieri): via anche dai casali.
+	var presenti := {}
+	for c in case:
+		presenti[c] = true
+	for l in case_casale.keys():
+		if not presenti.has(l):
+			case_casale.erase(l)
+	var servono_n := ceili(abitanti_nucleo() / ABITANTI_PER_CASA)
+	var servono_c := ceili(abitanti_casali() / ABITANTI_PER_CASA)
+	# Troppe case: si tolgono prima quelle dei casali, poi quelle del nucleo (le più recenti).
+	var nel_casale := case.filter(func(c: Vector2i) -> bool: return case_casale.has(c))
+	while nel_casale.size() > servono_c:
+		var via: Vector2i = nel_casale.pop_back()
+		case.erase(via)
+		case_casale.erase(via)
+	var nel_nucleo := case.filter(func(c: Vector2i) -> bool: return not case_casale.has(c))
+	while nel_nucleo.size() > servono_n:
+		var via: Vector2i = nel_nucleo.pop_back()
+		case.erase(via)
+	_disponi_nucleo(servono_n, nel_nucleo.size(), paga)
+	_disponi_casali(servono_c, paga)
+	var servono := servono_n + servono_c
+	affollamento = clampf(float(servono - case.size()) / servono, 0.0, 1.0) if servono > 0 else 0.0
+
+
+## Abitanti del nucleo e dei casali.
+func abitanti_nucleo() -> float:
+	return minf(pop, NUCLEO_MASSIMO) if sbloccato("casali") else pop
+
+
+func abitanti_casali() -> float:
+	return pop - abitanti_nucleo()
+
+
+func case_nel_nucleo() -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	for c in case:
+		if not case_casale.has(c):
+			out.append(c)
+	return out
+
+
+func _disponi_nucleo(servono: int, ci_sono: int, paga: bool) -> void:
 	var lc := lotto_da_mondo(mondo_di_px(centro).x, mondo_di_px(centro).y)
 	var r := 3 + ceili(1.4 * sqrt(servono)) + raggio_extra * 3
 	var paura := memoria / 100.0
@@ -1509,14 +1754,14 @@ func disponi_case(paga := false) -> void:
 		occupati[c] = true
 	var granaio_l := lotto_da_mondo(granaio.x, granaio.y) if granaio.x >= 0 else Vector2i(-99999, -99999)
 	var tentativi := 0
-	while case.size() < servono and tentativi < 200 and (not paga or legna >= COSTO_CASA):
+	while ci_sono < servono and tentativi < 200 and (not paga or legna >= COSTO_CASA):
 		tentativi += 1
 		var migliore := Vector2i(-1, -1)
 		var punteggio := -1e9
 		for dy in range(-r, r + 1):
 			for dx in range(-r, r + 1):
 				var l := lc + Vector2i(dx, dy)
-				if l == lc or cheb(l, granaio_l) <= 1 or macerie.has(l):
+				if l == lc or cheb(l, granaio_l) <= 1 or macerie.has(l) or _vicino_a_legnaia(l):
 					continue
 				var w := centro_lotto(l)
 				var p := px_da_mondo(w.x, w.y)
@@ -1542,9 +1787,123 @@ func disponi_case(paga := false) -> void:
 			break
 		case.append(migliore)
 		occupati[migliore] = true
+		ci_sono += 1
 		if paga:
 			legna -= COSTO_CASA
-	affollamento = clampf(float(servono - case.size()) / servono, 0.0, 1.0) if servono > 0 else 0.0
+
+
+func _vicino_a_legnaia(l: Vector2i) -> bool:
+	for g in legnaie:
+		var p: Vector2 = g["punto"]
+		if cheb(lotto_da_mondo(p.x, p.y), l) <= 1:
+			return true
+	return false
+
+
+## Casali: le famiglie in più si stabiliscono nel contado, vicino ai campi, lontano dal pericolo
+## di piena finché il ricordo è vivo, in gruppi di 2–4 case distanti tra loro.
+func _disponi_casali(servono: int, paga: bool) -> void:
+	var ci_sono := case_casale.size()
+	var occupati := {}
+	for c in case:
+		occupati[c] = true
+	var tentativi := 0
+	while ci_sono < servono and tentativi < 60 and (not paga or legna >= COSTO_CASA):
+		tentativi += 1
+		# Un casale con posto, altrimenti uno nuovo.
+		var k := -1
+		var conta := {}
+		for l in case_casale:
+			conta[case_casale[l]] = int(conta.get(case_casale[l], 0)) + 1
+		for j in casali.size():
+			if int(conta.get(j, 0)) < CASE_PER_CASALE:
+				k = j
+				break
+		if k < 0:
+			var nuovo := _sito_casale()
+			if nuovo.x == -99999:
+				break
+			casali.append(nuovo)
+			k = casali.size() - 1
+			_scrivi("Alcune famiglie lasciano il villaggio per vivere vicino ai loro campi: nasce un casale.")
+		var lotto := _lotto_nel_casale(casali[k], occupati)
+		if lotto.x == -99999:
+			# Il casale è chiuso (niente terra libera attorno): si segna come pieno.
+			for t in CASE_PER_CASALE:
+				case_casale[Vector2i(-100000 - k * 10 - t, 0)] = k
+			continue
+		case.append(lotto)
+		case_casale[lotto] = k
+		occupati[lotto] = true
+		ci_sono += 1
+		if paga:
+			legna -= COSTO_CASA
+	# Le chiavi fittizie dei casali pieni non contano come case.
+	for l in case_casale.keys():
+		if l.x <= -100000:
+			case_casale.erase(l)
+
+
+func _sito_casale() -> Vector2i:
+	var c := mondo_di_px(centro)
+	var migliore := Vector2i(-99999, 0)
+	var punteggio := -1e9
+	var paura := memoria / 100.0
+	var passo := 2
+	var r := ceili(CASALE_DISTANZA_MAX / dati.metri_per_px)
+	var coltivati := {}
+	for i in campi:
+		coltivati[i] = true
+	for dy in range(-r, r + 1, passo):
+		for dx in range(-r, r + 1, passo):
+			var q := centro + Vector2i(dx, dy)
+			if q.x < 1 or q.y < 1 or q.x >= n - 1 or q.y >= n - 1:
+				continue
+			var w := mondo_di_px(q)
+			var d := w.distance_to(c)
+			if d < CASALE_DISTANZA_MIN or d > CASALE_DISTANZA_MAX:
+				continue
+			var i := px(q)
+			if not edificabile(i) or coltivati.has(i) or sentieri.has(i):
+				continue
+			var lontano := true
+			for s in casali:
+				if centro_lotto(s).distance_to(w) < CASALE_SPAZIO:
+					lontano = false
+			if not lontano:
+				continue
+			var vicini := 0
+			for oy in range(-3, 4):
+				for ox in range(-3, 4):
+					var v := q + Vector2i(ox, oy)
+					if v.x >= 0 and v.y >= 0 and v.x < n and v.y < n and coltivati.has(px(v)):
+						vicini += 1
+			var sc := vicini * 0.2 - piena(i) * (0.5 + paura) * 8.0 + acqua_qualsiasi(i) - d / 1000.0
+			if sc > punteggio:
+				punteggio = sc
+				migliore = lotto_da_mondo(w.x, w.y)
+	return migliore
+
+
+func _lotto_nel_casale(centro_casale: Vector2i, occupati: Dictionary) -> Vector2i:
+	for raggio in [0, 2, 3]:
+		for dy in range(-raggio, raggio + 1):
+			for dx in range(-raggio, raggio + 1):
+				var l := centro_casale + Vector2i(dx, dy)
+				if occupati.has(l):
+					continue
+				var vicina := false
+				for oy in [-1, 0, 1]:
+					for ox in [-1, 0, 1]:
+						if occupati.has(l + Vector2i(ox, oy)):
+							vicina = true
+				if vicina:
+					continue
+				var w := centro_lotto(l)
+				var i := px(px_da_mondo(w.x, w.y))
+				if edificabile(i) and not campi.has(i) and not sentieri.has(i):
+					return l
+	return Vector2i(-99999, 0)
 
 
 ## Emigrazione (decisione di Fede: al posto del villaggio figlio): un terzo delle famiglie parte.
@@ -1564,6 +1923,9 @@ func _abbandona() -> void:
 	fondato = false
 	centro = Vector2i(-1, -1)
 	case = []
+	casali = []
+	case_casale = {}
+	legnaie = []
 	campi = []
 	_tecnica_campi = {}
 	zona = {}
@@ -1596,12 +1958,16 @@ func cause_di(nome: String) -> Array[String]:
 	var cibo_anno := ultimo_raccolto + ultima_caccia + ultima_pesca
 	match nome:
 		"Abbondanza", "Popolazione":
+			if not casali.is_empty():
+				out.append("%d abitanti nel villaggio e %d nei casali del contado (%d casali)." % [roundi(abitanti_nucleo()), roundi(abitanti_casali()), casali.size()])
 			if abbondanza >= SOGLIA_CRESCITA + 0.02:
 				out.append("La popolazione cresce: c'è cibo da parte, salute e spazio.")
 			elif abbondanza <= SOGLIA_CRESCITA - 0.02:
 				out.append("La popolazione cala piano: l'abbondanza è sotto %d." % roundi(SOGLIA_CRESCITA * 100.0))
 			else:
 				out.append("La popolazione è ferma: il villaggio ha quasi raggiunto ciò che la terra può dare.")
+			if anni_deficit >= 3 and abbondanza_lenta > abbondanza:
+				out.append("Siete più di quanti la terra possa sfamare: le nascite vengono dagli anni buoni, ma da %d anni il cibo non basta. Servono più campi, o meno bocche." % anni_deficit)
 			if parti_abbondanza["cibo"] < 0.4:
 				out.append("Le scorte bastano per %.0f mesi: servono più campi, o più caccia e pesca." % mesi_di_scorta())
 			if zona_piena:
@@ -1650,7 +2016,18 @@ func cause_di(nome: String) -> Array[String]:
 			if consenso["famiglie"] < 30.0:
 				out.append("Le famiglie molto scontente cominciano ad andarsene.")
 		"Legna":
-			out.append("I boschi vicini ne danno fino a %d l'anno; se ne raccolgono %d e se ne consumano %d." % [roundi(offerta_legna), roundi(ultima_legna), roundi(consumo_legna)])
+			if legnaie.is_empty():
+				out.append("Senza legnaia non si raccoglie legna: costruiscine una vicino al bosco (Edifici). Ora arriva solo quella del dissodamento.")
+			else:
+				out.append("Le legnaie ne danno fino a %d l'anno; se ne raccolgono %d e se ne consumano %d." % [roundi(offerta_legna), roundi(ultima_legna), roundi(consumo_legna)])
+				for l in legnaie:
+					var d := _bosco_vicino_legnaia(l)
+					if int(l["cantiere"]) > 0:
+						out.append("Una legnaia è in costruzione: ancora %d anni." % int(l["cantiere"]))
+					elif d < 0.0:
+						out.append("Attorno a una legnaia il bosco è finito: spostala o costruiscine un'altra vicino al bosco.")
+					elif d > RAGGIO_LEGNAIA * 0.5:
+						out.append("Il bosco è ormai a %d m da una legnaia: i boscaioli vanno lontano e raccolgono meno." % roundi(d))
 			if disboscamento > 0.1:
 				out.append("Attorno al villaggio è sparito il %d%% del bosco: meno legna e selvaggina, piene più frequenti." % roundi(disboscamento * 100.0))
 			if legna < COSTO_CASA:

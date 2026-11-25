@@ -38,6 +38,7 @@ const COSTRUZIONI := {
 	"casa_lunga": ["legno", "argilla", "paglia"],
 	"capanna": ["legno", "argilla", "paglia"],
 	"granaio": ["legno", "argilla", "paglia"],
+	"legnaia": ["legno", "paglia"],
 	"focolare": ["pietra a secco"],
 	"sentiero": ["terra battuta"],
 	"palizzata": ["legno"],

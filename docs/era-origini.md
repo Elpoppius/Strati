@@ -73,6 +73,13 @@ Caso estremo: sotto il 5% per anni il villaggio si divide (c'è già).
 
 Più risorse, più crescita; la pianificazione dei cicli e l'uso delle risorse rallentano la crescita in modo naturale.
 
+**Edifici delle risorse [Deciso, 25/11/2026]**
+- **Legnaia:** senza legnaia non si raccoglie legna (resta quella del dissodamento). I boscaioli abbattono ogni anno gli alberi più vicini: più il bosco è vicino, più in fretta si raccoglie; la radura si allarga, la raccolta rallenta e conviene spostarsi o costruirne un'altra. **Il taglio si vede sulla mappa** e il bosco ricresce dai margini. Costa braccia (2 anni di cantiere); se ne possono fare più d'una.
+- **Capanno da pesca** (germe dell'approdo e del porto) e **Posta di caccia** (al margine del bosco): stessa dinamica, influenzati dalla vicinanza all'acqua (fiume più dei torrenti, poco le paludi) e al bosco fitto con selvaggina. Senza questi edifici caccia e pesca non spariscono ma rendono circa un terzo. *(Da costruire dopo la legnaia.)*
+
+### Casali
+**[Deciso, 25/11/2026]** Dalla tappa "Territorio" (250 abitanti) il nucleo tiene fino a circa 280 abitanti; la crescita in più va nei casali: 2–4 case nel contado, a 300–800 m dal centro, vicino ai campi, lontano dalle terre a rischio di piena finché il ricordo è vivo, ad almeno 200 m l'uno dall'altro. Costano legna come le altre case. Si contano gli abitanti in tutto; la densità si misura sul nucleo. Più avanti, con le scorrerie, i casali saranno più esposti.
+
 ### Tappe
 **[Deciso, 25/11/2026]** Soglie di abitanti che aprono gli strumenti; una volta raggiunte restano. Cambia solo l'effetto (il luogo sacro rende quanto è contento il sacerdote). Soglie di partenza, da tarare:
 | Tappa | Abitanti | Si apre |
@@ -97,7 +104,7 @@ Più risorse, più crescita; la pianificazione dei cicli e l'uso delle risorse r
 | Evento | Viene da | Si attenua con | Come si vede |
 |---|---|---|---|
 | Annata magra | clima, campi stanchi | – | solo nell'accumulo del cibo, **nessun avviso** |
-| Carestia | scorte finite + annata cattiva + segnali ignorati | granaio, animali, presagi ascoltati | indicatori, pannello di focus; poche per partita |
+| Carestia | scorte finite + annata cattiva + segnali ignorati; **[Deciso, 25/11/2026: B + C]** un presagio ignorato fa durare e mordere di più la siccità, senza granaio le scorte si guastano più in fretta, e le nascite seguono l'abbondanza degli ultimi 15 anni circa (negli anni buoni si cresce oltre ciò che la terra regge) | granaio, animali, presagi ascoltati | indicatori, pannello di focus ("siete più di quanti la terra possa sfamare"); obiettivo 1–3 per chi sbaglia, 0–1 per chi legge, nessun abbandono a livello medio |
 | Siccità | clima, **sempre annunciata** dalle sorgenti | scorte, campi vicini all'acqua | presagio, mappa dell'acqua |
 | Piena di stagione | rischio della mappa | non coltivare nelle terre basse | campi allagati sulla mappa; **portano limo**: più fertilità dopo |
 | Piena disastrosa | rara, coerente con il **sito e le azioni** (bosco tagliato a monte, costruzioni nelle terre a rischio), annunciata da segni | lasciare il bosco sui pendii, non costruire nel rischio | acqua che sale, case e campi persi sulla mappa; la prima ferma il gioco una volta |

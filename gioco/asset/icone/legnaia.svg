@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="miter">
+<!-- Legnaia: tronchi accatastati e l'ascia -->
+<circle cx="9" cy="24" r="3.2" fill="#ffffff" stroke="none"/>
+<circle cx="16" cy="24" r="3.2" fill="#ffffff" stroke="none"/>
+<circle cx="23" cy="24" r="3.2" fill="#ffffff" stroke="none"/>
+<circle cx="12.5" cy="18" r="3.2" fill="#ffffff" stroke="none"/>
+<circle cx="19.5" cy="18" r="3.2" fill="#ffffff" stroke="none"/>
+<line x1="20" y1="4" x2="26" y2="12"/>
+<polyline points="18,8 22,4 24,6"/>
+</svg>

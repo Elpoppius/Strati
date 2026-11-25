@@ -96,7 +96,7 @@ Sono una prima serie (proposta di Claude), da confermare con Fede.
 | fps, alberi (livello), cache | in alto a destra | prestazioni, per le prove sui PC |
 
 ## Tasti
-1–5 mappe · G griglia · I isoipse · F fondare · Z zona agricola · C campo · V sentiero · H granaio · Spazio pausa o riprendi · + e − velocità del tempo · X demolisci · P politiche · Y +10 anni · [ e ] raggio dello strumento · Esc o clic destro chiude il pannello di focus o le politiche, chiude la catena dei sentieri o toglie lo strumento · Q E ruota · rotella zoom · tasto destro trascinato, tasto centrale o WASD sposta · Home torna al sito.
+1–5 mappe · G griglia · I isoipse · F fondare · Z zona agricola · C campo · V sentiero · H granaio · L legnaia · Spazio pausa o riprendi · + e − velocità del tempo · X demolisci · P politiche · Y +10 anni · [ e ] raggio dello strumento · Esc o clic destro chiude il pannello di focus o le politiche, chiude la catena dei sentieri o toglie lo strumento · Q E ruota · rotella zoom · tasto destro trascinato, tasto centrale o WASD sposta · Home torna al sito.
 
 ## Partita (Prototipo 0 in Godot)
 - **Indicatori** (dal 25/11/2026): popolazione, abbondanza, consenso, cibo (scorta / consumo dell'anno), legna, densità, più le fonti di cibo. Rossi quando sono in pericolo. Un clic apre il pannello di focus.

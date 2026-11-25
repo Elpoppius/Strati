@@ -23,6 +23,7 @@ var _firma_campi := 0
 var _nastri: MeshInstance3D
 var _granaio: Node3D
 var _granaio_pos := Vector2(-1, -1)
+var _legnaie := {}  # punto -> nodo
 var _focolare: Node3D
 var _centro := Vector2i(-1, -1)
 var _rovine := 0
@@ -67,6 +68,7 @@ func sincronizza() -> void:
 	_sincronizza_campi_e_sentieri()
 	_sincronizza_case()
 	_sincronizza_granaio()
+	_sincronizza_legnaie()
 	_sincronizza_rovine()
 
 
@@ -432,6 +434,31 @@ func _sincronizza_granaio() -> void:
 		_granaio = _istanza("granaio_su_pali")
 		_posa(_granaio, sim.granaio, 0.0)
 		uso.costruisci(uso.celle_nel_cerchio(sim.granaio.x, sim.granaio.y, 6.0), "granaio")
+
+
+## Legnaie (decisione di Fede del 25/11/2026): la catasta di legna con un piccolo riparo accanto.
+func _sincronizza_legnaie() -> void:
+	var ora := {}
+	for l in sim.legnaie:
+		ora[l["punto"]] = true
+	for p in _legnaie.keys():
+		if not ora.has(p):
+			(_legnaie[p] as Node3D).queue_free()
+			_legnaie.erase(p)
+			uso.libera(uso.celle_nel_cerchio(p.x, p.y, 7.0))
+	for p in ora:
+		if _legnaie.has(p):
+			continue
+		var nodo := Node3D.new()
+		add_child(nodo)
+		var catasta := _istanza("catasta_legna")
+		_posa(catasta, p, 0.0)
+		var riparo := _istanza("capanna_tonda_piccola")
+		_posa(riparo, p + Vector2(6.0, 4.0), 30.0)
+		catasta.reparent(nodo)
+		riparo.reparent(nodo)
+		_legnaie[p] = nodo
+		uso.costruisci(uso.celle_nel_cerchio(p.x, p.y, 7.0), "legnaia")
 
 
 ## Rovine: qualche sasso dove c'erano il centro e le case (il fallimento come strato).

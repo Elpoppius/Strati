@@ -86,6 +86,8 @@ func _gioca(d: MappaDati, sito: Vector2i, k: int, seme: int) -> Dictionary:
 	var campioni: Array[float] = [sim.pop]
 	var sentieri_fatti := false
 	_stendi_zona(sim, copertura, limite_piena)
+	# La legnaia: i più bravi la mettono vicino al bosco e ne fanno un'altra quando rende poco.
+	AiutiGiocatori.costruisci_legnaia(sim, caso, (k - 1) / 9.0)
 	while not sim.finito:
 		while sim.in_attesa():
 			var dec: Dictionary = sim.decisioni[0]
@@ -93,6 +95,7 @@ func _gioca(d: MappaDati, sito: Vector2i, k: int, seme: int) -> Dictionary:
 		if not sim.fondato:
 			sim.fonda(sito)
 			_stendi_zona(sim, copertura, limite_piena)
+			AiutiGiocatori.costruisci_legnaia(sim, caso, (k - 1) / 9.0)
 		var eta := sim.anno - anno0
 		# Chi gioca poco allarga la zona solo quando, guardando la mappa, la vede piena (dal 25/11/2026
 		# non c'è più la notifica: lo dice la mappa).
@@ -107,6 +110,8 @@ func _gioca(d: MappaDati, sito: Vector2i, k: int, seme: int) -> Dictionary:
 					for prova in [Vector2(60, 0), Vector2(-60, 0), Vector2(0, 60), Vector2(0, -60), Vector2(100, 100)]:
 						if sim.costruisci_granaio(c + prova) == "":
 							break
+			if sim.legnaie.is_empty() or (k >= 4 and AiutiGiocatori.legna_scarsa(sim) and sim.legnaie.size() < 1 + k / 3):
+				AiutiGiocatori.costruisci_legnaia(sim, caso, (k - 1) / 9.0)
 			if k >= 5 and not sentieri_fatti and eta >= 20:
 				sentieri_fatti = true
 				for j in mini(k - 4, 6):

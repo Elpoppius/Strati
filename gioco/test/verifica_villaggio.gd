@@ -14,7 +14,11 @@ func controlla(cond: bool, testo: String) -> void:
 
 ## Giocatore automatico: tiene i campi un po' sopra le braccia disponibili (i più fertili a
 ## portata), risponde alle decisioni con la prima opzione, costruisce il granaio quando può.
+var _caso_giocatore := RandomNumberGenerator.new()
+
+
 func _gioca(sim: SimVillaggio, sito: Vector2i, scelta_presagi := "") -> Dictionary:
+	_caso_giocatore.seed = 12345
 	sim.fonda(sito)
 	var minimo_pop := sim.pop
 	var massimo_case := 0
@@ -38,6 +42,8 @@ func _gioca(sim: SimVillaggio, sito: Vector2i, scelta_presagi := "") -> Dictiona
 					for dx in range(-r, r + 1):
 						tutta.append(sim.centro + Vector2i(dx, dy))
 				sim.aggiungi_zona(tutta)
+			if sim.legnaie.is_empty() or (AiutiGiocatori.legna_scarsa(sim) and sim.legnaie.size() < 3):
+				AiutiGiocatori.costruisci_legnaia(sim, _caso_giocatore, 0.8)
 			if sim.granaio.x < 0 and sim.sbloccato("granaio") and sim.legna >= SimVillaggio.COSTO_GRANAIO:
 				var c := sim.mondo_di_px(sim.centro)
 				for prova in [Vector2(60, 0), Vector2(-60, 0), Vector2(0, 60), Vector2(0, -60), Vector2(100, 100)]:
@@ -125,6 +131,37 @@ func _initialize() -> void:
 	controlla(t.motivo_granaio(t.mondo_di_px(c) + Vector2(60, 0)) != "", "senza legna il granaio non si costruisce")
 	t.legna = 45.0
 	controlla(t.motivo_granaio(t.mondo_di_px(c) + Vector2(60, 0)) == "" and t.motivo_granaio(t.mondo_di_px(c) + Vector2(900, 0)) != "", "il granaio va vicino al centro (con %d di legna si può)" % roundi(t.legna))
+	# Legnaia (decisione di Fede del 25/11/2026): senza legnaia non si raccoglie legna; i boscaioli
+	# abbattono gli alberi più vicini e la raccolta rallenta man mano che la radura si allarga.
+	var tl := SimVillaggio.new(d, 3)
+	tl.fonda(Vector2i(d.siti[2]["px"]))
+	tl.decisioni.clear()
+	tl.passo()
+	controlla(tl.legnaie.is_empty() and tl.ultima_legna == 0.0, "senza legnaia non si raccoglie legna")
+	var cg := RandomNumberGenerator.new()
+	cg.seed = 5
+	controlla(AiutiGiocatori.costruisci_legnaia(tl, cg, 1.0) and tl.legnaie.size() == 1, "si costruisce una legnaia vicino al bosco")
+	var l0: Dictionary = tl.legnaie[0]
+	controlla(tl.capacita_legnaia(l0) == 0.0, "la legnaia in costruzione non raccoglie")
+	for k in 3:
+		tl.decisioni.clear()
+		tl.passo()
+	var cap0 := tl.capacita_legnaia(l0)
+	controlla(cap0 > 0.0 and tl.ultima_legna > 0.0, "finita la legnaia, si raccoglie legna (%.1f l'anno, fino a %.1f)" % [tl.ultima_legna, cap0])
+	var abbattuti := tl.tagliati.size()
+	for k in 40:
+		tl.decisioni.clear()
+		tl.legna = 0.0
+		tl.passo()
+	controlla(tl.tagliati.size() > abbattuti and tl.capacita_legnaia(l0) < cap0, "il taglio allarga la radura e la raccolta rallenta (%.1f → %.1f l'anno)" % [cap0, tl.capacita_legnaia(l0)])
+	var uno: int = -1
+	for i in tl.tagliati:
+		if tl.dati.tipo[i] != MappaDati.PALUDE:
+			uno = i
+			break
+	controlla(not tl.bosco_in_piedi(uno) or tl.anno - int(tl.tagliati.get(uno, tl.anno)) >= SimVillaggio.ANNI_RICRESCITA, "un pixel abbattuto non è bosco finché non ricresce")
+	tl.anno += SimVillaggio.ANNI_RICRESCITA
+	controlla(tl.bosco_in_piedi(uno), "dopo %d anni il bosco abbattuto ricresce" % SimVillaggio.ANNI_RICRESCITA)
 	# Politiche: cambiarle costa consenso, gli stranieri seguono la regola in vigore.
 	controlla(t.politica("raccolto") == "comune" and t.politica("stranieri") == "aperta", "politiche iniziali: raccolto in comune, stranieri accolti")
 	var b0: float = t.bonus["anziani"]

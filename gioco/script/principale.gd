@@ -287,8 +287,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 				imposta_modo((ev as InputEventKey).keycode - KEY_1)
 			KEY_HOME:
 				torna_al_sito()
-			KEY_X, KEY_F, KEY_C, KEY_Z, KEY_V, KEY_H:
-				var id: String = {KEY_X: "demolisci", KEY_F: "fonda", KEY_C: "campi", KEY_Z: "zona", KEY_V: "sentiero", KEY_H: "granaio"}[(ev as InputEventKey).keycode]
+			KEY_X, KEY_F, KEY_C, KEY_Z, KEY_V, KEY_H, KEY_L:
+				var id: String = {KEY_X: "demolisci", KEY_F: "fonda", KEY_C: "campi", KEY_Z: "zona", KEY_V: "sentiero", KEY_H: "granaio", KEY_L: "legnaia"}[(ev as InputEventKey).keycode]
 				hud.seleziona_comando("" if hud.comando() == id else id)
 				_aggiorna_pennello()
 			KEY_P:

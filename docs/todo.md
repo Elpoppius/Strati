@@ -27,6 +27,9 @@ Legenda: `[x]` fatto · `[~]` in parte · `[ ]` da fare · **(?)** serve una dec
 4. [~] **Risorse: legna e braccia** (legna, costi, cantiere del granaio e case che chiedono legna fatti il 25/11/2026; resta il cantiere per il luogo sacro e l'erosione dei pendii). Costi in legna e braccia per granaio e luogo sacro, cantieri di qualche anno, dissodamento che dà legna, case spontanee solo con la legna. Con gli **effetti del disboscamento** (erosione, piene, selvaggina).
 5. [x] **Piene che distruggono e fertilizzano** (fatto il 25/11/2026, nella simulazione; l'acqua che sale nella grafica resta nella base tecnica): limo sui campi allagati; disastrose rare, legate a sito e azioni (bosco tagliato a monte), annunciate e visibili sulla mappa. Con le **febbri** (paludi, affollamento).
 6. [x] **Lettura sotto il puntatore per ogni strumento** (fatto il 25/11/2026: zona, campo, granaio, sentiero), come in fondazione.
+6b. [x] **Legnaia** (decisione di Fede del 25/11/2026, fatta lo stesso giorno): obbligatoria per raccogliere legna, taglio visibile sulla mappa, raccolta che rallenta man mano che la radura si allarga.
+6c. [ ] **Capanno da pesca e Posta di caccia** (approvati da Fede il 25/11/2026): stessa dinamica della legnaia, vicinanza all'acqua e al bosco fitto con selvaggina; senza edificio caccia e pesca rendono circa un terzo.
+6d. [x] **Carestie B + C e casali** (decisioni di Fede del 25/11/2026, fatti lo stesso giorno).
 7. [ ] **Pascolo e animali:** campo che si stanca, maggese a pascolo, concime, scorta viva, radure aperte, erosione sui pendii.
 8. [ ] **Luogo sacro e bosco sacro** (cerchio di pali attorno a una pietra, forma confermata il 24/11/2026): peso al sacerdote, lettura dei presagi; la riserva diventa il bosco sacro.
 9. [ ] **Scorrerie** attirate dalla ricchezza e dai margini poco usati; segni prima; abitato compatto e sito come difesa.

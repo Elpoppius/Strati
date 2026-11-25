@@ -46,6 +46,7 @@ func _gioca(d: MappaDati, sito: Vector2i, k: int, seme: int, nome: String) -> Di
 	var sentieri_fatti := false
 	_uscita.append("\n=== %s (seme %d, livello %d) ===" % [nome, seme, k])
 	_stendi_zona(sim, copertura, limite_piena)
+	AiutiGiocatori.costruisci_legnaia(sim, caso, 0.5)
 	while not sim.finito:
 		while sim.in_attesa():
 			var dec: Dictionary = sim.decisioni[0]
@@ -64,6 +65,8 @@ func _gioca(d: MappaDati, sito: Vector2i, k: int, seme: int, nome: String) -> Di
 				for prova in [Vector2(60, 0), Vector2(-60, 0), Vector2(0, 60), Vector2(0, -60)]:
 					if sim.costruisci_granaio(c + prova) == "":
 						break
+			if sim.legnaie.is_empty() or (AiutiGiocatori.legna_scarsa(sim) and sim.legnaie.size() < 3):
+				AiutiGiocatori.costruisci_legnaia(sim, caso, 0.5)
 			if k >= 5 and not sentieri_fatti and eta >= 20:
 				sentieri_fatti = true
 				for j in mini(k - 4, 6):

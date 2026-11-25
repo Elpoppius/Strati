@@ -161,6 +161,12 @@ func _process(_d: float) -> bool:
 			if _s.uso.stato(c0.x + dx, c0.y - 300.0 + dz) == UsoSuolo.COLTIVATO:
 				coltivate += 1
 	controlla(sim.sentieri.size() > 0 and coltivate == lungo_sentiero, "i campi arrivano fino al sentiero, senza corridoio d'erba (%d su %d)" % [coltivate, lungo_sentiero])
+	# Legnaia (decisione di Fede del 25/11/2026): si costruisce dallo strumento; gli alberi che i
+	# boscaioli abbattono spariscono dalla mappa.
+	var cg := RandomNumberGenerator.new()
+	cg.seed = 9
+	AiutiGiocatori.costruisci_legnaia(sim, cg, 1.0)
+	controlla(sim.legnaie.size() == 1, "si costruisce la legnaia")
 	# Tempo: 15 anni al secondo per qualche secondo simulato, rispondendo alle scelte.
 	p.imposta_velocita(3)
 	var anno0 := sim.anno
@@ -177,6 +183,14 @@ func _process(_d: float) -> bool:
 				_s.punto_corrente = Vector3(c.x + cos(a * 0.8) * 350.0, 0, c.y + sin(a * 0.8) * 350.0)
 				_s.applica_strumento()
 	controlla(sim.anno > anno0 + 150, "il tempo scorre (%s)" % SimVillaggio.anno_testo(sim.anno))
+	var tagliati_visibili := 0
+	for i in sim.tagliati:
+		if sim.dati.tipo[i] == MappaDati.PALUDE:
+			continue
+		var w := sim.mondo_di_px(sim.px_di(i))
+		if _s.uso.stato(w.x, w.y) != UsoSuolo.NATURALE:
+			tagliati_visibili += 1
+	controlla(sim.tagliati.is_empty() or tagliati_visibili > 0, "gli alberi abbattuti dalla legnaia spariscono dalla mappa (%d su %d)" % [tagliati_visibili, sim.tagliati.size()])
 	controlla(p.vista.numero_case() == sim.case.size(), "case disegnate allineate alla simulazione (%d)" % sim.case.size())
 	print("   %d abitanti, %d campi, %d case, abbandoni %d" % [roundi(sim.pop), sim.campi.size(), sim.case.size(), sim.stat["abbandoni"]])
 	controlla(sim.fondato and sim.stat["abbandoni"] == 0, "con i campi il villaggio vive")
