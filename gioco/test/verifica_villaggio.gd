@@ -17,6 +17,96 @@ func controlla(cond: bool, testo: String) -> void:
 var _caso_giocatore := RandomNumberGenerator.new()
 
 
+## Capanno da pesca e Posta di caccia (decisioni di Fede del 25/11/2026): senza edificio un terzo,
+## con l'edificio pieno; il capanno solo sulla riva, la posta al margine del bosco; pesce e
+## selvaggina locali, divisi tra edifici vicini, che calano se se ne prende troppo e si riprendono.
+func _verifica_capanno_e_posta(d: MappaDati) -> void:
+	# Sbocco del fiume: fiume e bosco vicini.
+	var s := SimVillaggio.new(d, 7)
+	var c := Vector2i(d.siti[1]["px"])
+	s.fonda(c)
+	var cm := s.mondo_di_px(c)
+	# Il punto di riva e il punto di margine più vicini al centro (griglia di 40 m).
+	var riva := {}
+	var margine := {}
+	for r in range(0, 1000, 40):
+		for k in 24:
+			var q := cm + Vector2.from_angle(TAU * k / 24.0) * r
+			if riva.is_empty():
+				var a := s.posa_capanno(q)
+				if a["motivo"] == "":
+					riva = a
+			if margine.is_empty():
+				var b := s.posa_posta(q)
+				if b["motivo"] == "":
+					margine = b
+	controlla(not riva.is_empty(), "allo sbocco del fiume c'è una riva per il capanno")
+	controlla(not margine.is_empty(), "allo sbocco del fiume c'è un margine del bosco per la posta")
+	if riva.is_empty() or margine.is_empty():
+		return
+	var pr: Vector2 = riva["punto"]
+	controlla(absf(d.distanza_riva(pr.x, pr.y) - 2.0) <= 1.5 and d.palude_in(pr.x, pr.y) <= 0.4, "il capanno si aggancia alla riva, a circa 2 m dall'acqua e fuori dalla palude (%.1f m, %s)" % [d.distanza_riva(pr.x, pr.y), riva["acqua"]])
+	var verso: Vector2 = riva["verso"]
+	controlla(d.distanza_riva(pr.x + verso.x * 6.0, pr.y + verso.y * 6.0) < d.distanza_riva(pr.x, pr.y), "il capanno guarda l'acqua")
+	var lontano := pr + verso * -200.0
+	controlla(s.posa_capanno(lontano)["motivo"] != "", "lontano dalla riva il capanno non si posa: «%s»" % s.posa_capanno(lontano)["motivo"])
+	var pm: Vector2 = margine["punto"]
+	var vb: Vector2 = margine["verso"]
+	controlla(d.bosco_in(pm.x + vb.x * 20.0, pm.y + vb.y * 20.0) > d.bosco_in(pm.x, pm.y), "la posta ha il bosco alle spalle")
+	# Senza edifici: un terzo. Si confronta con l'offerta piena di tutti i riquadri attorno.
+	var piena_caccia := 0.0
+	for cb in s.celle_bosco:
+		var w := 1.0 - s.centro_riquadro(cb).distance_to(cm) / s.raggio_famiglie()
+		if w > 0.0:
+			piena_caccia += w * float(s.celle_bosco[cb]) * SimVillaggio.RESA_BOSCO
+	s.decisioni.clear()
+	s.passo()
+	controlla(absf(s.offerta_caccia - piena_caccia * SimVillaggio.RESA_SENZA_EDIFICIO) < piena_caccia * 0.05, "senza posta la caccia offre un terzo (%.1f di %.1f)" % [s.offerta_caccia, piena_caccia])
+	var caccia_senza := s.offerta_caccia
+	var pesca_senza := s.offerta_pesca
+	# Con gli edifici: in costruzione non rendono, finiti sì.
+	controlla(s.costruisci_capanno(pr) == "" and s.costruisci_posta(pm) == "", "capanno e posta si costruiscono")
+	controlla(s.costruisci_capanno(pr) != "", "due capanni non vanno nello stesso punto")
+	controlla(float(s.capanni[0]["offerta"]) == 0.0 and s.stato_edificio(s.capanni[0]).begins_with("in costruzione"), "il capanno in costruzione non pesca")
+	for k in SimVillaggio.ANNI_CANTIERE_RISORSE + 1:
+		s.decisioni.clear()
+		s.passo()
+	controlla(s.offerta_pesca > pesca_senza * 1.3 and float(s.capanni[0]["offerta"]) > 0.0, "con il capanno si pesca di più (%.1f → %.1f)" % [pesca_senza, s.offerta_pesca])
+	controlla(s.offerta_caccia > caccia_senza * 1.3 and float(s.poste[0]["offerta"]) > 0.0, "con la posta si caccia di più (%.1f → %.1f)" % [caccia_senza, s.offerta_caccia])
+	# Pesce locale: un capanno solo lo fa calare poco, sei ammassati nello stesso tratto di più; poi
+	# lasciato stare si riprende.
+	var prova_pesce := func(quanti: int) -> float:
+		var u := SimVillaggio.new(d, 7)
+		u.fonda(c)
+		for k in quanti:
+			u.capanni.append({"punto": pr + Vector2(k * 3.0, 0), "verso": verso, "acqua": riva["acqua"], "cantiere": 0, "preso": 0.0, "offerta": 0.0})
+		u._conta_riquadri()
+		# Ogni anno: ripresa, poi i capanni pescano fino alla loro capacità.
+		for k in 30:
+			u._riprendi_scorte(u.scorta_pesce, SimVillaggio.RIPRESA_PESCE)
+			u._caccia_o_pesca(false, SimVillaggio.CAPACITA_CAPANNO * quanti)
+		return u.scorta_attorno(u.capanni[0])
+	var uno: float = prova_pesce.call(1)
+	var sei: float = prova_pesce.call(6)
+	controlla(sei < uno - 0.1, "troppi capanni nello stesso tratto fanno calare il pesce (uno: %d%%, sei: %d%%)" % [roundi(uno * 100.0), roundi(sei * 100.0)])
+	var v := SimVillaggio.new(d, 7)
+	v.fonda(c)
+	v.capanni.append({"punto": pr, "verso": verso, "acqua": riva["acqua"], "cantiere": 0, "preso": 0.0, "offerta": 0.0})
+	v._conta_riquadri()
+	for cq in v.celle_acqua:
+		v.scorta_pesce[cq] = 0.2
+	var prima: float = v.scorta_attorno(v.capanni[0])
+	for k in 10:
+		v._riprendi_scorte(v.scorta_pesce, SimVillaggio.RIPRESA_PESCE)
+	controlla(v.scorta_attorno(v.capanni[0]) > prima + 0.4, "lasciato stare, il pesce si riprende in qualche anno (%d%% → %d%%)" % [roundi(prima * 100.0), roundi(v.scorta_attorno(v.capanni[0]) * 100.0)])
+	# Due poste vicine si dividono la selvaggina: ognuna rende meno di una posta sola.
+	var a1 := s.stima_edificio({"punto": pm + Vector2(30, 0), "cantiere": 0})
+	controlla(int(a1["vicini"]) == 1 and float(a1["resa"]) <= float(s.poste[0]["offerta"]) + 0.01, "una posta accanto a un'altra si divide la selvaggina (%.1f)" % a1["resa"])
+	# Demolire toglie gli edifici.
+	var esito := s.demolisci(pr, 10.0)
+	controlla(esito.get("capanni", 0) == 1 and s.capanni.is_empty(), "il capanno si demolisce")
+
+
 func _gioca(sim: SimVillaggio, sito: Vector2i, scelta_presagi := "") -> Dictionary:
 	_caso_giocatore.seed = 12345
 	sim.fonda(sito)
@@ -101,7 +191,9 @@ func _initialize() -> void:
 	# Indicatori di caccia e pesca (richiesta di Fede): offerta dell'anno e caccia eccessiva.
 	t.decisioni.clear()
 	t.avvisi.clear()
-	t.selvaggina = 0.3
+	# Selvaggina locale (decisione di Fede del 25/11/2026): si svuotano le scorte dei boschi attorno.
+	for cb in t.celle_bosco:
+		t.scorta_selvaggina[cb] = 0.2
 	t.passo()
 	var avvisato := t.avvisi.any(func(x: Dictionary) -> bool: return String(x["testo"]).begins_with("Si caccia troppo"))
 	controlla(t.offerta_caccia > 0.0 and avvisato and not t.in_attesa(), "con poca selvaggina arriva la notifica \"si caccia troppo\", senza fermare il gioco")
@@ -152,6 +244,9 @@ func _initialize() -> void:
 	for k in 40:
 		tl.decisioni.clear()
 		tl.legna = 0.0
+		# Il villaggio di prova non ha campi: senza poste e capanni (un terzo di caccia e pesca)
+		# morirebbe di fame, e qui si prova solo la legnaia.
+		tl.cibo = maxf(tl.cibo, tl.pop)
 		tl.passo()
 	controlla(tl.tagliati.size() > abbattuti and tl.capacita_legnaia(l0) < cap0, "il taglio allarga la radura e la raccolta rallenta (%.1f → %.1f l'anno)" % [cap0, tl.capacita_legnaia(l0)])
 	var uno: int = -1
@@ -241,6 +336,7 @@ func _initialize() -> void:
 		t.scegli(t.decisioni[0]["id"], t.decisioni[0]["opzioni"][0]["id"])
 	controlla(fermate <= 1, "solo la prima piena disastrosa ferma il gioco (%d)" % fermate)
 	t.avvisi.clear()
+	_verifica_capanno_e_posta(d)
 	# Partite intere.
 	var sopravvissuti := 0
 	for s in d.siti:

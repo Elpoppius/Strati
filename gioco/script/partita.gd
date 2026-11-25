@@ -5,7 +5,7 @@ extends Node
 ## Tempo continuo con pausa e tre velocità; si ferma da solo nei momenti decisivi
 ## (decisione di Fede del 23/11/2026).
 
-const STRUMENTI := ["fonda", "zona", "campi", "sentiero", "granaio", "legnaia", "demolisci"]
+const STRUMENTI := ["fonda", "zona", "campi", "sentiero", "granaio", "legnaia", "capanno", "posta", "demolisci"]
 const VELOCITA := [0.0, 1.0, 6.0, 15.0]  # anni al secondo (velocità 1 più calma: decisione di Fede del 25/11/2026)
 const NOMI_VELOCITA := ["Pausa", "1 anno al secondo", "6 anni al secondo", "15 anni al secondo"]
 
@@ -60,6 +60,12 @@ func avvia(s: Node, seme: int = -1) -> void:
 		 "descrizione": "Costa 30 di legna e qualche anno di lavoro, e va vicino al centro: le scorte si conservano meglio."},
 		{"id": "legnaia", "icona": "legnaia", "testo": "Legnaia", "breve": "Legnaia", "tasto": "L",
 		 "descrizione": "Senza legnaia non si raccoglie legna. I boscaioli abbattono gli alberi più vicini: più il bosco è vicino, più in fretta si raccoglie; la zona di taglio resta aperta finché la legnaia lavora. Clic su una legnaia: lasciar ricrescere il bosco o rimetterla al lavoro."},
+		# Capanno da pesca e Posta di caccia (decisioni di Fede del 25/11/2026): senza, caccia e pesca
+		# rendono un terzo. Tasti K e T: proposta di Claude.
+		{"id": "capanno", "icona": "capanno_pesca", "testo": "Capanno da pesca", "breve": "Capanno", "tasto": "K",
+		 "descrizione": "Senza capanno le famiglie pescano come capita e rendono un terzo. Va sulla riva di un fiume o di un torrente: si aggancia da solo alla riva più vicina. Il fiume dà più pesce dei torrenti; più capanni vicini si dividono il pesce di quel tratto, e troppi lo fanno calare."},
+		{"id": "posta", "icona": "posta_caccia", "testo": "Posta di caccia", "breve": "Posta", "tasto": "T",
+		 "descrizione": "Senza posta le famiglie cacciano attorno al villaggio e rendono un terzo. Va al margine del bosco: si aggancia da sola al margine più vicino. Rende di più dove il bosco è fitto e la selvaggina abbondante; se lì si caccia troppo, la selvaggina cala."},
 	])
 	# Opzione dello strumento Sentiero (Fede: un'opzione, non un tasto accanto): Collega alla rete.
 	hud.aggiungi_opzioni("sentiero", [
@@ -337,6 +343,10 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 				parti.append("il granaio")
 			if esito.get("legnaie", 0) > 0:
 				parti.append("la legnaia")
+			if esito.get("poste", 0) > 0:
+				parti.append("la posta di caccia")
+			if esito.get("capanni", 0) > 0:
+				parti.append("il capanno da pesca")
 			if esito.get("zona", 0) > 0:
 				parti.append("%s ha di zona agricola" % _ettari(esito["zona"]))
 			hud.imposta_messaggio(("Demoliti: " + ", ".join(parti) + ".") if not parti.is_empty() else "Qui non c'è niente da demolire.")
@@ -354,6 +364,12 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 				hud.imposta_messaggio("Legnaia in costruzione: tra %d anni i boscaioli cominciano a tagliare il bosco vicino." % SimVillaggio.ANNI_CANTIERE_LEGNAIA)
 			else:
 				hud.imposta_messaggio(m)
+		"capanno":
+			var m := sim.costruisci_capanno(Vector2(punto.x, punto.z))
+			hud.imposta_messaggio(("Capanno da pesca in costruzione: tra %d anni si comincia a pescare in questo tratto." % SimVillaggio.ANNI_CANTIERE_RISORSE) if m == "" else m)
+		"posta":
+			var m := sim.costruisci_posta(Vector2(punto.x, punto.z))
+			hud.imposta_messaggio(("Posta di caccia in costruzione: tra %d anni i cacciatori battono il bosco attorno." % SimVillaggio.ANNI_CANTIERE_RISORSE) if m == "" else m)
 		"granaio":
 			var m := sim.costruisci_granaio(Vector2(punto.x, punto.z))
 			if m == "":
@@ -463,7 +479,7 @@ func raggio_strumento(comando: String, raggio: float) -> float:
 			return SimVillaggio.CONTADO_MIN
 		"zona", "campi", "demolisci":
 			return raggio
-		"granaio", "legnaia":
+		"granaio", "legnaia", "capanno", "posta":
 			return 8.0
 	return -1.0
 
@@ -498,10 +514,10 @@ func aggiorna_hud() -> void:
 			 "suggerimento": "Raccolto di quest'anno / raccolto se si lavorassero tutti i campi (%d campi, %d lavorati)." % [sim.campi.size(), sim.ultimi_lavorati]},
 			{"id": "caccia", "nome": "Caccia", "preso": sim.ultima_caccia, "offerta": sim.offerta_caccia, "accesa": sim.fonti["caccia"],
 			 "allarme": sim.selvaggina < SimVillaggio.SOGLIA_SELVAGGINA, "freccia": freccia,
-			 "suggerimento": "Cibo da caccia e raccolta quest'anno / quanto offrono i boschi. Selvaggina al %d%%%s. Rosso: si caccia troppo; un clic apre le politiche per sospendere la caccia." % [roundi(sim.selvaggina * 100.0),
+			 "suggerimento": "Cibo da caccia e raccolta quest'anno / quanto offrono i boschi (senza posta di caccia un terzo). Selvaggina al %d%%%s. Rosso: si caccia troppo; un clic apre le politiche per sospendere la caccia." % [roundi(sim.selvaggina * 100.0),
 				" (in calo)" if sim.andamento_selvaggina < -0.03 else (" (in crescita)" if sim.andamento_selvaggina > 0.03 else "")]},
 			{"id": "pesca", "nome": "Pesca", "preso": sim.ultima_pesca, "offerta": sim.offerta_pesca, "accesa": sim.fonti["pesca"],
-			 "suggerimento": "Cibo dalla pesca quest'anno / quanto offrono fiume, torrenti e paludi vicini."},
+			 "suggerimento": "Cibo dalla pesca quest'anno / quanto offrono fiume, torrenti e paludi vicini (senza capanno da pesca un terzo)."},
 		])
 	else:
 		hud.imposta_fonti([])
@@ -524,7 +540,7 @@ func aggiorna_hud() -> void:
 	# Dopo la fondazione il tasto non serve più (Fede): torna solo se il villaggio è abbandonato.
 	hud.mostra("fonda", not on)
 	hud.segna("collega_rete", collega_rete)
-	for id in ["zona", "campi", "sentiero", "legnaia"]:
+	for id in ["zona", "campi", "sentiero", "legnaia", "capanno", "posta"]:
 		hud.abilita(id, on and not sim.finito)
 	for id in ["comune", "famiglie"]:
 		hud.abilita(id, on and not sim.finito and sim.sbloccato("raccolto"))
@@ -647,8 +663,11 @@ func dati_focus(nome: String) -> Dictionary:
 func leggi_per_strumento(punto: Vector3) -> void:
 	var hud: Hud = scena.hud
 	var cmd := hud.comando()
-	if not sim.fondato or not cmd in ["zona", "campi", "granaio", "legnaia", "sentiero"]:
+	if not sim.fondato or not cmd in ["zona", "campi", "granaio", "legnaia", "sentiero", "capanno", "posta"]:
 		hud.imposta_lettura_strumento([])
+		return
+	if cmd in ["capanno", "posta"]:
+		hud.imposta_lettura_strumento(_lettura_edificio_risorse(cmd, Vector2(punto.x, punto.z)))
 		return
 	var p := sim.px_da_mondo(punto.x, punto.z)
 	var i := sim.px(p)
@@ -706,6 +725,54 @@ func leggi_per_strumento(punto: Vector3) -> void:
 			voci.append(["Acqua", "guado vicino" if vicino_acqua else "asciutto", 1.0 if vicino_acqua else 0.0, false])
 			voci.append(piena_voce)
 	hud.imposta_lettura_strumento(voci)
+
+
+## Dove andrebbe un capanno o una posta con il puntatore qui (l'ultimo calcolo si ricorda: lo
+## chiedono sia il cerchio dello strumento sia la lettura).
+var _ultima_posa := {}
+
+func posa_edificio(cmd: String, punto: Vector2) -> Dictionary:
+	var chiave := [cmd, Vector2i(punto.round()), sim.anno, sim.poste.size(), sim.capanni.size()]
+	if _ultima_posa.get("chiave", []) == chiave:
+		return _ultima_posa["posa"]
+	var posa := sim.posa_capanno(punto) if cmd == "capanno" else sim.posa_posta(punto)
+	_ultima_posa = {"chiave": chiave, "posa": posa}
+	return posa
+
+
+## Lettura sotto il puntatore per Capanno e Posta: sopra un edificio che c'è già, il suo stato;
+## altrimenti cosa troverebbe nel punto dove si aggancerebbe.
+func _lettura_edificio_risorse(cmd: String, punto: Vector2) -> Array:
+	var caccia := cmd == "posta"
+	var elenco: Array = sim.poste if caccia else sim.capanni
+	var capacita := SimVillaggio.CAPACITA_POSTA if caccia else SimVillaggio.CAPACITA_CAPANNO
+	var k := sim.edificio_vicino(elenco, punto, 20.0)
+	if k >= 0:
+		var e: Dictionary = elenco[k]
+		var scorta := sim.scorta_attorno(e)
+		return [[("Posta di caccia" if caccia else "Capanno da pesca"), sim.stato_edificio(e), 1.0 if int(e["cantiere"]) <= 0 else 0.3, false],
+			["Selvaggina attorno" if caccia else "Pesce del tratto", "%d%%" % roundi(scorta * 100.0), scorta, scorta < 0.4],
+			["Resa", "%d / %d l'anno" % [roundi(float(e["preso"])), roundi(float(e["offerta"]))], float(e["offerta"]) / capacita, false]]
+	var posa := posa_edificio(cmd, punto)
+	if posa["motivo"] != "":
+		return [["Riva" if not caccia else "Margine del bosco", posa["motivo"], 0.0, true]]
+	var prova := {"punto": posa["punto"], "cantiere": 0}
+	if not caccia:
+		prova["acqua"] = posa["acqua"]
+	var stima := sim.stima_edificio(prova)
+	var voci: Array = []
+	if caccia:
+		voci.append(["Bosco attorno", "fitto" if stima["risorsa"] > 0.6 else ("rado" if stima["risorsa"] > 0.3 else "poco"), stima["risorsa"], stima["risorsa"] <= 0.3])
+		voci.append(["Selvaggina", "%d%%" % roundi(stima["scorta"] * 100.0), stima["scorta"], stima["scorta"] < 0.4])
+	else:
+		voci.append(["Acqua", "fiume" if posa["acqua"] == "fiume" else "torrente", 1.0 if posa["acqua"] == "fiume" else 0.4, false])
+		voci.append(["Pesce del tratto", "%d%%" % roundi(stima["scorta"] * 100.0), stima["scorta"], stima["scorta"] < 0.4])
+	voci.append(["Resa stimata", "%d l'anno" % roundi(stima["resa"]), stima["resa"] / capacita, stima["resa"] < capacita * 0.3])
+	if stima["vicini"] > 0:
+		voci.append(["Vicini", ("%d poste" if caccia else "%d capanni") % stima["vicini"] if stima["vicini"] > 1 else ("una posta" if caccia else "un capanno"), 0.5, false])
+	var d := (posa["punto"] as Vector2).distance_to(sim.mondo_di_px(sim.centro))
+	voci.append(["Distanza dal centro", "%d m" % roundi(d), 1.0 - clampf(d / SimVillaggio.DISTANZA_MASSIMA_RISORSE, 0.0, 1.0), d > SimVillaggio.DISTANZA_MASSIMA_RISORSE])
+	return voci
 
 
 ## Gli alberi abbattuti dalle legnaie spariscono dalla mappa (decisione di Fede del 25/11/2026: il

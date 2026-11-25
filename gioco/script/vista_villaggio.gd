@@ -24,6 +24,7 @@ var _nastri: MeshInstance3D
 var _granaio: Node3D
 var _granaio_pos := Vector2(-1, -1)
 var _legnaie := {}  # punto -> nodo
+var _edifici_risorse := {}  # punto -> [nodo, raggio degli alberi tolti]
 var _focolare: Node3D
 var _centro := Vector2i(-1, -1)
 var _rovine := 0
@@ -69,6 +70,7 @@ func sincronizza() -> void:
 	_sincronizza_case()
 	_sincronizza_granaio()
 	_sincronizza_legnaie()
+	_sincronizza_edifici_risorse()
 	_sincronizza_rovine()
 
 
@@ -453,6 +455,32 @@ func _sincronizza_legnaie() -> void:
 		_posa(nodo, p, float(int(p.x * 7.0 + p.y * 13.0) % 360))
 		_legnaie[p] = nodo
 		uso.costruisci(uso.celle_nel_cerchio(p.x, p.y, 7.0), "legnaia")
+
+
+## Capanni da pesca e poste di caccia (decisioni di Fede del 25/11/2026): il capanno sulla riva con
+## rastrelliera e piroga verso l'acqua, la posta con la schiena al bosco. Il lato +y del modello in
+## Blender (-z in Godot) guarda verso l'acqua o il bosco: rotazione atan2(-v.x, -v.y). Attorno si
+## tolgono gli alberi, in un cerchio largo per il capanno (i pioppi della riva lo nascondevano).
+func _sincronizza_edifici_risorse() -> void:
+	var ora := {}
+	for e in sim.capanni:
+		ora[e["punto"]] = ["capanno_pesca", e["verso"], 14.0]
+	for e in sim.poste:
+		ora[e["punto"]] = ["posta_caccia", e["verso"], 8.0]
+	for p in _edifici_risorse.keys():
+		if not ora.has(p):
+			(_edifici_risorse[p][0] as Node3D).queue_free()
+			uso.libera(uso.celle_nel_cerchio(p.x, p.y, float(_edifici_risorse[p][1])))
+			_edifici_risorse.erase(p)
+	for p in ora:
+		if _edifici_risorse.has(p):
+			continue
+		var voce: Array = ora[p]
+		var v: Vector2 = voce[1]
+		var nodo := _istanza(voce[0])
+		_posa(nodo, p, rad_to_deg(atan2(-v.x, -v.y)))
+		_edifici_risorse[p] = [nodo, voce[2]]
+		uso.costruisci(uso.celle_nel_cerchio(p.x, p.y, voce[2]), voce[0])
 
 
 ## Rovine: qualche sasso dove c'erano il centro e le case (il fallimento come strato).

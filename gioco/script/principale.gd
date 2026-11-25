@@ -289,8 +289,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 				imposta_modo((ev as InputEventKey).keycode - KEY_1)
 			KEY_HOME:
 				torna_al_sito()
-			KEY_X, KEY_F, KEY_C, KEY_Z, KEY_V, KEY_H, KEY_L:
-				var id: String = {KEY_X: "demolisci", KEY_F: "fonda", KEY_C: "campi", KEY_Z: "zona", KEY_V: "sentiero", KEY_H: "granaio", KEY_L: "legnaia"}[(ev as InputEventKey).keycode]
+			KEY_X, KEY_F, KEY_C, KEY_Z, KEY_V, KEY_H, KEY_L, KEY_K, KEY_T:
+				var id: String = {KEY_X: "demolisci", KEY_F: "fonda", KEY_C: "campi", KEY_Z: "zona", KEY_V: "sentiero", KEY_H: "granaio", KEY_L: "legnaia", KEY_K: "capanno", KEY_T: "posta"}[(ev as InputEventKey).keycode]
 				hud.seleziona_comando("" if hud.comando() == id else id)
 				_aggiorna_pennello()
 			KEY_P:
@@ -389,6 +389,16 @@ func _aggiorna_pennello() -> void:
 		"fonda":
 			# Il villaggio nasce al centro di un punto della mappa: il cerchio vi si aggancia.
 			centro = Vector2(roundf(p.x / dati.metri_per_px), roundf(p.z / dati.metri_per_px)) * dati.metri_per_px
+	# Capanno e posta si agganciano alla riva o al margine del bosco (decisione di Fede del
+	# 25/11/2026): il cerchio va dove andrebbe l'edificio, rosso con il motivo se non si può.
+	var vietato := false
+	if partita and partita.sim and partita.sim.fondato and hud.comando() in ["capanno", "posta"]:
+		var posa := partita.posa_edificio(hud.comando(), Vector2(p.x, p.z))
+		# Sopra un edificio che c'è già il cerchio resta bianco: con un clic se ne legge lo stato.
+		vietato = posa["motivo"] != "" and not String(posa["motivo"]).begins_with("C'è già")
+		if posa.has("punto"):
+			centro = posa["punto"]
+		partita.vista.mostra_anteprima(centro, centro, not vietato, posa["motivo"] if vietato else "")
 	terreno.materiale.set_shader_parameter("pennello", Vector3(centro.x, centro.y, r))
 	terreno.materiale.set_shader_parameter("griglia_magnetica", griglia)
 	# Confine del contado con lo strumento Campi.
@@ -401,10 +411,10 @@ func _aggiorna_pennello() -> void:
 	if partita:
 		if hud.comando() == "sentiero":
 			partita.anteprima_sentiero(p)
-		else:
+		elif not hud.comando() in ["capanno", "posta"]:
 			partita.annulla_sentiero()
 		partita.vista.evidenzia_sentieri(hud.comando() == "sentiero")
-	terreno.materiale.set_shader_parameter("colore_pennello", Hud.PERICOLO if hud.comando() == "demolisci" else Hud.BIANCO)
+	terreno.materiale.set_shader_parameter("colore_pennello", Hud.PERICOLO if hud.comando() == "demolisci" or vietato else Hud.BIANCO)
 
 
 ## Legge il terreno sotto un punto dello schermo e aggiorna l'evidenziazione del lotto.

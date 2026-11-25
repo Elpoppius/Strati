@@ -2,6 +2,39 @@
 
 Voci più recenti in cima.
 
+## 25/11/2026 (sera tardi)
+**Fatto**
+- **Capanno da pesca e Posta di caccia** (voce 1 del todo):
+  - **Simulazione** (`sim_villaggio.gd`): senza edifici le famiglie cacciano e pescano attorno al villaggio e rendono un terzo; ogni edificio finito rende pieno, fino a 35 di cibo l'anno. Pesce e selvaggina sono contati in riquadri di 200 m: gli edifici vicini se li dividono, troppi li fanno calare, lasciati stare si riprendono. 2 anni di cantiere, entro 1 km dal centro, nessuna distanza minima.
+  - **Aggancio:** la simulazione aggancia da sola, con i campi fini della mappa (`MappaDati.valore_fine`, `distanza_riva`, `bosco_in`, `palude_in`). Il capanno va a circa 2 m dall'acqua, fuori dalla palude e girato verso l'acqua; la posta appena fuori dal bosco, con la schiena al bosco.
+  - **Nel gioco:**
+    - voci in Edifici (tasti K e T) con l'anteprima già agganciata, rossa con il motivo se non si può;
+    - lettura sotto il puntatore: acqua o bosco, scorta, resa stimata, edifici vicini, stato dell'edificio;
+    - cause nel pannello del Cibo;
+    - modelli posati sulla mappa con gli alberi tolti attorno;
+    - Demolisci li toglie.
+  - **Prove:** 16 verifiche nuove in `verifica_villaggio.gd` e 8 in `verifica_partita.gd`. I giocatori automatici costruiscono i due edifici (`aiuti_giocatori.gd`). Tutte le 9 verifiche superate. Foto in `docs/immagini/capanno-nel-gioco-25-11.jpg` e `posta-nel-gioco-25-11.jpg`.
+- **Giocatori "umani" e registro** (`sessioni-giocatori.md`):
+  - le mediane non cambiano (433, 555, 748, 110 abitanti);
+  - le carestie salgono per chi legge (2,4 a partita, prima 1,3) e per il casual (2,7, prima 1,7), quasi tutte all'Area dei gessi e allo Sperone collinare, i siti che vivono di caccia;
+  - per partita 3,6 pause e 47 righe di cronaca.
+
+**Decisioni**
+- Fede: si comincia dalla voce 1 come riepilogata da Claude.
+- Proposte di Claude, da confermare con Fede:
+  - posta agganciata al margine entro 60 m;
+  - tasti K e T;
+  - 35 di cibo l'anno per edificio; posta fino a 1000 m, capanno fino a 600 m;
+  - stato "pesce scarso" o "selvaggina scarsa" sotto il 40% della scorta.
+
+**Prossimo passo**
+- Fede:
+  - decidere sulle carestie nei siti di caccia e sulle proposte qui sopra (todo, "Da decidere con Fede");
+  - guardare le foto;
+  - confermare la proposta sulla crescita dei capi e sul campo stanco visibile prima del pascolo.
+- Claude: voce 2, pascolo e bestiame.
+- Nota per chi riprende: a inizio sessione l'accesso in scrittura al repository può essere bloccato da un controllo automatico. Basta che Fede lo autorizzi in modo esplicito, poi si riprova.
+
 ## 25/11/2026 (sera)
 **Fatto**
 - **Ritmo:** il gioco si ferma solo per le scelte che chiedono un intervento (sorgenti, cometa, primo arrivo degli stranieri); primo cattivo raccolto come notifica; piene grandi, siccità, segni di piena e divisione del villaggio solo in cronaca; febbri lievi se la città è sana, in cronaca solo se gravi; niente righe per i casali (spiegazione nel pannello della Popolazione); affollamento come politica "Villaggio affollato" (allargare o emigrare); velocità 1 a un anno al secondo. Risultato: 3,4 pause per partita, una ogni due minuti e mezzo circa.

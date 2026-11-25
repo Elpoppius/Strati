@@ -88,6 +88,9 @@ func _gioca(d: MappaDati, sito: Vector2i, k: int, seme: int) -> Dictionary:
 	_stendi_zona(sim, copertura, limite_piena)
 	# La legnaia: i più bravi la mettono vicino al bosco e ne fanno un'altra quando rende poco.
 	AiutiGiocatori.costruisci_legnaia(sim, caso, (k - 1) / 9.0)
+	# Posta di caccia e capanno da pesca: chi gioca meglio li fa subito e nel punto giusto, e ne
+	# aggiunge quando non bastano; chi gioca peggio li fa tardi, dove capita.
+	_edifici_risorse(sim, caso, k, 0)
 	while not sim.finito:
 		while sim.in_attesa():
 			var dec: Dictionary = sim.decisioni[0]
@@ -96,6 +99,7 @@ func _gioca(d: MappaDati, sito: Vector2i, k: int, seme: int) -> Dictionary:
 			sim.fonda(sito)
 			_stendi_zona(sim, copertura, limite_piena)
 			AiutiGiocatori.costruisci_legnaia(sim, caso, (k - 1) / 9.0)
+			_edifici_risorse(sim, caso, k, 0)
 		var eta := sim.anno - anno0
 		# Chi gioca poco allarga la zona solo quando, guardando la mappa, la vede piena (dal 25/11/2026
 		# non c'è più la notifica: lo dice la mappa).
@@ -112,6 +116,7 @@ func _gioca(d: MappaDati, sito: Vector2i, k: int, seme: int) -> Dictionary:
 							break
 			if sim.legnaie.is_empty() or (k >= 4 and AiutiGiocatori.legna_scarsa(sim) and sim.legnaie.size() < 1 + k / 3):
 				AiutiGiocatori.costruisci_legnaia(sim, caso, (k - 1) / 9.0)
+			_edifici_risorse(sim, caso, k, eta)
 			if k >= 5 and not sentieri_fatti and eta >= 20:
 				sentieri_fatti = true
 				for j in mini(k - 4, 6):
@@ -185,3 +190,14 @@ func _risposta(dec: Dictionary, caso: RandomNumberGenerator, p: float, sim: SimV
 			"primo_cattivo":
 				return "caccia" if sim.selvaggina > 0.5 else "razionare"
 	return opzioni[caso.randi() % opzioni.size()]["id"]
+
+
+## Poste e capanni secondo il livello: dal livello 4 subito, prima dopo 60 anni; dal livello 6 un
+## altro quando non bastano (fino a 1 + k / 4).
+func _edifici_risorse(sim: SimVillaggio, caso: RandomNumberGenerator, k: int, eta: int) -> void:
+	if k < 4 and eta < 60:
+		return
+	for caccia in [true, false]:
+		var quanti: int = (sim.poste if caccia else sim.capanni).size()
+		if quanti == 0 or (k >= 6 and quanti < 1 + k / 4 and AiutiGiocatori.risorsa_scarsa(sim, caccia)):
+			AiutiGiocatori.costruisci_edificio_risorse(sim, caso, (k - 1) / 9.0, caccia)

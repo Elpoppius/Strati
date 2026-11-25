@@ -80,6 +80,36 @@ func quota(xm: float, zm: float) -> float:
 	return lerpf(lerpf(a, b, tx), lerpf(c, d, tx), tz)
 
 
+## Valore di uno strato della griglia fine (lato_acqua) in un punto del mondo, con interpolazione
+## bilineare: lo stesso campionamento di Alberi e dello shader, per la simulazione senza grafica.
+func valore_fine(strato: PackedByteArray, xm: float, zm: float) -> float:
+	var n := lato_acqua
+	var passo := metri_per_px * lato / float(lato_acqua)
+	var fx := clampf((xm + 1.5 * passo) / passo, 0.0, n - 1.001)
+	var fz := clampf((zm + 1.5 * passo) / passo, 0.0, n - 1.001)
+	var ix := int(fx)
+	var iz := int(fz)
+	var tx := fx - ix
+	var tz := fz - iz
+	var i := iz * n + ix
+	return lerpf(lerpf(strato[i], strato[i + 1], tx), lerpf(strato[i + n], strato[i + n + 1], tx), tz)
+
+
+## Distanza dalla riva di fiumi e torrenti in metri (negativa dentro l'acqua).
+func distanza_riva(xm: float, zm: float) -> float:
+	return (valore_fine(distanza_acqua, xm, zm) - 128.0) * 2.0
+
+
+## Quanto un punto è dentro il bosco della mappa (0–1, il margine è 0,5).
+func bosco_in(xm: float, zm: float) -> float:
+	return valore_fine(bosco_fine, xm, zm) / 255.0
+
+
+## Quanto un punto è dentro la palude (0–1, il margine è 0,5).
+func palude_in(xm: float, zm: float) -> float:
+	return valore_fine(palude_fine, xm, zm) / 255.0
+
+
 func edificabile_px(p: Vector2i) -> bool:
 	var t := tipo[indice(p.x, p.y)]
 	return t == TERRA or t == GESSI

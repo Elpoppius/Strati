@@ -242,6 +242,41 @@ var cantiere_granaio := 0
 var bosco_iniziale := 0.0
 ## Quota di bosco perso attorno al villaggio (0–1): erosione, piene più rapide, meno selvaggina.
 var disboscamento := 0.0
+## Capanno da pesca e Posta di caccia (decisioni di Fede del 25/11/2026): stessa dinamica della
+## legnaia. Senza questi edifici caccia e pesca non spariscono, ma rendono circa un terzo: le
+## famiglie cacciano e pescano attorno al villaggio. Il capanno va solo sulla riva di un fiume o di
+## un torrente (si aggancia al punto di riva più vicino, girato verso l'acqua, fuori dalla palude);
+## la posta al margine del bosco, con la schiena al bosco. Nessuna distanza minima tra edifici: chi
+## li ammassa esaurisce il pesce o la selvaggina di quel tratto, ed è una scelta sua.
+## Pesce e selvaggina sono locali (Fede, 25/11/2026): ogni riquadro di BLOCCO_RISORSE pixel ha la sua
+## scorta; gli edifici vicini se la dividono, troppi la fanno calare, e lasciata stare si riprende in
+## qualche anno. Il capanno rende di più sul fiume che sui torrenti, poco sulle paludi.
+## Numeri: proposta di Claude, da tarare con le partite automatiche.
+const RESA_SENZA_EDIFICIO := 0.33
+const BLOCCO_RISORSE := 5  # pixel (200 m)
+const RAGGIO_POSTA := 1000.0  # metri: fin dove vanno i cacciatori di una posta
+const RAGGIO_CAPANNO := 600.0  # metri di fiume e di riva attorno al capanno
+const CAPACITA_POSTA := 35.0  # cibo l'anno al massimo, con il bosco ricco attorno
+const CAPACITA_CAPANNO := 35.0
+const ANNI_CANTIERE_RISORSE := 2
+const DISTANZA_MASSIMA_RISORSE := 1000.0  # dal centro del villaggio
+## Aggancio (metri dal puntatore): il capanno alla riva più vicina, la posta al margine più vicino.
+const AGGANCIO_RIVA := 30.0
+const AGGANCIO_MARGINE := 60.0
+## Quanto si riprendono ogni anno le scorte lasciate stare (quota di ciò che manca).
+const RIPRESA_SELVAGGINA := 0.15
+const RIPRESA_PESCE := 0.2
+## Edifici: {punto (metri), verso (Vector2 verso l'acqua o il bosco), cantiere (anni), preso (cibo
+## dell'ultimo anno), offerta (cibo che potrebbe dare)}; il capanno anche acqua ("fiume", "torrente").
+var poste: Array = []
+var capanni: Array = []
+## Riquadri attorno al villaggio e agli edifici: bosco in piedi (pixel, la palude conta 0,3) e acqua
+## (pixel pesati per tipo), ricontati con le risorse.
+var celle_bosco := {}
+var celle_acqua := {}
+## Scorte per riquadro (0–1; assente = piena).
+var scorta_selvaggina := {}
+var scorta_pesce := {}
 ## Consenso per gruppo (decisione di Fede del 24–25/11/2026): anziani, famiglie, sacerdote; un solo
 ## indicatore (legittimita) con il dettaglio al passaggio. Il sacerdote diventa un gruppo con il
 ## luogo sacro; fino ad allora i presagi li leggono gli anziani.
@@ -504,6 +539,8 @@ func fonda(p: Vector2i) -> void:
 	_anni_risorse = 0
 	legna = LEGNA_INIZIALE
 	legnaie = []
+	poste = []
+	capanni = []
 	tagli_anno = []
 	zona_attiva = {}
 	stanchezza = {}
@@ -512,7 +549,9 @@ func fonda(p: Vector2i) -> void:
 	limo = {}
 	piena_tra = -1
 	zona_piena = false
-	_risorse = risorse_attorno(p)
+	_conta_riquadri()
+	_risorse = _risorse_dai_riquadri()
+	_anni_risorse = 5
 	bosco_iniziale = _risorse["bosco"]
 	disboscamento = 0.0
 	_aggiorna_abbondanza()
@@ -1041,6 +1080,414 @@ func _lavora_legnaie() -> void:
 		_anni_risorse = mini(_anni_risorse, 1)
 
 
+# ---------- capanni da pesca e poste di caccia ----------
+
+## Pendenza attorno a un punto (metri di dislivello su 12 m, nelle due direzioni).
+func _pendenza(p: Vector2) -> float:
+	return absf(dati.quota(p.x + 6.0, p.y) - dati.quota(p.x - 6.0, p.y)) + absf(dati.quota(p.x, p.y + 6.0) - dati.quota(p.x, p.y - 6.0))
+
+
+## Dove andrebbe un capanno con il puntatore in `puntatore` (decisione di Fede del 25/11/2026): la
+## terra asciutta a circa 2 m dall'acqua più vicina, entro AGGANCIO_RIVA metri, fuori dalla palude e
+## poco inclinata, girata verso l'acqua. Restituisce {punto, verso, acqua, motivo}; motivo vuoto se
+## si può costruire (il punto c'è anche quando c'è un motivo, se la riva è stata trovata).
+func posa_capanno(puntatore: Vector2) -> Dictionary:
+	if not fondato:
+		return {"motivo": "Prima bisogna fondare il villaggio."}
+	var migliore := Vector2.INF
+	var costo := INF
+	var r := int(AGGANCIO_RIVA / 2.0) + 2
+	for gz in range(-r, r + 1):
+		for gx in range(-r, r + 1):
+			var p := puntatore + Vector2(gx, gz) * 2.0
+			var d := p.distance_to(puntatore)
+			if d > AGGANCIO_RIVA + 2.0:
+				continue
+			if absf(dati.distanza_riva(p.x, p.y) - 2.0) > 1.5 or dati.palude_in(p.x, p.y) > 0.4:
+				continue
+			var c := d + _pendenza(p) * 40.0
+			if c < costo:
+				costo = c
+				migliore = p
+	if migliore == Vector2.INF:
+		return {"motivo": "Serve la riva di un fiume o di un torrente."}
+	var h := 4.0
+	var verso := -Vector2(dati.distanza_riva(migliore.x + h, migliore.y) - dati.distanza_riva(migliore.x - h, migliore.y),
+		dati.distanza_riva(migliore.x, migliore.y + h) - dati.distanza_riva(migliore.x, migliore.y - h)).normalized()
+	# Il tipo d'acqua: il fiume se c'è, altrimenti il torrente, nei punti della mappa attorno alla riva.
+	var acqua := ""
+	var q := px_da_mondo(migliore.x, migliore.y)
+	for raggio in [1, 2]:
+		for dy in range(-raggio, raggio + 1):
+			for dx in range(-raggio, raggio + 1):
+				var k := q + Vector2i(dx, dy)
+				if k.x < 0 or k.y < 0 or k.x >= n or k.y >= n:
+					continue
+				var t := dati.tipo[px(k)]
+				if t == MappaDati.FIUME:
+					acqua = "fiume"
+				elif acqua == "" and (t == MappaDati.TORRENTE or t == MappaDati.TORRENTE_EST):
+					acqua = "torrente"
+		if acqua != "":
+			break
+	var esito := {"punto": migliore, "verso": verso, "acqua": acqua if acqua != "" else "torrente", "motivo": ""}
+	esito["motivo"] = _motivo_edificio(migliore, capanni, "C'è già un capanno qui.")
+	return esito
+
+
+## Dove andrebbe una posta con il puntatore in `puntatore`: appena fuori dal bosco (il margine è
+## 0,5), entro AGGANCIO_MARGINE metri, asciutta, poco inclinata, con il bosco ancora in piedi alle
+## spalle; girata con la schiena al bosco. Stesso formato di posa_capanno.
+func posa_posta(puntatore: Vector2) -> Dictionary:
+	if not fondato:
+		return {"motivo": "Prima bisogna fondare il villaggio."}
+	var migliore := Vector2.INF
+	var verso_migliore := Vector2.ZERO
+	var costo := INF
+	var r := int(AGGANCIO_MARGINE / 3.0) + 1
+	var h := 8.0
+	for gz in range(-r, r + 1):
+		for gx in range(-r, r + 1):
+			var p := puntatore + Vector2(gx, gz) * 3.0
+			var d := p.distance_to(puntatore)
+			if d > AGGANCIO_MARGINE + 3.0:
+				continue
+			if absf(dati.bosco_in(p.x, p.y) - 0.4) > 0.04 or dati.palude_in(p.x, p.y) > 0.4 or dati.distanza_riva(p.x, p.y) < 20.0:
+				continue
+			var i := px(px_da_mondo(p.x, p.y))
+			if not edificabile(i) or campi.has(i) or sentieri.has(i):
+				continue
+			var v := Vector2(dati.bosco_in(p.x + h, p.y) - dati.bosco_in(p.x - h, p.y), dati.bosco_in(p.x, p.y + h) - dati.bosco_in(p.x, p.y - h)).normalized()
+			# Alle spalle il bosco deve essere ancora in piedi (le legnaie e i campi lo tolgono).
+			var dietro := v * 40.0 + p
+			if not bosco_in_piedi(px(px_da_mondo(dietro.x, dietro.y))):
+				continue
+			var c := d + _pendenza(p) * 40.0
+			if c < costo:
+				costo = c
+				migliore = p
+				verso_migliore = v
+	if migliore == Vector2.INF:
+		return {"motivo": "Serve il margine di un bosco, entro %d m." % roundi(AGGANCIO_MARGINE)}
+	return {"punto": migliore, "verso": verso_migliore, "motivo": _motivo_edificio(migliore, poste, "C'è già una posta qui.")}
+
+
+func _motivo_edificio(punto: Vector2, elenco: Array, gia: String) -> String:
+	if punto.distance_to(mondo_di_px(centro)) > DISTANZA_MASSIMA_RISORSE:
+		return "Troppo lontano dal villaggio: va entro %d m dal centro." % roundi(DISTANZA_MASSIMA_RISORSE)
+	for e in elenco:
+		if (e["punto"] as Vector2).distance_to(punto) < 8.0:
+			return gia
+	return ""
+
+
+func costruisci_capanno(puntatore: Vector2) -> String:
+	var posa := posa_capanno(puntatore)
+	if posa["motivo"] != "":
+		return posa["motivo"]
+	capanni.append({"punto": posa["punto"], "verso": posa["verso"], "acqua": posa["acqua"], "cantiere": ANNI_CANTIERE_RISORSE, "preso": 0.0, "offerta": 0.0})
+	_scrivi("Si comincia a costruire un capanno da pesca sulla riva del %s." % posa["acqua"])
+	_dopo_edificio_risorse(posa["punto"])
+	return ""
+
+
+func costruisci_posta(puntatore: Vector2) -> String:
+	var posa := posa_posta(puntatore)
+	if posa["motivo"] != "":
+		return posa["motivo"]
+	poste.append({"punto": posa["punto"], "verso": posa["verso"], "cantiere": ANNI_CANTIERE_RISORSE, "preso": 0.0, "offerta": 0.0})
+	_scrivi("Si comincia a costruire una posta di caccia al margine del bosco.")
+	_dopo_edificio_risorse(posa["punto"])
+	return ""
+
+
+## Un edificio nuovo: le case non gli nascono sopra e i riquadri attorno si contano subito.
+func _dopo_edificio_risorse(punto: Vector2) -> void:
+	var l := lotto_da_mondo(punto.x, punto.y)
+	case = case.filter(func(c: Vector2i) -> bool: return cheb(c, l) > 0)
+	_conta_riquadri()
+	disponi_case()
+
+
+func _avanza_cantieri_risorse() -> void:
+	for e in poste + capanni:
+		if int(e["cantiere"]) > 0:
+			e["cantiere"] = int(e["cantiere"]) - 1
+			if int(e["cantiere"]) == 0:
+				_scrivi("Il capanno da pesca è pronto." if e.has("acqua") else "La posta di caccia è pronta.", "buono")
+
+
+## L'edificio (posta o capanno) più vicino al punto, entro `entro` metri (-1 se nessuno).
+func edificio_vicino(elenco: Array, punto: Vector2, entro := 30.0) -> int:
+	var k_migliore := -1
+	var d_migliore := entro
+	for k in elenco.size():
+		var d := (elenco[k]["punto"] as Vector2).distance_to(punto)
+		if d <= d_migliore:
+			d_migliore = d
+			k_migliore = k
+	return k_migliore
+
+
+## Stato di una posta o di un capanno per il giocatore.
+func stato_edificio(e: Dictionary) -> String:
+	if int(e["cantiere"]) > 0:
+		return "in costruzione (ancora %d anni)" % int(e["cantiere"])
+	if scorta_attorno(e) < 0.4:
+		return "pesce scarso in questo tratto" if e.has("acqua") else "selvaggina scarsa qui"
+	return "al lavoro" if not e.has("acqua") else "al lavoro sul " + String(e["acqua"])
+
+
+## Scorta media (0–1) attorno a un edificio, pesata con la vicinanza.
+func scorta_attorno(e: Dictionary) -> float:
+	var caccia := not e.has("acqua")
+	var celle: Dictionary = celle_bosco if caccia else celle_acqua
+	var scorta: Dictionary = scorta_selvaggina if caccia else scorta_pesce
+	var raggio := RAGGIO_POSTA if caccia else RAGGIO_CAPANNO
+	var somma := 0.0
+	var pesi := 0.0
+	for c in celle:
+		var w := 1.0 - centro_riquadro(c).distance_to(e["punto"]) / raggio
+		if w > 0.0 and float(celle[c]) > 0.0:
+			somma += w * float(celle[c]) * float(scorta.get(c, 1.0))
+			pesi += w * float(celle[c])
+	return somma / pesi if pesi > 0.0 else 0.0
+
+
+func riquadro_di(p: Vector2i) -> Vector2i:
+	return Vector2i(p.x / BLOCCO_RISORSE, p.y / BLOCCO_RISORSE)
+
+
+func centro_riquadro(c: Vector2i) -> Vector2:
+	return (Vector2(c * BLOCCO_RISORSE) + Vector2.ONE * (BLOCCO_RISORSE - 1) * 0.5) * dati.metri_per_px
+
+
+## Raggio in metri entro cui le famiglie cacciano e pescano attorno al villaggio.
+func raggio_famiglie() -> float:
+	return RAGGIO_RISORSE * dati.metri_per_px
+
+
+## Conta bosco in piedi e acqua nei riquadri che servono: attorno al villaggio e agli edifici.
+func _conta_riquadri() -> void:
+	celle_bosco = {}
+	celle_acqua = {}
+	if not fondato:
+		return
+	var coltivati := {}
+	for c in campi:
+		coltivati[c] = true
+	var fonti_risorse: Array = [[mondo_di_px(centro), raggio_famiglie()]]
+	for e in poste:
+		fonti_risorse.append([e["punto"], RAGGIO_POSTA])
+	for e in capanni:
+		fonti_risorse.append([e["punto"], RAGGIO_CAPANNO])
+	var lato := BLOCCO_RISORSE * dati.metri_per_px
+	var nb := ceili(float(n) / BLOCCO_RISORSE)
+	for f in fonti_risorse:
+		var pr: Vector2 = f[0]
+		var r: float = f[1]
+		var a := Vector2i(clampi(floori((pr.x - r) / lato), 0, nb - 1), clampi(floori((pr.y - r) / lato), 0, nb - 1))
+		var b := Vector2i(clampi(floori((pr.x + r) / lato) + 1, 0, nb - 1), clampi(floori((pr.y + r) / lato) + 1, 0, nb - 1))
+		for cy in range(a.y, b.y + 1):
+			for cx in range(a.x, b.x + 1):
+				var c := Vector2i(cx, cy)
+				if celle_bosco.has(c) or centro_riquadro(c).distance_to(pr) > r:
+					continue
+				var conta := _conta_riquadro(c, coltivati)
+				celle_bosco[c] = conta.x
+				celle_acqua[c] = conta.y
+
+
+## Bosco in piedi (x) e acqua pesata per tipo (y) in un riquadro.
+func _conta_riquadro(c: Vector2i, coltivati: Dictionary) -> Vector2:
+	var bosco := 0.0
+	var acqua := 0.0
+	for y in range(c.y * BLOCCO_RISORSE, mini((c.y + 1) * BLOCCO_RISORSE, n)):
+		for x in range(c.x * BLOCCO_RISORSE, mini((c.x + 1) * BLOCCO_RISORSE, n)):
+			var j := y * n + x
+			var t := dati.tipo[j]
+			if t == MappaDati.FIUME:
+				acqua += 1.0
+			elif t == MappaDati.TORRENTE or t == MappaDati.TORRENTE_EST:
+				acqua += 0.6
+			elif t == MappaDati.PALUDE:
+				acqua += 0.5
+				bosco += 0.3
+			elif not coltivati.has(j) and bosco_in_piedi(j):
+				bosco += 1.0
+	return Vector2(bosco, acqua)
+
+
+## Stima per un edificio che si potrebbe costruire (lettura sotto il puntatore): resa possibile
+## l'anno, già divisa con gli edifici vicini; scorta attorno (0–1); quanto è ricca la risorsa
+## attorno (0–1, per il bosco la quota di terra boscosa); quanti edifici uguali sono vicini.
+func stima_edificio(e: Dictionary) -> Dictionary:
+	var caccia := not e.has("acqua")
+	var scorta: Dictionary = scorta_selvaggina if caccia else scorta_pesce
+	var resa := RESA_BOSCO if caccia else RESA_ACQUA
+	var raggio := RAGGIO_POSTA if caccia else RAGGIO_CAPANNO
+	var elenco: Array = poste if caccia else capanni
+	var punto: Vector2 = e["punto"]
+	var coltivati := {}
+	for c in campi:
+		coltivati[c] = true
+	var lato := BLOCCO_RISORSE * dati.metri_per_px
+	var nb := ceili(float(n) / BLOCCO_RISORSE)
+	var a := Vector2i(clampi(floori((punto.x - raggio) / lato), 0, nb - 1), clampi(floori((punto.y - raggio) / lato), 0, nb - 1))
+	var b := Vector2i(clampi(floori((punto.x + raggio) / lato) + 1, 0, nb - 1), clampi(floori((punto.y + raggio) / lato) + 1, 0, nb - 1))
+	var disponibile := 0.0
+	var somma_scorta := 0.0
+	var pesi := 0.0
+	var ricchezza := 0.0
+	var pesi_tutti := 0.0
+	for cy in range(a.y, b.y + 1):
+		for cx in range(a.x, b.x + 1):
+			var c := Vector2i(cx, cy)
+			var cc := centro_riquadro(c)
+			var w := 1.0 - cc.distance_to(punto) / raggio
+			if w <= 0.0:
+				continue
+			var quanto: float
+			if celle_bosco.has(c):
+				quanto = float(celle_bosco[c] if caccia else celle_acqua[c])
+			else:
+				var conta := _conta_riquadro(c, coltivati)
+				quanto = conta.x if caccia else conta.y
+			ricchezza += w * quanto / float(BLOCCO_RISORSE * BLOCCO_RISORSE)
+			pesi_tutti += w
+			if quanto <= 0.0:
+				continue
+			var pressione := w
+			for altro in elenco:
+				if int(altro["cantiere"]) <= 0:
+					pressione += maxf(0.0, 1.0 - cc.distance_to(altro["punto"]) / raggio)
+			var s := float(scorta.get(c, 1.0))
+			disponibile += quanto * resa * s * w / maxf(1.0, pressione)
+			somma_scorta += w * quanto * s
+			pesi += w * quanto
+	var vicini := 0
+	for altro in elenco:
+		if (altro["punto"] as Vector2).distance_to(punto) < raggio:
+			vicini += 1
+	return {"resa": minf(disponibile, CAPACITA_POSTA if caccia else CAPACITA_CAPANNO),
+		"scorta": somma_scorta / pesi if pesi > 0.0 else 0.0,
+		"risorsa": clampf(ricchezza / maxf(pesi_tutti, 0.001), 0.0, 1.0), "vicini": vicini}
+
+
+## Boschi e acque attorno al villaggio, pesati con la vicinanza (1 al centro, 0 a 1,6 km), dai
+## riquadri: servono al disboscamento.
+func _risorse_dai_riquadri() -> Dictionary:
+	var c0 := mondo_di_px(centro)
+	var rc := raggio_famiglie()
+	var bosco := 0.0
+	var acqua := 0.0
+	for c in celle_bosco:
+		var w := 1.0 - centro_riquadro(c).distance_to(c0) / rc
+		if w > 0.0:
+			bosco += w * float(celle_bosco[c])
+			acqua += w * float(celle_acqua[c])
+	return {"bosco": bosco, "acqua": acqua}
+
+
+func _riprendi_scorte(scorta: Dictionary, ripresa: float) -> void:
+	for c in scorta.keys():
+		var s: float = scorta[c] + (1.0 - scorta[c]) * ripresa
+		if s >= 0.995:
+			scorta.erase(c)
+		else:
+			scorta[c] = s
+
+
+## Un anno di caccia (o di pesca). Prima lavorano poste e capanni finiti, che rendono pieno: ognuno
+## prende dai riquadri attorno, pesati con la vicinanza, fino alla sua capacità; dove gli edifici si
+## sovrappongono la scorta si divide. Poi le famiglie cacciano o pescano attorno al villaggio con
+## ciò che resta, rendendo un terzo. Il preso fa calare le scorte dei riquadri. Restituisce
+## [preso, offerta].
+func _caccia_o_pesca(caccia: bool, domanda: float) -> Array:
+	var celle: Dictionary = celle_bosco if caccia else celle_acqua
+	var scorta: Dictionary = scorta_selvaggina if caccia else scorta_pesce
+	var resa := RESA_BOSCO if caccia else RESA_ACQUA
+	var raggio := RAGGIO_POSTA if caccia else RAGGIO_CAPANNO
+	var capacita := CAPACITA_POSTA if caccia else CAPACITA_CAPANNO
+	var edifici: Array = poste if caccia else capanni
+	var offerta := {}
+	for c in celle:
+		offerta[c] = float(celle[c]) * resa * float(scorta.get(c, 1.0))
+	# Pesi degli edifici sui riquadri e pressione (somma dei pesi) per dividere la scorta.
+	var pesi: Array = []
+	var pressione := {}
+	for e in edifici:
+		var pw := {}
+		if int(e["cantiere"]) <= 0:
+			for c in celle:
+				var w := 1.0 - centro_riquadro(c).distance_to(e["punto"]) / raggio
+				if w > 0.0 and float(celle[c]) > 0.0:
+					pw[c] = w
+					pressione[c] = float(pressione.get(c, 0.0)) + w
+		pesi.append(pw)
+	var disponibile: Array[float] = []
+	var dagli_edifici := 0.0
+	for k in edifici.size():
+		var a := 0.0
+		for c in pesi[k]:
+			a += float(offerta[c]) * float(pesi[k][c]) / maxf(1.0, float(pressione[c]))
+		disponibile.append(a)
+		edifici[k]["offerta"] = minf(a, capacita)
+		dagli_edifici += minf(a, capacita)
+	var quota := minf(1.0, domanda / dagli_edifici) if dagli_edifici > 0.0 else 0.0
+	var presi := {}
+	var preso := 0.0
+	for k in edifici.size():
+		edifici[k]["preso"] = float(edifici[k]["offerta"]) * quota
+		preso += float(edifici[k]["preso"])
+		if disponibile[k] <= 0.0:
+			continue
+		var f := float(edifici[k]["preso"]) / disponibile[k]
+		for c in pesi[k]:
+			presi[c] = float(presi.get(c, 0.0)) + float(offerta[c]) * float(pesi[k][c]) / maxf(1.0, float(pressione[c])) * f
+	# Le famiglie attorno al villaggio, con ciò che resta.
+	var c0 := mondo_di_px(centro)
+	var rc := raggio_famiglie()
+	var dalle_famiglie := {}
+	var disp_famiglie := 0.0
+	for c in celle:
+		var w := 1.0 - centro_riquadro(c).distance_to(c0) / rc
+		if w <= 0.0:
+			continue
+		var v := maxf(0.0, float(offerta[c]) - float(presi.get(c, 0.0))) * w * RESA_SENZA_EDIFICIO
+		if v > 0.0:
+			dalle_famiglie[c] = v
+			disp_famiglie += v
+	var resto := clampf(domanda - preso, 0.0, disp_famiglie)
+	if resto > 0.0:
+		for c in dalle_famiglie:
+			presi[c] = float(presi.get(c, 0.0)) + float(dalle_famiglie[c]) * resto / disp_famiglie
+		preso += resto
+	# Le scorte calano con ciò che si prende (come prima per la selvaggina del villaggio).
+	for c in presi:
+		var portata := float(celle[c]) * resa
+		scorta[c] = clampf(float(scorta.get(c, 1.0)) - float(presi[c]) / maxf(portata * 8.0, 0.5), 0.05, 1.0)
+	return [preso, dagli_edifici + disp_famiglie]
+
+
+## Selvaggina del villaggio (0–1): la scorta media dei boschi dove si caccia, pesata con il bosco e
+## con quanto ci si caccia (attorno al villaggio e alle poste). La selvaggina vicina rovina i campi.
+func _selvaggina_media() -> float:
+	var c0 := mondo_di_px(centro)
+	var rc := raggio_famiglie()
+	var somma := 0.0
+	var pesi := 0.0
+	for c in celle_bosco:
+		var cc := centro_riquadro(c)
+		var w := maxf(0.0, 1.0 - cc.distance_to(c0) / rc)
+		for e in poste:
+			w += maxf(0.0, 1.0 - cc.distance_to(e["punto"]) / RAGGIO_POSTA)
+		var b := float(celle_bosco[c]) * w
+		somma += b * float(scorta_selvaggina.get(c, 1.0))
+		pesi += b
+	return somma / pesi if pesi > 0.0 else 1.0
+
+
 ## Demolisce ciò che è demolibile dentro il cerchio (strumento Demolisci, decisione di Fede del
 ## 24/11/2026, come in Cities: Skylines): case, campi, sentieri, granaio. Il centro del villaggio
 ## (il focolare) non si demolisce. Fiumi e paludi non sono affare di questo strumento: si
@@ -1080,6 +1527,17 @@ func demolisci(punto: Vector2, raggio: float) -> Dictionary:
 	esito["legnaie"] = n_legnaie - legnaie.size()
 	if esito["legnaie"] > 0:
 		_scrivi("Demolita la legnaia.")
+	var fuori := func(e: Dictionary) -> bool: return (e["punto"] as Vector2).distance_to(punto) > raggio
+	var n_poste := poste.size()
+	poste = poste.filter(fuori)
+	esito["poste"] = n_poste - poste.size()
+	var n_capanni := capanni.size()
+	capanni = capanni.filter(fuori)
+	esito["capanni"] = n_capanni - capanni.size()
+	if esito["poste"] > 0:
+		_scrivi("Demolita la posta di caccia.")
+	if esito["capanni"] > 0:
+		_scrivi("Demolito il capanno da pesca.")
 	if granaio.x >= 0 and granaio.distance_to(punto) <= raggio:
 		granaio = Vector2(-1, -1)
 		esito["granaio"] = true
@@ -1477,7 +1935,8 @@ func passo() -> void:
 			_scrivi("Il granaio è finito: le scorte si conservano meglio.", "buono")
 	# Raccolto: le braccia lavorano prima i campi più fertili. Famiglie contente lavorano di più
 	# (decisione di Fede del 25/11/2026); un cantiere aperto toglie un po' di braccia.
-	var cantieri := (1 if cantiere_granaio > 0 else 0) + legnaie.filter(func(l: Dictionary) -> bool: return int(l["cantiere"]) > 0).size()
+	var in_cantiere := func(e: Dictionary) -> bool: return int(e["cantiere"]) > 0
+	var cantieri := (1 if cantiere_granaio > 0 else 0) + legnaie.filter(in_cantiere).size() + poste.filter(in_cantiere).size() + capanni.filter(in_cantiere).size()
 	var lavoro: float = (0.9 + 0.2 * consenso["famiglie"] / 100.0) * (1.0 - 0.05 * mini(cantieri, 3))
 	var braccia: float = pop * 0.55 * lavoro * (1.0 + (0.0 if fonti["caccia"] else 0.2) + (0.0 if fonti["pesca"] else 0.1))
 	var lavorabili := int(braccia / 3.0 * AREA_CELLA) if fonti["agricoltura"] else 0
@@ -1503,17 +1962,24 @@ func passo() -> void:
 	# Caccia, raccolta e pesca (economia mista): la selvaggina cala se si caccia troppo e ricresce
 	# lentamente; boschi e acque si ricontano ogni 5 anni (tagli e campi tolgono bosco).
 	if _anni_risorse <= 0:
-		_risorse = risorse_attorno(centro)
+		_conta_riquadri()
+		_risorse = _risorse_dai_riquadri()
 		_anni_risorse = 5
 		if bosco_iniziale > 0.0:
 			disboscamento = clampf(1.0 - _risorse["bosco"] / bosco_iniziale, 0.0, 1.0)
 	_anni_risorse -= 1
-	var portata_bosco: float = _risorse["bosco"] * RESA_BOSCO
-	offerta_caccia = portata_bosco * selvaggina
-	ultima_caccia = minf(pop * QUOTA_CACCIA * piu_braccia, offerta_caccia) if fonti["caccia"] else 0.0
-	selvaggina = clampf(selvaggina - ultima_caccia / maxf(portata_bosco * 8.0, 1.0) + (1.0 - selvaggina) * 0.15, 0.05, 1.0)
-	offerta_pesca = float(_risorse["acqua"]) * RESA_ACQUA
-	ultima_pesca = minf(pop * QUOTA_PESCA * piu_braccia, offerta_pesca) if fonti["pesca"] else 0.0
+	# Le scorte lasciate stare si riprendono; poi lavorano poste e capanni (pieni), e le famiglie
+	# cacciano e pescano attorno al villaggio con ciò che resta (un terzo).
+	_avanza_cantieri_risorse()
+	_riprendi_scorte(scorta_selvaggina, RIPRESA_SELVAGGINA)
+	_riprendi_scorte(scorta_pesce, RIPRESA_PESCE)
+	var esito_caccia := _caccia_o_pesca(true, pop * QUOTA_CACCIA * piu_braccia if fonti["caccia"] else 0.0)
+	ultima_caccia = esito_caccia[0]
+	offerta_caccia = esito_caccia[1]
+	var esito_pesca := _caccia_o_pesca(false, pop * QUOTA_PESCA * piu_braccia if fonti["pesca"] else 0.0)
+	ultima_pesca = esito_pesca[0]
+	offerta_pesca = esito_pesca[1]
+	selvaggina = _selvaggina_media()
 	_storia_selvaggina.append(selvaggina)
 	if _storia_selvaggina.size() > 6:
 		_storia_selvaggina.pop_front()
@@ -1914,7 +2380,7 @@ func _disponi_nucleo(servono: int, ci_sono: int, paga: bool) -> void:
 
 
 func _vicino_a_legnaia(l: Vector2i) -> bool:
-	for g in legnaie:
+	for g in legnaie + poste + capanni:
 		var p: Vector2 = g["punto"]
 		if cheb(lotto_da_mondo(p.x, p.y), l) <= 1:
 			return true
@@ -2046,6 +2512,8 @@ func _abbandona() -> void:
 	casali = []
 	case_casale = {}
 	legnaie = []
+	poste = []
+	capanni = []
 	campi = []
 	_tecnica_campi = {}
 	zona = {}
@@ -2108,6 +2576,19 @@ func cause_di(nome: String) -> Array[String]:
 				out.append("%d campi hanno il limo di una piena: rendono di più per qualche anno." % limo.size())
 			if _caccia_eccessiva:
 				out.append("Si caccia troppo: la selvaggina è al %d%%." % roundi(selvaggina * 100.0))
+			# Senza edifici caccia e pesca rendono un terzo (decisione di Fede del 25/11/2026).
+			if fonti["caccia"] and poste.is_empty():
+				out.append("Senza posta di caccia le famiglie cacciano attorno al villaggio e rendono un terzo: costruiscine una al margine del bosco (Edifici).")
+			if fonti["pesca"] and capanni.is_empty() and float(_risorse["acqua"]) > 5.0:
+				out.append("Senza capanno da pesca le famiglie pescano come capita e rendono un terzo: costruiscine uno sulla riva (Edifici).")
+			for e in poste:
+				if int(e["cantiere"]) <= 0 and scorta_attorno(e) < 0.4:
+					out.append("Attorno a una posta la selvaggina è scarsa (%d%%)." % roundi(scorta_attorno(e) * 100.0))
+					break
+			for e in capanni:
+				if int(e["cantiere"]) <= 0 and scorta_attorno(e) < 0.4:
+					out.append("In un tratto di riva il pesce è scarso (%d%%)." % roundi(scorta_attorno(e) * 100.0))
+					break
 			var stanchi := campi_stanchi()
 			if stanchi > 0:
 				out.append("%d campi sono stanchi dopo tanti anni di coltura: rendono meno. Lasciati incolti si riposano; il limo di una piena li rinnova." % stanchi)

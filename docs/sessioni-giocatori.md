@@ -134,3 +134,20 @@ Le decisioni che ne sono venute (Fede, 25/11/2026) stanno in `pilastri-e-decisio
 - **Popolazioni rientrate:** la mediana di chi conosce il genere passa da 1172 a 763 (dentro l'obiettivo di 600–800); i massimi restano sopra (circa 1000–1080).
 - **Carestie:** chi impara sbagliando 2,6 a partita (obiettivo 1–3), chi legge 1,3 (obiettivo 0–1, poco sopra), nessun abbandono.
 - **Il casual** resta piccolo (mediana 103, minimo 47): la legna e i campi stanchi pesano su chi non costruisce e non allarga. Da guardare con Fede: il casual deve potersi divertire.
+
+## Con capanno da pesca e posta di caccia (25/11/2026, sera tardi)
+*Decisioni di Fede del 25/11/2026: senza edifici caccia e pesca rendono un terzo; capanno solo sulla riva, posta al margine del bosco; pesce e selvaggina locali.* I giocatori automatici imparano i due edifici (`test/aiuti_giocatori.gd`, `costruisci_edificio_risorse`): chi conosce il genere li fa subito nel punto con la resa stimata più alta e ne aggiunge quando non bastano (fino a 3); chi legge li costruisce dopo aver letto la causa nel pannello del Cibo ("Senza posta di caccia…", "Senza capanno da pesca…"); chi sbaglia e il casual provano il tasto nuovo all'inizio, 4–5 volte su 10, il casual dove capita. 72 partite (500 anni).
+
+| Profilo | Abitanti (mediana) | Massimo | Minimo | Carestie per partita | Carestie gravi | Abbandoni | Poste / capanni (mediana) |
+|---|---|---|---|---|---|---|---|
+| Impara sbagliando | 433 (prima 432) | 967 | 109 (132) | 2.5 (2.6) | 0 | 0 | 1 / 0 |
+| Legge le spiegazioni | 555 (545) | 909 | 130 (203) | 2.4 (1.3) | 2 | 0 | 1 / 0 |
+| Conosce il genere | 748 (763) | 1081 | 271 (227) | 2.3 (2.1) | 2 | 0 | 3 / 3 |
+| Casual | 110 (102) | 453 | 43 (47) | 2.7 (1.7) | 1 | 0 | 0 / 0 |
+
+**Registro degli avvisi** (5 partite, livello 5), per partita: 3,6 pause (prima 3,4), 0,8 notifiche rosse (0,6), 4 grigie (3,8), 47 righe di cronaca (42; le righe in più sono "si comincia a costruire" e "è pronta" dei due edifici).
+
+- **Le popolazioni non cambiano:** chi costruisce gli edifici recupera ciò che perde chi non li costruisce.
+- **Le carestie salgono dove si vive di caccia:** quasi tutte all'Area dei gessi (fertilità scarsa) e allo Sperone collinare (bosco ricco, nessun fiume per il capanno): per chi legge 8 a partita ai gessi e 6 allo Sperone, quasi nessuna altrove. Chi legge costruisce la posta solo dopo aver visto il Cibo rosso, cioè dopo la prima fame. Anche chi conosce il genere, con tre poste, ai gessi ha circa 8 carestie a partita: la selvaggina attorno alle poste cala.
+- **Da decidere con Fede:** lasciare così (sono siti di caccia, sfavorevoli per scelta), oppure alzare la resa delle poste (oggi 35 di cibo l'anno al massimo) o la ripresa della selvaggina, oppure far dire alla fondazione che caccia e pesca chiedono gli edifici.
+- Foto nel gioco: `docs/immagini/capanno-nel-gioco-25-11.jpg` (capanno sulla riva del torrente al Terrazzo centrale, con la lettura dell'edificio) e `docs/immagini/posta-nel-gioco-25-11.jpg` (posta al margine del bosco).

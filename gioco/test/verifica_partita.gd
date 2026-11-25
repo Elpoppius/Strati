@@ -167,6 +167,44 @@ func _process(_d: float) -> bool:
 	cg.seed = 9
 	AiutiGiocatori.costruisci_legnaia(sim, cg, 1.0)
 	controlla(sim.legnaie.size() == 1, "si costruisce la legnaia")
+	# Capanno da pesca e Posta di caccia (decisioni di Fede del 25/11/2026): dallo strumento, con
+	# l'aggancio alla riva e al margine; il modello si disegna e gli alberi attorno spariscono.
+	var cc := sim.mondo_di_px(sim.centro)
+	for voce in [["capanno", sim.capanni], ["posta", sim.poste]]:
+		var cmd: String = voce[0]
+		var punto := Vector2.INF
+		for r in range(0, 1000, 40):
+			for k in 24:
+				var q := cc + Vector2.from_angle(TAU * k / 24.0) * r
+				if punto == Vector2.INF and p.posa_edificio(cmd, q)["motivo"] == "":
+					punto = q
+		if punto == Vector2.INF:
+			print("   (%s: nessun punto adatto entro 1 km da questo sito)" % cmd)
+			continue
+		h.seleziona_comando(cmd)
+		_s.punto_corrente = Vector3(punto.x, 0, punto.y)
+		_s._aggiorna_pennello()
+		controlla(p.vista._etichetta.visible == false or p.vista._etichetta.text == "", "%s: l'anteprima agganciata è valida (niente motivo)" % cmd)
+		_s.applica_strumento()
+		var elenco: Array = voce[1]
+		controlla(elenco.size() == 1, "%s: si costruisce dallo strumento" % cmd)
+		if elenco.is_empty():
+			continue
+		var e: Dictionary = elenco[0]
+		var pe: Vector2 = e["punto"]
+		controlla(p.vista._edifici_risorse.has(pe) and _s.uso.stato(pe.x, pe.y) != UsoSuolo.NATURALE, "%s: il modello è sulla mappa e attorno non ci sono alberi" % cmd)
+	# Lontano dall'acqua l'anteprima del capanno è rossa e dice perché.
+	h.seleziona_comando("capanno")
+	var asciutto := Vector2.INF
+	for k in 24:
+		var q := cc + Vector2.from_angle(TAU * k / 24.0) * 300.0
+		if asciutto == Vector2.INF and sim.dati.distanza_riva(q.x, q.y) > 100.0:
+			asciutto = q
+	if asciutto != Vector2.INF:
+		_s.punto_corrente = Vector3(asciutto.x, 0, asciutto.y)
+		_s._aggiorna_pennello()
+		controlla(p.vista._etichetta.visible and p.vista._etichetta.text.begins_with("Serve la riva"), "lontano dall'acqua l'anteprima del capanno dice perché: «%s»" % p.vista._etichetta.text)
+	h.seleziona_comando("")
 	# Tempo: 15 anni al secondo per qualche secondo simulato, rispondendo alle scelte.
 	p.imposta_velocita(3)
 	var anno0 := sim.anno

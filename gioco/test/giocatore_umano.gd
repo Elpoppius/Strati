@@ -7,9 +7,10 @@ extends SceneTree
 ## - "legge": si ferma a leggere le spiegazioni (8 volte su 10);
 ## - "genere": conosce i giochi di questo tipo ma non legge e va a tentativi: allarga la zona appena
 ##   la vede piena, costruisce subito granaio e legnaia (la legnaia vicino al bosco, un'altra quando
-##   rende poco), guarda le mappe tematiche e così metà delle volte evita le terre a rischio;
+##   rende poco; così anche posta di caccia e capanno da pesca), guarda le mappe tematiche e così metà delle volte evita le terre a rischio;
 ## - "casual": guarda di rado (ogni 20–50 anni), non legge mai, risponde a caso, non impara dalle
-##   piene, mette la legnaia dove capita e non rivede mai le politiche; continua a giocare comunque.
+##   piene, mette legnaia, posta e capanno dove capita e non rivede mai le politiche; continua a
+##   giocare comunque.
 ## Cosa fa un giocatore "umano":
 ## - stende all'inizio una zona agricola a metà del contado, senza guardare il rischio di piena;
 ##   impara a evitarlo solo dopo la prima piena grande (la finestra lo spiega);
@@ -31,12 +32,12 @@ func _initialize() -> void:
 	var file := args[0] if args.size() > 0 else "/tmp/umano.txt"
 	var semi := int(args[1]) if args.size() > 1 else 3
 	var d: MappaDati = load("res://mappe/pedecollinare/mappa.res")
-	_righe.append("profilo,sito,seme,pop_finale,pop_minima,carestie,carestie_gravi,abbandoni,scissioni,pause,piene_grandi,granaio_anno,cosa_ha_imparato,legnaie,casali,nucleo")
+	_righe.append("profilo,sito,seme,pop_finale,pop_minima,carestie,carestie_gravi,abbandoni,scissioni,pause,piene_grandi,granaio_anno,cosa_ha_imparato,legnaie,casali,nucleo,poste,capanni")
 	for profilo in ["sbaglia", "legge", "genere", "casual"]:
 		for sito in d.siti:
 			for seme in range(1, semi + 1):
 				var r := _gioca(d, sito, profilo, seme * 31 + int(sito["n"]))
-				_righe.append("%s,%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%d,%d,%d" % [profilo, String(sito["nome"]).replace(",", " "), seme, r["pop"], r["minima"], r["carestie"], r["gravi"], r["abbandoni"], r["scissioni"], r["pause"], r["piene"], r["granaio"], r["imparato"], r["legnaie"], r["casali"], r["nucleo"]])
+				_righe.append("%s,%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%d,%d,%d,%d,%d" % [profilo, String(sito["nome"]).replace(",", " "), seme, r["pop"], r["minima"], r["carestie"], r["gravi"], r["abbandoni"], r["scissioni"], r["pause"], r["piene"], r["granaio"], r["imparato"], r["legnaie"], r["casali"], r["nucleo"], r["poste"], r["capanni"]])
 	var f := FileAccess.open(file, FileAccess.WRITE)
 	f.store_string("\n".join(_righe) + "\n")
 	f.close()
@@ -68,6 +69,7 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 		AiutiGiocatori.costruisci_legnaia(sim, caso, 0.9)
 	elif caso.randf() < (0.7 if casual else 0.5):
 		AiutiGiocatori.costruisci_legnaia(sim, caso, 0.4 if casual else 0.5)
+	_edifici_iniziali(sim, caso, genere, casual)
 	var gravi := 0
 	var scissioni := 0
 	var pause := 0
@@ -90,6 +92,7 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 			sim.fonda(p_sito)
 			_zona(sim, copertura, imparato.has("piena"))
 			AiutiGiocatori.costruisci_legnaia(sim, caso, 0.9 if genere else 0.5)
+			_edifici_iniziali(sim, caso, genere, casual)
 		var eta := sim.anno - anno0
 		# Le notifiche delle tappe: un tasto nuovo invoglia a provarlo.
 		while not sim.avvisi.is_empty():
@@ -132,9 +135,20 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 					elif (c.contains("Senza legnaia") or c.contains("il bosco è finito") or c.contains("vanno lontano")) and sim.legnaie.size() < 4:
 						AiutiGiocatori.costruisci_legnaia(sim, caso, 0.7)
 						imparato["legnaia"] = true
+					elif (c.contains("Senza posta di caccia") or c.contains("Attorno a una posta")) and sim.poste.size() < 4:
+						AiutiGiocatori.costruisci_edificio_risorse(sim, caso, 0.7, true)
+						imparato["posta"] = true
+					elif (c.contains("Senza capanno da pesca") or c.contains("il pesce è scarso")) and sim.capanni.size() < 4:
+						AiutiGiocatori.costruisci_edificio_risorse(sim, caso, 0.7, false)
+						imparato["capanno"] = true
 			# Chi conosce il genere: legnaia in più quando la legna scarseggia, granaio appena si può.
 			if genere and (sim.legnaie.is_empty() or AiutiGiocatori.legna_scarsa(sim)) and sim.legnaie.size() < 4:
 				AiutiGiocatori.costruisci_legnaia(sim, caso, 0.9)
+			# Chi conosce il genere: un'altra posta o un altro capanno quando quelli che ha non bastano.
+			if genere:
+				for caccia in [true, false]:
+					if AiutiGiocatori.risorsa_scarsa(sim, caccia) and (sim.poste if caccia else sim.capanni).size() < 3:
+						AiutiGiocatori.costruisci_edificio_risorse(sim, caso, 0.9, caccia)
 			# Senza leggere, ma provando: legna rossa e nessuna legnaia, si prova il tasto.
 			if not genere and sim.legnaie.is_empty() and sim.legna < SimVillaggio.COSTO_CASA and caso.randf() < (0.3 if casual else 0.4):
 				AiutiGiocatori.costruisci_legnaia(sim, caso, 0.4 if casual else 0.5)
@@ -166,7 +180,19 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 			minima = minf(minima, sim.pop)
 	return {"pop": roundi(sim.pop), "minima": roundi(minima), "carestie": sim.stat["carestie"], "gravi": gravi,
 		"abbandoni": sim.stat["abbandoni"], "scissioni": scissioni, "pause": pause, "piene": sim.stat["piene"],
-		"granaio": granaio_anno, "imparato": " ".join(imparato.keys()), "legnaie": sim.legnaie.size(), "casali": sim.casali.size(), "nucleo": roundi(sim.abitanti_nucleo())}
+		"granaio": granaio_anno, "imparato": " ".join(imparato.keys()), "legnaie": sim.legnaie.size(), "casali": sim.casali.size(), "nucleo": roundi(sim.abitanti_nucleo()),
+		"poste": sim.poste.size(), "capanni": sim.capanni.size()}
+
+
+## Posta di caccia e capanno da pesca all'inizio (decisioni di Fede del 25/11/2026): chi conosce il
+## genere li fa subito, nel punto giusto; gli altri provano i tasti nuovi, chi più chi meno (il
+## casual dove capita).
+func _edifici_iniziali(sim: SimVillaggio, caso: RandomNumberGenerator, genere: bool, casual: bool) -> void:
+	for caccia in [true, false]:
+		if genere:
+			AiutiGiocatori.costruisci_edificio_risorse(sim, caso, 0.9, caccia)
+		elif caso.randf() < (0.5 if casual else 0.4):
+			AiutiGiocatori.costruisci_edificio_risorse(sim, caso, 0.2 if casual else 0.5, caccia)
 
 
 ## Zona agricola su una parte del contado; evita le terre a rischio solo se l'ha imparato.

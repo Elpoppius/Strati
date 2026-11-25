@@ -10,12 +10,12 @@ Legenda: `[x]` fatto · `[~]` in parte · `[ ]` da fare · **(?)** serve una dec
 3. **Traguardi** da rispettare (`era-origini.md`, § 9): circa 2–3 pause a partita (si ferma solo per le scelte), poche notifiche, carestie rare e leggibili, nessun abbandono al livello medio, nucleo 100–300 abitanti, territorio fino a 600–800 per chi gioca molto bene.
 4. **Alla fine:** voce in cima al diario, todo aggiornato, commit e push.
 
-## A che punto siamo (25/11/2026, fine giornata)
-Fatte e collaudate le basi della prima epoca (ritmo, crescita, risorse e rischi, consenso di anziani e famiglie, HUD, strumenti di prova). Pronti anche i modelli di legnaia, capanno da pesca e posta di caccia, con le icone di capanno, posta e pascolo. Per chiudere il villaggio restano circa **27–40 ore di lavoro di Claude** (stima del 25/11/2026, prove comprese; non contano le conferme e le prove di Fede), cioè **7–9 giornate** alternando i due account, poi la prova fisica di Fede e 1–2 giornate di correzioni.
+## A che punto siamo (25/11/2026, sera tardi)
+Fatte e collaudate le basi della prima epoca (ritmo, crescita, risorse e rischi, consenso di anziani e famiglie, HUD, strumenti di prova) e la **voce 1, capanno da pesca e posta di caccia** (meccaniche, strumenti, prove), con due domande aperte per Fede (sotto, "Da decidere con Fede"). Per chiudere il villaggio restano circa **25–38 ore di lavoro di Claude** (stima del 25/11/2026, prove comprese; non contano le conferme e le prove di Fede), cioè **7–9 giornate** alternando i due account, poi la prova fisica di Fede e 1–2 giornate di correzioni.
 
 | Voce | Stima |
 |---|---|
-| 1. Capanno da pesca e Posta di caccia (modelli e icone fatti; restano meccaniche e strumenti) | 1,5–2 ore |
+| 1. Capanno da pesca e Posta di caccia | **fatto** (25/11/2026 sera) |
 | 2. Pascolo e bestiame visibile | 4–6 ore |
 | 3. Luogo sacro, sacerdote, bosco sacro | 2–3 ore |
 | 4. Scorrerie | 2–3 ore |
@@ -30,7 +30,8 @@ Raggruppamento proposto: giornata 1 caccia e pesca con la mappa boschi e selvagg
 ## Per chi riprende: il lavoro in ordine
 *Ordine proposto da Claude il 25/11/2026; le voci sono già approvate da Fede nei contenuti, salvo dove c'è (?).*
 
-### 1. [~] Capanno da pesca e Posta di caccia
+### 1. [x] Capanno da pesca e Posta di caccia
+**Fatto il 25/11/2026 sera** (regole e numeri in `prototipo0-godot.md`, prove in `sessioni-giocatori.md`): senza edifici un terzo, con l'edificio pieno (35 di cibo l'anno al massimo); aggancio alla riva (capanno) e al margine del bosco (posta) anche nella simulazione senza grafica; pesce e selvaggina in riquadri di 200 m; strumenti con anteprima agganciata e lettura; cause nel pannello del Cibo; i giocatori automatici li costruiscono. Restano le due domande in "Da decidere con Fede" (carestie nei siti di caccia, aggancio e tasti della posta). Sotto, le note di lavoro di prima.
 **Deciso** (Fede, 25/11/2026): stessa dinamica della legnaia; senza questi edifici caccia e pesca non spariscono ma rendono circa un terzo.
 - **Capanno da pesca** (germe dell'approdo e del porto): **solo sulla riva** (Fede, 25/11/2026, come i moli: aggancio automatico al punto di riva più vicino entro circa 30 m, girato verso l'acqua; fuori dalla palude; anteprima già agganciata, rossa con "Serve la riva di un fiume o di un torrente" se non c'è riva); **nessuna distanza minima tra capanni** (Fede: chi ne ammassa tanti esaurisce il pesce di quel tratto, è una scelta sua). **Deciso** (Fede, 25/11/2026, su proposta di Claude): il pesce diventa locale per tratto di riva, come la selvaggina attorno alla posta: più capanni vicini se lo dividono, troppi lo fanno calare, e si riprende in qualche anno se lasciato stare; rende di più vicino all'acqua e secondo il tipo d'acqua (fiume più dei torrenti, poco le paludi).
 - **Posta di caccia**: al margine del bosco; rende di più dove il bosco è fitto e la selvaggina abbondante. **La selvaggina diventa locale** attorno alla posta: se si caccia troppo lì cala, e conviene spostarsi (oggi `selvaggina` è un numero unico per il villaggio).
@@ -86,6 +87,8 @@ Raggruppamento proposto: giornata 1 caccia e pesca con la mappa boschi e selvagg
 - Prove sui PC di Fede: tempi degli alberi e fotogrammi al secondo.
 
 ## Da decidere con Fede
+- **(?)** Carestie nei siti di caccia (25/11/2026 sera): con capanno e posta le mediane non cambiano, ma chi legge passa da 1,3 a 2,4 carestie a partita, quasi tutte all'Area dei gessi e allo Sperone collinare. Lasciare così, alzare la resa delle poste o la ripresa della selvaggina, o dirlo alla fondazione? Dati in `sessioni-giocatori.md`.
+- **(?)** Proposte di Claude da confermare: la posta si aggancia al margine del bosco entro 60 m (come il capanno alla riva); tasti K (capanno) e T (posta); 35 di cibo l'anno al massimo per edificio, posta fino a 1000 m, capanno fino a 600 m. Nelle foto la posta sta a qualche decina di metri dai primi alberi (valore 0,4 del margine, come nella posa provata): se Fede la vuole più a ridosso, si alza la soglia.
 - **(?)** Popolazioni: con i campi che si stancano le mediane sono rientrate (chi conosce il genere 763), i massimi restano a 1000–1080; il casual resta piccolo (mediana 103): **si lascia così per ora** (Fede, 25/11/2026).
 - Carestie per chi impara sbagliando: 2,6 a partita, dentro l'obiettivo 1–3 (25/11/2026 sera); chi legge 1,3 (poco sopra 0–1).
 - Politica "Caccia regolata": **non si fa per ora** (Fede, 25/11/2026): con la Posta di caccia e la selvaggina locale il giocatore regola già la caccia; si riprende solo se le prove mostrano ancora troppa caccia.
@@ -107,6 +110,7 @@ Raggruppamento proposto: giornata 1 caccia e pesca con la mappa boschi e selvagg
   - Giocatori automatici "umani" a quattro profili; registro degli avvisi.
   - Icone di legnaia, capanno da pesca, posta di caccia e pascolo; modelli di legnaia, capanno da pesca e posta di caccia, posati nel gioco dove starebbero (riva e margine del bosco).
   - Decisioni sugli edifici delle risorse: capanno solo sulla riva con aggancio automatico, nessuna distanza minima tra capanni né tra legnaie (tolta dal codice quella di 150 m tra legnaie), pesce locale per tratto di riva.
+  - Sera tardi: **capanno da pesca e posta di caccia** nel gioco (simulazione, strumenti, modelli, lettura, prove).
 
 ## Per l'abitato protourbano (dopo il villaggio)
 - Recinto o palizzata, con terrapieno e fossato: la regolazione dello spazio della seconda epoca (decisioni di Fede del 24 e 25/11/2026).

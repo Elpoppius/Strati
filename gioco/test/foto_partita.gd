@@ -1,7 +1,9 @@
 extends SceneTree
 ## Foto di controllo di una partita: fondazione sul sito 1, campi attorno, un secolo e mezzo di
 ## tempo con un giocatore automatico semplice, poi la foto.
-## Uso: xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto_partita.gd -- uscita.png [dimensione_vista] [anni] [mappa] [strumento | politiche | tecniche | anteprima | fondazione | focus:Indicatore]
+## Uso: xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto_partita.gd -- uscita.png [dimensione_vista] [anni] [mappa] [strumento | politiche | tecniche | anteprima | fondazione | focus:Indicatore | capanno | posta]
+## Con capanno o posta la vista va sul primo capanno da pesca o sulla prima posta di caccia, con lo
+## strumento scelto e il puntatore sopra (lettura dell'edificio).
 
 var _s: Node
 var _f := 0
@@ -36,6 +38,11 @@ func _process(_d: float) -> bool:
 					var cg := RandomNumberGenerator.new()
 					cg.seed = k
 					AiutiGiocatori.costruisci_legnaia(sim, cg, 1.0)
+				for caccia in [true, false]:
+					if (sim.poste if caccia else sim.capanni).is_empty():
+						var ce := RandomNumberGenerator.new()
+						ce.seed = k + 1
+						AiutiGiocatori.costruisci_edificio_risorse(sim, ce, 1.0, caccia)
 				if sim.granaio.x < 0 and sim.sbloccato("granaio") and sim.legna >= SimVillaggio.COSTO_GRANAIO:
 					var c := sim.mondo_di_px(sim.centro)
 					sim.costruisci_granaio(c + Vector2(70, -30))
@@ -52,7 +59,16 @@ func _process(_d: float) -> bool:
 		# Vista sulla prima legnaia (per vedere la radura dei boscaioli).
 		if args.size() > 4 and args[4] == "legnaia" and not sim.legnaie.is_empty():
 			c = sim.legnaie[0]["punto"]
-		_s.cam.vai_a(c.x + 60.0, c.y + 40.0, float(args[1]) if args.size() > 1 else 600.0)
+		var su_edificio := false
+		if args.size() > 4 and args[4] in ["capanno", "posta"]:
+			var elenco: Array = sim.capanni if args[4] == "capanno" else sim.poste
+			if not elenco.is_empty():
+				c = elenco[0]["punto"]
+				su_edificio = true
+		if su_edificio:
+			_s.cam.vai_a(c.x, c.y, float(args[1]) if args.size() > 1 else 600.0)
+		else:
+			_s.cam.vai_a(c.x + 60.0, c.y + 40.0, float(args[1]) if args.size() > 1 else 600.0)
 		_s.griglia_attiva = false
 		if args.size() > 3:
 			_s.imposta_modo(int(args[3]))
@@ -95,6 +111,11 @@ func _process(_d: float) -> bool:
 		elif args.size() > 4 and args[4] == "legnaia":
 			_s.hud.seleziona_comando("legnaia")
 			_s.aggiorna_zone_taglio()
+		elif su_edificio:
+			_s.hud.seleziona_comando(args[4])
+			_s.punto_corrente = Vector3(c.x, 0.0, c.y)
+			_s.partita.leggi_sito(_s.punto_corrente)
+			_s._aggiorna_pennello()
 		elif args.size() > 4:
 			# Strumento attivo con il cerchio al centro della vista (per vedere la guida dei campi).
 			_s.hud.seleziona_comando(args[4])
