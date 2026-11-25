@@ -2,7 +2,7 @@
 
 Riusa materiali e forme della prova di stile (prova_stile_verosimile.py): case lunghe in tre
 misure, capanne tonde in due, granaio su pali, palizzata (tratto e varco), luogo sacro,
-focolare, fossa-silo, recinto per gli animali, catasta di legna, rocce; legnaia e capanno da pesca (25/11/2026).
+focolare, fossa-silo, recinto per gli animali, catasta di legna, rocce; legnaia, capanno da pesca e posta di caccia (25/11/2026).
 
 Uso:  blender-py strumenti/blender/villaggio.py gioco/asset/villaggio
 
@@ -320,6 +320,117 @@ def capanno_pesca(nome, seme):
     return base.unisci(nome, parti)
 
 
+def posta_caccia(nome, seme):
+    """Posta di caccia (decisione di Fede del 25/11/2026): riparo basso di frasche al margine del
+    bosco, una rastrelliera con le pelli a seccare, un piccolo focolare e un palo con un palco di
+    corna. Il riparo ha la schiena al bosco (verso y positivo) e si apre verso la radura."""
+    m = materiali()
+    m["pelle"] = base.materiale("pelle", "argilla", tinta=(0.56, 0.4, 0.27))
+    m["corno"] = base.materiale("corno", "legno", tinta=(0.82, 0.77, 0.66))
+    m["frasche"] = base.materiale("frasche", "paglia", tinta=(0.42, 0.42, 0.26))
+    m["laccio"] = base.materiale("laccio", "legno", tinta=(0.45, 0.36, 0.26))
+    rnd = random.Random(seme)
+    parti = []
+    # Riparo a una falda appoggiata a terra: due pali a forcella davanti, un colmo, i correnti
+    # che scendono fino al suolo dietro, coperti di frasche.
+    lungo, alto, fondo = 3.4, 1.45, 2.3
+    y0 = -0.9
+    for x in (-lungo / 2 + 0.2, lungo / 2 - 0.2):
+        parti.append(base.cilindro_tra("forcella", (x, y0, -0.15), (x, y0, alto + 0.05), 0.08, 0.07, m["corteccia"], lati=6))
+        parti.append(base.cilindro_tra("forca", (x, y0, alto - 0.15), (x + 0.15, y0 - 0.05, alto + 0.25), 0.04, 0.03, m["corteccia"], lati=5))
+    parti.append(base.cilindro_tra("colmo", (-lungo / 2 - 0.2, y0, alto + 0.08), (lungo / 2 + 0.2, y0, alto + 0.08), 0.07, 0.06, m["corteccia"], lati=6))
+    for k in range(6):
+        x = -lungo / 2 + 0.1 + k * (lungo - 0.2) / 5 + rnd.uniform(-0.06, 0.06)
+        parti.append(base.cilindro_tra("corrente", (x, y0 - 0.25, alto + 0.22), (x + rnd.uniform(-0.1, 0.1), y0 + fondo + 0.15, -0.05), 0.04, 0.035, m["corteccia"], lati=5))
+    # Falda di frasche secche: nasce nell'origine, si inclina e poi si mette al suo posto.
+    pend = math.atan2(alto, fondo)
+    lung_falda = math.hypot(alto, fondo) + 0.2
+    falda = base.scatola("falda", (lungo + 0.3, lung_falda, 0.12), (0, 0, 0), m["frasche"], tagli=3)
+    for v in falda.data.vertices:
+        v.co.z += rnd.uniform(-0.04, 0.04)
+    falda.rotation_euler = (-pend, 0, 0)
+    falda.location = (0, y0 + fondo / 2, alto / 2 + 0.12)
+    parti.append(falda)
+    # Rami con le foglie sopra la falda: ciuffi di carte di foglie come le chiome degli alberi,
+    # freschi (quercia) e già secchi (foglie d'autunno).
+    normale = Vector((0, math.sin(pend), math.cos(pend)))
+    for foglie, quanti in (("foglie_quercia", 9), ("foglie_autunno", 6)):
+        lobi = []
+        for k in range(quanti):
+            t = rnd.uniform(0.08, 0.92)
+            x = rnd.uniform(-lungo / 2 + 0.2, lungo / 2 - 0.2)
+            c = Vector((x, y0 + t * fondo, alto * (1 - t) + 0.12)) + normale * 0.12
+            lobi.append((c, rnd.uniform(0.38, 0.5)))
+        centro = Vector((0, y0 + fondo / 2, alto / 2))
+        ciuffo = base.chioma("frasche_" + foglie, lobi, centro, lungo / 2, 0.6, rnd, m[foglie])
+        # Le carte più basse si appoggiano a terra, come rami caduti.
+        for v in ciuffo.data.vertices:
+            v.co.z = max(v.co.z, 0.03)
+        parti.append(ciuffo)
+    # Fianchi chiusi da qualche frasca appoggiata di sbieco.
+    for lato in (-1, 1):
+        for k in range(4):
+            t = (k + 0.5) / 4
+            y = y0 + t * fondo
+            h = alto * (1 - t) + 0.1
+            x = lato * (lungo / 2 + 0.05)
+            parti.append(base.cilindro_tra("frasca", (x + lato * 0.25, y + rnd.uniform(-0.15, 0.15), 0.0), (x, y, h), 0.05, 0.02, m["corteccia"], lati=4))
+    # Giaciglio di frasche sotto il riparo.
+    parti.append(base.scatola("giaciglio", (lungo - 0.6, 1.0, 0.1), (0, y0 + 0.75, 0.05), m["frasche"]))
+    # Davanti, un piccolo focolare.
+    fx, fy = -0.3, y0 - 1.5
+    for k in range(8):
+        a = 2 * math.pi * k / 8 + rnd.uniform(-0.12, 0.12)
+        parti.append(sasso("sasso", (0.24, 0.2, 0.17), (fx + math.cos(a) * 0.55, fy + math.sin(a) * 0.55, 0), m["pietra"], seme + 20 + k))
+    bm = bmesh.new()
+    bmesh.ops.create_cone(bm, cap_ends=True, segments=10, radius1=0.45, radius2=0.38, depth=0.06)
+    bmesh.ops.translate(bm, vec=Vector((fx, fy, 0.03)), verts=bm.verts)
+    parti.append(base.da_bmesh("cenere", bm, m["cenere"], tile=1.0))
+    for k in range(3):
+        a = k * 2.1 + rnd.uniform(-0.3, 0.3)
+        parti.append(base.cilindro_tra("ciocco", (fx + math.cos(a) * 0.35, fy + math.sin(a) * 0.35, 0.06), (fx - math.cos(a) * 0.08, fy - math.sin(a) * 0.08, 0.24), 0.05, 0.045, m["corteccia"], lati=5))
+    # Rastrelliera con le pelli: telaio di pali con una pelle tesa, legata ai lati.
+    rx, ry = lungo / 2 + 1.5, y0 - 0.6
+    larg, h = 1.5, 1.7
+    for dx in (-larg / 2, larg / 2):
+        parti.append(base.cilindro_tra("montante", (rx + dx, ry, -0.15), (rx + dx, ry, h), 0.05, 0.045, m["corteccia"], lati=5))
+    for z in (h - 0.1, 0.25):
+        parti.append(base.cilindro_tra("traversa", (rx - larg / 2 - 0.1, ry, z), (rx + larg / 2 + 0.1, ry, z), 0.04, 0.04, m["corteccia"], lati=5))
+    zc = (h - 0.1 + 0.25) / 2
+    parti.append(sasso("pelle", (larg - 0.35, 0.05, h - 0.75), (rx, ry, zc), m["pelle"], seme + 3, appoggiato=False))
+    for k in range(6):
+        a = 2 * math.pi * k / 6 + 0.3
+        px, pz = rx + math.cos(a) * (larg / 2 - 0.2), zc + math.sin(a) * (h / 2 - 0.4)
+        bx = rx + (larg / 2 if math.cos(a) > 0 else -larg / 2)
+        parti.append(base.cilindro_tra("laccio", (px, ry, pz), (bx, ry, pz + rnd.uniform(-0.05, 0.05)), 0.01, 0.01, m["laccio"], lati=3))
+    # Una seconda pelle stesa a terra, fermata da picchetti.
+    gx, gy = rx - 0.2, ry - 1.6
+    parti.append(sasso("pelle_a_terra", (1.3, 0.95, 0.04), (gx, gy, 0.0), m["pelle"], seme + 4))
+    for k in range(6):
+        a = 2 * math.pi * k / 6
+        x, y = gx + math.cos(a) * 0.66, gy + math.sin(a) * 0.5
+        parti.append(base.cilindro_tra("picchetto", (x, y, -0.05), (x, y, 0.14), 0.02, 0.012, m["legno"], lati=4))
+    # Palo con un palco di corna, segno della posta.
+    cx, cy = -lungo / 2 - 0.9, y0 - 0.8
+    parti.append(base.cilindro_tra("palo", (cx, cy, -0.15), (cx, cy, 2.1), 0.06, 0.05, m["corteccia"], lati=6))
+    for lato in (-1, 1):
+        p0 = Vector((cx, cy, 2.05))
+        p1 = p0 + Vector((lato * 0.25, -0.05, 0.3))
+        p2 = p1 + Vector((lato * 0.15, 0.05, 0.35))
+        parti.append(base.cilindro_tra("corno", p0, p1, 0.035, 0.03, m["corno"], lati=5))
+        parti.append(base.cilindro_tra("corno", p1, p2, 0.03, 0.012, m["corno"], lati=5))
+        for k, t in enumerate((0.45, 0.85)):
+            q = p0 + (p1 - p0) * t if k == 0 else p1 + (p2 - p1) * 0.4
+            parti.append(base.cilindro_tra("punta", q, q + Vector((lato * 0.05, -0.18, 0.15)), 0.02, 0.008, m["corno"], lati=4))
+    # Due lance appoggiate al colmo.
+    for k, x in enumerate((0.6, 0.9)):
+        piede = (x, y0 - 0.9, 0.0)
+        cima = (x + 0.1, y0 + 0.05, alto + 0.6)
+        parti.append(base.cilindro_tra("lancia", piede, cima, 0.022, 0.02, m["legno"], lati=4))
+        parti.append(sasso("punta_lancia", (0.05, 0.05, 0.16), (cima[0] + 0.02, cima[1] + 0.03, cima[2] + 0.06), m["pietra"], seme + 30 + k, appoggiato=False))
+    return base.unisci(nome, parti)
+
+
 def roccia(nome, seme, dim):
     m = materiali()
     return base.unisci(nome, [sasso("roccia", dim, (0, 0, 0), m["pietra"], seme)])
@@ -341,6 +452,7 @@ ASSET = [
     ("catasta_legna", lambda n: catasta_legna(n, 27)),
     ("legnaia", lambda n: legnaia(n, 31)),
     ("capanno_pesca", lambda n: capanno_pesca(n, 32)),
+    ("posta_caccia", lambda n: posta_caccia(n, 33)),
     ("roccia_1", lambda n: roccia(n, 28, (1.6, 1.2, 0.9))),
     ("roccia_2", lambda n: roccia(n, 29, (2.4, 1.8, 1.3))),
     ("roccia_3", lambda n: roccia(n, 30, (0.9, 0.8, 0.6))),
