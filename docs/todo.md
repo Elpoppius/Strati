@@ -46,13 +46,14 @@ In tutto **7–10 ore di lavoro di Claude**, cioè 2–3 giornate, più le confe
 ### B. [ ] Registro tecnico in gioco (richiesta di Fede del 26/11/2026)
 **Richiesta di Fede:** un registro interno che il gioco salva da solo mentre lui gioca, con le questioni tecniche, così nelle prove lui guarda la direzione artistica e Claude legge il registro.
 **Proposta di Claude (da confermare prima del codice):**
-- Un file per sessione di gioco in `user://registro/` (sui PC Windows: `%APPDATA%\Godot\app_userdata\Strati\registro\`), testo semplice; si tengono gli ultimi 10.
+- **Cartella (Fede, 26/11/2026): `D:\Godot\Strati\Registro`**; un file per sessione di gioco, testo semplice; si tengono gli ultimi 10. Se su un PC il disco D: non c'è o non si può scrivere, il gioco ripiega su `user://registro/` e lo dice nella prima riga.
+- **Accesso alla cartella (Fede):** quando c'è da leggere il registro, Claude chiede l'accesso alla cartella `D:\Godot\Strati\Registro` del PC di Fede con l'app desktop collegata (`device_request_folder_access`), invece di farsi allegare i file.
+- **Finestra Debug in gioco (Fede):** una piccola finestra che si apre e si chiude con un tasto (proposta: F3), con i numeri dal vivo (fotogrammi al secondo, memoria, figure e animali disegnati) e l'elenco delle **prove da verificare** (le prove aperte di questo todo); Fede spunta ciò che ha visto e ogni spunta finisce nel registro con l'ora.
 - **In testa:** PC e scheda video (nome, driver, versione delle API), sistema, risoluzione, versione di Godot e del gioco (commit), mappa e seme.
 - **Ogni 10 secondi, una riga:** fotogrammi al secondo (media e minimo), fotogramma più lento, chiamate di disegno, memoria, zoom, anno e velocità, quanti alberi, animali e figure si disegnano.
 - **Eventi:** fotogrammi sopra i 100 ms con cosa stava succedendo (cambio di zoom, rotazione, anno che passa, strumento), tempi di caricamento (alberi, cache, mappa), errori e avvisi di Godot (anche con il file di log di Godot acceso nelle impostazioni del progetto).
 - **Segnalibro:** un tasto (F9) scrive "segnalibro" nel registro con l'ora e la posizione della camera e salva una foto dello schermo, per segnare "qui c'è qualcosa" senza fermarsi a scrivere.
-- **Come arriva a Claude:** Fede allega il file nella conversazione; oppure, con l'app desktop collegata e la cartella condivisa, Claude lo legge direttamente.
-- Verifica: `verifica_base.gd` o una nuova verifica controlla che il registro si scriva e che le righe abbiano i campi giusti. Stima: 30–45 minuti.
+- Verifica: una nuova verifica controlla che il registro si scriva, che le righe abbiano i campi giusti e che le spunte della finestra Debug finiscano nel registro. Stima: 40–60 minuti con la finestra Debug.
 
 ### A. [x] Specchietti in gioco: "Conseguenze" e "Rapporti di forza" — PRIORITÀ 1
 **Fatto il 26/11/2026 pomeriggio** (descrizione in `hud.md` e `prototipo0-godot.md`; foto `docs/immagini/conseguenze-26-11.jpg` e `rapporti-di-forza-26-11.jpg`). Resta la prova di Fede nel gioco. Sotto, il disegno di partenza.
