@@ -6,7 +6,7 @@
 //   Parti: 0 busto e veste · 1 collo e testa · 2 braccio sinistro · 3 braccio destro ·
 //   4 gamba sinistra · 5 gamba destra · 6 attrezzo (nella mano destra).
 //   Classi: 0 pelle · 1 capelli · 2 veste · 3 mantello o pelle · 4 calzari · 5 cintura ·
-//   6 legno · 7 selce · 8 vimini.
+//   6 legno · 7 selce · 8 vimini · 9 occhi.
 // I colori dei vertici portano solo l'occlusione cotta. La persona guarda verso -z.
 //
 // Stato di ogni persona (dati personalizzati della MultiMesh, VistaVillaggio._muovi_persone):
@@ -84,10 +84,10 @@ void vertex() {
 	// Colori di questa persona.
 	float s2 = seme + variante;
 	float hc = caso(s2, 2.0);
-	vec3 tinte[9] = vec3[](PELLE[int(caso(s2, 1.0) * 4.0) % 4], CAPELLI[hc > 0.92 ? 4 : int(hc / 0.92 * 4.0) % 4],
+	vec3 tinte[10] = vec3[](PELLE[int(caso(s2, 1.0) * 4.0) % 4], CAPELLI[hc > 0.92 ? 4 : int(hc / 0.92 * 4.0) % 4],
 		VESTI[int(caso(s2, 3.0) * 7.0) % 7], MANTELLI[int(caso(s2, 4.0) * 4.0) % 4],
-		vec3(0.085, 0.055, 0.035), vec3(0.07, 0.045, 0.028), vec3(0.20, 0.13, 0.07), vec3(0.16, 0.15, 0.14), vec3(0.36, 0.28, 0.15));
-	v_colore = tinte[clamp(classe, 0, 8)];
+		vec3(0.085, 0.055, 0.035), vec3(0.07, 0.045, 0.028), vec3(0.20, 0.13, 0.07), vec3(0.16, 0.15, 0.14), vec3(0.36, 0.28, 0.15), vec3(0.025, 0.018, 0.014));
+	v_colore = tinte[clamp(classe, 0, 9)];
 	v_grane = vec3(classe == 2 ? 1.0 : 0.0, (classe == 1 || classe == 3) ? 1.0 : 0.0, (classe == 6 || classe == 8) ? 1.0 : 0.0);
 	v_pelle = classe == 0 ? 1.0 : 0.0;
 

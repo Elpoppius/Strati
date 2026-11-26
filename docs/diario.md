@@ -2,6 +2,20 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (sera, più tardi) — persone: viso e spalle
+**Fatto**
+- **Viso** (`strumenti/blender/persone.py`, funzione `viso`): orbite scavate con gli occhi scuri dentro (nuovo volume `Scava` e nuova classe "occhi" nello shader), naso con il dorso e le ali, bocca incisa e labbra, zigomi, mascella e mento (più delicati nelle donne), sopracciglia; barba con le basette; la calotta dei capelli non copre più la fronte.
+- **Spalle**: niente più sfere sulle spalle; il trapezio scende dal collo, deltoide piccolo, braccia e maniche più asciutte, busto un po' più stretto, petto più marcato negli uomini. La pelle a tracolla dell'uomo 2 al posto del disco sul petto.
+- Il modello completo ha circa 3000 facce (prima 2200) e la testa ne tiene il 40%; il leggero resta a 320. La cucitura della grana è dietro.
+- Nuovo `test/foto_ritratto.gd` (ritratti ravvicinati); immagine `docs/immagini/ritratti-prima-dopo-26-11.jpg`. Tutte le 9 verifiche superate.
+
+**Decisioni**
+- Fede: il modello va rifinito, spalle e viso in particolare, nella vista ravvicinata; da lontano va bene. L'ok sulle animazioni arriva dopo la sua prova.
+
+**Prossimo passo**
+- Fede: provare nel gioco persone, animazioni e specchietti; i nomi delle forme di governo.
+- Claude: la scheda della famiglia con un clic su una persona; poi le voci 4 e 5.
+
 ## 26/11/2026 (pomeriggio, sera) — popolazione visibile (voce 7)
 **Fatto**
 - **Persone** (`strumenti/blender/persone.py`, `gioco/asset/persone/`): 3 uomini (1,74 m) e 3 donne (1,62 m), corpo unico da volumi come gli animali, completo (2200 facce) e leggero (320). Vesti del Neolitico (tunica con la cintura, al ginocchio o al polpaccio, maniche corte; mantelli e pelli; calzari), capelli lunghi, corti, a crocchia, treccia o sciolti, barba per due uomini. Cinque attrezzi nella mano destra: zappa, ascia, lancia, bastone, cesto. Le braccia sono scostate dal corpo, così alzandole non si tende una membrana tra mano e fianco.

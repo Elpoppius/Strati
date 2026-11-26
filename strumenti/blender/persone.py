@@ -7,7 +7,7 @@ Come gli animali (`animali.py`), ogni persona è un corpo unico: un campo di dis
 (ellissoidi e coni arrotondati per gambe, bacino, busto, braccia, mani, collo, testa, naso, capelli,
 vesti, cintura, calzari) che si fondono morbidamente; la superficie si estrae con marching cubes e si
 semplifica in due livelli:
-  - completo (circa 2200 facce) per le viste vicine;
+  - completo (circa 3200 facce, con la testa che ne tiene più del resto) per le viste vicine;
   - leggero (circa 320 facce) per la media distanza.
 
 Vesti del Neolitico (proposta di Claude): tunica di lana o di lino stretta in vita da una cintura,
@@ -43,12 +43,98 @@ import prova_stile_verosimile as base  # noqa: E402  (legge la cartella d'uscita
 import animali  # noqa: E402  (volumi, superficie, semplificazione, esportazione)
 import bpy  # noqa: E402
 
-Cono, Elli, superficie, oggetto, esporta = animali.Cono, animali.Elli, animali.superficie, animali.oggetto, animali.esporta
+Cono, Elli, esporta = animali.Cono, animali.Elli, animali.esporta
+import bmesh  # noqa: E402
 USCITA = base.USCITA
-FACCE_COMPLETO = 2200
+FACCE_COMPLETO = 3200
 FACCE_LEGGERO = 320
-CLASSI = {"pelle": 0, "capelli": 1, "veste": 2, "mantello": 3, "calzari": 4, "cintura": 5, "legno": 6, "selce": 7, "vimini": 8}
+QUOTA_TESTA = 0.4  # parte delle facce del modello completo che va alla testa e al collo
+CLASSI = {"pelle": 0, "capelli": 1, "veste": 2, "mantello": 3, "calzari": 4, "cintura": 5, "legno": 6, "selce": 7, "vimini": 8, "occhi": 9}
 PARTI = {"busto": 0, "testa": 1, "braccio_sx": 2, "braccio_dx": 3, "gamba_sx": 4, "gamba_dx": 5, "attrezzo": 6}
+
+
+# ---------- volumi che scavano (orbite, bocca) e superficie ----------
+class Scava(Elli):
+    """Ellissoide che si toglie dal corpo, con un raccordo morbido (orbite degli occhi, bocca)."""
+    sottrai = True
+
+
+def campo(volumi, p):
+    """Come animali.campo, più i volumi che scavano. I volumi si applicano nell'ordine in cui sono
+    aggiunti: uno scavo toglie ciò che c'è già, e ciò che viene dopo (l'occhio nell'orbita) resta."""
+    d = volumi[0].dist(p)
+    for v in volumi[1:]:
+        if getattr(v, "sottrai", False):
+            d = -animali.unione_morbida(-d, v.dist(p), v.k)
+        else:
+            d = animali.unione_morbida(d, v.dist(p), v.k)
+    return np.maximum(d, -p[:, 2])
+
+
+def superficie(sp, passo_griglia):
+    pieni = [v for v in sp.volumi if not getattr(v, "sottrai", False)]
+    lo = np.min([v.limiti()[0] for v in pieni], axis=0) - 0.05
+    hi = np.max([v.limiti()[1] for v in pieni], axis=0) + 0.05
+    lo[2] = -passo_griglia * 2
+    assi = [np.arange(lo[i], hi[i] + passo_griglia, passo_griglia) for i in range(3)]
+    X, Y, Z = np.meshgrid(*assi, indexing="ij")
+    p = np.stack([X.ravel(), Y.ravel(), Z.ravel()], axis=1)
+    d = np.empty(len(p))
+    for i in range(0, len(p), 300000):
+        d[i:i + 300000] = campo(sp.volumi, p[i:i + 300000])
+    vol = d.reshape(X.shape)
+    verts, facce, _n, _v = animali.measure.marching_cubes(vol, level=0.0, spacing=(passo_griglia,) * 3)
+    return verts + lo, facce
+
+
+def oggetto(nome, verts, facce, facce_volute, mat, sopra=None):
+    """Come animali.oggetto; con `sopra` la testa (sopra quella quota) si semplifica a parte e tiene
+    più triangoli: da vicino il viso ne ha bisogno."""
+    me = bpy.data.meshes.new(nome)
+    me.from_pydata(verts.tolist(), [], facce.tolist())
+    me.update()
+    ob = bpy.data.objects.new(nome, me)
+    base.collega(ob, mat)
+    bpy.ops.object.select_all(action="DESELECT")
+    bpy.context.view_layer.objects.active = ob
+    ob.select_set(True)
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-6)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    bm.to_mesh(me)
+    bm.free()
+    if sopra is None:
+        mod = ob.modifiers.new("semplifica", "DECIMATE")
+        mod.ratio = min(1.0, facce_volute / max(1, len(me.polygons)))
+        bpy.ops.object.modifier_apply(modifier=mod.name)
+    else:
+        # Due semplificazioni separate in modo modifica, ognuna sulle sole facce scelte: la testa
+        # tiene QUOTA_TESTA delle facce volute, il resto del corpo il rimanente. Il bordo tra le due
+        # zone resta cucito perché la semplificazione non tocca i vertici fuori dalla scelta.
+        for testa, quota in ((True, QUOTA_TESTA), (False, 1.0 - QUOTA_TESTA)):
+            bpy.ops.object.mode_set(mode="EDIT")
+            bpy.ops.mesh.select_mode(type="FACE")
+            bpy.ops.mesh.select_all(action="DESELECT")
+            bm = bmesh.from_edit_mesh(me)
+            scelte = 0
+            for f in bm.faces:
+                if (f.calc_center_median().z > sopra) == testa:
+                    f.select_set(True)
+                    scelte += 1
+            bm.select_flush_mode()
+            bmesh.update_edit_mesh(me)
+            bpy.ops.mesh.decimate(ratio=min(1.0, facce_volute * quota / max(1, scelte)))
+            bpy.ops.object.mode_set(mode="OBJECT")
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bmesh.ops.dissolve_degenerate(bm, edges=bm.edges, dist=1e-5)
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+    bm.to_mesh(me)
+    bm.free()
+    me.validate()
+    bpy.ops.object.shade_smooth()
+    return ob
 
 
 # ---------- scheletro ----------
@@ -80,8 +166,10 @@ def braccio(p, sk, lato, parte, pelle_avambraccio=True, manica=0.55):
     s = sk.s
     sp, go, po, ma = m(sk.spalla), m(sk.gomito), m(sk.polso), m(sk.mano)
     fine_manica = tuple(np.array(sp) + (np.array(go) - np.array(sp)) * manica)
-    p.add(Cono(sp, go, 0.052 * s, 0.040 * s, "pelle", parte, k=0.02))
-    p.add(Cono(sp, fine_manica, 0.066 * s, 0.056 * s, "veste", parte, k=0.015))
+    # Braccio asciutto e manica aderente (26/11/2026, Fede: le spalle da rifinire; prima la manica
+    # larga faceva uno sbuffo).
+    p.add(Cono(sp, go, 0.046 * s, 0.036 * s, "pelle", parte, k=0.02))
+    p.add(Cono(sp, fine_manica, 0.054 * s, 0.047 * s, "veste", parte, k=0.012))
     p.add(Cono(go, po, 0.039 * s, 0.030 * s, "pelle" if pelle_avambraccio else "veste", parte, k=0.015))
     p.add(Elli(ma, (0.030 * s, 0.022 * s, 0.055 * s), "pelle", parte, k=0.012))
     p.add(Cono(ma, m(sk.punta), 0.018 * s, 0.012 * s, "pelle", parte, k=0.01))
@@ -109,31 +197,55 @@ def corpo_base(sk, donna):
     largo_spalle = 0.95 if donna else 1.0
     p.add(Elli((0, 0, 0.96 * s), (0.16 * s, 0.11 * s, 0.12 * s), "veste", 0, k=0.04))
     p.add(Elli((0, 0, 1.08 * s), (0.145 * s, 0.10 * s, 0.13 * s), "veste", 0, k=0.04))
-    p.add(Elli((0, -0.005 * s, 1.27 * s), (0.18 * s * largo_spalle, 0.115 * s, 0.17 * s), "veste", 0, k=0.04))
+    p.add(Elli((0, -0.005 * s, 1.27 * s), (0.165 * s * largo_spalle, 0.11 * s, 0.17 * s), "veste", 0, k=0.04))
     if donna:
         p.add(Elli((0.055 * s, 0.075 * s, 1.27 * s), (0.055 * s, 0.05 * s, 0.05 * s), "veste", 0, k=0.04))
         p.add(Elli((-0.055 * s, 0.075 * s, 1.27 * s), (0.055 * s, 0.05 * s, 0.05 * s), "veste", 0, k=0.04))
-    # Spalle arrotondate verso le braccia.
+    # Spalle (26/11/2026, rifinite su richiesta di Fede): il trapezio scende dal collo alla spalla,
+    # il deltoide è piccolo e raccordato; niente sfere che gonfiano la manica.
     for lato in (1, -1):
-        p.add(Elli((0.15 * s * lato * largo_spalle, -0.005 * s, 1.39 * s), (0.075 * s, 0.075 * s, 0.06 * s), "veste", 0, k=0.03))
+        x_sp = sk.spalla[0] * lato * largo_spalle
+        p.add(Cono((0.03 * s * lato, -0.01 * s, 1.465 * s), (x_sp * 0.92, -0.005 * s, 1.405 * s), 0.045 * s, 0.05 * s, "veste", 0, k=0.035))
+        p.add(Elli((x_sp * 0.95, 0.0, 1.385 * s), (0.05 * s, 0.055 * s, 0.05 * s), "veste", 0, k=0.03))
+    if not donna:  # petto un po' più marcato
+        p.add(Elli((0, 0.035 * s, 1.31 * s), (0.14 * s, 0.07 * s, 0.075 * s), "veste", 0, k=0.04))
     # Scollo, collo e testa.
     p.add(Cono((0, 0.0, 1.43 * s), (0, 0.005 * s, sk.testa - 0.05 * s), 0.05 * s, 0.045 * s, "pelle", 1, k=0.03))
     p.add(Elli((0, 0.005 * s, sk.testa), (0.078 * s, 0.092 * s, 0.108 * s), "pelle", 1, k=0.03))
-    # Mascella e mento, naso, arcate sopracciliari, orecchie.
-    p.add(Elli((0, 0.035 * s, sk.testa - 0.06 * s), (0.06 * s, 0.06 * s, 0.05 * s), "pelle", 1, k=0.03))
-    p.add(Cono((0, 0.085 * s, sk.testa + 0.01 * s), (0, 0.103 * s, sk.testa - 0.025 * s), 0.011 * s, 0.016 * s, "pelle", 1, k=0.012))
-    p.add(Elli((0, 0.07 * s, sk.testa + 0.03 * s), (0.055 * s, 0.025 * s, 0.014 * s), "pelle", 1, k=0.02))
-    for lato in (1, -1):
-        p.add(Elli((0.078 * s * lato, -0.005 * s, sk.testa + 0.0), (0.012 * s, 0.022 * s, 0.03 * s), "pelle", 1, k=0.012))
+    viso(p, sk, donna)
     # Cintura di cuoio in vita.
     p.add(Elli((0, 0.004 * s, 1.01 * s), (0.158 * s, 0.112 * s, 0.022 * s), "cintura", 0, k=0.006))
     return p
 
 
+def viso(p, sk, donna):
+    """Il viso (26/11/2026, rifinito su richiesta di Fede: da vicino era una sfera senza lineamenti):
+    mascella e mento, zigomi, arcate, orbite scavate con gli occhi scuri dentro, naso con il dorso e
+    le ali, bocca incisa con le labbra, sopracciglia, orecchie."""
+    s, t = sk.s, sk.testa
+    m = 0.85 if donna else 1.0  # mascella e mento più delicati
+    p.add(Elli((0, 0.03 * s, t - 0.055 * s), (0.062 * s * m, 0.066 * s, 0.05 * s), "pelle", 1, k=0.03))
+    p.add(Elli((0, 0.074 * s, t - 0.083 * s), (0.03 * s * m, 0.026 * s, 0.022 * s), "pelle", 1, k=0.02))
+    for lato in (1, -1):
+        p.add(Elli((0.046 * s * lato, 0.07 * s, t - 0.008 * s), (0.026 * s, 0.022 * s, 0.02 * s), "pelle", 1, k=0.015))
+    p.add(Elli((0, 0.077 * s, t + 0.03 * s), (0.056 * s, 0.024 * s, 0.014 * s * m), "pelle", 1, k=0.02))
+    for lato in (1, -1):
+        p.add(Scava((0.031 * s * lato, 0.094 * s, t + 0.012 * s), (0.019 * s, 0.016 * s, 0.012 * s), "pelle", 1, k=0.01))
+    for lato in (1, -1):
+        p.add(Elli((0.031 * s * lato, 0.079 * s, t + 0.011 * s), (0.0125 * s, 0.012 * s, 0.009 * s), "occhi", 1, k=0.003))
+        p.add(Elli((0.031 * s * lato, 0.094 * s, t + 0.029 * s), (0.019 * s, 0.006 * s, 0.0045 * s), "capelli", 1, k=0.004))
+        p.add(Elli((0.079 * s * lato, -0.005 * s, t), (0.011 * s, 0.022 * s, 0.03 * s), "pelle", 1, k=0.012))
+        p.add(Elli((0.012 * s * lato, 0.1 * s, t - 0.026 * s), (0.01 * s, 0.01 * s, 0.008 * s), "pelle", 1, k=0.006))  # ali del naso
+    p.add(Cono((0, 0.094 * s, t + 0.016 * s), (0, 0.113 * s, t - 0.022 * s), 0.009 * s, 0.014 * s, "pelle", 1, k=0.01))
+    p.add(Elli((0, 0.088 * s, t - 0.047 * s), (0.022 * s, 0.013 * s, 0.011 * s), "pelle", 1, k=0.008))  # labbra
+    p.add(Scava((0, 0.1 * s, t - 0.047 * s), (0.02 * s, 0.008 * s, 0.0025 * s), "pelle", 1, k=0.004))  # bocca
+
+
 def capelli(p, sk, stile):
     """Capelli sopra la testa e, secondo lo stile, giù sulle spalle o raccolti."""
     s, t = sk.s, sk.testa
-    p.add(Elli((0, -0.012 * s, t + 0.02 * s), (0.085 * s, 0.098 * s, 0.1 * s), "capelli", 1, k=0.015))
+    # La calotta lascia libere fronte e tempie: l'attaccatura è netta sopra le sopracciglia.
+    p.add(Elli((0, -0.026 * s, t + 0.036 * s), (0.084 * s, 0.094 * s, 0.092 * s), "capelli", 1, k=0.015))
     if stile in ("lunghi", "sciolti"):
         p.add(Elli((0, -0.05 * s, t - 0.08 * s), (0.09 * s, 0.06 * s, 0.13 * s), "capelli", 1, k=0.04))
     if stile == "sciolti":  # fino a metà schiena
@@ -151,8 +263,10 @@ def capelli(p, sk, stile):
 
 def barba(p, sk, lunga):
     s, t = sk.s, sk.testa
-    p.add(Elli((0, 0.055 * s, t - 0.075 * s), (0.058 * s, 0.045 * s, 0.05 * s if not lunga else 0.075 * s), "capelli", 1, k=0.02))
-    p.add(Elli((0, 0.09 * s, t - 0.02 * s), (0.04 * s, 0.012 * s, 0.01 * s), "capelli", 1, k=0.01))  # baffi
+    p.add(Elli((0, 0.062 * s, t - 0.078 * s), (0.056 * s, 0.04 * s, 0.045 * s if not lunga else 0.07 * s), "capelli", 1, k=0.02))
+    for lato in (1, -1):
+        p.add(Elli((0.055 * s * lato, 0.04 * s, t - 0.045 * s), (0.016 * s, 0.03 * s, 0.035 * s), "capelli", 1, k=0.012))  # basette
+    p.add(Elli((0, 0.098 * s, t - 0.036 * s), (0.03 * s, 0.01 * s, 0.007 * s), "capelli", 1, k=0.006))  # baffi
 
 
 def gonna(p, sk, orlo, largo):
@@ -168,8 +282,9 @@ def mantello(p, sk, lungo, pelle):
     p.add(Elli((0, -0.07 * s, 1.36 * s), (0.215 * s, 0.11 * s, 0.09 * s), tinta, 0, k=0.03))
     if lungo:
         p.add(Elli((0, -0.11 * s, 1.0 * s), (0.2 * s, 0.05 * s, 0.38 * s), tinta, 0, k=0.04))
-    if pelle:  # una pelle annodata sul petto: un lembo davanti
-        p.add(Elli((0.06 * s, 0.1 * s, 1.3 * s), (0.07 * s, 0.03 * s, 0.09 * s), tinta, 0, k=0.03))
+    if pelle:  # una pelle a tracolla: scende dalla spalla sinistra e si annoda sul fianco destro
+        p.add(Cono((-0.12 * s, 0.035 * s, 1.43 * s), (0.11 * s, 0.1 * s, 1.17 * s), 0.035 * s, 0.03 * s, tinta, 0, k=0.02))
+        p.add(Elli((0.12 * s, 0.1 * s, 1.15 * s), (0.03 * s, 0.022 * s, 0.03 * s), tinta, 0, k=0.012))
 
 
 # Le sei persone (proposta di Claude, da guardare con Fede): stile dei capelli, barba, mantello.
@@ -223,7 +338,9 @@ def _lungo_polilinea(punti, q):
 
 
 def parti_e_classi(p, sk, co):
-    dist = np.stack([v.dist(co) for v in p.volumi], axis=1)
+    # I volumi che scavano (orbite, bocca) non danno colore: la parete dello scavo prende quello
+    # del volume pieno più vicino (la pelle intorno, l'occhio dentro).
+    dist = np.stack([v.dist(co) if not getattr(v, "sottrai", False) else np.full(len(co), 1e9) for v in p.volumi], axis=1)
     vicino = np.argmin(dist, axis=1)
     parte = np.array([p.volumi[i].parte for i in vicino])
     classe = np.array([CLASSI[p.volumi[i].tinta] for i in vicino])
@@ -256,7 +373,7 @@ def prepara(ob, p, sk, tile):
         x, y, z = co[vi]
         k = int(parte[vi])
         cx = {2: -sk.spalla[0], 3: sk.spalla[0], 4: -sk.x_anca, 5: sk.x_anca}.get(k, 0.0)
-        a = math.atan2(y, x - cx)
+        a = math.atan2(x - cx, y)  # la cucitura della grana sta dietro, non sulla spalla
         r = max(0.03, math.hypot(x - cx, y))
         uv[li].uv = (a * r / tile, z / tile)
         uv2[li].uv = (k + classe[vi] / 10.0 + 0.05, float(peso[vi]))
@@ -339,10 +456,10 @@ def main():
     dati = {}
     for nome in PERSONE:
         p, sk = persona(nome)
-        verts, facce = superficie(p, 0.0085)
+        verts, facce = superficie(p, 0.0055)
         for livello, facce_volute in (("", FACCE_COMPLETO), ("_leggero", FACCE_LEGGERO)):
             n = f"persona_{nome}{livello}"
-            ob = oggetto(n, verts, facce, facce_volute, mat)
+            ob = oggetto(n, verts, facce, facce_volute, mat, sopra=sk.collo if livello == "" else None)
             prepara(ob, p, sk, 0.35)
             base.cuoci_occlusione(ob, 0.55)
             grigio(ob)
