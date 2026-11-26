@@ -116,6 +116,41 @@ static func stendi_bosco_sacro(sim: SimVillaggio, caso: RandomNumberGenerator, q
 	return sim.ettari_bosco_sacro()
 
 
+## Stende circa `ettari` di pascolo. qualita 1: dal prato più vicino al villaggio, evitando i
+## pendii e prendendo i campi stanchi (che diventano maggese); qualita bassa: da un punto a caso.
+## Restituisce gli ettari di pascolo.
+static func stendi_pascolo(sim: SimVillaggio, caso: RandomNumberGenerator, qualita: float, ettari: float) -> float:
+	var c := sim.centro
+	var r := ceili(sim.raggio_contado() / sim.dati.metri_per_px)
+	var candidati: Array[Vector2i] = []
+	for dy in range(-r, r + 1):
+		for dx in range(-r, r + 1):
+			var p := c + Vector2i(dx, dy)
+			if sim.motivo_pascolo(p) == "" and not sim.pascolo.has(sim.px(p)):
+				candidati.append(p)
+	if candidati.is_empty():
+		return 0.0
+	var bravo := caso.randf() < qualita
+	var peso := func(p: Vector2i) -> float:
+		var i := sim.px(p)
+		var v := (p - c).length()
+		if bravo:
+			v += (6.0 if sim._pendio(i) else 0.0) - (4.0 if sim.campi.has(i) and sim.fattore_stanchezza(i) < 0.9 else 0.0) + (2.0 if sim.campi.has(i) else 0.0)
+		return v
+	var inizio: Vector2i = candidati[caso.randi() % candidati.size()]
+	if bravo:
+		var meglio := INF
+		for p in candidati:
+			var v: float = peso.call(p)
+			if v < meglio:
+				meglio = v
+				inizio = p
+	candidati.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return (a - inizio).length_squared() + (peso.call(a) if bravo else 0.0) < (b - inizio).length_squared() + (peso.call(b) if bravo else 0.0))
+	var quanti := int(ettari * (0.4 + 0.6 * qualita) / SimVillaggio.AREA_PIXEL_HA)
+	sim.aggiungi_pascolo(candidati.slice(0, quanti))
+	return sim.pascolo.size() * SimVillaggio.AREA_PIXEL_HA
+
+
 ## Vero se le legnaie raccolgono meno della metà di ciò che servirebbe.
 static func legna_scarsa(sim: SimVillaggio) -> bool:
 	return sim.offerta_legna < sim.consumo_legna * 1.2

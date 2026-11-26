@@ -1,7 +1,7 @@
 extends SceneTree
 ## Foto di controllo di una partita: fondazione sul sito 1, campi attorno, un secolo e mezzo di
 ## tempo con un giocatore automatico semplice, poi la foto.
-## Uso: xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto_partita.gd -- uscita.png [dimensione_vista] [anni] [mappa] [strumento | politiche | tecniche | anteprima | fondazione | focus:Indicatore | capanno | posta | cantiere]
+## Uso: xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto_partita.gd -- uscita.png [dimensione_vista] [anni] [mappa] [strumento | politiche | tecniche | anteprima | fondazione | focus:Indicatore | capanno | posta | cantiere | pascolo]
 ## Con capanno o posta la vista va sul primo capanno da pesca o sulla prima posta di caccia, con lo
 ## strumento scelto e il puntatore sopra (lettura dell'edificio).
 
@@ -38,6 +38,10 @@ func _process(_d: float) -> bool:
 					var cg := RandomNumberGenerator.new()
 					cg.seed = k
 					AiutiGiocatori.costruisci_legnaia(sim, cg, 1.0)
+				if sim.sbloccato("pascolo") and sim.pascolo.is_empty():
+					var cp := RandomNumberGenerator.new()
+					cp.seed = k + 5
+					AiutiGiocatori.stendi_pascolo(sim, cp, 1.0, 15.0)
 				for caccia in [true, false]:
 					if (sim.poste if caccia else sim.capanni).is_empty():
 						var ce := RandomNumberGenerator.new()
@@ -71,6 +75,11 @@ func _process(_d: float) -> bool:
 			if not sim.poste.is_empty():
 				c = sim.poste[0]["punto"]
 				su_edificio = true
+		# Pascolo: la vista va sul primo stabbio, con lo strumento Pascolo scelto.
+		if args.size() > 4 and args[4] == "pascolo" and not p.vista._stabbi.is_empty():
+			c = p.vista._greggi[0]["centro"] if not p.vista._greggi.is_empty() else p.vista._stabbi.keys()[0]
+			su_edificio = true
+			print("   animali disegnati: %d, capi %d, stabbi %d" % [p.vista.animali_disegnati(), roundi(sim.capi), p.vista._stabbi.size()])
 		if args.size() > 4 and args[4] in ["capanno", "posta"]:
 			var elenco: Array = sim.capanni if args[4] == "capanno" else sim.poste
 			if not elenco.is_empty():

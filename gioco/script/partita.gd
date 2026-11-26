@@ -5,7 +5,7 @@ extends Node
 ## Tempo continuo con pausa e tre velocità; si ferma da solo nei momenti decisivi
 ## (decisione di Fede del 23/11/2026).
 
-const STRUMENTI := ["fonda", "zona", "campi", "sentiero", "granaio", "legnaia", "capanno", "posta", "luogo_sacro", "bosco_sacro", "demolisci"]
+const STRUMENTI := ["fonda", "zona", "campi", "pascolo", "sentiero", "granaio", "legnaia", "capanno", "posta", "luogo_sacro", "bosco_sacro", "demolisci"]
 const VELOCITA := [0.0, 1.0, 6.0, 15.0]  # anni al secondo (velocità 1 più calma: decisione di Fede del 25/11/2026)
 const NOMI_VELOCITA := ["Pausa", "1 anno al secondo", "6 anni al secondo", "15 anni al secondo"]
 
@@ -17,6 +17,10 @@ var velocita := 0
 ## della rete se è acceso "Collega alla rete".
 var inizio_sentiero := Vector2i(-1, -1)
 var collega_rete := false
+## Opzione "Togli" delle zone (decisione di Fede del 25/11/2026 sera): il pennello toglie la zona e
+## lascia campi e animali dove sono.
+var togli_zona := false
+var togli_pascolo := false
 ## Ettari aggiunti alla zona agricola nella pennellata in corso (il messaggio dice il totale).
 var _pennellata := 0
 var _ultima_velocita := 1
@@ -47,7 +51,10 @@ func avvia(s: Node, seme: int = -1) -> void:
 	])
 	hud.aggiungi_menu("territorio", "Territorio", "A cosa si destina la terra attorno al villaggio.", [
 		{"id": "zona", "icona": "zona_agricola", "testo": "Zona agricola", "breve": "Zona", "tasto": "Z",
-		 "descrizione": "Tieni premuto e trascina, come un pennello: la terra sotto il cerchio è destinata alla coltivazione. Dentro la zona le famiglie dissodano da sole i campi quando servono, dalla terra migliore e più vicina. Per toglierla: Demolisci."},
+		 "descrizione": "Tieni premuto e trascina, come un pennello: la terra sotto il cerchio è destinata alla coltivazione. Dentro la zona le famiglie dissodano da sole i campi quando servono, dalla terra migliore e più vicina. Per toglierla senza toccare i campi: opzione Togli."},
+		# Pascolo (decisioni di Fede del 25/11/2026); tasto N, proposta di Claude.
+		{"id": "pascolo", "icona": "pascolo", "testo": "Pascolo", "breve": "Pascolo", "tasto": "N",
+		 "descrizione": "Tieni premuto e trascina, come un pennello, su prati, radure e margini del bosco: le famiglie ci portano gli animali, e lì il bosco non ricresce. Sui campi coltivati gli animali pascolano solo le stoppie dopo il raccolto; i campi stanchi diventano maggese e si riposano più in fretta. Per toglierlo: opzione Togli."},
 		{"id": "campi", "icona": "campi", "testo": "Campo", "breve": "Campo", "tasto": "C",
 		 "descrizione": "Un clic dissoda subito la terra libera nel cerchio, a mano; i campi che ci sono già restano. Gli alberi sui nuovi campi si tagliano. Per abbandonare un campo: Demolisci."},
 		# Bosco sacro (decisione di Fede: tappa dei 150, la riserva); tasto B, proposta di Claude
@@ -74,6 +81,12 @@ func avvia(s: Node, seme: int = -1) -> void:
 		 "descrizione": "Senza posta le famiglie cacciano attorno al villaggio e rendono un terzo. Va al margine del bosco: si aggancia da sola al margine più vicino. Rende di più dove il bosco è fitto e la selvaggina abbondante; se lì si caccia troppo, la selvaggina cala."},
 	])
 	# Opzione dello strumento Sentiero (Fede: un'opzione, non un tasto accanto): Collega alla rete.
+	hud.aggiungi_opzioni("zona", [
+		{"id": "togli_zona", "testo": "Togli", "suggerimento": "Acceso: il pennello toglie la zona agricola e lascia i campi dove sono."},
+	])
+	hud.aggiungi_opzioni("pascolo", [
+		{"id": "togli_pascolo", "testo": "Togli", "suggerimento": "Acceso: il pennello toglie il pascolo e lascia campi e animali dove sono."},
+	])
 	hud.aggiungi_opzioni("sentiero", [
 		{"id": "collega_rete", "testo": "Collega alla rete", "suggerimento": "Acceso: ogni sentiero parte dal punto più vicino del villaggio o dei sentieri. Spento: il sentiero comincia dove vuoi."},
 	])
@@ -161,6 +174,14 @@ func _azione(id: String) -> void:
 			scena.hud.seleziona_comando("sentiero")
 			scena.hud.imposta_messaggio("Collega alla rete acceso: ogni sentiero parte dal punto più vicino del villaggio o dei sentieri; un clic dove finisce." if collega_rete
 				else "Collega alla rete spento: un clic dove comincia il sentiero, un clic dove finisce.")
+		"togli_zona":
+			togli_zona = not togli_zona
+			scena.hud.seleziona_comando("zona")
+			scena.hud.imposta_messaggio("Togli acceso: il pennello toglie la zona agricola; i campi restano." if togli_zona else "Togli spento: il pennello stende la zona agricola.")
+		"togli_pascolo":
+			togli_pascolo = not togli_pascolo
+			scena.hud.seleziona_comando("pascolo")
+			scena.hud.imposta_messaggio("Togli acceso: il pennello toglie il pascolo; campi e animali restano." if togli_pascolo else "Togli spento: il pennello stende il pascolo.")
 		"amm_agricolo":
 			var attivo: bool = not sim.ammodernamenti["agricolo"]
 			sim.imposta_ammodernamento("agricolo", attivo)
@@ -276,6 +297,10 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 			if not sim.fondato:
 				return
 			var celle_z := _celle_cerchio(p, Vector2(punto.x, punto.z), raggio)
+			if togli_zona:
+				_pennellata += sim.togli_zona(celle_z)
+				hud.imposta_messaggio("Zona agricola: tolti %s ha (ne restano %s ha). I campi restano." % [_ettari(_pennellata), _ettari(sim.zona.size())])
+				return
 			var fuori_z := 0
 			for q in celle_z:
 				if not sim.a_portata(q) and not sim.zona.has(sim.px(q)):
@@ -286,6 +311,20 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 			if fuori_z > 0:
 				testo_z += " %d celle fuori dal contado (fino a %d m dal villaggio)." % [fuori_z, roundi(sim.raggio_contado())]
 			hud.imposta_messaggio(testo_z)
+		"pascolo":
+			if not sim.fondato:
+				return
+			var celle_pa := _celle_cerchio(p, Vector2(punto.x, punto.z), raggio)
+			if togli_pascolo:
+				_pennellata += sim.togli_pascolo(celle_pa)
+				hud.imposta_messaggio("Pascolo: tolti %s ha (ne restano %s ha). Campi e animali restano." % [_ettari(_pennellata), _ettari(sim.pascolo.size())])
+				return
+			_pennellata += sim.aggiungi_pascolo(celle_pa)
+			if _pennellata > 0:
+				hud.imposta_messaggio("Pascolo: %s ha in più (in tutto %s ha, per %d capi). Tieni premuto e trascina per stenderlo." % [_ettari(_pennellata), _ettari(sim.pascolo.size()), roundi(sim.portata_capi)])
+			else:
+				var m_pa := sim.motivo_pascolo(p)
+				hud.imposta_messaggio(m_pa if m_pa != "" else "Qui c'è già il pascolo.")
 		"campi":
 			if not sim.fondato:
 				return
@@ -503,7 +542,7 @@ func raggio_strumento(comando: String, raggio: float) -> float:
 	match comando:
 		"fonda":
 			return SimVillaggio.CONTADO_MIN
-		"zona", "campi", "demolisci", "bosco_sacro":
+		"zona", "campi", "demolisci", "bosco_sacro", "pascolo":
 			return raggio
 		"granaio", "legnaia", "capanno", "posta":
 			return 8.0
@@ -531,6 +570,10 @@ func aggiorna_hud() -> void:
 		["Legna", ("%d  +%d −%d" % [floori(sim.legna), roundi(sim.ultima_legna), roundi(sim.consumo_legna)]) if on else trattino,
 			on and sim.legna < SimVillaggio.COSTO_CASA and sim.ultima_legna < sim.consumo_legna,
 			"Legna in catasta, poi quanta se ne raccoglie e quanta se ne consuma ogni anno (focolari e manutenzione delle case). Si raccoglie nei boschi vicini e si ricava dissodando; ogni casa nuova ne chiede %d, il granaio %d. Senza legna non nascono case." % [roundi(SimVillaggio.COSTO_CASA), roundi(SimVillaggio.COSTO_GRANAIO)]],
+		# Animali (decisione di Fede del 25/11/2026): capi / quanti ne nutre il pascolo.
+		["Animali", ("%d / %d" % [roundi(sim.capi), roundi(sim.portata_capi)]) if on and sim.sbloccato("pascolo") else trattino,
+			on and sim.sbloccato("pascolo") and sim.pascolo_eccessivo > 0.3,
+			"Capi della mandria / quanti ne nutre il pascolo. Un solo numero, con pecore e capre soprattutto, maiali vicino al bosco, qualche bue. Nelle annate cattive se ne macella quanto serve. Si apre a %d abitanti." % SimVillaggio.TAPPE[SimVillaggio.tappa_di("pascolo")]["abitanti"]],
 		["Densità", ("%d ab/ha" % roundi(sim.densita())) if on else trattino, on and sim.affollamento > 0.3,
 			"Abitanti per ettaro (un ettaro è 100 × 100 m): la popolazione divisa per l'area dell'abitato, cioè il cerchio che contiene le case. Rossa quando le case non bastano per tutti (affollamento): la salute ne risente."],
 	])
@@ -569,6 +612,10 @@ func aggiorna_hud() -> void:
 	# Dopo la fondazione il tasto non serve più (Fede): torna solo se il villaggio è abbandonato.
 	hud.mostra("fonda", not on)
 	hud.segna("collega_rete", collega_rete)
+	hud.segna("togli_zona", togli_zona)
+	hud.segna("togli_pascolo", togli_pascolo)
+	hud.abilita("pascolo", on and not sim.finito and sim.sbloccato("pascolo"))
+	hud.cambia_testo("pascolo", "Pascolo" if sim.sbloccato("pascolo") else "Pascolo (si apre a %d abitanti)" % SimVillaggio.TAPPE[SimVillaggio.tappa_di("pascolo")]["abitanti"], "Pascolo")
 	for id in ["zona", "campi", "sentiero", "legnaia", "capanno", "posta"]:
 		hud.abilita(id, on and not sim.finito)
 	for id in ["comune", "famiglie"]:
@@ -754,6 +801,13 @@ func dati_focus(nome: String) -> Dictionary:
 			d["serie"] = serie_di.call("legna", 1.0)
 			d["mappa"] = 5
 			d["testo_mappa"] = "Mostra boschi, selvaggina e zone di taglio"
+		"Animali":
+			d["valore"] = str(roundi(sim.capi))
+			d["allarme"] = sim.pascolo_eccessivo > 0.3
+			d["descrizione"] = "Un solo numero di capi: pecore e capre soprattutto, maiali vicino al bosco, qualche bue. Crescono finché c'è erba nel pascolo."
+			d["parti"] = [["Capi / portata del pascolo", sim.capi / maxf(1.0, sim.portata_capi), "%d / %d" % [roundi(sim.capi), roundi(sim.portata_capi)]],
+				["Erba libera", sim.erba, "%d%%" % roundi(sim.erba * 100.0)]]
+			d["serie"] = serie_di.call("capi", 1.0)
 	return d
 
 
@@ -762,11 +816,24 @@ func dati_focus(nome: String) -> Dictionary:
 func leggi_per_strumento(punto: Vector3) -> void:
 	var hud: Hud = scena.hud
 	var cmd := hud.comando()
-	if not sim.fondato or not cmd in ["zona", "campi", "granaio", "legnaia", "sentiero", "capanno", "posta", "luogo_sacro", "bosco_sacro"]:
+	if not sim.fondato or not cmd in ["zona", "campi", "granaio", "legnaia", "sentiero", "capanno", "posta", "luogo_sacro", "bosco_sacro", "pascolo"]:
 		hud.imposta_lettura_strumento([])
 		return
 	if cmd in ["capanno", "posta"]:
 		hud.imposta_lettura_strumento(_lettura_edificio_risorse(cmd, Vector2(punto.x, punto.z)))
+		return
+	if cmd == "pascolo":
+		var q := sim.px_da_mondo(punto.x, punto.z)
+		var iq := sim.px(q)
+		var terra := "campo a maggese" if sim.maggese.has(iq) else ("campo (stoppie)" if sim.campi.has(iq) else ("bosco" if sim.bosco_in_piedi(iq) else "prato"))
+		var capi_ha: float = {"campo a maggese": SimVillaggio.CAPI_HA_MAGGESE, "campo (stoppie)": SimVillaggio.CAPI_HA_STOPPIE, "bosco": SimVillaggio.CAPI_HA_BOSCO, "prato": SimVillaggio.CAPI_HA_PRATO}[terra]
+		var motivo_pa := sim.motivo_pascolo(q)
+		var voci_pa: Array = [["Terra", terra if motivo_pa == "" else motivo_pa, capi_ha / SimVillaggio.CAPI_HA_MAGGESE, motivo_pa != ""],
+			["Erba", "%s capi per ettaro" % String.num(capi_ha, 1).replace(".", ","), capi_ha / SimVillaggio.CAPI_HA_MAGGESE, false],
+			["Mandria", "%d capi su %d" % [roundi(sim.capi), roundi(sim.portata_capi)], sim.erba, sim.erba < 0.05]]
+		if sim._pendio(iq):
+			voci_pa.append(["Pendio", "sì: troppi animali erodono", 0.3, true])
+		hud.imposta_lettura_strumento(voci_pa)
 		return
 	if cmd == "bosco_sacro":
 		var q := sim.px_da_mondo(punto.x, punto.z)
@@ -917,14 +984,17 @@ func _abbatti_tagli() -> void:
 	# Zone di taglio: si bloccano le celle entrate, si sbloccano quelle uscite.
 	var entrate: Array[Vector2i] = []
 	var uscite: Array[Vector2i] = []
-	for i in sim.zona_attiva:
+	# Anche il pascolo tiene aperte le radure (decisione di Fede del 25/11/2026).
+	var bloccate := sim.zona_attiva.duplicate()
+	bloccate.merge(sim.pascolo)
+	for i in bloccate:
 		if not _zona_bloccata.has(i):
 			entrate.append_array(_celle_del_pixel(i))
 	for i in _zona_bloccata.keys():
-		if not sim.zona_attiva.has(i):
+		if not bloccate.has(i):
 			uscite.append_array(_celle_del_pixel(i))
 	if not entrate.is_empty():
 		uso.blocca_ricrescita(entrate, true)
 	if not uscite.is_empty():
 		uso.blocca_ricrescita(uscite, false)
-	_zona_bloccata = sim.zona_attiva.duplicate()
+	_zona_bloccata = bloccate

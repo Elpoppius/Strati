@@ -79,6 +79,10 @@ uniform float mostra_zona = 0.0;
 // Bosco sacro e nelle mappe Caccia e pesca e Memoria del suolo.
 uniform sampler2D bosco_sacro_mappa : filter_linear, repeat_disable;
 uniform float mostra_bosco_sacro = 0.0;
+// Zona di pascolo (25/11/2026 sera): velo verde chiaro e bordo con gli strumenti Pascolo, Zona
+// agricola e Campo.
+uniform sampler2D pascolo_mappa : filter_linear, repeat_disable;
+uniform float mostra_pascolo = 0.0;
 
 // Tecnica di ogni campo (UsoSuolo.tecniche, un byte per cella da 10 m, senza filtro): 0 zappa
 // (villaggio), 1 aratro in croce, 2 centuriazione, 3 strisce medievali, 4 meccanica.
@@ -472,6 +476,13 @@ void fragment() {
 		float fz = max(fwidth(z), 1e-3);
 		float bordo_z = 1.0 - smoothstep(fz * 0.5, fz * 2.0, abs(z - 0.5));
 		col = mix(col, vec3(1.0), smoothstep(0.45, 0.55, z) * 0.1 + bordo_z * 0.6);
+	}
+	if (mostra_pascolo > 0.5) {
+		float zp = texture(pascolo_mappa, UV).r;
+		float fp = max(fwidth(zp), 1e-3);
+		float bordo_p = 1.0 - smoothstep(fp * 0.5, fp * 2.0, abs(zp - 0.5));
+		vec3 verde = pow(vec3(0.72, 0.9, 0.5), vec3(2.2));
+		col = mix(col, verde, smoothstep(0.45, 0.55, zp) * 0.25 + bordo_p * 0.75);
 	}
 	if (mostra_bosco_sacro > 0.5) {
 		float zs = texture(bosco_sacro_mappa, UV).r;

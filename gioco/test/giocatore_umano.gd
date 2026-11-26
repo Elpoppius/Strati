@@ -32,12 +32,12 @@ func _initialize() -> void:
 	var file := args[0] if args.size() > 0 else "/tmp/umano.txt"
 	var semi := int(args[1]) if args.size() > 1 else 3
 	var d: MappaDati = load("res://mappe/pedecollinare/mappa.res")
-	_righe.append("profilo,sito,seme,pop_finale,pop_minima,carestie,carestie_gravi,abbandoni,scissioni,pause,piene_grandi,granaio_anno,cosa_ha_imparato,legnaie,casali,nucleo,poste,capanni,luogo_sacro,bosco_sacro_ha,sacerdote")
+	_righe.append("profilo,sito,seme,pop_finale,pop_minima,carestie,carestie_gravi,abbandoni,scissioni,pause,piene_grandi,granaio_anno,cosa_ha_imparato,legnaie,casali,nucleo,poste,capanni,luogo_sacro,bosco_sacro_ha,sacerdote,capi,pascolo_ha")
 	for profilo in ["sbaglia", "legge", "genere", "casual"]:
 		for sito in d.siti:
 			for seme in range(1, semi + 1):
 				var r := _gioca(d, sito, profilo, seme * 31 + int(sito["n"]))
-				_righe.append("%s,%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%d,%d,%d,%d,%d,%d,%.1f,%d" % [profilo, String(sito["nome"]).replace(",", " "), seme, r["pop"], r["minima"], r["carestie"], r["gravi"], r["abbandoni"], r["scissioni"], r["pause"], r["piene"], r["granaio"], r["imparato"], r["legnaie"], r["casali"], r["nucleo"], r["poste"], r["capanni"], r["sacro"], r["bosco_sacro"], r["sacerdote"]])
+				_righe.append("%s,%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%d,%d,%d,%d,%d,%d,%.1f,%d,%d,%.1f" % [profilo, String(sito["nome"]).replace(",", " "), seme, r["pop"], r["minima"], r["carestie"], r["gravi"], r["abbandoni"], r["scissioni"], r["pause"], r["piene"], r["granaio"], r["imparato"], r["legnaie"], r["casali"], r["nucleo"], r["poste"], r["capanni"], r["sacro"], r["bosco_sacro"], r["sacerdote"], r["capi"], r["pascolo_ha"]])
 	var f := FileAccess.open(file, FileAccess.WRITE)
 	f.store_string("\n".join(_righe) + "\n")
 	f.close()
@@ -79,6 +79,7 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 	# Luogo sacro e bosco sacro: le tappe li annunciano; chi conosce il genere li fa subito.
 	var sacro_voluto := false
 	var bosco_voluto := false
+	var pascolo_voluto := false
 	var caccia_spenta_anno := -1
 	var raccolto_provato := false
 	while not sim.finito:
@@ -105,6 +106,8 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 				granaio_voluto = genere or caso.randf() < (0.3 if casual else 0.6)
 			if t.contains("luogo sacro"):
 				sacro_voluto = genere or caso.randf() < (0.3 if casual else 0.6)
+			if t.contains("il pascolo"):
+				pascolo_voluto = genere or caso.randf() < (0.4 if casual else 0.6)
 			if t.contains("bosco sacro"):
 				bosco_voluto = genere or caso.randf() < (0.2 if casual else 0.5)
 			if t.contains("si divide"):
@@ -145,6 +148,9 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 					elif c.contains("finché non si erige il luogo sacro"):
 						sacro_voluto = true
 						imparato["luogo_sacro"] = true
+					elif c.contains("Serve più pascolo") or c.contains("Stendi il pascolo"):
+						AiutiGiocatori.stendi_pascolo(sim, caso, 0.7, 8.0)
+						imparato["pascolo"] = true
 					elif c.contains("bosco sacro più grande"):
 						AiutiGiocatori.stendi_bosco_sacro(sim, caso, 0.7, 6.0)
 						imparato["bosco_sacro"] = true
@@ -175,6 +181,11 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 				caccia_spenta_anno = -1
 			if sacro_voluto and sim.luogo_sacro.x < 0 and sim.sbloccato("luogo_sacro") and sim.legna >= SimVillaggio.COSTO_LUOGO_SACRO:
 				AiutiGiocatori.costruisci_luogo_sacro(sim)
+			if pascolo_voluto and sim.pascolo.is_empty() and sim.sbloccato("pascolo"):
+				AiutiGiocatori.stendi_pascolo(sim, caso, 0.9 if genere else (0.2 if casual else 0.5), 15.0 if genere else 8.0)
+			# Chi conosce il genere allarga il pascolo quando l'erba finisce.
+			if genere and not sim.pascolo.is_empty() and sim.erba < 0.05 and sim.pascolo.size() * SimVillaggio.AREA_PIXEL_HA < 40.0:
+				AiutiGiocatori.stendi_pascolo(sim, caso, 0.9, 8.0)
 			if bosco_voluto and sim.bosco_sacro.is_empty() and sim.sbloccato("bosco_sacro"):
 				AiutiGiocatori.stendi_bosco_sacro(sim, caso, 0.9 if genere else (0.3 if casual else 0.5), 10.0 if genere else 6.0)
 			if granaio_voluto and sim.granaio.x < 0 and sim.sbloccato("granaio") and sim.legna >= SimVillaggio.COSTO_GRANAIO:
@@ -199,7 +210,8 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 		"abbandoni": sim.stat["abbandoni"], "scissioni": scissioni, "pause": pause, "piene": sim.stat["piene"],
 		"granaio": granaio_anno, "imparato": " ".join(imparato.keys()), "legnaie": sim.legnaie.size(), "casali": sim.casali.size(), "nucleo": roundi(sim.abitanti_nucleo()),
 		"poste": sim.poste.size(), "capanni": sim.capanni.size(),
-		"sacro": 1 if sim.luogo_sacro_pronto() else 0, "bosco_sacro": snappedf(sim.ettari_bosco_sacro(), 0.1), "sacerdote": roundi(sim.consenso["sacerdote"]) if sim.sacerdote_attivo else -1}
+		"sacro": 1 if sim.luogo_sacro_pronto() else 0, "bosco_sacro": snappedf(sim.ettari_bosco_sacro(), 0.1), "sacerdote": roundi(sim.consenso["sacerdote"]) if sim.sacerdote_attivo else -1,
+		"capi": roundi(sim.capi), "pascolo_ha": snappedf(sim.pascolo.size() * SimVillaggio.AREA_PIXEL_HA, 0.1)}
 
 
 ## Posta di caccia e capanno da pesca all'inizio (decisioni di Fede del 25/11/2026): chi conosce il

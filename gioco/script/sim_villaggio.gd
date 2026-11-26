@@ -316,6 +316,39 @@ const ANNI_STANCHEZZA := 60.0
 const PERDITA_STANCHEZZA := 0.35
 const RIPOSO_PER_ANNO := 4.0
 var stanchezza := {}  # indice del pixel -> anni di coltura di fila
+## Pascolo e animali (decisioni di Fede del 25/11/2026): dalla tappa dei 100 abitanti. Zona di
+## pascolo a pennello (come la zona agricola, le famiglie portano gli animali da sole) su prati,
+## radure e margini del bosco, che lì non ricresce. Le due zone si parlano senza entrare in
+## conflitto: su un campo coltivato gli animali pascolano solo le stoppie dopo il raccolto (poca
+## erba, un po' di concime per l'anno dopo); un campo stanco o incolto diventa maggese (molta erba,
+## riposo più rapido) e torna coltivato quando è buono. Un solo numero di capi: una decina alla
+## tappa, +10% l'anno finché c'è erba (portata della zona), di più se il raccolto va alle famiglie
+## (e cresce la disuguaglianza); oltre la portata smette di crescere e sui pendii dà erosione. Gli
+## stranieri portano i loro animali; nelle annate cattive se ne macella quanto serve (scorta viva).
+## Numeri: proposta di Claude approvata da Fede il 25/11/2026 sera.
+const CAPI_INIZIALI := 10.0
+const CAPI_ATTORNO_CASE := 12.0  # portata senza zona di pascolo: gli animali attorno alle case
+const CRESCITA_CAPI := 0.10
+const CRESCITA_CAPI_FAMIGLIE := 0.13
+const CAPI_HA_PRATO := 2.0
+const CAPI_HA_BOSCO := 0.7
+const CAPI_HA_MAGGESE := 3.0
+const CAPI_HA_STOPPIE := 0.5
+const BONUS_STOPPIE := 1.05
+const CIBO_PER_CAPO := 4.0  # cibo da un capo macellato
+const CAPI_PER_STRANIERO := 0.5
+const PENDIO := 0.08  # pendenza oltre cui il troppo pascolo erode (8%)
+var pascolo := {}  # indice del pixel -> true
+var capi := 0.0
+var portata_capi := 0.0
+var erba := 0.0  # quanto della portata è libera (0–1)
+var maggese := {}  # campi a maggese quest'anno
+var concimati := {}  # stoppie pascolate l'anno scorso: rendono un po' di più
+var ultimi_macellati := 0
+var pascolo_eccessivo := 0.0  # 0–1: troppi capi sui pendii (erosione, piene)
+var disuguaglianza := 0.0  # 0–1: la mandria delle famiglie (prepara le famiglie eminenti)
+var _pendii := {}  # cache: pixel -> vero se in pendio
+var _anno_macellazione := -999999  # per non ripetere la riga di cronaca anno dopo anno
 ## Piena disastrosa annunciata: anni che mancano (-1: nessuna in arrivo).
 var piena_tra := -1
 ## Siccità dopo un presagio ignorato: dura di più e i campi rendono meno (carestie B).
@@ -339,7 +372,7 @@ var gia_carestia := false
 ## La zona agricola è piena (niente avviso: lo dice la mappa; decisione di Fede del 25/11/2026).
 var zona_piena := false
 var stat := {"carestie": 0, "piene": 0, "siccita": 0, "fondazioni": 0, "presagi_letti": 0, "presagi_totali": 0, "abbandoni": 0, "febbri": 0}
-var storia := {"pop": [], "cibo": [], "salute": [], "legittimita": [], "abbondanza": [], "legna": []}
+var storia := {"pop": [], "cibo": [], "salute": [], "legittimita": [], "abbondanza": [], "legna": [], "capi": []}
 ## Cronaca: [{anno, testo, tipo ("", "buono", "allarme")}], la più recente in testa.
 var cronaca: Array = []
 ## Decisioni che aspettano il giocatore: il tempo si ferma finché non sono risolte.
@@ -565,6 +598,12 @@ func fonda(p: Vector2i) -> void:
 	tagli_anno = []
 	zona_attiva = {}
 	stanchezza = {}
+	pascolo = {}
+	capi = 0.0
+	portata_capi = 0.0
+	maggese = {}
+	concimati = {}
+	pascolo_eccessivo = 0.0
 	consenso = {"anziani": 60.0, "famiglie": 60.0, "sacerdote": 60.0}
 	# Le tappe raggiunte restano anche dopo una rifondazione: il sacerdote che ha già voce la tiene.
 	sacerdote_attivo = sbloccato("luogo_sacro")
@@ -892,6 +931,118 @@ func costruisci_granaio(punto: Vector2) -> String:
 	return ""
 
 
+# ---------- pascolo e animali ----------
+
+## Perché qui non si può stendere il pascolo ("" se si può): terra asciutta o bosco, dentro il contado.
+func motivo_pascolo(p: Vector2i) -> String:
+	if not fondato:
+		return "Prima bisogna fondare il villaggio."
+	if not sbloccato("pascolo"):
+		return "Il pascolo si apre con la tappa \"%s\" (%d abitanti)." % [TAPPE[tappa_di("pascolo")]["nome"], TAPPE[tappa_di("pascolo")]["abitanti"]]
+	if p.x < 0 or p.y < 0 or p.x >= n or p.y >= n:
+		return "Fuori dalla mappa."
+	var i := px(p)
+	if not edificabile(i):
+		return "Il pascolo va su prati, radure e boschi, non sull'acqua o nella palude."
+	if not a_portata(p):
+		return "Fuori dal contado: oggi le famiglie portano gli animali fino a %d m dal villaggio." % roundi(raggio_contado())
+	if bosco_sacro.has(i):
+		return "È bosco sacro: lì non si pascola."
+	return ""
+
+
+func aggiungi_pascolo(lista: Array[Vector2i]) -> int:
+	var aggiunti := 0
+	for p in lista:
+		if motivo_pascolo(p) == "" and not pascolo.has(px(p)):
+			pascolo[px(p)] = true
+			aggiunti += 1
+	return aggiunti
+
+
+## Opzione "Togli" (decisione di Fede del 25/11/2026 sera): toglie il pascolo e lascia campi e animali.
+func togli_pascolo(lista: Array[Vector2i]) -> int:
+	var tolti := 0
+	for p in lista:
+		if p.x >= 0 and p.y >= 0 and p.x < n and p.y < n and pascolo.erase(px(p)):
+			tolti += 1
+	return tolti
+
+
+func _pendio(i: int) -> bool:
+	if not _pendii.has(i):
+		var p := px_di(i)
+		var w := mondo_di_px(p)
+		var d := dati.metri_per_px
+		var pend := (absf(dati.quota(w.x + d, w.y) - dati.quota(w.x - d, w.y)) + absf(dati.quota(w.x, w.y + d) - dati.quota(w.x, w.y - d))) / (2.0 * d)
+		_pendii[i] = pend > PENDIO
+	return _pendii[i]
+
+
+## Ettari di pascolo per tipo di terra: prato, bosco, maggese, stoppie (dopo l'ultimo anno).
+func ettari_pascolo() -> Dictionary:
+	var e := {"prato": 0.0, "bosco": 0.0, "maggese": 0.0, "stoppie": 0.0}
+	for i in pascolo:
+		var k := "prato"
+		if campi.has(i):
+			k = "maggese" if maggese.has(i) else "stoppie"
+		elif bosco_in_piedi(i):
+			k = "bosco"
+		e[k] += AREA_PIXEL_HA
+	return e
+
+
+## Un anno di pascolo, dopo il raccolto: portata della zona, maggese e stoppie, crescita della
+## mandria, erosione sui pendii, disuguaglianza se gli animali sono delle famiglie.
+func _pascola(lavorati: Dictionary) -> void:
+	maggese = {}
+	if not sbloccato("pascolo"):
+		return
+	if capi <= 0.0 and portata_capi <= 0.0:
+		capi = CAPI_INIZIALI
+		_scrivi("Le famiglie tengono una decina di animali attorno alle case.")
+	portata_capi = CAPI_ATTORNO_CASE
+	var nuovi_concimati := {}
+	var in_pendio := 0
+	for i in pascolo:
+		if campi.has(i):
+			if lavorati.has(i):
+				# Stoppie: dopo il raccolto, poca erba e un po' di concime per l'anno dopo.
+				portata_capi += CAPI_HA_STOPPIE * AREA_PIXEL_HA
+				nuovi_concimati[i] = true
+			else:
+				# Maggese: gli animali ci stanno tutto l'anno e il campo si riposa più in fretta.
+				portata_capi += CAPI_HA_MAGGESE * AREA_PIXEL_HA
+				maggese[i] = true
+				if stanchezza.has(i):
+					stanchezza[i] = float(stanchezza[i]) - RIPOSO_PER_ANNO
+					if stanchezza[i] <= 0.0:
+						stanchezza.erase(i)
+		elif bosco_in_piedi(i):
+			portata_capi += CAPI_HA_BOSCO * AREA_PIXEL_HA
+		else:
+			portata_capi += CAPI_HA_PRATO * AREA_PIXEL_HA
+		if _pendio(i):
+			in_pendio += 1
+	concimati = nuovi_concimati
+	var famiglie := politica("raccolto") == "famiglie"
+	if capi < portata_capi:
+		capi = minf(portata_capi, capi * (1.0 + (CRESCITA_CAPI_FAMIGLIE if famiglie else CRESCITA_CAPI)))
+	else:
+		# Più capi che erba (la zona si è ristretta): una parte si vende o si macella.
+		capi -= (capi - portata_capi) * 0.3
+	erba = clampf(1.0 - capi / maxf(portata_capi, 1.0), 0.0, 1.0)
+	# Erosione: la mandria piena sui pendii della zona di pascolo.
+	var quota_pendii := float(in_pendio) / maxf(1.0, pascolo.size())
+	var prima := pascolo_eccessivo
+	pascolo_eccessivo = clampf((capi / maxf(portata_capi, 1.0) - 0.9) / 0.1, 0.0, 1.0) * quota_pendii
+	if pascolo_eccessivo > 0.3 and prima <= 0.3:
+		_scrivi("Troppi animali sui pendii: l'erba non ricresce e la terra comincia a scendere.", "allarme")
+	# Gli animali delle famiglie arricchiscono chi ne ha di più (decisione di Fede del 25/11/2026).
+	var meta := clampf(capi / 300.0, 0.0, 1.0) if famiglie else 0.0
+	disuguaglianza += (meta - disuguaglianza) * 0.05
+
+
 # ---------- luogo sacro, sacerdote, bosco sacro ----------
 
 func motivo_luogo_sacro(punto: Vector2) -> String:
@@ -1002,7 +1153,8 @@ func _testo_sorgenti() -> String:
 ## abbattuto da meno di ANNI_RICRESCITA anni.
 func bosco_in_piedi(i: int) -> bool:
 	if tagliati.has(i):
-		if zona_attiva.has(i) or anno - int(tagliati[i]) < ANNI_RICRESCITA:
+		# Il pascolo tiene aperte le radure: lì il bosco non ricresce.
+		if zona_attiva.has(i) or pascolo.has(i) or anno - int(tagliati[i]) < ANNI_RICRESCITA:
 			return false
 		tagliati.erase(i)
 	return bosco_presente.call(i)
@@ -1946,6 +2098,8 @@ func _accogli(n_persone: int) -> void:
 	_cambia_consenso("famiglie", -1.5)
 	anni_sapere = 15
 	stranieri_accolti += n_persone
+	if sbloccato("pascolo"):
+		capi += n_persone * CAPI_PER_STRANIERO
 	_scrivi("%d stranieri si fermano al villaggio e portano nuovi modi di coltivare." % n_persone, "buono")
 
 
@@ -2032,7 +2186,7 @@ func passo() -> void:
 			piena_tra = -1
 			disastrosa_ora = true
 			_piena(true)
-	elif rng.randf() < PROB_PIENA_DISASTROSA * (1.0 + 3.0 * disboscamento):
+	elif rng.randf() < PROB_PIENA_DISASTROSA * (1.0 + 3.0 * maxf(disboscamento, 0.5 * pascolo_eccessivo)):
 		piena_tra = 1 + rng.randi() % 2
 		if _esposto_alle_piene():
 			_scrivi("Piove da settimane sui colli: i corsi d'acqua sono torbidi e gonfi.")
@@ -2113,12 +2267,14 @@ func passo() -> void:
 	ordinati.sort_custom(func(a: int, b: int) -> bool: return fert(a) * fattore_stanchezza(a) > fert(b) * fattore_stanchezza(b))
 	var raccolto := 0.0
 	raccolto_potenziale = 0.0
+	var lavorati := {}
 	for k in ordinati.size():
 		var i: int = ordinati[k]
 		var r := _resa(i)
 		raccolto_potenziale += r
 		if k < lavorabili:
 			raccolto += r
+			lavorati[i] = true
 			stanchezza[i] = float(stanchezza.get(i, 0.0)) + 1.0
 		elif stanchezza.has(i):
 			stanchezza[i] = float(stanchezza[i]) - RIPOSO_PER_ANNO
@@ -2126,6 +2282,7 @@ func passo() -> void:
 				stanchezza.erase(i)
 	ultimo_raccolto = raccolto
 	ultimi_lavorati = mini(lavorabili, ordinati.size())
+	_pascola(lavorati)
 	var piu_braccia := 1.0 if fonti["agricoltura"] else 1.5
 	# Caccia, raccolta e pesca (economia mista): la selvaggina cala se si caccia troppo e ricresce
 	# lentamente; boschi e acque si ricontano ogni 5 anni (tagli e campi tolgono bosco).
@@ -2169,6 +2326,17 @@ func passo() -> void:
 	# (decisione di Fede del 25/11/2026). La carestia arriva quando le scorte finiscono.
 	var consumo := pop * (0.8 if razionamento > 0 else 1.0)
 	cibo += raccolto + ultima_caccia + ultima_pesca - consumo
+	# Scorta viva: nelle annate cattive le famiglie macellano quanto serve, fino a metà della mandria.
+	ultimi_macellati = 0
+	if cibo < 0.0 and capi >= 1.0:
+		ultimi_macellati = mini(floori(capi * 0.5), ceili(-cibo / CIBO_PER_CAPO))
+		if ultimi_macellati > 0:
+			capi -= ultimi_macellati
+			cibo += ultimi_macellati * CIBO_PER_CAPO
+			# Una riga ogni 5 anni al massimo (ritmo meditativo, decisione di Fede del 24/11/2026).
+			if anno - _anno_macellazione >= 5:
+				_scrivi("Annate cattive: si macellano gli animali per passare l'inverno (%d capi quest'anno)." % ultimi_macellati)
+			_anno_macellazione = anno
 	if razionamento > 0:
 		razionamento -= 1
 	var carestia := 0.0
@@ -2258,7 +2426,7 @@ func passo() -> void:
 		_scrivi("Il villaggio si divide: molte famiglie se ne vanno.", "allarme")
 	if pop < 6.0:
 		_abbandona()
-	for k in ["pop", "cibo", "salute", "legittimita", "abbondanza", "legna"]:
+	for k in ["pop", "cibo", "salute", "legittimita", "abbondanza", "legna", "capi"]:
 		var arr: Array = storia[k]
 		arr.append(get(k))
 		if arr.size() > 200:
@@ -2358,7 +2526,7 @@ func _resa(i: int) -> float:
 	var vie := 1.0 + BONUS_SENTIERO if _campi_serviti.has(i) else 1.0
 	var danni := 1.0 - 0.25 * selvaggina if _campi_al_bosco.has(i) else 1.0
 	var famiglie := 1.0 + 0.12 * efficacia_usanze() if politica("raccolto") == "famiglie" else 1.0
-	return RESA_CAMPO * fert(i) * fattore * famiglie * (BONUS_LIMO if limo.has(i) else 1.0) * fattore_stanchezza(i) \
+	return RESA_CAMPO * fert(i) * fattore * famiglie * (BONUS_LIMO if limo.has(i) else 1.0) * fattore_stanchezza(i) * (BONUS_STOPPIE if concimati.has(i) else 1.0) \
 		* (1.08 if anni_sapere > 0 else 1.0) * RESA_TECNICA[tecnica_campo(i)] * vie * danni / AREA_CELLA
 
 
@@ -2824,4 +2992,27 @@ func cause_di(nome: String) -> Array[String]:
 				out.append("Senza legna non nascono case nuove.")
 			if legna >= massimo_legna() - 1.0:
 				out.append("La catasta è piena: la legna in più marcisce.")
+		"Animali":
+			if not sbloccato("pascolo"):
+				out.append("Il pascolo si apre con la tappa \"%s\" (%d abitanti)." % [TAPPE[tappa_di("pascolo")]["nome"], TAPPE[tappa_di("pascolo")]["abitanti"]])
+				return out
+			if pascolo.is_empty():
+				out.append("Senza zona di pascolo gli animali stanno attorno alle case: non più di %d capi. Stendi il pascolo (Territorio) su prati, radure e margini del bosco." % roundi(CAPI_ATTORNO_CASE))
+			else:
+				var e := ettari_pascolo()
+				out.append("Il pascolo nutre fino a %d capi: %s ha di prato, %s di bosco, %s di maggese, %s di stoppie." % [roundi(portata_capi), _ha(e["prato"]), _ha(e["bosco"]), _ha(e["maggese"]), _ha(e["stoppie"])])
+			if erba < 0.05:
+				out.append("L'erba è finita: la mandria non cresce più. Serve più pascolo.")
+			if maggese.size() > 0:
+				out.append("%d campi stanchi sono a maggese: gli animali li concimano e si riposano più in fretta." % maggese.size())
+			if pascolo_eccessivo > 0.3:
+				out.append("Troppi animali sui pendii: la terra scende e le piene arrivano più spesso.")
+			if ultimi_macellati > 0:
+				out.append("Quest'anno si sono macellati %d capi per l'annata cattiva." % ultimi_macellati)
+			if politica("raccolto") == "famiglie":
+				out.append("Gli animali sono delle famiglie: la mandria cresce più in fretta, ma chi ne ha di più si arricchisce (disuguaglianza %d%%)." % roundi(disuguaglianza * 100.0))
 	return out
+
+
+func _ha(v: float) -> String:
+	return String.num(v, 1).replace(".", ",")

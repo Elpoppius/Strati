@@ -252,6 +252,24 @@ func _process(_d: float) -> bool:
 						p.inizia_pennellata()
 						_s.applica_strumento()
 		controlla(not sim.bosco_sacro.is_empty() and p.vista._immagine_sacro != null, "bosco sacro a pennello (%s ha)" % String.num(sim.ettari_bosco_sacro(), 1))
+		# Pascolo a pennello e opzione Togli (decisioni di Fede del 25/11/2026).
+		h.seleziona_comando("pascolo")
+		var punto_pa := Vector2.INF
+		for r in range(60, 800, 40):
+			for k in 16:
+				var q := Vector2(cs.x + cos(TAU * k / 16.0) * r, cs.y + sin(TAU * k / 16.0) * r)
+				if punto_pa == Vector2.INF and sim.motivo_pascolo(sim.px_da_mondo(q.x, q.y)) == "":
+					punto_pa = q
+		_s.punto_corrente = Vector3(punto_pa.x, 0, punto_pa.y)
+		p.inizia_pennellata()
+		_s.applica_strumento()
+		var campi_prima := sim.campi.size()
+		controlla(not sim.pascolo.is_empty() and p.vista._immagine_pascolo != null, "pascolo a pennello (%d pixel)" % sim.pascolo.size())
+		p._azione("togli_pascolo")
+		p.inizia_pennellata()
+		_s.applica_strumento()
+		controlla(sim.pascolo.is_empty() and sim.campi.size() == campi_prima, "con Togli il pennello toglie il pascolo e lascia i campi")
+		p._azione("togli_pascolo")
 		h.seleziona_comando("")
 	var tagliati_visibili := 0
 	for i in sim.tagliati:

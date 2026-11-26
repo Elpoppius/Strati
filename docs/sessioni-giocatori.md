@@ -172,3 +172,21 @@ Le decisioni che ne sono venute (Fede, 25/11/2026) stanno in `pilastri-e-decisio
 - **Le dinamiche reggono:** popolazioni, carestie e pause restano dove erano, con le differenze dovute al caso.
 - **Il sacerdote è contento quando lo si cura:** chi conosce il genere, con luogo sacro e bosco sacro di quasi 10 ettari, lo tiene a 71, quindi ha meno presagi falsi. Chi non lo cura lo lascia intorno a 58–60.
 - **Chi legge erige il luogo sacro poco** (7 su 18), perché la causa "si può erigere il luogo sacro" sta nel pannello del Consenso, che si apre solo quando il consenso è rosso. Va guardato con Fede se serve un richiamo in più, per esempio nella notifica della tappa, che oggi lo nomina già.
+
+## Sacerdote contrariato senza luogo sacro, poi pascolo e animali (26/11/2026, mattina)
+**Sacerdote** (decisione di Fede del 25/11/2026 sera: contrariato finché il luogo sacro non è eretto), 72 partite: mediane 503, 599, 729, 121 abitanti; carestie 2,8, 2,3, 2,7, 2,0 a partita; nessun abbandono. Chi non erige il luogo sacro lascia il sacerdote a 35–37, quindi con presagi ambigui; chi conosce il genere lo tiene a 71. **Chi legge erige ancora il luogo sacro solo 7 volte su 18:** il consenso complessivo non diventa rosso, perché il sacerdote pesa 0,2, e quindi il pannello con la causa non si apre. Se Fede vuole spingere di più, il "Il sacerdote chiede un luogo sacro" può diventare una notifica grigia invece di una riga di cronaca.
+
+**Pascolo e animali** (decisioni di Fede del 25/11/2026), 72 partite. I giocatori automatici stendono il pascolo dopo la notifica della tappa (chi conosce il genere sempre, 15 ettari, e lo allarga quando l'erba finisce; gli altri 6 volte su 10, il casual 4) o dopo le cause degli Animali.
+
+| Profilo | Abitanti (mediana) | Massimo | Minimo | Carestie per partita | Carestie gravi | Abbandoni | Capi (mediana / massimo) | Pascolo (mediana) | Partite con pascolo |
+|---|---|---|---|---|---|---|---|---|---|
+| Impara sbagliando | 616 | 912 | 103 | 2.7 | 3 | 0 | 17 / 23 | 5,6 ha | 12 su 18 |
+| Legge le spiegazioni | 454 | 1127 | 110 | 2.5 | 0 | 0 | 13 / 23 | 0 ha | 8 su 18 |
+| Conosce il genere | 742 | 999 | 211 | **1.6** (prima 2,7) | 3 | 0 | 49 / 72 | 44 ha | 18 su 18 |
+| Casual | 116 | 646 | 43 | 2.2 | 0 | 0 | 12 / 20 | 0 ha | 4 su 18 |
+
+**Registro** (5 partite): 4,2 pause per partita (presagi e stranieri, dovute al caso), 0,8 notifiche rosse, 4 grigie; le righe "si macellano" erano 5–6 a partita, anni di fila: ora al massimo una ogni 5 anni.
+
+- **La scorta viva funziona:** chi tiene una mandria grande passa da 2,7 a 1,6 carestie a partita.
+- **Mandrie piccole:** chi non stende il pascolo resta sui 12 capi attorno alle case; con 44 ettari si arriva a 50–70. La portata (2 capi per ettaro di prato) si può alzare se Fede vuole mandrie più grandi.
+- La mediana di chi legge (454 contro 599) oscilla molto da una prova all'altra: il massimo e il minimo restano gli stessi.

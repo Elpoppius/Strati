@@ -174,6 +174,95 @@ func _verifica_sacro(d: MappaDati) -> void:
 	controlla(int(esito.get("bosco_sacro", 0)) > 0 and s.bonus["sacerdote"] < prima and s.cronaca[0]["testo"].contains("bosco sacro") or s.cronaca.any(func(e: Dictionary) -> bool: return String(e["testo"]).contains("bosco sacro")), "tagliare il bosco sacro offende il sacerdote")
 
 
+## Pascolo e animali (decisioni di Fede del 25/11/2026).
+func _verifica_pascolo(d: MappaDati) -> void:
+	var s := SimVillaggio.new(d, 13)
+	var c := Vector2i(d.siti[0]["px"])
+	s.fonda(c)
+	var vicini: Array[Vector2i] = []
+	for dy in range(-6, 7):
+		for dx in range(-6, 7):
+			vicini.append(c + Vector2i(dx, dy))
+	controlla(s.motivo_pascolo(c + Vector2i(3, 0)).contains("si apre") and s.aggiungi_pascolo(vicini) == 0, "il pascolo si apre con la tappa dei 100 abitanti")
+	s.pop = 110.0
+	s._aggiorna_tappa()
+	s._pascola({})
+	controlla(s.capi >= SimVillaggio.CAPI_INIZIALI and s.capi <= SimVillaggio.CAPI_ATTORNO_CASE and is_equal_approx(s.portata_capi, SimVillaggio.CAPI_ATTORNO_CASE), "alla tappa una decina di capi attorno alle case (%d, portata %d)" % [roundi(s.capi), roundi(s.portata_capi)])
+	var messi := s.aggiungi_pascolo(vicini)
+	var prima_capi := s.capi
+	s._pascola({})
+	var portata := s.portata_capi
+	controlla(messi > 50 and portata > SimVillaggio.CAPI_ATTORNO_CASE + 10.0, "il pascolo a pennello nutre più capi (%d pixel, portata %d)" % [messi, roundi(portata)])
+	controlla(is_equal_approx(s.capi, prima_capi * 1.1), "la mandria cresce del 10%% l'anno (%.1f → %.1f)" % [prima_capi, s.capi])
+	for k in 40:
+		s._pascola({})
+	controlla(s.capi <= s.portata_capi + 0.01 and s.capi > s.portata_capi * 0.95, "finita l'erba la mandria smette di crescere (%d su %d)" % [roundi(s.capi), roundi(s.portata_capi)])
+	var f := SimVillaggio.new(d, 13)
+	f.fonda(c)
+	f.pop = 110.0
+	f._aggiorna_tappa()
+	f.politiche["raccolto"] = "famiglie"
+	f.aggiungi_pascolo(vicini)
+	f._pascola({})
+	f._pascola({})
+	controlla(f.capi > SimVillaggio.CAPI_INIZIALI * 1.1 * 1.1 + 0.1, "con il raccolto alle famiglie la mandria cresce di più (%.1f in due anni)" % f.capi)
+	for k in 30:
+		f._pascola({})
+	controlla(f.disuguaglianza > 0.0 and s.disuguaglianza == 0.0, "gli animali delle famiglie fanno crescere la disuguaglianza (%.3f)" % f.disuguaglianza)
+	# Campi nella zona di pascolo: stoppie se lavorati, maggese se stanchi o incolti.
+	var campo := -1
+	for i in s.pascolo:
+		if campo < 0 and s.edificabile(i) and not s.campi.has(i):
+			campo = i
+	s.campi.append(campo)
+	s.stanchezza[campo] = 80.0
+	s._pascola({})
+	controlla(s.maggese.has(campo) and is_equal_approx(float(s.stanchezza[campo]), 80.0 - SimVillaggio.RIPOSO_PER_ANNO), "un campo stanco nel pascolo diventa maggese e si riposa più in fretta")
+	var resa_prima := s._resa(campo)
+	s._pascola({campo: true})
+	controlla(not s.maggese.has(campo) and s.concimati.has(campo) and s._resa(campo) > resa_prima * 1.04, "su un campo coltivato gli animali pascolano le stoppie: l'anno dopo rende un po' di più")
+	# Togli: via il pascolo, i campi restano.
+	s.togli_pascolo([s.px_di(campo)])
+	controlla(not s.pascolo.has(campo) and s.campi.has(campo), "l'opzione Togli toglie il pascolo e lascia il campo")
+	# Il pascolo tiene aperte le radure.
+	var radura := -1
+	for i in s.pascolo:
+		if radura < 0 and s.bosco_in_piedi(i):
+			radura = i
+	if radura >= 0:
+		s.tagliati[radura] = s.anno - SimVillaggio.ANNI_RICRESCITA - 5
+		controlla(not s.bosco_in_piedi(radura), "dove si pascola il bosco tagliato non ricresce")
+	# Stranieri e scorta viva.
+	var capi_prima := s.capi
+	s._accogli(4)
+	controlla(is_equal_approx(s.capi, capi_prima + 4 * SimVillaggio.CAPI_PER_STRANIERO), "gli stranieri accolti portano i loro animali")
+	s.capi = 40.0
+	s.cibo = -1000.0
+	s.campi = []
+	s.fonti = {"agricoltura": false, "caccia": false, "pesca": false}
+	s.decisioni.clear()
+	s.passo()
+	controlla(s.ultimi_macellati > 0 and s.capi >= s.ultimi_macellati - 0.5 and s.cronaca.any(func(e: Dictionary) -> bool: return String(e["testo"]).contains("macellano")), "nell'annata cattiva si macellano gli animali (%d), fino a metà della mandria" % s.ultimi_macellati)
+	# Troppi animali sui pendii: erosione.
+	var e := SimVillaggio.new(d, 13)
+	var sito_pendii := Vector2i(d.siti[2]["px"])
+	e.fonda(sito_pendii)
+	e.pop = 300.0
+	e._aggiorna_tappa()
+	var tutto: Array[Vector2i] = []
+	for dy in range(-12, 13):
+		for dx in range(-12, 13):
+			tutto.append(sito_pendii + Vector2i(dx, dy))
+	e.aggiungi_pascolo(tutto)
+	e.capi = 5000.0
+	e._pascola({})
+	var pendii := 0
+	for i in e.pascolo:
+		if e._pendio(i):
+			pendii += 1
+	controlla(pendii == 0 or e.pascolo_eccessivo > 0.0, "la mandria piena sui pendii dà erosione (%d pixel in pendio, %.2f)" % [pendii, e.pascolo_eccessivo])
+
+
 func _gioca(sim: SimVillaggio, sito: Vector2i, scelta_presagi := "") -> Dictionary:
 	_caso_giocatore.seed = 12345
 	sim.fonda(sito)
@@ -405,6 +494,7 @@ func _initialize() -> void:
 	t.avvisi.clear()
 	_verifica_capanno_e_posta(d)
 	_verifica_sacro(d)
+	_verifica_pascolo(d)
 	# Partite intere.
 	var sopravvissuti := 0
 	for s in d.siti:

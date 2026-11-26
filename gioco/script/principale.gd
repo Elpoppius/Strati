@@ -39,7 +39,7 @@ var _trascinando := false
 var _destro_da := Vector2.ZERO
 const SOGLIA_CLIC_DESTRO := 5.0
 ## Strumenti a pennello (Fede: la zona agricola si disegna tenendo premuto e trascinando).
-const STRUMENTI_PENNELLO := ["zona", "bosco_sacro"]
+const STRUMENTI_PENNELLO := ["zona", "bosco_sacro", "pascolo"]
 var _pennellando := false
 var _ultimo_pennello := Vector3.INF
 ## Etichette dei siti adatti alle dighe: visibili solo nella mappa dell'energia dell'acqua.
@@ -294,8 +294,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 				imposta_modo((ev as InputEventKey).keycode - KEY_1)
 			KEY_HOME:
 				torna_al_sito()
-			KEY_X, KEY_F, KEY_C, KEY_Z, KEY_V, KEY_H, KEY_L, KEY_K, KEY_T, KEY_O, KEY_B:
-				var id: String = {KEY_X: "demolisci", KEY_F: "fonda", KEY_C: "campi", KEY_Z: "zona", KEY_V: "sentiero", KEY_H: "granaio", KEY_L: "legnaia", KEY_K: "capanno", KEY_T: "posta", KEY_O: "luogo_sacro", KEY_B: "bosco_sacro"}[(ev as InputEventKey).keycode]
+			KEY_X, KEY_F, KEY_C, KEY_Z, KEY_V, KEY_H, KEY_L, KEY_K, KEY_T, KEY_O, KEY_B, KEY_N:
+				var id: String = {KEY_X: "demolisci", KEY_F: "fonda", KEY_C: "campi", KEY_Z: "zona", KEY_V: "sentiero", KEY_H: "granaio", KEY_L: "legnaia", KEY_K: "capanno", KEY_T: "posta", KEY_O: "luogo_sacro", KEY_B: "bosco_sacro", KEY_N: "pascolo"}[(ev as InputEventKey).keycode]
 				hud.seleziona_comando("" if hud.comando() == id else id)
 				_aggiorna_pennello()
 			KEY_P:
@@ -362,6 +362,7 @@ func _aggiorna_pennello() -> void:
 	# La zona agricola si vede solo mentre si destina la terra (Zona agricola o Campo). Va decisa
 	# prima dell'uscita qui sotto: senza strumento o col puntatore fuori dal terreno restava accesa.
 	terreno.materiale.set_shader_parameter("mostra_zona", 1.0 if hud.comando() in ["campi", "zona"] else 0.0)
+	terreno.materiale.set_shader_parameter("mostra_pascolo", 1.0 if hud.comando() in ["pascolo", "zona", "campi"] else 0.0)
 	terreno.materiale.set_shader_parameter("mostra_bosco_sacro", 1.0 if hud.comando() in ["bosco_sacro", "demolisci", "legnaia"] or modo in [5, 7] else 0.0)
 	if hud.comando() == "" or punto_corrente == null:
 		terreno.materiale.set_shader_parameter("pennello", Vector3(0, 0, -1))

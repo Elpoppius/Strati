@@ -10,22 +10,32 @@ Legenda: `[x]` fatto · `[~]` in parte · `[ ]` da fare · **(?)** serve una dec
 3. **Traguardi** da rispettare (`era-origini.md`, § 9): circa 2–3 pause a partita (si ferma solo per le scelte), poche notifiche, carestie rare e leggibili, nessun abbandono al livello medio, nucleo 100–300 abitanti, territorio fino a 600–800 per chi gioca molto bene.
 4. **Alla fine:** voce in cima al diario, todo aggiornato, commit e push.
 
-## A che punto siamo (25/11/2026, sera tardi)
-Fatte e collaudate le basi della prima epoca (ritmo, crescita, risorse e rischi, consenso di anziani e famiglie, HUD, strumenti di prova) e la **voce 1, capanno da pesca e posta di caccia** (meccaniche, strumenti, prove), con due domande aperte per Fede (sotto, "Da decidere con Fede"). Per chiudere il villaggio restano circa **25–38 ore di lavoro di Claude** (stima del 25/11/2026, prove comprese; non contano le conferme e le prove di Fede), cioè **7–9 giornate** alternando i due account, poi la prova fisica di Fede e 1–2 giornate di correzioni.
+## A che punto siamo (26/11/2026, mattina)
+Fatte e collaudate le basi della prima epoca e le voci 0 (cantieri visibili), 1 (capanno e posta), 3 (luogo sacro, sacerdote, bosco sacro) e 8 (mappe tematiche). Restano le voci 2, 4, 5, 6, 7, 9.
 
-| Voce | Stima |
+**Stime riviste** (richiesta di Fede del 25/11/2026). Tempi veri del 25/11, dall'ok di Fede al push, presi dai commit:
+
+| Lavoro | Stima di prima | Tempo vero |
+|---|---|---|
+| 1. Capanno e posta (con 72 partite umane e registro) | 1,5–2 ore | 1 ora e 13 minuti (di cui circa 25 di partite) |
+| 0. Cantieri visibili (cinque scheletri, barra, prove) | 30–60 minuti | 13 minuti |
+| 8. Mappe tematiche (tre mappe, shader, legende, prove) | 2–3 ore | 17 minuti |
+| 3. Luogo sacro, sacerdote, bosco sacro (con partite umane e registro) | 2–3 ore | 41 minuti (di cui circa 25 di partite) |
+| Sacerdote contrariato senza luogo sacro | — | 12 minuti (partite interrotte) |
+
+Le stime di prima erano da 2 a 8 volte troppo alte: erano pensate come ore di lavoro di una persona. Il costo fisso vero è quello delle prove, circa **25 minuti di partite umane e registro** per ogni voce che tocca le dinamiche; le foto di controllo prendono 2–3 minuti l'una. Il resto del tempo lo prendono le conferme e le prove di Fede.
+
+| Voce | Stima rivista (prove comprese) |
 |---|---|
-| 1. Capanno da pesca e Posta di caccia | **fatto** (25/11/2026 sera) |
-| 2. Pascolo e bestiame visibile | 4–6 ore |
-| 3. Luogo sacro, sacerdote, bosco sacro | **fatto** (25/11/2026 sera) |
-| 4. Scorrerie | 2–3 ore |
-| 5. Sentieri che diventano strade | 2–3 ore |
-| 6. Evento soglia e passo elastico | 4–6 ore (la più delicata: il passo a decenni tocca tutte le regole "per anno") |
-| 7. Popolazione visibile | 5–8 ore (serve una prova di Fede per i fotogrammi al secondo) |
-| 8. Mappe tematiche | **fatto** (25/11/2026 sera) |
-| 9. Base tecnica | 4–6 ore |
+| 0, 1, 3, 8 | **fatte** (25/11/2026) |
+| 2. Pascolo e bestiame visibile | 1,5–2 ore (simulazione 30–45 min, modelli e animali sulla mappa 30–45 min, prove 25 min) |
+| 4. Scorrerie | 40–60 minuti |
+| 5. Sentieri che diventano strade | 40–60 minuti |
+| 6. Evento soglia e passo elastico | 1,5–2,5 ore (la più delicata: il passo a decenni tocca tutte le regole "per anno") |
+| 7. Popolazione visibile | 1,5–2 ore (serve una prova di Fede per i fotogrammi al secondo) |
+| 9. Base tecnica | 1–1,5 ore (salvataggio, acqua che sale, varianti; più le prove sui PC di Fede) |
 
-Raggruppamento proposto: giornata 1 caccia e pesca con la mappa boschi e selvaggina; 2–3 pascolo, bestiame e luogo sacro; 4 scorrerie e strade; 5–6 evento soglia e passo elastico; 7–8 popolazione visibile; 9 salvataggio, acqua, rifinitura, poi la prova di Fede. Rischi: domande aperte, correzioni dopo la prova fisica, passo elastico e popolazione visibile meno prevedibili.
+In tutto **7–10 ore di lavoro di Claude**, cioè 2–3 giornate, più le conferme e le prove di Fede (che oggi sono la parte più lunga), poi la prova fisica e le correzioni.
 
 ## Per chi riprende: il lavoro in ordine
 
@@ -52,7 +62,8 @@ Raggruppamento proposto: giornata 1 caccia e pesca con la mappa boschi e selvagg
 
 **Da fare all'inizio della prossima sessione:** rifare `test/giocatore_umano.gd` dopo il sacerdote contrariato senza luogo sacro (25/11/2026 notte, partite interrotte per il limite di utilizzo; registro e verifiche del villaggio superati) e aggiornare `sessioni-giocatori.md`.
 
-### 2. [ ] Pascolo e animali (con il bestiame visibile)
+### 2. [~] Pascolo e animali (con il bestiame visibile)
+**Fatto il 26/11/2026 mattina** (regole e numeri in `prototipo0-godot.md`): zona di pascolo a pennello con l'opzione Togli (anche per la zona agricola), capi con portata e crescita, stoppie e maggese, radure aperte, scorta viva, stranieri con animali, erosione sui pendii, disuguaglianza, indicatore e pannello Animali, stabbio e animali (pecora, capra, maiale, bue) in greggi sulla mappa, giocatori automatici, prove. **Resta:** il campo stanco visibile (proposta sotto, da confermare con Fede) e la prova di Fede dei fotogrammi al secondo con le greggi. Le vie degli animali arrivano con la voce 5, le scorrerie attirate dagli animali con la voce 4.
 **Deciso** (Fede, 25/11/2026, `era-origini.md` § 4 "I cicli"): si apre a 100 abitanti. Concime ai campi vicini, scorta viva per le annate cattive, radure che restano aperte, erosione e piene se troppo pascolo sui pendii, ricchezza delle famiglie, vie degli animali come traffico sui sentieri, animali che attirano le scorrerie.
 **Deciso** (Fede, 25/11/2026 sera, sulle domande di Claude):
 1. **Zona di pascolo a pennello**, come la zona agricola: le famiglie portano gli animali da sole.

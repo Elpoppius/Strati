@@ -2,6 +2,28 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (mattina)
+**Fatto**
+- **Stime riviste** (richiesta di Fede): tempi veri dai commit del 25/11, nel todo. Erano da 2 a 8 volte troppo alte; il costo fisso vero sono le prove, circa 25 minuti per voce. Restano 7–10 ore di lavoro di Claude.
+- **Partite "umane" sul sacerdote contrariato** (`sessioni-giocatori.md`): dinamiche come prima. Chi legge erige ancora poco il luogo sacro (7 su 18).
+- **Pascolo e animali** (voce 2, quasi tutta):
+  - zona di pascolo a pennello (Territorio, tasto N) con l'opzione **Togli**, aggiunta anche alla zona agricola;
+  - capi con portata e crescita, stoppie e maggese, radure che restano aperte, scorta viva, stranieri con animali, erosione sui pendii, disuguaglianza se gli animali sono delle famiglie;
+  - indicatore e pannello "Animali";
+  - **stabbio** e **animali** (pecora, capra, maiale, bue) in Blender, sulla mappa in **greggi**, uno per stabbio, che si spostano piano nel pascolo. Foto: `docs/immagini/animali-26-11.jpg` e `greggi-nel-gioco-26-11.jpg`;
+  - giocatori automatici, 15 verifiche nuove sulla simulazione e 2 sugli strumenti, tutte le 9 superate. Partite "umane": chi conosce il genere passa da 2,7 a 1,6 carestie a partita grazie alla scorta viva.
+
+**Decisioni**
+- Fede (25/11 sera): capi confermati; opzione "Togli"; le due zone si parlano senza entrare in conflitto (stoppie e maggese).
+- Proposte di Claude da confermare: tasto N; animali in greggi, uno per stabbio; righe "si macellano" al massimo ogni 5 anni.
+
+**Prossimo passo**
+- Fede:
+  - guardare animali e greggi (foto) e provarli, con i fotogrammi al secondo;
+  - confermare il **campo stanco visibile**: il campo si schiarisce e si riempie di erbacce, ed è più povero nella mappa della fertilità;
+  - dire se il sacerdote deve chiedere il luogo sacro con una notifica.
+- Claude: campo stanco visibile appena confermato; poi le voci 4 (scorrerie) e 5 (strade).
+
 ## 25/11/2026 (notte, ancora più tardi)
 **Fatto**
 - **Luogo sacro, sacerdote, bosco sacro** (voce 3 del todo):

@@ -140,7 +140,7 @@ var _pannello_focus: PanelContainer
 var _colonna_focus: VBoxContainer
 var _focus := ""
 ## Indicatori che aprono un pannello di focus con un clic.
-const INDICATORI_CON_FOCUS := ["Popolazione", "Cibo", "Salute", "Abbondanza", "Consenso", "Legna"]
+const INDICATORI_CON_FOCUS := ["Popolazione", "Cibo", "Salute", "Abbondanza", "Consenso", "Legna", "Animali"]
 var _colonna_politiche: VBoxContainer
 var _scorri_politiche: ScrollContainer
 ## id politica -> {"opzioni": {valore: Button}, "nota": Label, "note": {valore: testo}}

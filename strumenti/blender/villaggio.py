@@ -3,7 +3,8 @@
 Riusa materiali e forme della prova di stile (prova_stile_verosimile.py): case lunghe in tre
 misure, capanne tonde in due, granaio su pali, palizzata (tratto e varco), luogo sacro,
 focolare, fossa-silo, recinto per gli animali, catasta di legna, rocce; legnaia, capanno da pesca e posta di caccia (25/11/2026);
-i cantieri di granaio, legnaia, capanno, posta e luogo sacro (scheletri, 25/11/2026 sera).
+i cantieri di granaio, legnaia, capanno, posta e luogo sacro (scheletri, 25/11/2026 sera);
+lo stabbio e gli animali del pascolo: pecora, capra, maiale, bue (26/11/2026).
 
 Uso:  blender-py strumenti/blender/villaggio.py gioco/asset/villaggio
 
@@ -588,6 +589,106 @@ def cantiere_luogo_sacro(nome, seme):
     return base.unisci(nome, parti)
 
 
+# ---------- pascolo e animali (decisioni di Fede del 25/11/2026) ----------
+
+def stabbio(nome, seme):
+    """Stabbio: recinto basso di graticcio per la notte, con un'apertura e un abbeveratoio di tronco
+    scavato accanto. Diverso dal recinto urbano dell'epoca 2: basso, ovale, fatto in fretta."""
+    m = materiali()
+    m["acqua"] = base.materiale("acqua_scura", "pietra", tinta=(0.16, 0.22, 0.24))
+    rnd = random.Random(seme)
+    parti = []
+    ax, ay = 3.4, 2.4
+    n = 20
+    pali = []
+    for k in range(n):
+        if k in (0, 1):
+            continue  # l'apertura
+        a = 2 * math.pi * (k + 0.5) / n
+        x, y = ax * math.cos(a), ay * math.sin(a)
+        pali.append((x, y))
+        parti.append(base.cilindro_tra("palo", (x, y, -0.1), (x, y, rnd.uniform(0.85, 1.0)), 0.06, 0.05, m["corteccia"], lati=5))
+    for riga in range(4):
+        z = 0.18 + riga * 0.18
+        for k in range(len(pali) - 1):
+            (x0, y0), (x1, y1) = pali[k], pali[k + 1]
+            s0 = 1.0 + (0.02 if (k + riga) % 2 == 0 else -0.02)
+            parti.append(base.cilindro_tra("vimine", (x0 * s0, y0 * s0, z), (x1 / s0, y1 / s0, z + rnd.uniform(-0.02, 0.02)), 0.03, 0.03, m["legno"], lati=4, uv_tile=0.8))
+    # Abbeveratoio: un tronco scavato, con l'acqua scura dentro.
+    tx, ty = ax + 0.9, -0.6
+    parti.append(base.cilindro_tra("abbeveratoio", (tx, ty - 0.9, 0.22), (tx, ty + 0.9, 0.22), 0.26, 0.24, m["corteccia"], lati=8))
+    parti.append(base.scatola("acqua", (0.28, 1.55, 0.04), (tx, ty, 0.44), m["acqua"]))
+    # Paglia sparsa per la notte.
+    for k in range(5):
+        parti.append(sasso("paglia", (rnd.uniform(0.6, 1.0), rnd.uniform(0.5, 0.8), 0.12), (rnd.uniform(-2, 2), rnd.uniform(-1.3, 1.3), 0), m["paglia"], seme + 70 + k))
+    return base.unisci(nome, parti)
+
+
+def _corpo(nome, dim, centro, mat, seme):
+    """Un volume morbido (icosfera appena irregolare), per corpo e testa degli animali."""
+    rnd = random.Random(seme)
+    bm = bmesh.new()
+    bmesh.ops.create_icosphere(bm, subdivisions=2, radius=0.5)
+    for v in bm.verts:
+        k = 1.0 + rnd.uniform(-0.05, 0.05)
+        v.co = Vector((v.co.x * dim[0] * k, v.co.y * dim[1] * k, v.co.z * dim[2] * k))
+    bmesh.ops.translate(bm, vec=Vector(centro), verts=bm.verts)
+    bm.normal_update()
+    return base.da_bmesh(nome, bm, mat, tile=1.0)
+
+
+# Specie: lunghezza del corpo, altezza al garrese, colori (pelo e zampe), corna, orecchie basse.
+SPECIE = {
+    "pecora": {"lungo": 1.05, "alto": 0.72, "largo": 0.55, "pelo": ("argilla", (0.95, 0.92, 0.84)), "zampe": (0.22, 0.19, 0.16), "corna": 0.0},
+    "capra": {"lungo": 0.95, "alto": 0.72, "largo": 0.38, "pelo": ("argilla", (0.52, 0.42, 0.33)), "zampe": (0.3, 0.25, 0.2), "corna": 0.22},
+    "maiale": {"lungo": 1.0, "alto": 0.62, "largo": 0.45, "pelo": ("argilla", (0.24, 0.19, 0.16)), "zampe": (0.18, 0.15, 0.13), "corna": 0.0},
+    "bue": {"lungo": 2.0, "alto": 1.3, "largo": 0.85, "pelo": ("argilla", (0.55, 0.36, 0.24)), "zampe": (0.36, 0.25, 0.18), "corna": 0.45},
+}
+
+
+def animale(nome, specie, seme):
+    """Animale semplice, guardato dall'alto e da lontano: corpo, testa, quattro zampe, corna o
+    orecchie. Il muso guarda verso +y."""
+    sp = SPECIE[specie]
+    m = materiali()
+    pelo = base.materiale("pelo_" + specie, sp["pelo"][0], tinta=sp["pelo"][1])
+    zampe = base.materiale("zampe_" + specie, "argilla", tinta=sp["zampe"])
+    L, H, W = sp["lungo"], sp["alto"], sp["largo"]
+    gamba = H * 0.5
+    parti = []
+    parti.append(_corpo("corpo", (W, L, H * 0.5), (0, 0, gamba + H * 0.22), pelo, seme))
+    if specie == "maiale":
+        testa = _corpo("testa", (W * 0.7, L * 0.38, H * 0.42), (0, L * 0.55, gamba + H * 0.12), pelo, seme + 1)
+        parti.append(testa)
+        parti.append(base.cilindro_tra("grugno", (0, L * 0.7, gamba + H * 0.08), (0, L * 0.78, gamba + H * 0.06), 0.07, 0.07, zampe, lati=6))
+    elif specie == "bue":
+        # Il bue: collo corto e massiccio in avanti, testa bassa e grande.
+        parti.append(base.cilindro_tra("collo", (0, L * 0.36, gamba + H * 0.3), (0, L * 0.5, gamba + H * 0.36), W * 0.3, W * 0.24, pelo, lati=7))
+        parti.append(_corpo("testa", (W * 0.42, L * 0.22, H * 0.3), (0, L * 0.6, gamba + H * 0.3), pelo, seme + 1))
+    else:
+        collo_y = L * 0.42
+        parti.append(base.cilindro_tra("collo", (0, collo_y, gamba + H * 0.35), (0, collo_y + L * 0.1, gamba + H * 0.62), W * 0.18, W * 0.14, pelo, lati=6))
+        parti.append(_corpo("testa", (W * 0.38, L * 0.28, H * 0.24), (0, collo_y + L * 0.2, gamba + H * 0.66), pelo if specie != "pecora" else zampe, seme + 1))
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            x, y = sx * W * 0.28, sy * L * 0.3
+            parti.append(base.cilindro_tra("zampa", (x, y, 0.0), (x, y, gamba + H * 0.1), 0.05 * (L / 1.0) ** 0.5, 0.06 * (L / 1.0) ** 0.5, zampe, lati=5))
+    if sp["corna"] > 0.0:
+        cy = L * 0.42 + L * 0.2
+        for sx in (-1, 1):
+            if specie == "bue":
+                parti.append(base.cilindro_tra("corno", (sx * W * 0.15, L * 0.62, gamba + H * 0.44), (sx * (W * 0.15 + sp["corna"]), L * 0.66, gamba + H * 0.6), 0.05, 0.015, m["legno"], lati=5))
+            else:
+                parti.append(base.cilindro_tra("corno", (sx * 0.05, cy - 0.02, gamba + H * 0.78), (sx * 0.09, cy - sp["corna"], gamba + H * 0.95), 0.025, 0.008, zampe, lati=4))
+    else:
+        cy = (L * 0.55 if specie == "maiale" else L * 0.62)
+        cz = (gamba + H * 0.3 if specie == "maiale" else gamba + H * 0.72)
+        for sx in (-1, 1):
+            parti.append(base.cilindro_tra("orecchio", (sx * W * 0.15, cy, cz), (sx * W * 0.32, cy - 0.04, cz - 0.03), 0.04, 0.015, pelo, lati=4))
+    parti.append(base.cilindro_tra("coda", (0, -L * 0.48, gamba + H * 0.35), (0, -L * 0.55, gamba + H * 0.12), 0.025, 0.015, pelo, lati=4))
+    return base.unisci(nome, parti)
+
+
 def roccia(nome, seme, dim):
     m = materiali()
     return base.unisci(nome, [sasso("roccia", dim, (0, 0, 0), m["pietra"], seme)])
@@ -615,6 +716,11 @@ ASSET = [
     ("cantiere_capanno_pesca", lambda n: cantiere_capanno(n, 36)),
     ("cantiere_posta_caccia", lambda n: cantiere_posta(n, 37)),
     ("cantiere_luogo_sacro", lambda n: cantiere_luogo_sacro(n, 38)),
+    ("stabbio", lambda n: stabbio(n, 39)),
+    ("animale_pecora", lambda n: animale(n, "pecora", 40)),
+    ("animale_capra", lambda n: animale(n, "capra", 41)),
+    ("animale_maiale", lambda n: animale(n, "maiale", 42)),
+    ("animale_bue", lambda n: animale(n, "bue", 43)),
     ("roccia_1", lambda n: roccia(n, 28, (1.6, 1.2, 0.9))),
     ("roccia_2", lambda n: roccia(n, 29, (2.4, 1.8, 1.3))),
     ("roccia_3", lambda n: roccia(n, 30, (0.9, 0.8, 0.6))),

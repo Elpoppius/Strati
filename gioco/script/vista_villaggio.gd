@@ -65,6 +65,221 @@ var _texture_sacro: ImageTexture
 var _firma_sacro := -1
 
 
+## Bestiame visibile (decisioni di Fede del 25/11/2026): tanti animali quanti i capi della
+## simulazione (fino a MASSIMO_ANIMALI), un misto che si vede: pecore e capre soprattutto, maiali
+## vicino al bosco, qualche bue. Stanno in greggi, uno per stabbio (uno ogni 30 capi, sparsi nella
+## zona di pascolo): il gregge pascola attorno a un punto che si sposta piano nel pascolo vicino allo
+## stabbio, e ogni animale va da un ciuffo all'altro attorno a quel punto. Senza zona di pascolo
+## stanno attorno alle case.
+const MASSIMO_ANIMALI := 400
+const SPECIE_ANIMALI := ["pecora", "capra", "maiale", "bue"]
+const VELOCITA_ANIMALI := 0.5  # metri al secondo
+const CAPI_PER_STABBIO := 30
+var _mandria := {}  # specie -> MultiMeshInstance3D
+## Animali: {specie, pos (Vector2), meta (Vector2), verso (gradi), sosta (secondi)}.
+var _animali: Array = []
+var _stabbi := {}  # punto -> nodo
+var _caso_animali := RandomNumberGenerator.new()
+var _tempo_animali := 0.0
+var _pixel_pascolo: Array[int] = []
+## Greggi: {stabbio (Vector2), centro (Vector2), cambio (secondi al prossimo spostamento)}.
+var _greggi: Array = []
+const RAGGIO_GREGGE := 30.0
+const GIRO_GREGGE := 160.0
+
+
+func _mesh_di(nome: String) -> Mesh:
+	var nodo := _istanza(nome)
+	var mi := nodo.find_children("*", "MeshInstance3D", true, false)[0] as MeshInstance3D
+	var mesh := mi.mesh
+	nodo.free()
+	return mesh
+
+
+## Un punto attorno al centro del gregge `g` (o a caso, se non ci sono greggi).
+func _punto_nel_gregge(g: int) -> Vector2:
+	if g < 0 or g >= _greggi.size():
+		return _punto_animale()
+	var c: Vector2 = _greggi[g]["centro"]
+	return c + Vector2.from_angle(_caso_animali.randf() * TAU) * _caso_animali.randf_range(2.0, RAGGIO_GREGGE)
+
+
+## Un nuovo centro di pascolo per il gregge: un pixel del pascolo entro GIRO_GREGGE m dal suo stabbio.
+func _nuovo_centro(stabbio: Vector2) -> Vector2:
+	var mezzo := sim.dati.metri_per_px * 0.5
+	for _k in 20:
+		var q := stabbio + Vector2.from_angle(_caso_animali.randf() * TAU) * _caso_animali.randf_range(0.0, GIRO_GREGGE)
+		if sim.pascolo.has(sim.px(sim.px_da_mondo(q.x, q.y))):
+			return q + Vector2(_caso_animali.randf_range(-mezzo, mezzo), _caso_animali.randf_range(-mezzo, mezzo)) * 0.3
+	return stabbio + Vector2(8.0, 6.0)
+
+
+## Un punto a caso dove stanno gli animali: un pixel del pascolo, o attorno alle case.
+func _punto_animale() -> Vector2:
+	var mezzo := sim.dati.metri_per_px * 0.5
+	if not _pixel_pascolo.is_empty():
+		var i := _pixel_pascolo[_caso_animali.randi() % _pixel_pascolo.size()]
+		return sim.mondo_di_px(sim.px_di(i)) + Vector2(_caso_animali.randf_range(-mezzo, mezzo), _caso_animali.randf_range(-mezzo, mezzo))
+	var a := _caso_animali.randf() * TAU
+	return sim.mondo_di_px(sim.centro) + Vector2(cos(a), sin(a)) * _caso_animali.randf_range(30.0, 70.0)
+
+
+## La specie di un animale nuovo: i maiali vicino al bosco, altrove pecore e capre, qualche bue.
+func _specie_in(p: Vector2) -> String:
+	var r := _caso_animali.randf()
+	var q := sim.px_da_mondo(p.x, p.y)
+	var bosco := false
+	for d in [Vector2i.ZERO, Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+		var k: Vector2i = q + d
+		if k.x >= 0 and k.y >= 0 and k.x < sim.n and k.y < sim.n and sim.bosco_in_piedi(sim.px(k)):
+			bosco = true
+	if bosco and r < 0.6:
+		return "maiale"
+	if r < 0.07:
+		return "bue"
+	return "pecora" if r < 0.55 else "capra"
+
+
+func _sincronizza_mandria() -> void:
+	if _mandria.is_empty():
+		_caso_animali.seed = 7
+		for sp in SPECIE_ANIMALI:
+			var mmi := MultiMeshInstance3D.new()
+			var mm := MultiMesh.new()
+			mm.transform_format = MultiMesh.TRANSFORM_3D
+			mm.mesh = _mesh_di("animale_" + sp)
+			mmi.multimesh = mm
+			add_child(mmi)
+			_mandria[sp] = mmi
+	_pixel_pascolo.assign(sim.pascolo.keys())
+	var voluti := mini(roundi(sim.capi), MASSIMO_ANIMALI) if sim.fondato else 0
+	while _animali.size() > voluti:
+		_animali.pop_back()
+	_sincronizza_stabbi()
+	# Un gregge per stabbio; chi cambia gregge (stabbi nuovi o tolti) ci va, e se è lontano ci arriva subito.
+	var stabbi: Array = _stabbi.keys()
+	if _greggi.size() != stabbi.size() or (not _greggi.is_empty() and not _stabbi.has(_greggi[0]["stabbio"])):
+		_greggi = []
+		for st in stabbi:
+			_greggi.append({"stabbio": st, "centro": _nuovo_centro(st), "cambio": _caso_animali.randf_range(20.0, 60.0)})
+	while _animali.size() < voluti:
+		var g := _animali.size() % maxi(_greggi.size(), 1) if not _greggi.is_empty() else -1
+		var p := _punto_nel_gregge(g)
+		_animali.append({"specie": _specie_in(p), "pos": p, "meta": p, "verso": _caso_animali.randf() * 360.0, "sosta": _caso_animali.randf() * 10.0, "gregge": g})
+	for k in _animali.size():
+		var a: Dictionary = _animali[k]
+		var g := k % _greggi.size() if not _greggi.is_empty() else -1
+		if int(a["gregge"]) != g:
+			a["gregge"] = g
+			var nuovo := _punto_nel_gregge(g)
+			a["meta"] = nuovo
+			if nuovo.distance_to(a["pos"]) > 150.0:
+				a["pos"] = nuovo
+	var per_specie := {}
+	for sp in SPECIE_ANIMALI:
+		per_specie[sp] = 0
+	for a in _animali:
+		per_specie[a["specie"]] += 1
+	for sp in SPECIE_ANIMALI:
+		(_mandria[sp] as MultiMeshInstance3D).multimesh.instance_count = per_specie[sp]
+	_muovi_animali(0.0)
+
+
+## Stabbi: uno ogni CAPI_PER_STABBIO capi, sui pixel del pascolo, ad almeno 120 m l'uno dall'altro.
+func _sincronizza_stabbi() -> void:
+	var voluti := mini(ceili(sim.capi / CAPI_PER_STABBIO), 12) if not _pixel_pascolo.is_empty() else 0
+	for p in _stabbi.keys():
+		if _stabbi.size() > voluti or not sim.pascolo.has(sim.px(sim.px_da_mondo(p.x, p.y))):
+			(_stabbi[p] as Node3D).queue_free()
+			uso.libera(uso.celle_nel_cerchio(p.x, p.y, 5.0))
+			_stabbi.erase(p)
+	var prove := 0
+	while _stabbi.size() < voluti and prove < 60:
+		prove += 1
+		var i := _pixel_pascolo[_caso_animali.randi() % _pixel_pascolo.size()]
+		var p := sim.mondo_di_px(sim.px_di(i))
+		if sim.campi.has(i) or sim.bosco_in_piedi(i):
+			continue
+		var lontano := true
+		for q in _stabbi:
+			if (q as Vector2).distance_to(p) < 120.0:
+				lontano = false
+		if not lontano:
+			continue
+		var nodo := _istanza("stabbio")
+		_posa(nodo, p, _caso_animali.randf() * 360.0)
+		_stabbi[p] = nodo
+		uso.costruisci(uso.celle_nel_cerchio(p.x, p.y, 5.0), "stabbio")
+
+
+## Gli animali camminano piano verso la loro meta; arrivati, sostano e poi ne scelgono una vicina.
+func _muovi_animali(dt: float) -> void:
+	if _animali.is_empty():
+		return
+	var indici := {}
+	for sp in SPECIE_ANIMALI:
+		indici[sp] = 0
+	# Il gregge si sposta piano: ogni tanto un nuovo centro di pascolo vicino allo stabbio.
+	for gr in _greggi:
+		gr["cambio"] = float(gr["cambio"]) - dt
+		if float(gr["cambio"]) <= 0.0:
+			gr["centro"] = _nuovo_centro(gr["stabbio"])
+			gr["cambio"] = _caso_animali.randf_range(40.0, 90.0)
+	for a in _animali:
+		var pos: Vector2 = a["pos"]
+		var meta: Vector2 = a["meta"]
+		if dt > 0.0:
+			if float(a["sosta"]) > 0.0:
+				a["sosta"] = float(a["sosta"]) - dt
+			elif pos.distance_to(meta) < 0.5:
+				a["sosta"] = _caso_animali.randf_range(4.0, 20.0)
+				a["meta"] = _punto_nel_gregge(int(a["gregge"]))
+			else:
+				var dir := (meta - pos).normalized()
+				a["pos"] = pos + dir * minf(VELOCITA_ANIMALI * dt, pos.distance_to(meta))
+				a["verso"] = rad_to_deg(atan2(-dir.x, -dir.y))
+				pos = a["pos"]
+		var sp: String = a["specie"]
+		var t := Transform3D(Basis(Vector3.UP, deg_to_rad(float(a["verso"]))), Vector3(pos.x, terreno.quota_mondo(pos.x, pos.y), pos.y))
+		(_mandria[sp] as MultiMeshInstance3D).multimesh.set_instance_transform(indici[sp], t)
+		indici[sp] += 1
+
+
+func _process(delta: float) -> void:
+	# Dieci volte al secondo bastano per un passo lento.
+	_tempo_animali += delta
+	if _tempo_animali >= 0.1:
+		_muovi_animali(_tempo_animali)
+		_tempo_animali = 0.0
+
+
+## Quanti animali sono disegnati (per le verifiche).
+func animali_disegnati() -> int:
+	return _animali.size()
+
+
+## Zona di pascolo: come il bosco sacro, un byte per punto della mappa.
+var _immagine_pascolo: Image
+var _texture_pascolo: ImageTexture
+var _firma_pascolo := -1
+
+
+func _sincronizza_pascolo() -> void:
+	if _immagine_pascolo == null:
+		_immagine_pascolo = Image.create(sim.n, sim.n, false, Image.FORMAT_L8)
+		_texture_pascolo = ImageTexture.create_from_image(_immagine_pascolo)
+		terreno.materiale.set_shader_parameter("pascolo_mappa", _texture_pascolo)
+	var firma := sim.pascolo.hash()
+	if firma == _firma_pascolo:
+		return
+	_firma_pascolo = firma
+	_immagine_pascolo.fill(Color(0, 0, 0))
+	for i in sim.pascolo:
+		var p := sim.px_di(i)
+		_immagine_pascolo.set_pixel(p.x, p.y, Color(1, 1, 1))
+	_texture_pascolo.update(_immagine_pascolo)
+
+
 func _sincronizza_bosco_sacro() -> void:
 	if _immagine_sacro == null:
 		_immagine_sacro = Image.create(sim.n, sim.n, false, Image.FORMAT_L8)
@@ -84,6 +299,8 @@ func _sincronizza_bosco_sacro() -> void:
 func sincronizza() -> void:
 	_sincronizza_zona()
 	_sincronizza_bosco_sacro()
+	_sincronizza_pascolo()
+	_sincronizza_mandria()
 	_sincronizza_centro()
 	_sincronizza_campi_e_sentieri()
 	_sincronizza_case()

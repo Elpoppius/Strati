@@ -74,6 +74,8 @@ func _gioca(d: MappaDati, sito: Vector2i, k: int, seme: int, nome: String) -> Di
 					AiutiGiocatori.costruisci_edificio_risorse(sim, caso, 0.5, caccia)
 			if sim.luogo_sacro.x < 0 and sim.sbloccato("luogo_sacro") and sim.legna >= SimVillaggio.COSTO_LUOGO_SACRO:
 				AiutiGiocatori.costruisci_luogo_sacro(sim)
+			if sim.pascolo.is_empty() and sim.sbloccato("pascolo"):
+				AiutiGiocatori.stendi_pascolo(sim, caso, 0.5, 10.0)
 			if sim.bosco_sacro.is_empty() and sim.sbloccato("bosco_sacro"):
 				AiutiGiocatori.stendi_bosco_sacro(sim, caso, 0.5, 8.0)
 			if k >= 5 and not sentieri_fatti and eta >= 20:
