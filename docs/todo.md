@@ -11,6 +11,8 @@ Legenda: `[x]` fatto · `[~]` in parte · `[ ]` da fare · **(?)** serve una dec
 4. **Alla fine:** voce in cima al diario, todo aggiornato, commit e push.
 
 ## A che punto siamo (26/11/2026, mattina tardi)
+**Priorità 1 (Fede, 26/11/2026 pomeriggio):** la voce A, gli specchietti in gioco. Poi le altre voci aperte.
+
 Fatte e collaudate le basi della prima epoca e le voci 0 (cantieri visibili), 1 (capanno e posta), 2 (pascolo e animali: restano la prova di Fede dei fotogrammi al secondo e due domande), 3 (luogo sacro, sacerdote, bosco sacro) e 8 (mappe tematiche). Restano le voci 4, 5, 6, 7, 9 e 10 (menù delle impostazioni). Fatta anche la 2b (tutorial alle tappe).
 
 **Stime riviste** (richiesta di Fede del 25/11/2026). Tempi veri del 25/11, dall'ok di Fede al push, presi dai commit:
@@ -38,6 +40,33 @@ Le stime di prima erano da 2 a 8 volte troppo alte: erano pensate come ore di la
 In tutto **7–10 ore di lavoro di Claude**, cioè 2–3 giornate, più le conferme e le prove di Fede (che oggi sono la parte più lunga), poi la prova fisica e le correzioni.
 
 ## Per chi riprende: il lavoro in ordine
+
+### A. [ ] Specchietti in gioco: "Cosa sto facendo" e "Rapporti di forza" — PRIORITÀ 1
+**Deciso** (Fede, 26/11/2026: "al primo posto metti questo già per il villaggio"; proposta di Claude in conversazione). Due specchietti che leggono ciò che la simulazione sa già, senza regole nuove; poche parole e barre, il perché esteso al passaggio del puntatore. Il gioco non si ferma.
+1. **Cosa sto facendo**, nel blocco Descrizione della scheda dello strumento (`hud.gd`), prima del clic: **Chi guadagna** e **Chi perde** (gruppi con frecce ▲ ▼, e il motivo breve tra parentesi), **Sul territorio** (cosa cambia: bosco protetto, legnaie più lontane, campi più vicini…), **Costo** (legna, braccia, anni di cantiere), **Resta** (la traccia). Esempio del villaggio:
+```
+BOSCO SACRO · 4 ettari
+Chi guadagna    Sacerdote ▲▲
+Chi perde       Famiglie ▼        (legna più lontana)
+Sul territorio  bosco protetto · legnaie più lontane
+Resta           nessuno potrà tagliarlo
+```
+2. **Rapporti di forza**, evoluzione del pannello di focus del Consenso (clic sull'indicatore; più un tasto che lo apre e lo chiude): per ogni gruppo il **peso** (quanto conta: nel villaggio i pesi di `sim_villaggio.gd`, anziani e famiglie 0,4, sacerdote 0,2) e l'**umore** (consenso, con la parola e la freccia di tendenza); sotto, **Tensione** e **Si muove verso** (gli assi dell'identità di `epoche-future.md` § 2 detti a parole, senza nominarli: "terra alle famiglie · più aperta", mossi dalle politiche del raccolto, degli stranieri e dai consensi). Nel villaggio: "Governano gli anziani", nessun nome di regime, niente peso latente.
+```
+RAPPORTI DI FORZA                       5420 a.C.
+Governano gli anziani
+──────────────────────────────────────────────────
+                  peso      umore
+Anziani           ████      ███████░░░  contenti
+Famiglie          ████      ████░░░░░░  scontente ▼
+Sacerdote         ██        ██████░░░░  tranquillo
+──────────────────────────────────────────────────
+Tensione          ██░░░░░░░░  bassa
+Si muove verso    terra alle famiglie · più aperta
+```
+- **Più avanti** (dall'epoca 2): nome della città, regime e vocazione in testa; peso latente tratteggiato; deriva al posto di "si muove verso" (`epoche-future.md` § 2).
+- **Come farlo:** per ogni strumento di `partita.gd` una funzione che stima gli effetti sui gruppi e sul territorio dalle stesse regole della simulazione (consenso, legna, bosco, cibo), da mostrare con `leggi_per_strumento`; gli assi dell'identità come valori nascosti in `SimVillaggio`, mossi dalle politiche esistenti; tensione dalla distanza tra i consensi dei gruppi pesati. Foto di controllo con `test/foto_hud.gd` e `foto_partita.gd`; verifiche in `verifica_partita.gd` e `verifica_hud.gd` (nessun muro di testo: righe e lunghezze massime); niente partite "umane" se le dinamiche non cambiano.
+- **Stima:** 45–75 minuti. Prima di toccare il codice, riepilogo a Fede.
 
 ### 0. [x] Cantieri visibili (richiesta di Fede del 25/11/2026 sera)
 **Fatto** il 25/11/2026 sera. Deciso da Fede: sopra ogni edificio in costruzione una **barra discreta** che avanza anno dopo anno, e al posto dell'edificio finito il suo **scheletro** (stessa struttura, solo pali e travi, con materiali e attrezzi accanto; scelto da Fede tra cantiere unico e scheletro di ogni edificio). Modelli `cantiere_granaio`, `cantiere_legnaia`, `cantiere_capanno_pesca`, `cantiere_posta_caccia` (`villaggio.py`, foto `docs/immagini/cantieri-25-11.jpg`); barra `shader/barra_cantiere.gdshader` (foto `docs/immagini/barra-cantiere-25-11.jpg`). **Il luogo sacro (voce 3) avrà il suo scheletro** in `VistaVillaggio.CANTIERI`. Le case nascono da sole, senza cantiere.

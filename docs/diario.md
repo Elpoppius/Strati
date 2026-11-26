@@ -2,6 +2,16 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (pomeriggio, più tardi) — specchietti in gioco
+**Fatto** (solo documenti)
+- Proposti a Fede due specchietti **in gioco** (Fede intendeva questo, non un documento; `docs/specchietto.md` resta per chi lavora al progetto): **Cosa sto facendo**, nella scheda dello strumento, e **Rapporti di forza**, dal pannello del Consenso. Messi nel todo come **voce A, priorità 1**, con disegno, modo di farli e stima; una riga nello specchietto.
+
+**Decisioni** (Fede)
+- Gli specchietti si fanno già nel villaggio, al primo posto.
+
+**Prossimo passo**
+- Claude: riepilogo della voce A a Fede prima del codice; poi le voci rimaste del todo.
+
 ## 26/11/2026 (pomeriggio) — prime due Ere riviste, specchietto
 **Fatto** (solo documenti)
 - **Prime due Ere riviste con lo schema** (ok di Fede: "mi pare tutto ottimo"): le Origini e l'Antichità sono il tutorial dello schema, ogni epoca accende pochi pezzi nuovi. In `era-origini.md`: "Lo schema nel villaggio" (§ 4), il primo governo con un nome all'evento soglia 1 (§ 5), prime zone dentro e fuori il recinto e concessione dei lotti ai lignaggi nell'epoca 2 (§ 6). Nuovo `era-antichita.md`: cronologia emiliana, nomenclatura, Città-stato (cittadinanza, reticolo e città vecchia, primo bilancio, colonie, tempio sul luogo sacro), evento soglia 3 con quattro esiti, Città imperiale (potere esterno, manutenzione annua, notabili che pagano le opere, centuriazione e coloni, reticolo sulla città vecchia, curatore), evento soglia 4.
