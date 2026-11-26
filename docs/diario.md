@@ -2,6 +2,15 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (pomeriggio, ordine del lavoro)
+**Decisioni** (Fede)
+- Ordine: voce A (specchietti in gioco), poi la 7 (popolazione visibile) con le **animazioni** e grande cura del **livello di dettaglio**; poi le altre.
+- Dimensioni degli edifici delle risorse: vanno bene. Numero di abitanti: va bene per ora, seguiranno verifiche. Catalogo degli edifici: va bene per ora.
+- Nomi delle forme di governo: Fede non li aveva visti; ripresentati in conversazione, in attesa di risposta.
+
+**Prossimo passo**
+- Claude: riepilogo della voce A a Fede, poi il codice.
+
 ## 26/11/2026 (pomeriggio, più tardi) — specchietti in gioco
 **Fatto** (solo documenti)
 - Proposti a Fede due specchietti **in gioco** (Fede intendeva questo, non un documento; `docs/specchietto.md` resta per chi lavora al progetto): **Cosa sto facendo**, nella scheda dello strumento, e **Rapporti di forza**, dal pannello del Consenso. Messi nel todo come **voce A, priorità 1**, con disegno, modo di farli e stima; una riga nello specchietto.

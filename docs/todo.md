@@ -11,7 +11,7 @@ Legenda: `[x]` fatto · `[~]` in parte · `[ ]` da fare · **(?)** serve una dec
 4. **Alla fine:** voce in cima al diario, todo aggiornato, commit e push.
 
 ## A che punto siamo (26/11/2026, mattina tardi)
-**Priorità 1 (Fede, 26/11/2026 pomeriggio):** la voce A, gli specchietti in gioco. Poi le altre voci aperte.
+**Ordine (Fede, 26/11/2026 pomeriggio):** prima la voce A (specchietti in gioco), poi la **7 (popolazione visibile, con animazioni e grande cura del livello di dettaglio)**, poi le altre voci aperte (4, 5, 6, 9, 10).
 
 Fatte e collaudate le basi della prima epoca e le voci 0 (cantieri visibili), 1 (capanno e posta), 2 (pascolo e animali: restano la prova di Fede dei fotogrammi al secondo e due domande), 3 (luogo sacro, sacerdote, bosco sacro) e 8 (mappe tematiche). Restano le voci 4, 5, 6, 7, 9 e 10 (menù delle impostazioni). Fatta anche la 2b (tutorial alle tappe).
 
@@ -128,6 +128,7 @@ Si muove verso    terra alle famiglie · più aperta
 
 ### 7. [ ] Popolazione visibile
 **Deciso** (25/11/2026): ogni figura fa un lavoro vero della simulazione (campi, bosco, fiume, pascolo, cantieri, sentieri, luogo sacro); **3 modelli di uomini e 3 di donne** che si ripetono, con capelli, incarnato e vesti che variano; animazioni dallo shader; MultiMesh; si vedono solo da vicino; **scala da verificare con la simulazione** (800 persone a schermo sono troppe: tetto di figure visibili, una figura per 1, 2 o 5 persone). Clic su una persona: la scheda della sua famiglia. Prima il bestiame (voce 2), poi i lavoratori, poi chi cammina, poi la scheda.
+**Deciso** (Fede, 26/11/2026): viene subito dopo la voce A; **servono anche le animazioni** (camminare, lavorare secondo il mestiere, stare fermi, parlare in gruppo) e **attenzione al livello di dettaglio**, con la stessa cura degli animali (corpo unico, vesti e capelli verosimili, due livelli di dettaglio secondo lo zoom, riferimento Age of Empires IV). A ogni modello, foto a Fede.
 
 ### 8. [x] Mappe tematiche (ok di Fede del 25/11/2026)
 **Fatto il 25/11/2026 sera** (descrizione in `prototipo0-godot.md` e `hud.md`), tasti 6, 7, 8:
@@ -151,8 +152,8 @@ Un menù delle impostazioni del gioco, con dentro anche l'opzione dei tutorial (
 - Carestie per chi impara sbagliando: 2,6 a partita, dentro l'obiettivo 1–3 (25/11/2026 sera); chi legge 1,3 (poco sopra 0–1).
 - Politica "Caccia regolata": **non si fa per ora** (Fede, 25/11/2026): con la Posta di caccia e la selvaggina locale il giocatore regola già la caccia; si riprende solo se le prove mostrano ancora troppa caccia.
 - **Orti più piccoli:** decisi (Fede, 25/11/2026) **solo come aspetto, nella fase grafica**: il quadrato da 40 m resta l'unità della simulazione, ma si disegna diviso in 2–4 appezzamenti con colture e colori diversi.
-- **(?)** Come contare gli abitanti sul territorio (idee 1 e 2 di `sessioni-giocatori.md`): con i casali la scelta è in parte fatta; il resto a epoca completa.
-- **(?)** Dimensioni degli edifici delle risorse: legnaia, capanno e posta sono piccoli accanto alle case lunghe (6–8 m); se Fede li vuole più grandi si ingrandiscono tutti insieme.
+- Come contare gli abitanti sul territorio (idee 1 e 2 di `sessioni-giocatori.md`): **per ora va bene così** (Fede, 26/11/2026); seguiranno verifiche e conferme.
+- Dimensioni degli edifici delle risorse (legnaia, capanno e posta piccoli accanto alle case lunghe): **vanno bene così** (Fede, 26/11/2026).
 - Prova fisica di Fede: al termine del villaggio (decisione del 25/11/2026), quando le voci sopra sono fatte e validate dalle prove di Claude.
 
 ## Fatto
@@ -173,7 +174,7 @@ Un menù delle impostazioni del gioco, con dentro anche l'opzione dei tutorial (
 ## Epoche future, sulla carta (in parallelo, 26/11/2026)
 Solo documenti, senza toccare codice o modelli (richiesta di Fede).
 - [x] Sistemi che attraversano le epoche, identità e regime, proprietà, vita delle costruzioni, dinamica calda, sottosuolo: `epoche-future.md` (approvato da Fede il 26/11/2026).
-- [~] Catalogo degli edifici per categoria di gioco, con scopo, epoche e cosa muove: `edifici-per-epoca.md` (proposta di Claude, da rivedere con Fede; la realizzazione dei modelli si decide dopo).
+- [x] Catalogo degli edifici per categoria di gioco, con scopo, epoche e cosa muove: `edifici-per-epoca.md` (**per ora va bene**, Fede 26/11/2026; la realizzazione dei modelli si decide dopo).
 - [ ] Età industriale sulla carta, con la profondità di `era-origini.md`.
 - [x] Prime due Ere riviste con lo schema (26/11/2026, ok di Fede): `era-origini.md` (§ 4 "Lo schema nel villaggio", § 5 primo governo, § 6 zone e concessione) e nuovo `era-antichita.md`.
 - [x] Specchietto riassuntivo: `specchietto.md`.

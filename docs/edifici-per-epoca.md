@@ -1,6 +1,6 @@
 # Edifici: catalogo per categoria di gioco
 
-*Scritto il 26/11/2026, rifatto lo stesso giorno su indicazione di Fede: "più edifici possibili per ogni epoca, ma con un lavoro certosino su come vengono usati nelle dinamiche". Ogni edificio sta in una **categoria di gioco** e ha uno **scopo**: perché il giocatore lo sceglie. Come si realizza (modello a mano, generatore, varianti) è secondario e si decide dopo; la prima versione con il genere di ogni modello sta nella storia del repository (commit del 26/11/2026 mattina). **Tutto il catalogo è una [Proposta] di Claude, da confermare con Fede.** Sistemi citati: `epoche-future.md`.*
+*Scritto il 26/11/2026, rifatto lo stesso giorno su indicazione di Fede: "più edifici possibili per ogni epoca, ma con un lavoro certosino su come vengono usati nelle dinamiche". Ogni edificio sta in una **categoria di gioco** e ha uno **scopo**: perché il giocatore lo sceglie. Come si realizza (modello a mano, generatore, varianti) è secondario e si decide dopo; la prima versione con il genere di ogni modello sta nella storia del repository (commit del 26/11/2026 mattina). **Catalogo approvato per ora da Fede (26/11/2026)**, da rivedere quando si scrive ogni epoca. Sistemi citati: `epoche-future.md`.*
 
 ## Regole del catalogo
 1. **Ogni edificio ha uno scopo suo.** Se due edifici della stessa epoca fanno la stessa cosa, uno si toglie o diventa una variante. Esempio: la torre civica chiama a raccolta (crisi, assemblee); la torre dell'orologio ordina il tempo del lavoro e del mercato.
