@@ -62,6 +62,28 @@ class Cono:
         return np.minimum(self.a, self.b) - r, np.maximum(self.a, self.b) + r
 
 
+class Disco:
+    """Cilindro a facce piatte da `a` a `b` (il grugno del maiale: un disco tagliato netto)."""
+
+    def __init__(self, a, b, r, tinta, parte=0, k=0.01):
+        self.a, self.b = np.array(a, float), np.array(b, float)
+        self.r, self.tinta, self.parte, self.k = r, tinta, parte, k
+
+    def dist(self, p):
+        ba = self.b - self.a
+        l = np.linalg.norm(ba)
+        asse = ba / l
+        t = (p - self.a) @ asse
+        q = p - self.a - t[:, None] * asse
+        dx = np.linalg.norm(q, axis=1) - self.r
+        dy = np.abs(t - l / 2) - l / 2
+        fuori = np.sqrt(np.maximum(dx, 0) ** 2 + np.maximum(dy, 0) ** 2)
+        return np.minimum(np.maximum(dx, dy), 0) + fuori
+
+    def limiti(self):
+        return np.minimum(self.a, self.b) - self.r, np.maximum(self.a, self.b) + self.r
+
+
 class Elli:
     """Ellissoide di centro `c` e semiassi `r`."""
 
@@ -181,26 +203,35 @@ def capra():
 
 
 def maiale():
+    """Maiale del Neolitico, vicino al cinghiale (rifatto il 26/11/2026: Fede, "sembra un tapiro").
+    Corpo corto e alto davanti, spalle robuste e prosciutti pieni, pancia profonda; testa grande a
+    cuneo attaccata alle spalle quasi senza collo, con le guance piene; grugno a disco largo e
+    piatto; orecchie grandi e dritte; zampe corte e sottili; cresta di setole scure sul dorso."""
     s = Specie()
-    s.add(Elli((0, 0.0, 0.42), (0.22, 0.5, 0.23), "pelo", k=0.07))
-    s.add(Elli((0, 0.22, 0.47), (0.21, 0.22, 0.24), "pelo", k=0.07))
-    s.add(Elli((0, -0.28, 0.42), (0.2, 0.22, 0.21), "pelo", k=0.07))
-    s.add(Elli((0, 0.02, 0.3), (0.17, 0.36, 0.1), "pancia", k=0.05))
-    s.add(Elli((0, 0.14, 0.645), (0.055, 0.32, 0.06), "scuro", k=0.05))  # criniera
-    # Testa corta e tozza (26/11/2026: allungata, brucando sembrava una proboscide).
-    s.add(Cono((0, 0.4, 0.5), (0, 0.65, 0.38), 0.17, 0.075, "pelo", 1, k=0.07))
-    s.add(Cono((0, 0.64, 0.37), (0, 0.7, 0.36), 0.06, 0.06, "naso", 1, k=0.015))
+    s.add(Elli((0, -0.04, 0.44), (0.19, 0.36, 0.19), "pelo", k=0.07))
+    s.add(Elli((0, 0.15, 0.48), (0.2, 0.2, 0.23), "pelo", k=0.07))  # spalle alte
+    s.add(Elli((0, -0.27, 0.43), (0.19, 0.17, 0.19), "pelo", k=0.07))  # prosciutti
+    s.add(Elli((0, 0.0, 0.32), (0.15, 0.28, 0.1), "pancia", k=0.06))
+    s.add(Elli((0, 0.08, 0.67), (0.05, 0.28, 0.06), "scuro", k=0.05))  # cresta
+    # Testa a cuneo: alta dietro (guance e mascella), la fronte scende dritta fino al grugno, la
+    # mascella resta quasi orizzontale; il grugno è un disco tagliato netto.
+    s.add(Elli((0, 0.31, 0.42), (0.15, 0.13, 0.14), "pelo", 1, k=0.07))
+    s.add(Cono((0, 0.3, 0.5), (0, 0.55, 0.375), 0.14, 0.072, "pelo", 1, k=0.05))
+    s.add(Elli((0, 0.42, 0.34), (0.1, 0.15, 0.065), "pelo", 1, k=0.05))  # mascella
+    s.add(Disco((0, 0.545, 0.36), (0, 0.6, 0.352), 0.072, "naso", 1, k=0.01))
     for sx in (-1, 1):
-        s.add(Elli((sx * 0.075, 0.56, 0.48), (0.013, 0.013, 0.013), "occhio", 1, k=0.004))
-        s.add(Elli((sx * 0.09, 0.5, 0.57), (0.035, 0.06, 0.025), "scuro", 6, k=0.015))
-    s.zampa(2, -0.12, 0.27, 0.36, 0.17, 0.028, True)
-    s.zampa(3, 0.12, 0.27, 0.36, 0.17, 0.028, True)
-    s.zampa(4, -0.12, -0.3, 0.36, 0.18, 0.028, False)
-    s.zampa(5, 0.12, -0.3, 0.36, 0.18, 0.028, False)
-    s.add(Cono((0, -0.5, 0.5), (0.02, -0.56, 0.36), 0.018, 0.01, "pelo", 7, k=0.015))
-    s.collo = ((0, 0.36, 0.48), (0, 0.7, 0.36))
-    s.coda = ((0, -0.5, 0.5), (0.02, -0.56, 0.36))
-    s.passo = 0.45
+        s.add(Elli((sx * 0.08, 0.41, 0.47), (0.013, 0.013, 0.013), "occhio", 1, k=0.004))
+        # Orecchie grandi e dritte, lamine appena rivolte in avanti.
+        s.add(Elli((sx * 0.09, 0.36, 0.61), (0.06, 0.024, 0.095), "scuro", 6, k=0.012))
+    s.zampa(2, -0.11, 0.19, 0.36, 0.18, 0.024, True)
+    s.zampa(3, 0.11, 0.19, 0.36, 0.18, 0.024, True)
+    s.zampa(4, -0.11, -0.29, 0.36, 0.19, 0.024, False)
+    s.zampa(5, 0.11, -0.29, 0.36, 0.19, 0.024, False)
+    s.add(Cono((0, -0.43, 0.52), (0.03, -0.49, 0.38), 0.014, 0.008, "pelo", 7, k=0.012))
+    s.add(Elli((0.03, -0.495, 0.36), (0.025, 0.025, 0.04), "scuro", 7, k=0.01))  # ciuffo
+    s.collo = ((0, 0.28, 0.48), (0, 0.6, 0.35))
+    s.coda = ((0, -0.43, 0.52), (0.03, -0.5, 0.34))
+    s.passo = 0.42
     s.bruca = 0.35  # la testa è già bassa: grufola appena
     return s
 

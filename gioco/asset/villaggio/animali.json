@@ -27,13 +27,13 @@
   "perno_collo": [
    0,
    0.48,
-   -0.36
+   -0.28
   ],
-  "lunghezza_collo": 0.3605551275463989,
-  "passo": 0.45,
+  "lunghezza_collo": 0.3453983207834108,
+  "passo": 0.42,
   "spalla": 0.36,
   "angolo_bruca": 0.35,
-  "abbassa_bruca": 0.17069001992346106
+  "abbassa_bruca": 0.1681542489440963
  },
  "bue": {
   "perno_collo": [

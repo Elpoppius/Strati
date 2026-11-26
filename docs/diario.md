@@ -2,6 +2,19 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (tarda mattinata)
+**Fatto**
+- **Maiale rimodellato** (Fede: "sembra un tapiro"): corpo più corto (1,15 m) e alto davanti, spalle robuste e prosciutti pieni, testa a cuneo con guance e mascella, grugno a disco tagliato netto (nuovo volume `Disco` in `animali.py`), orecchie grandi e dritte, zampe corte, coda con il ciuffo, cresta di setole. Foto `docs/immagini/maiale-26-11.jpg`; `animali-pelo-26-11.jpg` rifatta. `test/foto_animali.gd` ha un modo per una specie sola da vicino (quarto argomento: il nome della specie). Verifiche degli asset e della partita superate.
+
+**Decisioni** (Fede)
+- Il sacerdote chiede il luogo sacro quando se ne sblocca la costruzione.
+- Greggi: per ora restano come sono.
+- **Tutorial alle tappe:** a ogni sblocco (tappa, costruzione…) il gioco si ferma e mostra un avviso a schermo con la spiegazione, che si può saltare; un tasto apre il dettaglio ("Cosa fa un luogo sacro?"); "Salta i tutorial" si salva. Riepilogo e tre proposte di Claude inviati a Fede, in attesa di conferma: tutorial anche per la tappa dei 60 abitanti e per la fondazione; casella riattivabile dal pannello delle politiche finché non c'è un menù delle impostazioni; pause dei tutorial contate a parte nelle prove "umane".
+
+**Prossimo passo**
+- Fede: guardare il maiale; confermare il riepilogo dei tutorial.
+- Claude: i tutorial (con la richiesta del sacerdote dentro quello del luogo sacro), poi le voci 4 e 5.
+
 ## 26/11/2026 (mattina tardi)
 **Fatto**
 - **Animali rifatti, terza versione** (Fede: "grossolani e molto poligonali", definizione simile agli alberi; riferimenti di Age of Empires IV dalla pagina del wiki indicata da Fede, studiando le scene di gioco e non le icone dorate):

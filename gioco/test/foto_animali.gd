@@ -50,6 +50,24 @@ func _process(_d: float) -> bool:
 		var caso := RandomNumberGenerator.new()
 		caso.seed = 7
 		var leggero := args.size() > 3 and args[3] == "leggero"
+		# Una specie sola, da vicino (quarto argomento: il nome della specie): i tre manti in posa
+		# ferma, di fianco e di tre quarti, e una pecora accanto per le proporzioni.
+		if args.size() > 3 and args[3] in ["pecora", "capra", "maiale", "bue"]:
+			var sp: String = args[3]
+			for m in 3:
+				_animale(sp, m + 1, false, Vector4(0, 0, 0.0 if m < 2 else 1.0, 0.3), c.x - 2.0 + m * 1.8, c.z + m * 1.8, [45.0, 135.0, 90.0][m])
+			_animale("pecora", 1, false, Vector4(0, 0, 0, 0.3), c.x - 3.5, c.z + 2.0, 45.0)
+			_s.griglia_attiva = false
+			var dim0 := float(args[1]) if args.size() > 1 else 6.0
+			cam.vai_a(c.x - 0.5, c.z + 1.8)
+			cam.dimensione = dim0
+			cam.dimensione_obiettivo = dim0
+			if args.size() > 2:
+				for _i in int(args[2]):
+					cam.ruota(1)
+				cam.yaw = cam.yaw_obiettivo
+			cam.aggiorna()
+			return false
 		# Una fila per specie, i tre manti di fianco: fermo, che bruca, a metà passo.
 		var fila := ["pecora", "capra", "maiale", "bue"]
 		var pose := [Vector4(0, 0, 0, 0.3), Vector4(0, 0, 1, 0.5), Vector4(1.2, 1, 0, 0.7)]
