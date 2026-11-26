@@ -41,10 +41,10 @@ In tutto **7–10 ore di lavoro di Claude**, cioè 2–3 giornate, più le confe
 
 ## Per chi riprende: il lavoro in ordine
 
-### A. [x] Specchietti in gioco: "Cosa sto facendo" e "Rapporti di forza" — PRIORITÀ 1
-**Fatto il 26/11/2026 pomeriggio** (descrizione in `hud.md` e `prototipo0-godot.md`; foto `docs/immagini/cosa-sto-facendo-26-11.jpg` e `rapporti-di-forza-26-11.jpg`). Resta la prova di Fede nel gioco. Sotto, il disegno di partenza.
+### A. [x] Specchietti in gioco: "Conseguenze" e "Rapporti di forza" — PRIORITÀ 1
+**Fatto il 26/11/2026 pomeriggio** (descrizione in `hud.md` e `prototipo0-godot.md`; foto `docs/immagini/conseguenze-26-11.jpg` e `rapporti-di-forza-26-11.jpg`). Resta la prova di Fede nel gioco. Sotto, il disegno di partenza.
 **Deciso** (Fede, 26/11/2026: "al primo posto metti questo già per il villaggio"; proposta di Claude in conversazione). Due specchietti che leggono ciò che la simulazione sa già, senza regole nuove; poche parole e barre, il perché esteso al passaggio del puntatore. Il gioco non si ferma.
-1. **Cosa sto facendo**, nel blocco Descrizione della scheda dello strumento (`hud.gd`), prima del clic: **Chi guadagna** e **Chi perde** (gruppi con frecce ▲ ▼, e il motivo breve tra parentesi), **Sul territorio** (cosa cambia: bosco protetto, legnaie più lontane, campi più vicini…), **Costo** (legna, braccia, anni di cantiere), **Resta** (la traccia). Esempio del villaggio:
+1. **Conseguenze**, nel blocco Descrizione della scheda dello strumento (`hud.gd`), prima del clic: **Chi guadagna** e **Chi perde** (gruppi con frecce ▲ ▼, e il motivo breve tra parentesi), **Sul territorio** (cosa cambia: bosco protetto, legnaie più lontane, campi più vicini…), **Costo** (legna, braccia, anni di cantiere), **Resta** (la traccia). Esempio del villaggio:
 ```
 BOSCO SACRO · 4 ettari
 Chi guadagna    Sacerdote ▲▲

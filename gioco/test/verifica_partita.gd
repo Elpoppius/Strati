@@ -107,7 +107,7 @@ func _verifica_animali(p: Partita, sim: SimVillaggio) -> void:
 	controlla(in_fila, "il gregge si sposta in fila sciolta (%d animali, partenze in %.1f s)" % [ritardi.size(), ritardi[-1] - ritardi[0] if not ritardi.is_empty() else 0.0])
 
 
-## Specchietti in gioco (decisione di Fede del 26/11/2026): "Cosa sto facendo" per ogni strumento
+## Specchietti in gioco (decisione di Fede del 26/11/2026): "Conseguenze" per ogni strumento
 ## del villaggio, con poche parole, e "Rapporti di forza" dal pannello del Consenso o con il tasto R.
 func _verifica_specchietti(p: Partita, sim: SimVillaggio, h: Hud) -> void:
 	var c := sim.mondo_di_px(sim.centro)
@@ -138,7 +138,7 @@ func _verifica_specchietti(p: Partita, sim: SimVillaggio, h: Hud) -> void:
 	h.seleziona_comando("legnaia")
 	p._chiave_conseguenze = []
 	p.aggiorna_conseguenze()
-	controlla(not h.conseguenze().is_empty() and h._pannello_conseguenze.visible, "scelto uno strumento, compare lo specchietto Cosa sto facendo")
+	controlla(not h.conseguenze().is_empty() and h._pannello_conseguenze.visible, "scelto uno strumento, compare lo specchietto Conseguenze")
 	p.apri_rapporti()
 	controlla(h.focus_aperto() == "Consenso" and not h._pannello_conseguenze.visible, "il tasto R apre i rapporti di forza; lo specchietto dello strumento si fa da parte")
 	var testi := ""

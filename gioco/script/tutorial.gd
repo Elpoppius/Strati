@@ -81,7 +81,7 @@ const SCHEDE := {
 		"titolo": "Chi conta nel villaggio",
 		"testo": "Gli anziani, le famiglie e, più avanti, il sacerdote non vogliono le stesse cose. Ogni tua scelta piace a qualcuno e scontenta qualcun altro.",
 		"domanda": "Come vedo chi è contento e chi conta?",
-		"dettaglio": "Con il tasto R, o con un clic su Consenso, si apre lo specchietto dei rapporti di forza: per ogni gruppo, quanto conta e di che umore è, e se sta cambiando. Sotto, quanta tensione c'è nel villaggio e verso dove lo stanno portando le sue usanze. Prima di usare uno strumento, la sua scheda dice chi ci guadagna, chi ci perde, cosa cambia sulla terra e cosa ne resterà.",
+		"dettaglio": "Con il tasto R, o con un clic su Consenso, si apre lo specchietto dei rapporti di forza: per ogni gruppo, quanto conta e di che umore è, e se sta cambiando. Sotto, quanta tensione c'è nel villaggio e verso dove lo stanno portando le sue usanze. Prima di usare uno strumento, sopra la sua scheda le Conseguenze dicono chi ci guadagna, chi ci perde, cosa cambia sulla terra e cosa ne resterà.",
 		"avviso": "Rapporti di forza (R): chi conta nel villaggio e di che umore è.",
 	},
 	"granaio": {

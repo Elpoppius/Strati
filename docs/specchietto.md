@@ -49,7 +49,7 @@ Territorio e sensibilità → opere e zone → **campi del lotto** → edifici c
 | Categorie degli edifici | abitare · famiglie e prestigio · terra e cibo · lavoro · scambio e denaro · acqua ed energia · vie · trasporti · difesa e confine · sacro · governo e ordine · vita pubblica · sapere e informazione · salute e assistenza |
 
 ## In gioco **D**
-- Due specchietti per il giocatore, già nel villaggio (priorità 1 del todo, voce A): **Cosa sto facendo** (chi guadagna, chi perde, sul territorio, costo, resta) nella scheda dello strumento; **Rapporti di forza** (peso e umore dei gruppi, tensione, verso dove si muove la città) dal pannello del Consenso.
+- Due specchietti per il giocatore, già nel villaggio (priorità 1 del todo, voce A): **Conseguenze** (chi guadagna, chi perde, sul territorio, costo, resta) nella scheda dello strumento; **Rapporti di forza** (peso e umore dei gruppi, tensione, verso dove si muove la città) dal pannello del Consenso.
 
 ## Regole da non dimenticare **D**
 - Ritmo meditativo: il gioco si ferma solo per le scelte vere (e per l'ultimo esemplare di un'epoca).

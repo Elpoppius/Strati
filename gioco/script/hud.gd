@@ -139,7 +139,7 @@ var _voci_strumento: Array = []
 var _pannello_focus: PanelContainer
 var _colonna_focus: VBoxContainer
 var _focus := ""
-## Specchietto "Cosa sto facendo" (decisione di Fede del 26/11/2026): sopra la scheda dello
+## Specchietto "Conseguenze" (decisione di Fede del 26/11/2026): sopra la scheda dello
 ## strumento, prima del clic, chi ci guadagna, chi ci perde, cosa cambia sulla terra, il costo e
 ## cosa resta. Poche parole: una riga per voce, il resto al passaggio del puntatore.
 var _pannello_conseguenze: PanelContainer
@@ -1826,7 +1826,7 @@ func _barra_rapporti(quota: float, larghezza: float, allarme: bool) -> Control:
 	return box
 
 
-## Specchietto "Cosa sto facendo": d = {titolo, guadagna, perde, territorio, costo, resta,
+## Specchietto "Conseguenze": d = {titolo, guadagna, perde, territorio, costo, resta,
 ## irreversibile}. Vuoto: lo specchietto sparisce. Si nasconde da solo se sono aperti il focus o le
 ## politiche, che occupano lo stesso spazio.
 func imposta_conseguenze(d: Dictionary) -> void:
@@ -1838,7 +1838,7 @@ func imposta_conseguenze(d: Dictionary) -> void:
 	if d.is_empty():
 		_pannello_conseguenze.visible = false
 		return
-	_titolo_conseguenze.text = "COSA STO FACENDO · " + String(d.get("titolo", "")).to_upper()
+	_titolo_conseguenze.text = "CONSEGUENZE · " + String(d.get("titolo", "")).to_upper()
 	for v in VOCI_CONSEGUENZE:
 		var l: Label = _righe_conseguenze[v[0]]
 		var testo := String(d.get(v[0], ""))
@@ -1866,7 +1866,7 @@ func _crea_conseguenze() -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 3)
 	_pannello_conseguenze.add_child(col)
-	_titolo_conseguenze = _titoletto_focus("COSA STO FACENDO")
+	_titolo_conseguenze = _titoletto_focus("CONSEGUENZE")
 	_titolo_conseguenze.clip_text = true
 	_titolo_conseguenze.custom_minimum_size.x = 298
 	col.add_child(_titolo_conseguenze)

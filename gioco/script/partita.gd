@@ -25,7 +25,7 @@ var togli_pascolo := false
 var _pennellata := 0
 var _ultima_velocita := 1
 var _accumulo := 0.0
-## Lo specchietto "Cosa sto facendo" si ricalcola qualche volta al secondo, solo se è cambiato
+## Lo specchietto "Conseguenze" si ricalcola qualche volta al secondo, solo se è cambiato
 ## qualcosa (strumento, punto, anno, opzioni).
 var _attesa_conseguenze := 0.0
 var _chiave_conseguenze := []
@@ -890,7 +890,7 @@ func apri_rapporti() -> void:
 		hud.mostra_focus(dati_focus("Consenso"))
 
 
-## Specchietto "Cosa sto facendo" (decisione di Fede del 26/11/2026): per lo strumento scelto e il
+## Specchietto "Conseguenze" (decisione di Fede del 26/11/2026): per lo strumento scelto e il
 ## punto sotto il puntatore, chi ci guadagna, chi ci perde, cosa cambia sulla terra, quanto costa e
 ## cosa resta. Le stime vengono dalle stesse regole della simulazione; una riga per voce.
 func aggiorna_conseguenze() -> void:

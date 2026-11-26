@@ -2,6 +2,17 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (pomeriggio, più tardi) — "Conseguenze"
+**Fatto**
+- Lo specchietto sopra la scheda dello strumento si chiama **Conseguenze** (prima "Cosa sto facendo"): titolo nel gioco, scheda del tutorial, documenti, foto rinominata in `docs/immagini/conseguenze-26-11.jpg`. Tutte le 9 verifiche superate.
+
+**Decisioni** (Fede)
+- Togliere "Cosa sto facendo": un nome come "Conseguenze" o "Effetti". Claude ha scelto **Conseguenze** (in linea con il pilastro "nessuna soluzione giusta, solo conseguenze").
+
+**Prossimo passo**
+- Fede: provare gli specchietti nel gioco; dire se i nomi delle forme di governo vanno bene.
+- Claude: voce 7, popolazione visibile; prima il riepilogo.
+
 ## 26/11/2026 (pomeriggio) — specchietti in gioco (voce A)
 **Fatto**
 - **Cosa sto facendo:** sopra la scheda dello strumento, per ogni strumento del villaggio e per il punto sotto il puntatore: Chi guadagna, Chi perde (gruppi con ▲ ▼ e il motivo), Sul territorio, Costo (rosso se irreversibile), Resta. Le stime vengono dalle regole della simulazione (per esempio Demolisci sulle case: "Famiglie ▼▼", "macerie: niente case per 20 anni"). Si fa da parte quando si aprono focus o politiche.
