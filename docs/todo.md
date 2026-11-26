@@ -10,10 +10,12 @@ Legenda: `[x]` fatto · `[~]` in parte · `[ ]` da fare · **(?)** serve una dec
 3. **Traguardi** da rispettare (`era-origini.md`, § 9): circa 2–3 pause a partita (si ferma solo per le scelte), poche notifiche, carestie rare e leggibili, nessun abbandono al livello medio, nucleo 100–300 abitanti, territorio fino a 600–800 per chi gioca molto bene.
 4. **Alla fine:** voce in cima al diario, todo aggiornato, commit e push.
 
-## A che punto siamo (26/11/2026, sera)
-**Ordine (Fede, 26/11/2026 pomeriggio):** le voci A (specchietti in gioco) e 7 (popolazione visibile, con viso e spalle rifiniti) sono fatte, in attesa della prova di Fede; ora le altre voci aperte (4, 5, 6, 9, 10). Forme di governo delle epoche 2–4 decise.
+## A che punto siamo (26/11/2026, fine sessione)
+**Ordine (proposto da Claude e accolto da Fede il 26/11/2026 sera):** B (registro tecnico in gioco, richiesta di Fede) → 4 (scorrerie) → 5 (strade, con le figure sui sentieri) → 9 (base tecnica, con il salvataggio) → 6 (evento soglia e passo elastico: chiude l'epoca, va per ultima) → 10 (menù delle impostazioni) → prova fisica di Fede. In parallelo, sulla carta: l'Età industriale.
 
-Fatte e collaudate le basi della prima epoca e le voci 0 (cantieri visibili), 1 (capanno e posta), 2 (pascolo e animali: restano la prova di Fede dei fotogrammi al secondo e due domande), 3 (luogo sacro, sacerdote, bosco sacro) e 8 (mappe tematiche). Restano le voci 4, 5, 6, 7, 9 e 10 (menù delle impostazioni). Fatta anche la 2b (tutorial alle tappe).
+**Divisione del lavoro (Fede, 26/11/2026):** Fede nelle prove si sofferma sulla **direzione artistica**; le questioni tecniche (fotogrammi al secondo, tempi, errori) le raccoglie il registro tecnico della voce B, che Claude legge.
+
+Fatte: le basi della prima epoca e le voci 0 (cantieri visibili), 1 (capanno e posta), 2 (pascolo e animali), 2b (tutorial alle tappe), 3 (luogo sacro, sacerdote, bosco sacro), 7 (popolazione visibile, con viso e spalle rifiniti, scheda della famiglia, umore e prestigio delle famiglie), 8 (mappe tematiche), A (specchietti in gioco). Forme di governo delle epoche 2–4 decise. Restano B, 4, 5, 6, 9, 10 e le prove di Fede.
 
 **Stime riviste** (richiesta di Fede del 25/11/2026). Tempi veri del 25/11, dall'ok di Fede al push, presi dai commit:
 
@@ -40,6 +42,17 @@ Le stime di prima erano da 2 a 8 volte troppo alte: erano pensate come ore di la
 In tutto **7–10 ore di lavoro di Claude**, cioè 2–3 giornate, più le conferme e le prove di Fede (che oggi sono la parte più lunga), poi la prova fisica e le correzioni.
 
 ## Per chi riprende: il lavoro in ordine
+
+### B. [ ] Registro tecnico in gioco (richiesta di Fede del 26/11/2026)
+**Richiesta di Fede:** un registro interno che il gioco salva da solo mentre lui gioca, con le questioni tecniche, così nelle prove lui guarda la direzione artistica e Claude legge il registro.
+**Proposta di Claude (da confermare prima del codice):**
+- Un file per sessione di gioco in `user://registro/` (sui PC Windows: `%APPDATA%\Godot\app_userdata\Strati\registro\`), testo semplice; si tengono gli ultimi 10.
+- **In testa:** PC e scheda video (nome, driver, versione delle API), sistema, risoluzione, versione di Godot e del gioco (commit), mappa e seme.
+- **Ogni 10 secondi, una riga:** fotogrammi al secondo (media e minimo), fotogramma più lento, chiamate di disegno, memoria, zoom, anno e velocità, quanti alberi, animali e figure si disegnano.
+- **Eventi:** fotogrammi sopra i 100 ms con cosa stava succedendo (cambio di zoom, rotazione, anno che passa, strumento), tempi di caricamento (alberi, cache, mappa), errori e avvisi di Godot (anche con il file di log di Godot acceso nelle impostazioni del progetto).
+- **Segnalibro:** un tasto (F9) scrive "segnalibro" nel registro con l'ora e la posizione della camera e salva una foto dello schermo, per segnare "qui c'è qualcosa" senza fermarsi a scrivere.
+- **Come arriva a Claude:** Fede allega il file nella conversazione; oppure, con l'app desktop collegata e la cartella condivisa, Claude lo legge direttamente.
+- Verifica: `verifica_base.gd` o una nuova verifica controlla che il registro si scriva e che le righe abbiano i campi giusti. Stima: 30–45 minuti.
 
 ### A. [x] Specchietti in gioco: "Conseguenze" e "Rapporti di forza" — PRIORITÀ 1
 **Fatto il 26/11/2026 pomeriggio** (descrizione in `hud.md` e `prototipo0-godot.md`; foto `docs/immagini/conseguenze-26-11.jpg` e `rapporti-di-forza-26-11.jpg`). Resta la prova di Fede nel gioco. Sotto, il disegno di partenza.
@@ -125,7 +138,7 @@ Si muove verso    terra alle famiglie · più aperta
 ### 6. [ ] Evento soglia "il metallo e lo scambio" e passo elastico
 **Deciso** (`era-origini.md` § 2 e § 5): si apre quando il territorio è pieno e si è dentro la finestra (~3000–1800 a.C.); presagi (oggetti di rame, mercanti), dilemma aprirsi o restare isolati, transizione con riepilogo. **Passo elastico:** un anno per passo nei primi quattro secoli, poi un decennio (le regole vanno scritte per anno e moltiplicate per il passo). Oggi la partita finisce a 5500 a.C. (`ANNO_FINE`).
 
-### 7. [~] Popolazione visibile
+### 7. [x] Popolazione visibile (resta la prova di Fede)
 **Fatto il 26/11/2026 pomeriggio** (descrizione in `prototipo0-godot.md` e `asset.md`; foto `docs/immagini/persone-26-11.jpg`, `persone-nel-gioco-26-11.jpg`): sei persone in due livelli con le vesti del Neolitico, cinque attrezzi, colori per figura e animazioni nello shader, figure legate ai lavori della simulazione, tetto di 150 figure. **Rifiniti in serata** viso e spalle su richiesta di Fede (`docs/immagini/ritratti-prima-dopo-26-11.jpg`). **Fatta in serata** la scheda della famiglia (clic su persone e case, nome dal luogo: `prototipo0-godot.md`, `docs/immagini/famiglia-26-11.jpg`). **Fatti anche** l'umore di ogni famiglia in sola lettura e il prestigio nascosto (decisione di Fede del 26/11/2026, `era-origini.md` § 6). **Resta:** la prova di Fede (aspetto delle persone, scheda e fotogrammi al secondo, anche insieme agli animali), le figure che camminano lungo i sentieri (con la voce 5).
 **Deciso** (25/11/2026): ogni figura fa un lavoro vero della simulazione (campi, bosco, fiume, pascolo, cantieri, sentieri, luogo sacro); **3 modelli di uomini e 3 di donne** che si ripetono, con capelli, incarnato e vesti che variano; animazioni dallo shader; MultiMesh; si vedono solo da vicino; **scala da verificare con la simulazione** (800 persone a schermo sono troppe: tetto di figure visibili, una figura per 1, 2 o 5 persone). Clic su una persona: la scheda della sua famiglia. Prima il bestiame (voce 2), poi i lavoratori, poi chi cammina, poi la scheda.
 **Deciso** (Fede, 26/11/2026): viene subito dopo la voce A; **servono anche le animazioni** (camminare, lavorare secondo il mestiere, stare fermi, parlare in gruppo) e **attenzione al livello di dettaglio**, con la stessa cura degli animali (corpo unico, vesti e capelli verosimili, due livelli di dettaglio secondo lo zoom, riferimento Age of Empires IV). A ogni modello, foto a Fede.
@@ -146,6 +159,11 @@ Si muove verso    terra alle famiglie · più aperta
 Un menù delle impostazioni del gioco, con dentro anche l'opzione dei tutorial (accesi o spenti per le partite nuove). Da progettare con Fede: cosa contiene oltre ai tutorial (per esempio velocità di partenza, qualità grafica, lingua), dove si apre (tasto, voce dell'HUD), dove si salva sul PC.
 
 ## Da decidere con Fede
+- **Prove di Fede, aperte (26/11/2026):** l'ok definitivo sulle animazioni delle persone; la scheda della famiglia (le figure illuminate si vedono abbastanza? altrimenti un segno sopra le teste); fotogrammi al secondo con 400 animali e 150 figure (li raccoglie il registro della voce B).
+- **Proposte di Claude in attesa di uno sguardo (26/11/2026):** i dodici nomi comuni delle famiglie, l'ordine dei desideri ("Vorrebbe"), la cornice bianca della casa; i numeri dell'umore delle famiglie (−12 piena ricordata, −8 zona delle piene, −6 legna lontana, −5 campi stanchi e casale senza sentiero, +3 focolare e luogo sacro); i numeri della popolazione visibile (150 figure, 1/2/5 persone per figura, visibili sotto i 450 m).
+- **Menù delle impostazioni (voce 10):** cosa contiene oltre ai tutorial.
+- **Secondario, direzione artistica:** il maiale che sembra un facocero.
+- **Famiglie "eminenti e comuni":** nome confermato da Fede il 26/11/2026.
 - Carestie nei siti di caccia (25/11/2026 sera): chi legge passa da 1,3 a 2,4 carestie a partita, quasi tutte all'Area dei gessi e allo Sperone collinare. **Si lascia così** (Fede, 25/11/2026): nei siti che vivono di caccia le carestie sono normali.
 - **Confermate da Fede** (25/11/2026): la posta si aggancia al margine del bosco entro 60 m; tasti K (capanno) e T (posta); 35 di cibo l'anno al massimo per edificio, posta fino a 1000 m, capanno fino a 600 m.
 - **(?)** Popolazioni: con i campi che si stancano le mediane sono rientrate (chi conosce il genere 763), i massimi restano a 1000–1080; il casual resta piccolo (mediana 103): **si lascia così per ora** (Fede, 25/11/2026).
