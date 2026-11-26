@@ -19,6 +19,109 @@ func _initialize() -> void:
 	root.add_child(_s)
 
 
+## Animali del pascolo (26/11/2026, richieste di Fede): corpo e carte di pelo con i loro shader,
+## livelli di dettaglio con lo zoom, movimento con accelerazione, soste a brucare e gregge che si
+## sposta avviandosi uno dopo l'altro.
+func _verifica_animali(p: Partita, sim: SimVillaggio) -> void:
+	var vv: VistaVillaggio = p.vista
+	if sim.capi < 40.0:
+		sim.capi = 40.0
+	vv.sincronizza()
+	controlla(vv.animali_disegnati() > 0 and not vv._greggi.is_empty(), "animali e greggi sulla mappa (%d animali, %d greggi)" % [vv.animali_disegnati(), vv._greggi.size()])
+	var buone := true
+	for chiave in vv._mandria:
+		for livello in ["completo", "leggero"]:
+			var mesh: Mesh = (vv._mandria[chiave][livello] as MultiMeshInstance3D).multimesh.mesh
+			if mesh == null or mesh.get_surface_count() != 2:
+				buone = false
+				continue
+			var m0 := mesh.surface_get_material(0) as ShaderMaterial
+			var m1 := mesh.surface_get_material(1) as ShaderMaterial
+			if m0 == null or m1 == null or m0.shader != Asset.SHADER_ANIMALI or m1.shader != Asset.SHADER_CIOCCHE:
+				buone = false
+	controlla(buone, "ogni animale ha il corpo e le carte di pelo con i loro shader, in due livelli e tre manti")
+	var manti := {}
+	for a in vv._animali:
+		manti[a["manto"]] = true
+	controlla(manti.size() >= 2, "nel gregge si vedono manti diversi (%d)" % manti.size())
+	# Livelli di dettaglio con lo zoom.
+	var cam: CameraIsometrica = vv.cam
+	controlla(cam != null, "la vista del villaggio conosce la camera (per i livelli di dettaglio)")
+	if cam != null:
+		var dim := cam.dimensione
+		cam.dimensione = 100.0
+		vv._aggiorna_livello_animali()
+		var vicino: bool = (vv._mandria.values()[0]["completo"] as MultiMeshInstance3D).visible
+		cam.dimensione = 600.0
+		vv._aggiorna_livello_animali()
+		var lontano: bool = (vv._mandria.values()[0]["leggero"] as MultiMeshInstance3D).visible
+		cam.dimensione = dim
+		vv._aggiorna_livello_animali()
+		controlla(vicino and lontano, "da vicino i modelli completi, da lontano quelli leggeri")
+	# Due minuti di pascolo: velocità entro il passo lungo, soste a brucare, zampe che seguono la strada.
+	var vel_max := 0.0
+	var camminano := 0
+	var brucano := 0
+	var numeri_ok := true
+	var a0: Dictionary = vv._animali[0]
+	for _k in 1200:
+		vv._muovi_animali(0.1)
+		for a in vv._animali:
+			var v := float(a["vel"])
+			vel_max = maxf(vel_max, v)
+			if is_nan(v) or is_nan((a["pos"] as Vector2).x) or is_nan(float(a["fase"])):
+				numeri_ok = false
+	for a in vv._animali:
+		if float(a["bruca"]) > 0.9:
+			brucano += 1
+		if float(a["fase"]) != 0.0:
+			camminano += 1
+	controlla(numeri_ok and vel_max <= VistaVillaggio.VELOCITA_LUNGA + 0.001 and vel_max > 0.2, "gli animali camminano senza scatti (velocità massima %.2f m/s)" % vel_max)
+	controlla(brucano > 0 and camminano > 0, "c'è chi bruca a testa bassa (%d) e chi cammina (%d)" % [brucano, camminano])
+	# Un passo: la fase avanza di 2π ogni `passo` metri.
+	var prima_pos: Vector2 = a0["pos"]
+	var prima_fase := float(a0["fase"])
+	a0["sosta"] = 0.0
+	a0["ritardo"] = 0.0
+	a0["lungo"] = false
+	a0["vel"] = VistaVillaggio.VELOCITA_ANIMALI
+	a0["meta"] = prima_pos + Vector2(-sin(deg_to_rad(float(a0["verso"]))), -cos(deg_to_rad(float(a0["verso"])))) * 20.0
+	vv._passo_animale(a0, 0.1)
+	var fatta := (a0["pos"] as Vector2).distance_to(prima_pos)
+	var attesa := fatta / Asset.passo_animale(a0["specie"]) * TAU
+	controlla(absf(wrapf(float(a0["fase"]) - prima_fase, 0.0, TAU) - attesa) < 0.01, "le zampe seguono la strada fatta (%.3f m, fase %.3f)" % [fatta, attesa])
+	# Il gregge cambia posto: si avviano uno dopo l'altro, a passo lungo chi è lontano.
+	vv._greggi[0]["cambio"] = 0.0
+	vv._muovi_animali(0.01)
+	var ritardi := []
+	for a in vv._animali:
+		if int(a["gregge"]) == 0:
+			ritardi.append(float(a["ritardo"]))
+	ritardi.sort()
+	var in_fila: bool = ritardi.size() < 2 or ritardi[-1] - ritardi[0] > 0.5 * (ritardi.size() - 1)
+	controlla(in_fila, "il gregge si sposta in fila sciolta (%d animali, partenze in %.1f s)" % [ritardi.size(), ritardi[-1] - ritardi[0] if not ritardi.is_empty() else 0.0])
+
+
+## Campo stanco visibile (proposta confermata da Fede il 26/11/2026): la stanchezza e il maggese
+## arrivano allo shader del terreno.
+func _verifica_campo_stanco(p: Partita, sim: SimVillaggio) -> void:
+	if sim.campi.is_empty():
+		controlla(false, "servono campi per provare il campo stanco")
+		return
+	var i: int = sim.campi[0]
+	var prima = sim.stanchezza.get(i)
+	sim.stanchezza[i] = SimVillaggio.ANNI_PRIMA_STANCHEZZA + SimVillaggio.ANNI_STANCHEZZA
+	p.vista.sincronizza()
+	var mt: ShaderMaterial = _s.terreno.materiale
+	controlla(mt.get_shader_parameter("stanchezza_campi") != null and p.vista.stanchezza_disegnata(i) > 0.95, "un campo stanchissimo si vede stanco sulla mappa (%.2f)" % p.vista.stanchezza_disegnata(i))
+	sim.stanchezza.erase(i)
+	p.vista.sincronizza()
+	controlla(p.vista.stanchezza_disegnata(i) == 0.0, "riposato, il campo torna come prima")
+	if prima != null:
+		sim.stanchezza[i] = prima
+		p.vista.sincronizza()
+
+
 func _destro(premuto: bool, pos: Vector2) -> InputEventMouseButton:
 	var ev := InputEventMouseButton.new()
 	ev.button_index = MOUSE_BUTTON_RIGHT
@@ -265,6 +368,8 @@ func _process(_d: float) -> bool:
 		_s.applica_strumento()
 		var campi_prima := sim.campi.size()
 		controlla(not sim.pascolo.is_empty() and p.vista._immagine_pascolo != null, "pascolo a pennello (%d pixel)" % sim.pascolo.size())
+		_verifica_animali(p, sim)
+		_verifica_campo_stanco(p, sim)
 		p._azione("togli_pascolo")
 		p.inizia_pennellata()
 		_s.applica_strumento()

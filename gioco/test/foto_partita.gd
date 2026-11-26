@@ -59,6 +59,7 @@ func _process(_d: float) -> bool:
 			_s.uso.avanza_anni(1)
 		p.vista.sincronizza()
 		p.aggiorna_hud()
+		print("   campi %d, stanchi %d, a maggese %d" % [sim.campi.size(), sim.campi_stanchi(), sim.maggese.size()])
 		var c := sim.mondo_di_px(sim.centro)
 		# Vista sulla prima legnaia (per vedere la radura dei boscaioli).
 		if args.size() > 4 and args[4] == "legnaia" and not sim.legnaie.is_empty():
@@ -80,6 +81,17 @@ func _process(_d: float) -> bool:
 			c = p.vista._greggi[0]["centro"] if not p.vista._greggi.is_empty() else p.vista._stabbi.keys()[0]
 			su_edificio = true
 			print("   animali disegnati: %d, capi %d, stabbi %d" % [p.vista.animali_disegnati(), roundi(sim.capi), p.vista._stabbi.size()])
+		# Campi stanchi (26/11/2026): la vista su un campo molto stanco; con "senza" come sesto
+		# argomento si spegne la resa della stanchezza, per il confronto.
+		if args.size() > 4 and args[4] == "stanchi":
+			for i in sim.campi:
+				if sim.fattore_stanchezza(i) < 0.75:
+					c = sim.mondo_di_px(sim.px_di(i))
+					su_edificio = true
+					break
+			if args.size() > 5 and args[5] == "senza":
+				var nero := Image.create(4, 4, false, Image.FORMAT_RG8)
+				_s.terreno.materiale.set_shader_parameter("stanchezza_campi", ImageTexture.create_from_image(nero))
 		if args.size() > 4 and args[4] in ["capanno", "posta"]:
 			var elenco: Array = sim.capanni if args[4] == "capanno" else sim.poste
 			if not elenco.is_empty():

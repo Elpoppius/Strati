@@ -41,6 +41,7 @@ func avvia(s: Node, seme: int = -1) -> void:
 	vista = VistaVillaggio.new()
 	vista.name = "Villaggio"
 	vista.prepara(sim, uso, s.terreno)
+	vista.cam = s.cam
 	s.add_child(vista)
 	var hud: Hud = s.hud
 	# Menù logici (decisione di Fede, come in Cities: Skylines e Age of Empires). Per ora le voci

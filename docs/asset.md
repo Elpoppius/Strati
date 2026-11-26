@@ -102,6 +102,26 @@ Le texture di paglia e argilla erano rumori sfumati: da vicino la paglia sembrav
 - **Tetti conici:** nuove coordinate di texture (`proiezione_conica` in `prova_stile_verosimile.py`): i corsi sono anelli concentrici attorno all'apice. Con la proiezione per facce facevano zig-zag da una faccia all'altra.
 Immagine a 18 m di vista: `docs/immagini/paglia-argilla-24-11.jpg`.
 
+## Animali del pascolo (26/11/2026, terza versione)
+Richiesta di Fede: i modelli di prima erano "grossolani e molto poligonali"; definizione simile agli alberi, con i riferimenti di Age of Empires IV (scene di gioco: cervi, cinghiale, vacche delle Highlands; non le icone dorate). Cosa rende definiti quegli animali: il pelo che si vede (ciocche dal dorso verso la pancia, punte chiare e radici scure), la sagoma sfrangiata (ciocche su ventre, collo e zampe) e pochi segni forti sul manto.
+
+Script `strumenti/blender/animali.py` → `gioco/asset/villaggio/animale_<specie>_<manto>[_leggero].glb` e `animali.json`. Comandi: `python3 strumenti/blender/texture_procedurali.py gioco/asset/texture animali` (pelo, lana, ciocche, ciocche_lana), poi `blender-py strumenti/blender/animali.py gioco/asset/villaggio` (serve scikit-image nell'ambiente di Blender, lo installa `setup_strumenti.sh`), poi l'importazione e, nei nuovi `.import` delle texture, `detect_3d/compress_to=0` e le mipmap.
+- **Corpo unico:** un campo di distanza fatto di ellissoidi e coni arrotondati (tronco, collo, testa, zampe in tre tratti con ginocchio e garretto, corna, orecchie, coda) che si fondono morbidamente; la superficie si estrae con marching cubes e si semplifica. Niente giunture né facce piatte.
+- **Pelo:** grana `pelo.png` (ciocche fitte) o `lana.png` (riccioli) con UV che fanno scorrere il pelo dal dorso alla pancia e lungo le zampe; **carte di pelo** con il ritaglio, come le foglie delle chiome (`ciocche.png`, quattro ciocche affiancate; per la pecora `ciocche_lana.png`, bioccoli arricciati), piantate sul corpo nel verso del pelo, più lunghe sotto la pancia (frangia), corte su collo e fronte, cresta dritta sul dorso del maiale; muso, zoccoli e corna restano nudi. Le carte hanno le normali del corpo e il suo colore.
+- **Manti** nei colori dei vertici (per l'occlusione cotta), tre per specie: pecora bianca a muso scuro, bianca, bruna; capra fulva, nera, pezzata; maiale bruno scuro, fulvo, cinghiato; bue fromentino, grigio con spalle scure, bruno. Nel gioco il primo manto è il più comune (50%, 30%, 20%).
+- **Parti per l'animazione** nella seconda UV (corpo, collo e testa, quattro zampe, orecchie, coda, con il peso lungo la parte); in `animali.json` perno del collo, passo, spalla e quanto si abbassa la testa per brucare (poco il maiale, che ha la testa già bassa: prima sembrava una proboscide).
+- **Shader:** `animali.gdshader` (corpo) e `animali_ciocche.gdshader` (carte, con il ritaglio e le normali tenute verso l'esterno anche dal retro), con le animazioni in comune in `animali_comune.gdshaderinc`. Materiali da `Asset.materiale_animale`, mesh da `Asset.mesh_animale`.
+- **Prestazioni:** con la MultiMesh nel renderer Compatibilità servono anche i colori per istanza (bianchi): con i soli dati personalizzati gli animali uscivano neri. Da misurare sui PC di Fede con 400 animali vicini.
+
+| Modello | Misure (m) | Facce del corpo (completo / leggero) | Carte di pelo (completo / leggero) |
+|---|---|---|---|
+| pecora | 0,8 × 1,45 × 1,0 | 3200 / 260 | 700 / 70 |
+| capra | 0,4 × 1,15 × 1,25 | 3000 / 260 | 700 / 70 |
+| maiale | 0,5 × 1,35 × 0,8 | 2600 / 260 | 520 / 50 |
+| bue | 0,85 × 2,6 × 1,5 | 3600 / 260 | 1000 / 90 |
+
+Foto: `test/foto_animali.gd -- uscita [dimensione] [rotazioni] [leggero]` (per ogni specie i tre manti: fermo, che bruca, a metà passo). Immagini `docs/immagini/animali-pelo-26-11.jpg`, `docs/immagini/animali-pelo-vicino-26-11.jpg`.
+
 ## Lotto del villaggio (24/11/2026, Fede: procedi)
 Script `strumenti/blender/villaggio.py` → `gioco/asset/villaggio/`, nello stile verosimile della prova (stessi materiali e forme, occlusione cotta). Comando: `blender-py strumenti/blender/villaggio.py gioco/asset/villaggio`, poi `godot --headless --path gioco --import` e, nei nuovi `.import` delle texture, `detect_3d/compress_to=0`.
 

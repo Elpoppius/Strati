@@ -4,7 +4,7 @@ Riusa materiali e forme della prova di stile (prova_stile_verosimile.py): case l
 misure, capanne tonde in due, granaio su pali, palizzata (tratto e varco), luogo sacro,
 focolare, fossa-silo, recinto per gli animali, catasta di legna, rocce; legnaia, capanno da pesca e posta di caccia (25/11/2026);
 i cantieri di granaio, legnaia, capanno, posta e luogo sacro (scheletri, 25/11/2026 sera);
-lo stabbio e gli animali del pascolo: pecora, capra, maiale, bue (26/11/2026).
+lo stabbio del pascolo (26/11/2026). Gli animali: strumenti/blender/animali.py.
 
 Uso:  blender-py strumenti/blender/villaggio.py gioco/asset/villaggio
 
@@ -624,118 +624,7 @@ def stabbio(nome, seme):
     return base.unisci(nome, parti)
 
 
-def _corpo(nome, dim, centro, mat, seme, suddivisioni=2, irregolare=0.05, deforma=None):
-    """Un volume morbido (icosfera appena irregolare), per corpo e testa degli animali. `deforma`
-    riceve (x, y, z) in unità della sfera (-0,5…0,5) e restituisce un fattore per la sezione."""
-    rnd = random.Random(seme)
-    bm = bmesh.new()
-    bmesh.ops.create_icosphere(bm, subdivisions=suddivisioni, radius=0.5)
-    for v in bm.verts:
-        k = 1.0 + rnd.uniform(-irregolare, irregolare)
-        if deforma is not None:
-            k *= deforma(v.co.x, v.co.y, v.co.z)
-        v.co = Vector((v.co.x * dim[0] * k, v.co.y * dim[1], v.co.z * dim[2] * k))
-    bmesh.ops.translate(bm, vec=Vector(centro), verts=bm.verts)
-    bm.normal_update()
-    return base.da_bmesh(nome, bm, mat, tile=1.0)
-
-
-def _zampa(parti, x, y, alto, r, pelo, zoccolo, avanti=True):
-    """Zampa in due pezzi (coscia e stinco, con il garretto appena piegato) e lo zoccolo."""
-    piega = 0.03 if avanti else -0.04
-    ginocchio = (x, y + piega, alto * 0.5)
-    parti.append(base.cilindro_tra("coscia", (x, y, alto + r * 0.5), ginocchio, r * 1.5, r, pelo, lati=6))
-    parti.append(base.cilindro_tra("stinco", ginocchio, (x, y, alto * 0.08), r * 0.9, r * 0.75, pelo, lati=5))
-    parti.append(base.cilindro_tra("zoccolo", (x, y, alto * 0.08), (x, y + 0.01, 0.0), r * 0.8, r * 0.85, zoccolo, lati=5))
-
-
-def _corno(parti, punti, r0, mat):
-    """Corno fatto di tratti, dal più grosso alla punta."""
-    for k in range(len(punti) - 1):
-        t0, t1 = k / (len(punti) - 1), (k + 1) / (len(punti) - 1)
-        parti.append(base.cilindro_tra("corno", punti[k], punti[k + 1], r0 * (1.0 - 0.75 * t0), r0 * (1.0 - 0.75 * t1), mat, lati=5))
-
-
-def _pecora(parti, m, pelo, scuro, zoccolo, seme):
-    """Pecora: vello a bioccoli attorno al corpo, testa e zampe scure, orecchie di lato."""
-    rnd = random.Random(seme)
-    parti.append(_corpo("corpo", (0.5, 1.0, 0.5), (0, 0, 0.62), pelo, seme))
-    for k in range(14):
-        a = rnd.uniform(0, 2 * math.pi)
-        y = rnd.uniform(-0.38, 0.36)
-        r = 0.13 + rnd.uniform(0, 0.05)
-        parti.append(_corpo("bioccolo", (r * 2, r * 2, r * 1.6), (0.21 * math.cos(a), y, 0.66 + 0.2 * abs(math.sin(a))), pelo, seme + 10 + k, suddivisioni=1, irregolare=0.12))
-    parti.append(_corpo("testa", (0.17, 0.3, 0.2), (0, 0.6, 0.78), scuro, seme + 1, deforma=lambda x, y, z: 0.75 + 0.5 * (0.5 - y)))
-    parti.append(_corpo("fronte", (0.2, 0.18, 0.16), (0, 0.5, 0.86), pelo, seme + 2, suddivisioni=1))
-    for sx in (-1, 1):
-        parti.append(base.cilindro_tra("orecchio", (sx * 0.08, 0.52, 0.86), (sx * 0.22, 0.48, 0.82), 0.04, 0.02, scuro, lati=4))
-        for sy, avanti in ((0.3, True), (-0.3, False)):
-            _zampa(parti, sx * 0.13, sy, 0.42, 0.035, scuro, zoccolo, avanti)
-    parti.append(_corpo("coda", (0.1, 0.12, 0.18), (0, -0.52, 0.58), pelo, seme + 3, suddivisioni=1))
-
-
-def _capra(parti, m, pelo, chiaro, zoccolo, seme):
-    """Capra: corpo asciutto, zampe lunghe, collo alto, barba, corna piegate all'indietro, coda
-    dritta."""
-    parti.append(_corpo("corpo", (0.34, 0.88, 0.38), (0, 0, 0.66), pelo, seme, deforma=lambda x, y, z: 1.0 + 0.12 * (y + 0.5)))
-    parti.append(_corpo("pancia", (0.28, 0.6, 0.2), (0, 0.02, 0.55), chiaro, seme + 4, suddivisioni=1))
-    parti.append(base.cilindro_tra("collo", (0, 0.32, 0.76), (0, 0.44, 0.98), 0.09, 0.07, pelo, lati=6))
-    parti.append(_corpo("testa", (0.15, 0.3, 0.16), (0, 0.55, 1.02), pelo, seme + 1, deforma=lambda x, y, z: 0.7 + 0.6 * (0.5 - y)))
-    parti.append(base.cilindro_tra("barba", (0, 0.63, 0.95), (0, 0.6, 0.84), 0.035, 0.01, chiaro, lati=4))
-    for sx in (-1, 1):
-        _corno(parti, [(sx * 0.04, 0.5, 1.08), (sx * 0.07, 0.44, 1.2), (sx * 0.1, 0.34, 1.26), (sx * 0.12, 0.26, 1.22)], 0.028, zoccolo)
-        parti.append(base.cilindro_tra("orecchio", (sx * 0.06, 0.48, 1.04), (sx * 0.17, 0.44, 1.0), 0.03, 0.015, pelo, lati=4))
-        for sy, avanti in ((0.27, True), (-0.27, False)):
-            _zampa(parti, sx * 0.1, sy, 0.48, 0.03, pelo, zoccolo, avanti)
-    parti.append(base.cilindro_tra("coda", (0, -0.42, 0.78), (0, -0.48, 0.92), 0.03, 0.015, pelo, lati=4))
-
-
-def _maiale(parti, m, pelo, scuro, zoccolo, seme):
-    """Maiale: corpo lungo e tondo, schiena alta sulle spalle, testa grande che si stringe nel
-    grugno a disco, orecchie in avanti, zampe corte."""
-    parti.append(_corpo("corpo", (0.44, 1.0, 0.44), (0, 0, 0.42), pelo, seme, deforma=lambda x, y, z: 1.0 + 0.1 * (y + 0.5)))
-    parti.append(_corpo("criniera", (0.2, 0.5, 0.12), (0, 0.18, 0.64), scuro, seme + 5, suddivisioni=1, irregolare=0.15))
-    parti.append(_corpo("testa", (0.3, 0.38, 0.3), (0, 0.55, 0.42), pelo, seme + 1, deforma=lambda x, y, z: 0.55 + 0.9 * (0.5 - y)))
-    parti.append(base.cilindro_tra("grugno", (0, 0.72, 0.36), (0, 0.8, 0.34), 0.07, 0.075, scuro, lati=8))
-    for sx in (-1, 1):
-        parti.append(base.cilindro_tra("orecchio", (sx * 0.09, 0.5, 0.54), (sx * 0.15, 0.62, 0.5), 0.05, 0.02, pelo, lati=4))
-        for sy, avanti in ((0.3, True), (-0.32, False)):
-            _zampa(parti, sx * 0.13, sy, 0.24, 0.04, scuro, zoccolo, avanti)
-    parti.append(base.cilindro_tra("coda", (0, -0.5, 0.5), (0.03, -0.56, 0.42), 0.02, 0.012, pelo, lati=4))
-
-
-def _bue(parti, m, pelo, scuro, corna, zoccolo, seme):
-    """Bue: corpo massiccio con la gobba sulle spalle, giogaia sotto il collo, testa bassa e
-    lunga, corna a lira, coda lunga con il ciuffo."""
-    parti.append(_corpo("corpo", (0.78, 1.9, 0.78), (0, 0, 1.02), pelo, seme, deforma=lambda x, y, z: 1.0 + 0.08 * (y + 0.5)))
-    parti.append(_corpo("gobba", (0.5, 0.6, 0.4), (0, 0.5, 1.36), pelo, seme + 6, suddivisioni=1))
-    parti.append(_corpo("giogaia", (0.22, 0.5, 0.45), (0, 0.85, 0.82), pelo, seme + 7, suddivisioni=1))
-    parti.append(base.cilindro_tra("collo", (0, 0.8, 1.15), (0, 1.05, 1.08), 0.3, 0.22, pelo, lati=7))
-    parti.append(_corpo("testa", (0.32, 0.56, 0.34), (0, 1.22, 0.98), pelo, seme + 1, deforma=lambda x, y, z: 0.65 + 0.7 * (0.5 - y)))
-    parti.append(_corpo("muso", (0.2, 0.14, 0.16), (0, 1.47, 0.9), scuro, seme + 8, suddivisioni=1))
-    for sx in (-1, 1):
-        _corno(parti, [(sx * 0.13, 1.08, 1.12), (sx * 0.32, 1.1, 1.18), (sx * 0.42, 1.14, 1.34), (sx * 0.38, 1.12, 1.48)], 0.05, corna)
-        parti.append(base.cilindro_tra("orecchio", (sx * 0.14, 1.04, 1.06), (sx * 0.3, 1.0, 1.0), 0.06, 0.025, pelo, lati=4))
-        for sy, avanti in ((0.6, True), (-0.65, False)):
-            _zampa(parti, sx * 0.24, sy, 0.72, 0.07, pelo, zoccolo, avanti)
-    parti.append(base.cilindro_tra("coda", (0, -0.93, 1.22), (0, -1.0, 0.45), 0.035, 0.025, pelo, lati=4))
-    parti.append(_corpo("ciuffo", (0.1, 0.1, 0.22), (0, -1.0, 0.38), scuro, seme + 9, suddivisioni=1))
-
-
-def animale(nome, specie, seme):
-    """Animale del pascolo (26/11/2026, rifatto su richiesta di Fede: sagome proprie per specie).
-    Guardato dall'alto e da lontano; il muso guarda verso +y."""
-    m = materiali()
-    zoccolo = base.materiale("zoccolo", "pietra", tinta=(0.12, 0.11, 0.1))
-    if specie == "pecora":
-        _pecora(_p := [], m, base.materiale("lana", "pietra", tinta=(1.25, 1.2, 1.08)), base.materiale("muso_pecora", "argilla", tinta=(0.2, 0.17, 0.15)), zoccolo, seme)
-    elif specie == "capra":
-        _capra(_p := [], m, base.materiale("pelo_capra", "argilla", tinta=(0.5, 0.4, 0.31)), base.materiale("pancia_capra", "argilla", tinta=(0.8, 0.74, 0.62)), zoccolo, seme)
-    elif specie == "maiale":
-        _maiale(_p := [], m, base.materiale("setole", "argilla", tinta=(0.3, 0.22, 0.18)), base.materiale("setole_scure", "argilla", tinta=(0.15, 0.12, 0.1)), zoccolo, seme)
-    else:
-        _bue(_p := [], m, base.materiale("pelo_bue", "argilla", tinta=(0.62, 0.42, 0.28)), base.materiale("muso_bue", "argilla", tinta=(0.2, 0.15, 0.12)), base.materiale("corna", "legno", tinta=(0.85, 0.8, 0.68)), zoccolo, seme)
-    return base.unisci(nome, _p)
+# Gli animali del pascolo stanno in strumenti/blender/animali.py (terza versione, 26/11/2026).
 
 
 def roccia(nome, seme, dim):
@@ -766,10 +655,6 @@ ASSET = [
     ("cantiere_posta_caccia", lambda n: cantiere_posta(n, 37)),
     ("cantiere_luogo_sacro", lambda n: cantiere_luogo_sacro(n, 38)),
     ("stabbio", lambda n: stabbio(n, 39)),
-    ("animale_pecora", lambda n: animale(n, "pecora", 40)),
-    ("animale_capra", lambda n: animale(n, "capra", 41)),
-    ("animale_maiale", lambda n: animale(n, "maiale", 42)),
-    ("animale_bue", lambda n: animale(n, "bue", 43)),
     ("roccia_1", lambda n: roccia(n, 28, (1.6, 1.2, 0.9))),
     ("roccia_2", lambda n: roccia(n, 29, (2.4, 1.8, 1.3))),
     ("roccia_3", lambda n: roccia(n, 30, (0.9, 0.8, 0.6))),

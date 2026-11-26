@@ -345,15 +345,141 @@ SPECIE_FOGLIE = {
 }
 
 
+def _ciocca(d, rng, x0, y0, lung, larg, fili, scuro, chiaro, s, ang=0.0, curva=0.0, spessore=(1.2, 2.4)):
+    """Una ciocca: un fascio di fili che parte stretto dalla radice (y0, in basso) e si apre verso
+    la punta, scuro alla radice e chiaro in punta (la luce prende le punte)."""
+    for _ in range(fili):
+        off = rng.normal(0, larg * 0.22)
+        punti = []
+        segmenti = 6
+        l = lung * rng.uniform(0.75, 1.0)
+        for k in range(segmenti + 1):
+            t = k / segmenti
+            x = x0 + off * (0.35 + 0.65 * t) + math.sin(ang) * l * t + curva * l * t * t
+            y = y0 - math.cos(ang) * l * t
+            punti.append((x * s, y * s, t))
+        w0 = rng.uniform(*spessore) * s
+        for k in range(segmenti):
+            w = max(1, int(w0 * (1.0 - 0.6 * punti[k][2])))
+            t = punti[k][2]
+            c = tuple(int(scuro[i] + (chiaro[i] - scuro[i]) * (t ** 0.8)) for i in range(3))
+            d.line([punti[k][:2], punti[k + 1][:2]], fill=c + (255,), width=w)
+
+
+def pelo():
+    """Pelo degli animali (26/11/2026, sui riferimenti di Fede): ciocche fitte che scorrono lungo v
+    (sul corpo, dal dorso verso la pancia), radici scure e punte chiare. Quasi grigio: il colore
+    del manto sta nei vertici del modello."""
+    rng = np.random.default_rng(60)
+    s = 2
+    img = Image.new("RGBA", (LATO * s, LATO * s), (138, 133, 126, 255))
+    d = ImageDraw.Draw(img)
+    for _ in range(4200):
+        x, y = rng.random() * LATO, rng.random() * LATO
+        lung = rng.uniform(30, 60)
+        k = rng.uniform(0.85, 1.15)
+        scuro = tuple(int(c * k) for c in (112, 107, 100))
+        chiaro = tuple(int(min(255, c * k)) for c in (236, 230, 220))
+        for ox in (-LATO, 0, LATO):
+            for oy in (-LATO, 0, LATO):
+                if -80 < x + ox < LATO + 80 and -20 < y + oy < LATO + 90:
+                    _ciocca(d, np.random.default_rng(int(x * 1000 + y)), x + ox, y + oy, lung, rng.uniform(8, 16), 7, scuro, chiaro, s,
+                            ang=rng.normal(0, 0.12), curva=rng.normal(0, 0.08))
+    f = np.asarray(img.convert("RGB").resize((LATO, LATO), Image.LANCZOS)).astype(float) / 255
+    lento = 0.9 + 0.15 * fbm(LATO, 4, 3, 61)[..., None]
+    return np.clip(f * lento, 0, 1)
+
+
+def lana():
+    """Vello della pecora (26/11/2026): riccioli a spirale fitti, chiari in cima e scuri tra un
+    bioccolo e l'altro. Come il pelo, quasi grigia: il colore è nei vertici."""
+    rng = np.random.default_rng(62)
+    s = 2
+    img = Image.new("RGB", (LATO * s, LATO * s), (120, 116, 108))
+    d = ImageDraw.Draw(img)
+    for _ in range(6500):
+        x, y = rng.random() * LATO, rng.random() * LATO
+        r = rng.uniform(3.5, 8)
+        k = rng.uniform(0.8, 1.12)
+        col = tuple(int(min(255, c * k)) for c in (240, 235, 225))
+        w = max(1, int(rng.uniform(1.0, 2.2) * s))
+        a0 = rng.uniform(0, 360)
+        for ox in (-LATO, 0, LATO):
+            for oy in (-LATO, 0, LATO):
+                cx, cy = x + ox, y + oy
+                if -20 < cx < LATO + 20 and -20 < cy < LATO + 20:
+                    for g, rr in ((0, r), (120, r * 0.62)):
+                        d.arc([(cx - rr) * s, (cy - rr) * s, (cx + rr) * s, (cy + rr) * s], a0 + g, a0 + g + 250, fill=col, width=w)
+    f = np.asarray(img.resize((LATO, LATO), Image.LANCZOS)).astype(float) / 255
+    bioccoli = 0.78 + 0.3 * fbm(LATO, 16, 2, 63)[..., None]
+    return np.clip(f * bioccoli, 0, 1)
+
+
+def ciocche():
+    """Carte di pelo per la sagoma degli animali (26/11/2026), come le foglie degli alberi: quattro
+    ciocche affiancate (una per colonna da 128 px), radice in basso e punta in alto, con l'alfa
+    per il ritaglio."""
+    rng = np.random.default_rng(64)
+    s = 2
+    w, h = 512, 512
+    img = Image.new("RGBA", (w * s, h * s), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    for k in range(4):
+        cx = 64 + k * 128
+        for _ in range(16):
+            _ciocca(d, rng, cx + rng.normal(0, 7), h - 4, h * rng.uniform(0.6, 0.97), 50, 14, (120, 114, 106), (240, 234, 224), s,
+                    ang=rng.normal(0, 0.07), curva=rng.normal(0, 0.07), spessore=(2.5, 4.5))
+    img = img.resize((w, h), Image.LANCZOS)
+    return img
+
+
+def ciocche_lana():
+    """Carte di lana per la pecora (26/11/2026): quattro bioccoli arricciati con l'alfa, uno per
+    colonna da 128 px."""
+    rng = np.random.default_rng(65)
+    s = 2
+    w, h = 512, 512
+    img = Image.new("RGBA", (w * s, h * s), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    for k in range(4):
+        cx = 64 + k * 128
+        for _ in range(140):
+            a = rng.uniform(0, 2 * math.pi)
+            rad = 46 * math.sqrt(rng.random())
+            x = cx + math.cos(a) * rad
+            y = h * 0.5 + math.sin(a) * rad * 3.2
+            r = rng.uniform(6, 14)
+            t = 1.0 - (y / h)
+            kk = rng.uniform(0.75, 1.05) * (0.7 + 0.3 * t)
+            col = tuple(int(min(255, c * kk)) for c in (242, 237, 226)) + (255,)
+            a0 = rng.uniform(0, 360)
+            for g, rr in ((0, r), (110, r * 0.6), (220, r * 0.3)):
+                d.arc([(x - rr) * s, (y - rr) * s, (x + rr) * s, (y + rr) * s], a0 + g, a0 + g + 260, fill=col, width=int(3.2 * s))
+    return img.resize((w, h), Image.LANCZOS)
+
+
+TEXTURE_ANIMALI = [("pelo", pelo), ("lana", lana)]
+TEXTURE_CIOCCHE = [("ciocche", ciocche), ("ciocche_lana", ciocche_lana)]
+
+
 def main(uscita):
     os.makedirs(uscita, exist_ok=True)
     for nome, fn in [("paglia", paglia), ("argilla", argilla), ("legno", legno), ("corteccia", corteccia),
-                     ("pietra", pietra), ("erba", erba), ("erba_secca", erba_secca), ("macchie", macchie)]:
+                     ("pietra", pietra), ("erba", erba), ("erba_secca", erba_secca), ("macchie", macchie)] + TEXTURE_ANIMALI:
         salva(fn(), os.path.join(uscita, nome + ".png"))
+    for nome, fn in TEXTURE_CIOCCHE:
+        fn().save(os.path.join(uscita, nome + ".png"))
     for nome, (seme, toni) in SPECIE_FOGLIE.items():
         foglie(seme, toni).save(os.path.join(uscita, nome + ".png"))
     print("Texture scritte in", uscita)
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "gioco/asset/texture")
+    if len(sys.argv) > 2 and sys.argv[2] == "animali":
+        # Solo le texture degli animali, senza riscrivere le altre.
+        for nome, fn in TEXTURE_ANIMALI:
+            salva(fn(), os.path.join(sys.argv[1], nome + ".png"))
+        for nome, fn in TEXTURE_CIOCCHE:
+            fn().save(os.path.join(sys.argv[1], nome + ".png"))
+    else:
+        main(sys.argv[1] if len(sys.argv) > 1 else "gioco/asset/texture")

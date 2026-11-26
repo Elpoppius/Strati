@@ -17,7 +17,8 @@ pip install --break-system-packages -q uv
 if [ ! -x "$BASE/blender-venv/bin/python" ]; then
   uv venv -q "$BASE/blender-venv" -p 3.13
 fi
-uv pip install -q --python "$BASE/blender-venv/bin/python" bpy==5.3.0
+# scikit-image serve agli animali (strumenti/blender/animali.py: superficie da un campo di distanza).
+uv pip install -q --python "$BASE/blender-venv/bin/python" bpy==5.3.0 scikit-image
 printf '#!/bin/sh\nexec %s/blender-venv/bin/python "$@"\n' "$BASE" > "$HOME/bin/blender-py"
 chmod +x "$HOME/bin/blender-py"
 

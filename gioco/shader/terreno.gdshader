@@ -82,6 +82,8 @@ uniform float mostra_bosco_sacro = 0.0;
 // Zona di pascolo (25/11/2026 sera): velo verde chiaro e bordo con gli strumenti Pascolo, Zona
 // agricola e Campo.
 uniform sampler2D pascolo_mappa : filter_linear, repeat_disable;
+// Campi stanchi (26/11/2026): R = stanchezza (0–1), G = maggese, un punto della mappa per campo.
+uniform sampler2D stanchezza_campi : filter_linear, repeat_disable;
 uniform float mostra_pascolo = 0.0;
 
 // Tecnica di ogni campo (UsoSuolo.tecniche, un byte per cella da 10 m, senza filtro): 0 zappa
@@ -325,6 +327,27 @@ void fragment() {
 			float confine = 1.0 - smoothstep(0.0, 0.9 + 2.0 * lontano, abs(fract(s_trav / 18.0 + 0.5) - 0.5) * 18.0);
 			campo *= 1.0 - confine * 0.18 * (1.0 - lontano);
 		}
+		// Campo stanco (proposta confermata da Fede il 26/11/2026): si schiarisce, la terra si fa
+		// polverosa e le erbacce lo invadono a chiazze man mano che rende meno. Il maggese è quasi
+		// tutto erba, con qualche chiazza di terra calpestata dagli animali.
+		vec2 sm = texture(stanchezza_campi, UV).rg;
+		if (sm.r > 0.001 || sm.g > 0.001) {
+			float st = clamp(sm.r, 0.0, 1.0);
+			float mg = clamp(sm.g, 0.0, 1.0);
+			// Due scale di macchie, una ruotata, perché le chiazze non facciano un disegno ripetuto.
+			vec2 pr = mat2(vec2(0.8, 0.6), vec2(-0.6, 0.8)) * pos_mondo.xz;
+			float chiazze = texture(macchie, pos_mondo.xz / 7.3).r * 0.5 + texture(macchie, pr / 26.0 + 0.37).r * 0.5;
+			chiazze = mix(chiazze, 0.5, lontano);
+			vec3 polvere = vec3(0.3, 0.26, 0.2) * (0.92 + 0.16 * grana_c);
+			campo = mix(campo, polvere, 0.45 * st);
+			// Al massimo della stanchezza le erbacce coprono circa un terzo del campo, a chiazze:
+			// gli appezzamenti restano leggibili.
+			float erbacce = smoothstep(0.66 - 0.16 * st, 0.74 - 0.14 * st, chiazze) * st;
+			campo = mix(campo, verosimile * vec3(0.85, 0.93, 0.7), erbacce * 0.7);
+			vec3 prato_maggese = verosimile * vec3(0.92, 1.0, 0.86);
+			vec3 calpestio = mix(polvere, verosimile, 0.4);
+			campo = mix(campo, mix(prato_maggese, calpestio, smoothstep(0.7, 0.85, chiazze) * 0.6), mg * 0.85);
+		}
 		verosimile = mix(verosimile, campo, uso.b * (1.0 - uso.g) * (1.0 - uso.a));
 	}
 	// Zone speciali lette in otto punti attorno, come la copertura dei boschi: bordi senza gradini.
@@ -377,7 +400,8 @@ void fragment() {
 			float s = max(t.a - t.b, 0.0);
 			col = mix(base, pow(vec3(0.16, 0.43, 0.67), vec3(2.2)), clamp(0.08 + 0.55 * a + 0.25 * s, 0.0, 0.85));
 		} else if (modo == 2) {
-			float f = t.r;
+			// Fertilità: i campi stanchi rendono meno e si vedono più poveri (fino al -35%).
+			float f = t.r * (1.0 - 0.35 * clamp(texture(stanchezza_campi, UV).r, 0.0, 1.0));
 			col = mix(base, pow(mix(vec3(0.58, 0.45, 0.16), vec3(0.16, 0.55, 0.18), f), vec3(2.2)), 0.25 + 0.5 * f);
 		} else if (modo == 3) {
 			float r = t.g;

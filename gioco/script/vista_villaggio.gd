@@ -73,14 +73,26 @@ var _firma_sacro := -1
 ## stanno attorno alle case.
 const MASSIMO_ANIMALI := 400
 const SPECIE_ANIMALI := ["pecora", "capra", "maiale", "bue"]
-const VELOCITA_ANIMALI := 0.5  # metri al secondo
 const CAPI_PER_STABBIO := 30
-var _mandria := {}  # specie -> MultiMeshInstance3D
-## Animali: {specie, pos (Vector2), meta (Vector2), verso (gradi), sosta (secondi)}.
+## Movimento (26/11/2026, Fede): gli animali partono e si fermano con calma, girano piano verso la
+## meta, muovono le zampe alla velocità a cui avanzano; i tragitti lunghi (il gregge che cambia
+## posto, dal maggese al pascolo) li fanno a passo lungo, avviandosi uno dopo l'altro.
+const VELOCITA_ANIMALI := 0.5  # passo tranquillo, metri al secondo
+const VELOCITA_LUNGA := 0.95  # passo lungo, per i tragitti oltre TRAGITTO_LUNGO
+const TRAGITTO_LUNGO := 25.0
+const ACCELERAZIONE_ANIMALI := 0.35  # metri al secondo per secondo
+const GIRATA_ANIMALI := 75.0  # gradi al secondo
+## Livelli di dettaglio, come gli alberi (VistaAlberi.DIM_COMPLETI).
+const DIM_ANIMALI_COMPLETI := 220.0
+var cam: CameraIsometrica  # se manca (verifiche senza camera), modelli completi
+## "specie:manto" -> {completo, leggero} (MultiMeshInstance3D, con i dati personalizzati per lo shader).
+var _mandria := {}
+var _completi := true
+## Animali: {specie, manto, pos, meta, verso (gradi), vel, fase, bruca, sosta, ritardo, lungo,
+## alza (testa alta durante la sosta), testa (secondi al prossimo cambio), seme, gregge}.
 var _animali: Array = []
 var _stabbi := {}  # punto -> nodo
 var _caso_animali := RandomNumberGenerator.new()
-var _tempo_animali := 0.0
 var _pixel_pascolo: Array[int] = []
 ## Greggi: {stabbio (Vector2), centro (Vector2), cambio (secondi al prossimo spostamento)}.
 var _greggi: Array = []
@@ -144,13 +156,22 @@ func _sincronizza_mandria() -> void:
 	if _mandria.is_empty():
 		_caso_animali.seed = 7
 		for sp in SPECIE_ANIMALI:
-			var mmi := MultiMeshInstance3D.new()
-			var mm := MultiMesh.new()
-			mm.transform_format = MultiMesh.TRANSFORM_3D
-			mm.mesh = _mesh_di("animale_" + sp)
-			mmi.multimesh = mm
-			add_child(mmi)
-			_mandria[sp] = mmi
+			for m in range(1, Asset.MANTI_ANIMALI + 1):
+				var coppia := {}
+				for livello in ["completo", "leggero"]:
+					var mmi := MultiMeshInstance3D.new()
+					var mm := MultiMesh.new()
+					mm.transform_format = MultiMesh.TRANSFORM_3D
+					mm.use_custom_data = true
+					# Con i soli dati personalizzati il renderer Compatibilità disegnava gli
+					# animali neri: si attivano anche i colori per istanza (bianchi, neutri).
+					mm.use_colors = true
+					mm.mesh = Asset.mesh_animale(sp, m, livello == "leggero")
+					mmi.multimesh = mm
+					add_child(mmi)
+					coppia[livello] = mmi
+				_mandria["%s:%d" % [sp, m]] = coppia
+		_aggiorna_livello_animali(true)
 	_pixel_pascolo.assign(sim.pascolo.keys())
 	var voluti := mini(roundi(sim.capi), MASSIMO_ANIMALI) if sim.fondato else 0
 	while _animali.size() > voluti:
@@ -165,7 +186,7 @@ func _sincronizza_mandria() -> void:
 	while _animali.size() < voluti:
 		var g := _animali.size() % maxi(_greggi.size(), 1) if not _greggi.is_empty() else -1
 		var p := _punto_nel_gregge(g)
-		_animali.append({"specie": _specie_in(p), "pos": p, "meta": p, "verso": _caso_animali.randf() * 360.0, "sosta": _caso_animali.randf() * 10.0, "gregge": g})
+		_animali.append(_nuovo_animale(_specie_in(p), p, g))
 	for k in _animali.size():
 		var a: Dictionary = _animali[k]
 		var g := k % _greggi.size() if not _greggi.is_empty() else -1
@@ -173,16 +194,44 @@ func _sincronizza_mandria() -> void:
 			a["gregge"] = g
 			var nuovo := _punto_nel_gregge(g)
 			a["meta"] = nuovo
+			a["sosta"] = 0.0
+			a["lungo"] = nuovo.distance_to(a["pos"]) > TRAGITTO_LUNGO
 			if nuovo.distance_to(a["pos"]) > 150.0:
 				a["pos"] = nuovo
-	var per_specie := {}
-	for sp in SPECIE_ANIMALI:
-		per_specie[sp] = 0
+	var per_tipo := {}
+	for chiave in _mandria:
+		per_tipo[chiave] = 0
 	for a in _animali:
-		per_specie[a["specie"]] += 1
-	for sp in SPECIE_ANIMALI:
-		(_mandria[sp] as MultiMeshInstance3D).multimesh.instance_count = per_specie[sp]
+		per_tipo[_chiave(a)] += 1
+	for chiave in _mandria:
+		for livello in ["completo", "leggero"]:
+			(_mandria[chiave][livello] as MultiMeshInstance3D).multimesh.instance_count = per_tipo[chiave]
 	_muovi_animali(0.0)
+
+
+func _nuovo_animale(specie: String, p: Vector2, g: int) -> Dictionary:
+	# Manti: il primo più comune, il terzo più raro.
+	var r := _caso_animali.randf()
+	var manto := 1 if r < 0.5 else (2 if r < 0.8 else 3)
+	return {"specie": specie, "manto": manto, "pos": p, "meta": p, "verso": _caso_animali.randf() * 360.0,
+		"vel": 0.0, "fase": _caso_animali.randf() * TAU, "bruca": 1.0, "sosta": _caso_animali.randf() * 10.0,
+		"ritardo": 0.0, "lungo": false, "alza": false, "testa": _caso_animali.randf_range(2.0, 10.0),
+		"seme": _caso_animali.randf(), "gregge": g}
+
+
+func _chiave(a: Dictionary) -> String:
+	return "%s:%d" % [a["specie"], a["manto"]]
+
+
+## Modelli completi da vicino, leggeri da lontano (come gli alberi).
+func _aggiorna_livello_animali(forza: bool = false) -> void:
+	var completi := cam == null or cam.dimensione < DIM_ANIMALI_COMPLETI
+	if completi == _completi and not forza:
+		return
+	_completi = completi
+	for chiave in _mandria:
+		(_mandria[chiave]["completo"] as MultiMeshInstance3D).visible = completi
+		(_mandria[chiave]["leggero"] as MultiMeshInstance3D).visible = not completi
 
 
 ## Stabbi: uno ogni CAPI_PER_STABBIO capi, sui pixel del pascolo, ad almeno 120 m l'uno dall'altro.
@@ -212,45 +261,115 @@ func _sincronizza_stabbi() -> void:
 		uso.costruisci(uso.celle_nel_cerchio(p.x, p.y, 5.0), "stabbio")
 
 
-## Gli animali camminano piano verso la loro meta; arrivati, sostano e poi ne scelgono una vicina.
+## Gli animali camminano verso la loro meta: accelerano e rallentano piano, girano verso la meta
+## curvando, e arrivati sostano brucando (con la testa che ogni tanto si alza); poi scelgono un ciuffo
+## vicino. Quando il gregge cambia posto si avviano uno dopo l'altro, a passo lungo se è lontano.
+## Lo stato di ogni animale va allo shader (animali.gdshader) nei dati personalizzati della MultiMesh.
 func _muovi_animali(dt: float) -> void:
 	if _animali.is_empty():
 		return
-	var indici := {}
-	for sp in SPECIE_ANIMALI:
-		indici[sp] = 0
-	# Il gregge si sposta piano: ogni tanto un nuovo centro di pascolo vicino allo stabbio.
-	for gr in _greggi:
+	for gr_i in _greggi.size():
+		var gr: Dictionary = _greggi[gr_i]
 		gr["cambio"] = float(gr["cambio"]) - dt
 		if float(gr["cambio"]) <= 0.0:
 			gr["centro"] = _nuovo_centro(gr["stabbio"])
 			gr["cambio"] = _caso_animali.randf_range(40.0, 90.0)
+			_sposta_gregge(gr_i)
+	var indici := {}
+	for chiave in _mandria:
+		indici[chiave] = 0
 	for a in _animali:
 		var pos: Vector2 = a["pos"]
-		var meta: Vector2 = a["meta"]
 		if dt > 0.0:
-			if float(a["sosta"]) > 0.0:
-				a["sosta"] = float(a["sosta"]) - dt
-			elif pos.distance_to(meta) < 0.5:
-				a["sosta"] = _caso_animali.randf_range(4.0, 20.0)
-				a["meta"] = _punto_nel_gregge(int(a["gregge"]))
-			else:
-				var dir := (meta - pos).normalized()
-				a["pos"] = pos + dir * minf(VELOCITA_ANIMALI * dt, pos.distance_to(meta))
-				a["verso"] = rad_to_deg(atan2(-dir.x, -dir.y))
-				pos = a["pos"]
-		var sp: String = a["specie"]
+			_passo_animale(a, dt)
+			pos = a["pos"]
+		var chiave := _chiave(a)
+		var mmi: MultiMeshInstance3D = _mandria[chiave]["completo" if _completi else "leggero"]
 		var t := Transform3D(Basis(Vector3.UP, deg_to_rad(float(a["verso"]))), Vector3(pos.x, terreno.quota_mondo(pos.x, pos.y), pos.y))
-		(_mandria[sp] as MultiMeshInstance3D).multimesh.set_instance_transform(indici[sp], t)
-		indici[sp] += 1
+		var i: int = indici[chiave]
+		mmi.multimesh.set_instance_transform(i, t)
+		mmi.multimesh.set_instance_color(i, Color.WHITE)
+		mmi.multimesh.set_instance_custom_data(i, Color(float(a["fase"]), float(a["vel"]) / VELOCITA_ANIMALI, float(a["bruca"]), float(a["seme"])))
+		indici[chiave] = i + 1
+
+
+## Il gregge `g` va verso il suo nuovo centro: chi è più vicino parte per primo, gli altri lo
+## seguono a pochi secondi l'uno dall'altro.
+func _sposta_gregge(g: int) -> void:
+	var centro: Vector2 = _greggi[g]["centro"]
+	var membri := _animali.filter(func(a: Dictionary) -> bool: return int(a["gregge"]) == g)
+	membri.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return (a["pos"] as Vector2).distance_to(centro) < (b["pos"] as Vector2).distance_to(centro))
+	for k in membri.size():
+		var a: Dictionary = membri[k]
+		var meta := _punto_nel_gregge(g)
+		a["meta"] = meta
+		a["sosta"] = 0.0
+		a["ritardo"] = k * 0.6 + _caso_animali.randf_range(0.0, 1.5)
+		a["lungo"] = meta.distance_to(a["pos"]) > TRAGITTO_LUNGO
+
+
+func _passo_animale(a: Dictionary, dt: float) -> void:
+	var pos: Vector2 = a["pos"]
+	var meta: Vector2 = a["meta"]
+	var dist := pos.distance_to(meta)
+	var obiettivo := 0.0
+	var fermo := true
+	if float(a["ritardo"]) > 0.0:
+		a["ritardo"] = float(a["ritardo"]) - dt
+	elif float(a["sosta"]) > 0.0:
+		a["sosta"] = float(a["sosta"]) - dt
+	elif dist < 0.4:
+		a["sosta"] = _caso_animali.randf_range(4.0, 20.0)
+		a["lungo"] = false
+		a["meta"] = _ciuffo_vicino(a)
+	else:
+		fermo = false
+		var massima := VELOCITA_LUNGA if bool(a["lungo"]) else VELOCITA_ANIMALI
+		if a["specie"] == "bue":
+			massima *= 0.9
+		# Rallenta arrivando, così si ferma senza scatti.
+		obiettivo = minf(massima, sqrt(2.0 * ACCELERAZIONE_ANIMALI * maxf(dist - 0.25, 0.0)))
+		# Gira verso la meta poco alla volta; se deve girare molto, rallenta.
+		var dir := (meta - pos) / dist
+		var voluto := rad_to_deg(atan2(-dir.x, -dir.y))
+		var diff := wrapf(voluto - float(a["verso"]), -180.0, 180.0)
+		a["verso"] = float(a["verso"]) + clampf(diff, -GIRATA_ANIMALI * dt, GIRATA_ANIMALI * dt)
+		obiettivo *= clampf(cos(deg_to_rad(diff)), 0.12, 1.0)
+	var vel := move_toward(float(a["vel"]), obiettivo, ACCELERAZIONE_ANIMALI * dt)
+	a["vel"] = vel
+	if vel > 0.0:
+		var r := deg_to_rad(float(a["verso"]))
+		var avanti := Vector2(-sin(r), -cos(r))
+		a["pos"] = pos + avanti * vel * dt
+		# Le zampe seguono la strada fatta: a passo lungo il passo si allunga (lo shader ne allarga
+		# l'ampiezza nella stessa misura), così gli zoccoli non scivolano sull'erba.
+		var allunga := maxf(1.0, vel / VELOCITA_ANIMALI)
+		a["fase"] = fmod(float(a["fase"]) + vel * dt / (Asset.passo_animale(a["specie"]) * allunga) * TAU, TAU)
+	# Testa: alta camminando; in sosta nell'erba, alzandosi ogni tanto per guardarsi attorno.
+	a["testa"] = float(a["testa"]) - dt
+	if float(a["testa"]) <= 0.0:
+		a["alza"] = not bool(a["alza"])
+		a["testa"] = _caso_animali.randf_range(1.5, 4.0) if bool(a["alza"]) else _caso_animali.randf_range(4.0, 12.0)
+	var bruca := 1.0 if fermo and vel < 0.05 and not bool(a["alza"]) else 0.0
+	a["bruca"] = move_toward(float(a["bruca"]), bruca, dt * 0.9)
+
+
+## Il prossimo ciuffo: qualche metro più in là; chi si è allontanato dal gregge ci torna.
+func _ciuffo_vicino(a: Dictionary) -> Vector2:
+	var g := int(a["gregge"])
+	var pos: Vector2 = a["pos"]
+	if g >= 0 and g < _greggi.size() and pos.distance_to(_greggi[g]["centro"]) > RAGGIO_GREGGE:
+		return _punto_nel_gregge(g)
+	if g < 0 and _pixel_pascolo.is_empty() and pos.distance_to(sim.mondo_di_px(sim.centro)) > 80.0:
+		return _punto_animale()
+	return pos + Vector2.from_angle(_caso_animali.randf() * TAU) * _caso_animali.randf_range(1.5, 7.0)
 
 
 func _process(delta: float) -> void:
-	# Dieci volte al secondo bastano per un passo lento.
-	_tempo_animali += delta
-	if _tempo_animali >= 0.1:
-		_muovi_animali(_tempo_animali)
-		_tempo_animali = 0.0
+	if _animali.is_empty():
+		return
+	_aggiorna_livello_animali()
+	_muovi_animali(minf(delta, 0.1))
 
 
 ## Quanti animali sono disegnati (per le verifiche).
@@ -280,6 +399,42 @@ func _sincronizza_pascolo() -> void:
 	_texture_pascolo.update(_immagine_pascolo)
 
 
+## Campo stanco visibile (proposta di Claude confermata da Fede il 26/11/2026): un punto della
+## mappa per campo, R = quanto è stanco (0 riposato, 1 alla perdita massima di resa), G = a maggese.
+## Lo shader del terreno schiarisce il campo e lo riempie di erbacce man mano che si stanca, il
+## maggese è erba con gli animali, e nella mappa della Fertilità i campi stanchi sono più poveri.
+var _immagine_stanchezza: Image
+var _texture_stanchezza: ImageTexture
+var _firma_stanchezza := -1
+
+
+func _sincronizza_stanchezza() -> void:
+	if _immagine_stanchezza == null:
+		_immagine_stanchezza = Image.create(sim.n, sim.n, false, Image.FORMAT_RG8)
+		_texture_stanchezza = ImageTexture.create_from_image(_immagine_stanchezza)
+		terreno.materiale.set_shader_parameter("stanchezza_campi", _texture_stanchezza)
+	var firma := hash([sim.stanchezza, sim.maggese, sim.campi.size()])
+	if firma == _firma_stanchezza:
+		return
+	_firma_stanchezza = firma
+	_immagine_stanchezza.fill(Color(0, 0, 0))
+	for i in sim.campi:
+		var st := (1.0 - sim.fattore_stanchezza(i)) / SimVillaggio.PERDITA_STANCHEZZA
+		var mg := 1.0 if sim.maggese.has(i) else 0.0
+		if st > 0.0 or mg > 0.0:
+			var p := sim.px_di(i)
+			_immagine_stanchezza.set_pixel(p.x, p.y, Color(st, mg, 0))
+	_texture_stanchezza.update(_immagine_stanchezza)
+
+
+## Quanto appare stanco il campo nel punto `i` (per le verifiche): R della texture.
+func stanchezza_disegnata(i: int) -> float:
+	if _immagine_stanchezza == null:
+		return 0.0
+	var p := sim.px_di(i)
+	return _immagine_stanchezza.get_pixel(p.x, p.y).r
+
+
 func _sincronizza_bosco_sacro() -> void:
 	if _immagine_sacro == null:
 		_immagine_sacro = Image.create(sim.n, sim.n, false, Image.FORMAT_L8)
@@ -300,6 +455,7 @@ func sincronizza() -> void:
 	_sincronizza_zona()
 	_sincronizza_bosco_sacro()
 	_sincronizza_pascolo()
+	_sincronizza_stanchezza()
 	_sincronizza_mandria()
 	_sincronizza_centro()
 	_sincronizza_campi_e_sentieri()

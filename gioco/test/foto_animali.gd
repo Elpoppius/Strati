@@ -1,6 +1,8 @@
 extends SceneTree
 ## Foto di controllo del pascolo (decisioni di Fede del 25/11/2026): lo stabbio con l'abbeveratoio e
-## gli animali (pecore, capre, maiali, un bue) su un prato sgombro accanto al sito iniziale.
+## gli animali su un prato sgombro accanto al sito iniziale. Dal 26/11/2026 (terza versione): per
+## ogni specie i tre manti in fila, il primo fermo a testa alta, il secondo che bruca, il terzo a
+## metà passo; dietro qualcuno sparso. Con "leggero" come quarto argomento, il livello leggero.
 ## Uso: xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto_animali.gd -- uscita.png [dimensione_vista] [rotazioni]
 
 const CARTELLA := "res://asset/villaggio"
@@ -24,6 +26,18 @@ func _posa(nome: String, x: float, z: float, gradi: float) -> void:
 	_s.add_child(nodo)
 
 
+func _animale(specie: String, manto: int, leggero: bool, posa: Vector4, x: float, z: float, gradi: float) -> void:
+	var mi := MeshInstance3D.new()
+	mi.mesh = Asset.mesh_animale(specie, manto, leggero)
+	for i in mi.mesh.get_surface_count():
+		var mat := mi.mesh.surface_get_material(i).duplicate() as ShaderMaterial
+		mat.set_shader_parameter("posa", posa)
+		mi.set_surface_override_material(i, mat)
+	mi.position = Vector3(x, _s.terreno.quota_mondo(x, z), z)
+	mi.rotation_degrees.y = gradi
+	_s.add_child(mi)
+
+
 func _process(_d: float) -> bool:
 	_f += 1
 	var args := OS.get_cmdline_user_args()
@@ -35,13 +49,17 @@ func _process(_d: float) -> bool:
 		_posa("stabbio", c.x - 6.0, c.z - 4.0, 0.0)
 		var caso := RandomNumberGenerator.new()
 		caso.seed = 7
-		# In fila, di fianco, per confrontarli: pecora, capra, maiale, bue; dietro qualcuno sparso.
+		var leggero := args.size() > 3 and args[3] == "leggero"
+		# Una fila per specie, i tre manti di fianco: fermo, che bruca, a metà passo.
 		var fila := ["pecora", "capra", "maiale", "bue"]
+		var pose := [Vector4(0, 0, 0, 0.3), Vector4(0, 0, 1, 0.5), Vector4(1.2, 1, 0, 0.7)]
 		for k in fila.size():
-			_posa("animale_" + fila[k], c.x - 3.0 + k * 2.6, c.z + 3.0 - k * 2.6, 135.0)
+			for m in 3:
+				var passo := 2.6 if fila[k] == "bue" else 1.6
+				_animale(fila[k], m + 1, leggero, pose[m], c.x - 4.0 + m * passo * 1.3 + k * 1.2, c.z + 4.0 - k * 2.4 + m * 0.4, 100.0)
 		var elenco := ["pecora", "pecora", "capra", "maiale"]
 		for k in elenco.size():
-			_posa("animale_" + elenco[k], c.x + caso.randf_range(2.0, 9.0), c.z + caso.randf_range(-8.0, -2.0), caso.randf_range(0.0, 360.0))
+			_animale(elenco[k], 1 + k % 3, leggero, Vector4(caso.randf() * TAU, caso.randf(), caso.randf(), caso.randf()), c.x + caso.randf_range(3.0, 9.0), c.z + caso.randf_range(-8.0, -3.0), caso.randf_range(0.0, 360.0))
 		_s.griglia_attiva = false
 		var dim := float(args[1]) if args.size() > 1 else 24.0
 		cam.dimensione = dim

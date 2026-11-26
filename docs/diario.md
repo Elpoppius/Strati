@@ -2,6 +2,26 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (mattina tardi)
+**Fatto**
+- **Animali rifatti, terza versione** (Fede: "grossolani e molto poligonali", definizione simile agli alberi; riferimenti di Age of Empires IV dalla pagina del wiki indicata da Fede, studiando le scene di gioco e non le icone dorate):
+  - nuovo `strumenti/blender/animali.py`: corpo unico da un campo di distanza (volumi che si fondono, superficie con marching cubes; scikit-image aggiunto a `setup_strumenti.sh`), tre manti per specie, livello completo (2600–3600 facce) e leggero (260);
+  - pelo: grane nuove `pelo.png` e `lana.png` che scorrono dal dorso alla pancia, e **carte di pelo** con il ritaglio come le foglie (`ciocche.png`, `ciocche_lana.png`): frangia sotto la pancia, cresta del maiale;
+  - testa del maiale corta (brucando sembrava una proboscide, segnalato da Fede) e brucatura diversa per specie: il collo scende fino a mettere il muso nell'erba;
+  - tolti i vecchi `animale_*.glb` e gli animali da `villaggio.py`. Foto: `docs/immagini/animali-pelo-26-11.jpg`, `animali-pelo-vicino-26-11.jpg`.
+- **Animazioni e movimento** (Fede: animazioni ok come proposte, più il movimento da un punto all'altro): shader `animali.gdshader` e `animali_ciocche.gdshader` con `animali_comune.gdshaderinc` (zampe a coppie diagonali, corpo che sale e scende, testa che bruca e si guarda attorno, orecchie, coda); in `VistaVillaggio` accelerazione, curve, passo lungo oltre 25 m, zampe legate alla strada fatta, gregge che parte in fila sciolta; modelli completi sotto i 220 m di vista e leggeri sopra. Con la MultiMesh nel renderer Compatibilità servono anche i colori per istanza, altrimenti gli animali uscivano neri.
+- **Campo stanco visibile:** si schiarisce, terra polverosa, erbacce a chiazze; maggese quasi tutto erba; più povero nella mappa della Fertilità. Foto `docs/immagini/campo-stanco-26-11.jpg`.
+- Verifiche nuove in `verifica_partita.gd` (materiali e livelli degli animali, manti, movimento, fase del passo, gregge in fila, campo stanco); tutte le 9 verifiche superate. Le dinamiche non cambiano, quindi niente nuove partite "umane".
+
+**Decisioni** (Fede)
+- Confermate le proposte del campo stanco visibile, del tasto N, dei greggi uno per stabbio e della riga "si macellano" al massimo ogni 5 anni.
+- Tre manti per specie subito; animazioni come proposte da Claude, più il movimento tra i punti.
+- Riferimento per gli animali: Age of Empires IV (scene di gioco).
+
+**Prossimo passo**
+- Fede: guardare le foto e provare nel gioco gli animali (fotogrammi al secondo con molti animali vicini, sui tre PC) e il campo stanco; rispondere sulle due domande del pascolo (notifica del sacerdote, greggi più grandi).
+- Claude: voci 4 (scorrerie) e 5 (strade), con riepilogo prima di cominciare.
+
 ## 26/11/2026 (mattina)
 **Fatto**
 - **Stime riviste** (richiesta di Fede): tempi veri dai commit del 25/11, nel todo. Erano da 2 a 8 volte troppo alte; il costo fisso vero sono le prove, circa 25 minuti per voce. Restano 7–10 ore di lavoro di Claude.
