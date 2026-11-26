@@ -186,7 +186,48 @@ Non tutte le città crescono a livelli: alcune sostituiscono, altre integrano. L
 - **Interventi**, secondo l'epoca: mozzare la parte alta (la Garisenda nel Trecento), catene e contrafforti, consolidare le fondazioni, monitorare, chiudere l'area attorno, oppure accettare il rischio. Il **crollo** è un evento raro, annunciato da segni, come le piene.
 - Salvare un monumento a rischio è un dilemma vero: costa molto, ma è un simbolo.
 
-## 9. Prossimi passi
+## 9. Lo schema delle dinamiche e le sinergie
+*Approvato da Fede il 26/11/2026 ("mi torna"), da verificare con prove in gioco: "è tutto molto intricato per ora, serviranno dei test".*
+
+**Schema.** Territorio e sensibilità d'epoca stanno alla base. Le **opere** del giocatore e le **zone con le loro regole** scrivono i **campi del lotto**. I campi decidono quali **edifici crescono** e dove abitano i **gruppi sociali**. I gruppi danno **consenso per gruppo e per quartiere**, che muove **politiche e regime** e il **bilancio**. Opzioni ed entrate tornano alle opere; ciò che resta diventa strato.
+
+**Spontaneo solo nel villaggio.** Dall'abitato protourbano l'abitato si fa **con le zone**, con il gesto di Cities: Skylines ma più preciso: si dipinge per lotto (griglia da 20 m), con densità (bassa, media, alta), tipologia permessa dall'epoca e regole dell'epoca come opzioni della zona (portico obbligatorio, altezza massima delle torri, facciata regolare, zone omogenee A–F). La zona **si riempie solo dove c'è domanda** (principio "le regole permettono, non costruiscono" di `regolazione-dello-spazio.md`). **Famiglie e prestigio** è un sottomenù di Abitare: il giocatore **concede** un lotto a una famiglia (torre, palazzo, villa), un atto politico che piace agli eminenti e fa crescere la disuguaglianza.
+
+**Menù.**
+| Menù | Sottomenù |
+|---|---|
+| Abitare | Zone · Famiglie e prestigio |
+| Territorio | Terra e cibo · Acqua ed energia |
+| Economia | Lavoro e produzione · Scambio e denaro |
+| Vie e trasporti | Vie · Trasporti |
+| Servizi | Salute e assistenza · Sapere e informazione |
+| Potere | Governo e ordine · Difesa e confine · Sacro |
+| Città pubblica | piazze, svago, monumenti |
+
+Politiche e Ammodernamento restano nella Gestione.
+
+**Campi del lotto** (il motore delle sinergie: gli edifici scrivono valori sui lotti attorno, tutto il resto li legge):
+| Campo | Chi lo alza | Chi lo abbassa |
+|---|---|---|
+| Accesso | vie, ponti, porte, stazioni, tram | mura chiuse, fiumi senza ponti |
+| Salute | acqua, fogna, parchi, ospedali | paludi, maceri, fabbriche, discariche |
+| Sicurezza | mura, torri di avvistamento, caserme | margini scoperti, borghi fuori porta |
+| Decoro | piazze, fontane, palazzi, giardini | macelli, rovine abbandonate |
+| Disturbo | — (si accumula) | fabbriche, ferrovia, tangenziale, depuratore |
+| Valore | accesso, decoro, mercato vicino | disturbo, rischio di piena |
+| Memoria | età, eventi, rarità | demolizioni, restauri che cancellano |
+
+Li leggono le zone (cosa cresce, a che densità), i gruppi sociali (dove abitano: i borghesi cercano decoro e valore, gli operai l'accesso al lavoro e affitti bassi) e la dinamica calda (memoria contro pressione).
+
+**Quattro tipi di sinergia**, uguali in ogni epoca:
+1. **Raggio:** l'edificio cambia i campi attorno (fontana: salute entro 200 m; torre dell'orologio: resa di botteghe e mercato entro il suo suono; discarica: disturbo).
+2. **Catene:** ciò che un edificio produce serve a un altro; se manca un anello, la catena si ferma (cava di gesso → fornace → mura e case in muratura; canale → mulino da seta → mercanti → loggia; centrale → tram → quartieri lontani abitabili).
+3. **Complessi:** edifici vicini che valgono più della somma (piazza, palazzo del comune, torre civica e mercato: centro civico; università, biblioteca e tipografia: quartiere del sapere).
+4. **Conflitti:** edifici che si fanno la guerra (torre gentilizia più alta della torre civica; il depuratore che abbassa il valore e il consenso di un quartiere).
+
+**Esempio: Haussmann lungo lo schema.** Il boulevard alza accesso, salute e decoro, quindi il valore → la zona permette palazzi alti e c'è domanda: crescono i palazzi borghesi → gli operai vanno dove il valore è basso, in periferia vicino al disturbo → il consenso cambia geografia → il bilancio incassa di più, ma l'opera è a debito → la sensibilità dopo rigiudica la memoria demolita e il boulevard diventa patrimonio. Nessuna regola scritta apposta: è una conseguenza.
+
+## 10. Prossimi passi
 1. Lista degli edifici e dei modelli per epoca: `edifici-per-epoca.md` (richiesta di Fede del 26/11/2026).
 2. Età industriale sulla carta, poi Antichità, con la profondità di `era-origini.md`.
 3. Nel villaggio, tenere conto fin d'ora di: struttura separata dalla funzione negli edifici, tracce e leggibilità nel sottosuolo (le rovine ci sono già), assi dell'identità mossi dalle politiche esistenti.

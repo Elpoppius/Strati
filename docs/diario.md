@@ -2,6 +2,18 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (primo pomeriggio) — schema delle dinamiche
+**Fatto** (solo documenti)
+- In `epoche-future.md` nuovo § 9: schema delle dinamiche (territorio e sensibilità → opere e zone → campi del lotto → edifici e gruppi sociali → consenso per quartiere → regime e bilancio), zone dal protourbano, concessione dei lotti alle famiglie, sette menù con sottomenù, campi del lotto, quattro tipi di sinergia (raggio, catene, complessi, conflitti), Haussmann come esempio. Mostrato a Fede con uno schema disegnato.
+- Nel catalogo, la regola su chi fa gli edifici aggiornata.
+
+**Decisioni** (Fede)
+- Spontaneo solo l'abitato del villaggio; dal protourbano le zone, con il gesto di Cities: Skylines ma uno strumento più preciso. Famiglie e prestigio e Abitare come sottomenù.
+- Schema, campi e sinergie: "mi torna"; è intricato, serviranno prove in gioco.
+
+**Prossimo passo**
+- Claude: rivedere le prime due Ere (Origini e Antichità) alla luce dello schema; prima la proposta in conversazione.
+
 ## 26/11/2026 (mezzogiorno passato) — catalogo degli edifici
 **Fatto** (solo documenti)
 - `docs/edifici-per-epoca.md` rifatto come **catalogo per categoria di gioco** (richiesta di Fede: tanti edifici per epoca, ma con un lavoro certosino su come si usano nelle dinamiche). Quattordici categorie (abitare, famiglie e prestigio, terra e cibo, lavoro, scambio e denaro, acqua ed energia, vie, trasporti, difesa e confine, sacro, governo e ordine, vita pubblica, sapere e informazione, salute), circa 170 edifici, ognuno con le epoche in cui si costruisce, **perché lo si sceglie** e cosa muove. Aggiunti castelli e rocche, borghi murati, cassero, torre civica e torre dell'orologio (con scopi diversi), contado (casa colonica, corte agricola, macero, mulino), casello del dazio, tipografia e altri. Regole: ogni edificio ha uno scopo suo; quelli spontanei li orienta il giocatore, non li sceglie.

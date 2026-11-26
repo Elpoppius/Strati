@@ -5,7 +5,7 @@
 ## Regole del catalogo
 1. **Ogni edificio ha uno scopo suo.** Se due edifici della stessa epoca fanno la stessa cosa, uno si toglie o diventa una variante. Esempio: la torre civica chiama a raccolta (crisi, assemblee); la torre dell'orologio ordina il tempo del lavoro e del mercato.
 2. **Ogni edificio segue la regola dei sistemi** (`era-origini.md`): risolve un bisogno, muove almeno un gruppo o un indicatore, lascia una traccia.
-3. **Chi lo fa.** Gli edifici segnati *(spontaneo)* non si piazzano: nascono da soli secondo zone, regole, regime e bisogni. Il giocatore li orienta, non li sceglie. Il loro scopo è ciò che rivelano e ciò che cambiano.
+3. **Chi lo fa.** Gli edifici segnati *(spontaneo)* non si piazzano uno a uno. Nel villaggio nascono da soli; dall'abitato protourbano crescono nelle **zone** dipinte dal giocatore, dove c'è domanda (decisione di Fede del 26/11/2026, `epoche-future.md` § 9). Quelli di Famiglie e prestigio crescono sui lotti che il giocatore **concede** alle famiglie. Il loro scopo è ciò che rivelano e ciò che cambiano.
 4. **Epoche:** il numero dice da quando a quando l'edificio **si può costruire**. Dopo resta in città, finché non lo si demolisce o non va in rovina.
 
 | N. | Epoca | N. | Epoca |
@@ -56,7 +56,7 @@
 | Torre residenziale | 10–11 | tanta gente in poco suolo: risparmia campagna, costa coesione e servizi | ceti medi e popolari |
 
 ## 2. Famiglie e prestigio
-*Quasi tutti spontanei: li costruiscono i gruppi ricchi. Il giocatore li permette, li limita o li vieta con le regole.*
+*Sottomenù di Abitare. Li costruiscono i gruppi ricchi sui lotti che il giocatore concede; con le regole li limita o li vieta.*
 
 | Edificio | Epoche | Perché esiste nel gioco | Muove |
 |---|---|---|---|
