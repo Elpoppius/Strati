@@ -2,6 +2,23 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (notte fonda) — evento soglia e passo elastico (voce 6), partita più lunga, prove in gioco
+**Fatto**
+- **La partita è più lunga** (Fede: "aumenta il periodo di tempo della demo"): non finisce più al 5500 a.C. ma con l'evento del metallo, tra il 3000 e il 1800 a.C.
+- **Passo elastico:** dal 5600 a.C. (con la tappa Territorio, comunque dal 5200) ogni passo è un decennio, calcolato anno per anno e spalmato sui fotogrammi (al massimo 12 ms per fotogramma). Una scelta ferma il passo; notifiche uguali raccolte; scheda di tutorial "Il tempo a decenni".
+- **Evento soglia 1:** tre presagi del metallo dal 3300 a.C.; dal 3000, con il territorio pieno, la scelta aprirsi o restare isolati (al 1800 comunque); primo governo dall'identità (Comunità, Consiglio dei clan, Casa dominante); arriva l'aratro; riepilogo del villaggio e fine del prototipo. Menù Prova › Metallo per vederlo subito.
+- **Simulazione più veloce, stessi risultati:** da circa 60 a 22 ms per anno con mille campi (le partite delle verifiche danno gli stessi numeri di prima).
+- **Finestra Debug (F3):** tutte le prove da fare alla prima prova al PC, 16 caselle (le vecchie più strade, figure sulla rete, varianti delle case, piena, salvataggio, automatici, decenni, metallo, fotogrammi a decenni).
+- **Prove:** 11 verifiche superate (nuove su passo, presagi, evento, governi, Prova › Metallo, decenni nella partita). 18 partite lunghe di giocatori "umani": tutti arrivano al metallo, nessun abbandono (`sessioni-giocatori.md`).
+
+**Decisioni**
+- Fede: proposta della voce 6 approvata ("ok vai procedi"); prove in gioco aggiornate; demo più lunga.
+- Da decidere con Fede (todo): presagi troppo fitti a decenni; soglie del primo governo (nessun Consiglio dei clan nelle prove).
+
+**Prossimo passo**
+- Prova di Fede al PC con la finestra F3 e il Registro (poi Claude legge il registro).
+- Voce 10 (menù delle impostazioni), da progettare con Fede.
+
 ## 26/11/2026 (notte) — strade (voce 5), salvataggio, piene visibili e varianti delle case (voce 9)
 **Fatto**
 - **Sentieri che diventano strade** (voce 5; proposta di Claude approvata da Fede: "mi convincono le proposte"):

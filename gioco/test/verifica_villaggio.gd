@@ -459,13 +459,80 @@ func _verifica_strade(d: MappaDati) -> void:
 	controlla(not u.pixel_strada.has(u.px(fine)) and not u.pixel_strada.is_empty(), "demolendo si toglie il pezzo di strada")
 
 
+## Passo elastico ed evento soglia 1 (voce 6, regole approvate da Fede il 26/11/2026).
+func _verifica_soglia(d: MappaDati) -> void:
+	var s := SimVillaggio.new(d, 41)
+	var c := Vector2i(d.siti[0]["px"])
+	s.fonda(c)
+	s.decisioni.clear()
+	controlla(s.anni_per_passo() == 1, "nei primi secoli un anno per passo")
+	s.anno = SimVillaggio.ANNO_DECENNI - 1
+	s.tappa = SimVillaggio.tappa_di("casali")
+	s.passo()
+	while s.in_attesa():
+		s.scegli(s.decisioni[0]["id"], s.decisioni[0]["opzioni"][0]["id"])
+	controlla(s.anni_per_passo() == SimVillaggio.ANNI_DECENNIO and s.decenni, "dal %s, con il territorio, un decennio per passo" % SimVillaggio.anno_testo(SimVillaggio.ANNO_DECENNI))
+	var t := SimVillaggio.new(d, 41)
+	t.fonda(c)
+	t.decisioni.clear()
+	t.anno = SimVillaggio.ANNO_DECENNI
+	t._aggiorna_decenni()
+	controlla(not t.decenni, "un villaggio senza la tappa Territorio resta ad anni")
+	t.anno = SimVillaggio.ANNO_DECENNI_COMUNQUE
+	t._aggiorna_decenni()
+	controlla(t.decenni, "dal %s comunque a decenni" % SimVillaggio.anno_testo(SimVillaggio.ANNO_DECENNI_COMUNQUE))
+	# Presagi del metallo e scelta.
+	s.anno = SimVillaggio.ANNO_PRESAGI_SOGLIA
+	s.pop = 700.0
+	var anni := 0
+	while not s.decisioni.any(func(x: Dictionary) -> bool: return x["tipo"] == "soglia") and anni < 1000:
+		s.pop = 700.0
+		s.cibo = 5000.0
+		s.passo()
+		while s.in_attesa() and s.decisioni[0]["tipo"] != "soglia":
+			s.scegli(s.decisioni[0]["id"], s.decisioni[0]["opzioni"][0]["id"])
+		anni += 1
+	controlla(s.presagi_soglia >= 2, "prima dell'evento arrivano i presagi del metallo (%d)" % s.presagi_soglia)
+	var dec: Array = s.decisioni.filter(func(x: Dictionary) -> bool: return x["tipo"] == "soglia")
+	controlla(not dec.is_empty() and s.anno >= SimVillaggio.ANNO_SOGLIA, "con il territorio pieno, dal 3000 a.C. arriva l'evento soglia (%s)" % SimVillaggio.anno_testo(s.anno))
+	if not dec.is_empty():
+		s.identita["terra"] = 0.8
+		s.identita["decide"] = -0.4
+		s.scegli(dec[0]["id"], "aprirsi")
+	controlla(s.finito and s.soglia_scelta == "aprirsi" and s.primo_governo == "Casa dominante", "terra alle famiglie e pochi che decidono: Casa dominante (%s)" % s.primo_governo)
+	controlla(s.tecnica_corrente >= 1 and float(s.identita["apertura"]) > 0.3, "arriva l'aratro e la città nasce aperta")
+	var fine: Array = s.decisioni.filter(func(x: Dictionary) -> bool: return x["tipo"] == "fine")
+	controlla(not fine.is_empty() and String(fine[0]["testo"]).contains("Casa dominante") and String(fine[0]["testo"]).contains("abitanti"), "il riepilogo del villaggio dice il primo governo")
+	s.identita["terra"] = -0.6
+	s.identita["decide"] = 0.5
+	s.consenso["anziani"] = 70.0
+	controlla(s.governo_da_identita() == "Comunità", "terra in comune e molti che decidono: Comunità")
+	s.identita["terra"] = 0.1
+	s.identita["decide"] = 0.0
+	controlla(s.governo_da_identita() == "Consiglio dei clan", "in mezzo: Consiglio dei clan")
+	# Al 1800 a.C. l'evento arriva comunque.
+	var u := SimVillaggio.new(d, 41)
+	u.fonda(c)
+	u.decisioni.clear()
+	u.presagi_soglia = 3
+	u.anno = SimVillaggio.ANNO_SOGLIA_COMUNQUE
+	u.pop = 80.0
+	u._soglia()
+	controlla(u.decisioni.any(func(x: Dictionary) -> bool: return x["tipo"] == "soglia"), "al 1800 a.C. l'evento arriva anche a un villaggio piccolo")
+	var v := SimVillaggio.new(d, 41)
+	v.fonda(c)
+	v.decisioni.clear()
+	var msg := v.prova_soglia()
+	controlla(v.decisioni.any(func(x: Dictionary) -> bool: return x["tipo"] == "soglia") and v.anno == SimVillaggio.ANNO_SOGLIA and v.decenni, "Prova: Metallo porta subito all'evento (%s)" % msg)
+
+
 func _gioca(sim: SimVillaggio, sito: Vector2i, scelta_presagi := "") -> Dictionary:
 	_caso_giocatore.seed = 12345
 	sim.fonda(sito)
 	var minimo_pop := sim.pop
 	var massimo_case := 0
 	var case_sbagliate := 0
-	while not sim.finito:
+	while not sim.finito and sim.anno < SimVillaggio.ANNO_PROVE:
 		while sim.in_attesa():
 			var d: Dictionary = sim.decisioni[0]
 			var o: String = d["opzioni"][0]["id"]
@@ -709,6 +776,7 @@ func _initialize() -> void:
 	_verifica_pascolo(d)
 	_verifica_scorrerie(d)
 	_verifica_strade(d)
+	_verifica_soglia(d)
 	# Partite intere.
 	var sopravvissuti := 0
 	for s in d.siti:

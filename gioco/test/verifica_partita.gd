@@ -415,6 +415,26 @@ func _verifica_strade(p: Partita, sim: SimVillaggio, h: Hud) -> void:
 	controlla((f["tappe"] as Array).size() >= 2 or sim.mondo_di_px(c).distance_to(lontano) < 150.0, "chi va lontano segue sentieri e strade (%d tappe)" % (f["tappe"] as Array).size())
 
 
+## Passo elastico (voce 6, 26/11/2026): a decenni un passo fa dieci anni, spalmati sui fotogrammi.
+func _verifica_decenni(p: Partita, sim: SimVillaggio, h: Hud) -> void:
+	while sim.in_attesa():
+		sim.scegli(sim.decisioni[0]["id"], sim.decisioni[0]["opzioni"][0]["id"])
+	h.chiudi_scelta()
+	sim.decenni = true
+	var prima := sim.anno
+	p.imposta_velocita(1)
+	var fotogrammi := 0
+	while sim.anno < prima + 10 and fotogrammi < 400:
+		p._process(0.1)
+		while sim.in_attesa():
+			sim.scegli(sim.decisioni[0]["id"], sim.decisioni[0]["opzioni"][0]["id"])
+		h.chiudi_scelta()
+		fotogrammi += 1
+	p.imposta_velocita(0)
+	controlla(sim.anno >= prima + 10, "a decenni un passo fa dieci anni (%d anni in %d fotogrammi)" % [sim.anno - prima, fotogrammi])
+	sim.decenni = false
+
+
 func _destro(premuto: bool, pos: Vector2) -> InputEventMouseButton:
 	var ev := InputEventMouseButton.new()
 	ev.button_index = MOUSE_BUTTON_RIGHT
@@ -796,6 +816,7 @@ func _process(_d: float) -> bool:
 	_verifica_specchietti(p, sim, h)
 	_verifica_prova_del_26(p, sim, h)
 	_verifica_strade(p, sim, h)
+	_verifica_decenni(p, sim, h)
 	# Tappe: il granaio è chiuso finché non si raggiunge la sua tappa.
 	controlla(sim.sbloccato("granaio") or p.scena.hud.find_children("*", "Button", true, false).size() > 0, "il granaio segue le tappe")
 	print("Verifica completata: " + ("nessun errore" if _errori == 0 else "%d errori" % _errori))

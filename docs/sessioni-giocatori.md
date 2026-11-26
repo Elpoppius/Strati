@@ -212,6 +212,13 @@ Per sito, scorrerie a partita: Sbocco del fiume 1,67, Pianura aperta 1,17, Terra
 
 **Registro degli avvisi** (5 partite, livello 5): nessuna scorreria (il giocatore automatico del registro non stende il pascolo, quindi la ricchezza resta bassa); 4,2 pause vere e 16 riquadri di tutorial a partita, come prima.
 
+## Partite lunghe, fino al metallo (26/11/2026, notte)
+**Giocatori "umani"** con `lunghe` (18 partite: legge, genere, casual × 6 siti × 1 seme), fino all'evento soglia: 17 villaggi su 18 arrivano al metallo al 2999 a.C. (territorio pieno o 600 abitanti); il casual nell'Area dei gessi, rimasto a 44 abitanti, ci arriva al 1799. Nessun abbandono. A fine partita 378–1203 abitanti (mediana circa 900), 0–21 strade. Scelte a caso: 11 volte aprirsi, 7 isolarsi; governi: 11 Casa dominante, 7 Comunità, nessun Consiglio dei clan (le soglie dell'identità sono da guardare). Carestie in 3000 anni da 1 a 47 (in media circa una ogni due secoli; di più a Sbocco del fiume e Pianura aperta).
+
+**Pause:** circa 20 a partita, quasi tutte prima dei decenni o presagi. In una partita lunga del giocatore automatico semplice: 10 presagi delle sorgenti e 6 comete, di cui 13 a decenni (uno ogni 200 anni circa, cioè ogni 20 secondi a velocità 1). **Da decidere con Fede:** a decenni i presagi sono troppo fitti per il ritmo meditativo; proposta di Claude: a decenni diventano più rari (una volta ogni 5–8 secoli) oppure notifiche grigie senza pausa.
+
+**Tempi:** una partita lunga costa circa 80 s di calcolo senza grafica (circa 20 ms per anno con mille campi, prima 60).
+
 ## Con le strade (26/11/2026, notte)
 **Giocatori "umani"** (72 partite): tracciano sentieri verso legnaie, casali, luogo sacro e campi più lontani (chi conosce il genere quasi sempre, chi legge e chi impara a volte, il casual di rado; `AiutiGiocatori.traccia_sentieri_lavoro`).
 | Profilo | Mediana abitanti | Carestie | Pause vere | Sentieri (km) | Strade a fine partita |

@@ -6,6 +6,9 @@ extends Node
 ## (decisione di Fede del 23/11/2026).
 
 const STRUMENTI := ["fonda", "zona", "campi", "pascolo", "sentiero", "granaio", "legnaia", "capanno", "posta", "luogo_sacro", "torre", "bosco_sacro", "demolisci"]
+## Tempo massimo di calcolo della simulazione per fotogramma (ms), a decenni.
+const TEMPO_ANNI_MS := 12.0
+var _anni_da_fare := 0
 const VELOCITA := [0.0, 1.0, 6.0, 15.0]  # anni al secondo (velocità 1 più calma: decisione di Fede del 25/11/2026)
 const NOMI_VELOCITA := ["Pausa", "1 anno al secondo", "6 anni al secondo", "15 anni al secondo"]
 
@@ -249,19 +252,38 @@ func _process(delta: float) -> void:
 	if sim == null:
 		return
 	var hud: Hud = scena.hud
-	if velocita > 0 and sim.fondato and not sim.finito and not sim.in_attesa() and not hud.modale_aperta():
+	# Passo elastico (voce 6): ogni passo è un anno, o un decennio calcolato anno per anno. Gli anni da
+	# fare si spalmano sui fotogrammi con un tetto di tempo (TEMPO_ANNI_MS), così a decenni il gioco
+	# non si inceppa; se il calcolo non sta dietro, il tempo va un po' più piano. Una scelta ferma il
+	# passo nell'anno in cui arriva.
+	var gioca := velocita > 0 and sim.fondato and not sim.finito and not sim.in_attesa() and not hud.modale_aperta()
+	if gioca:
 		_accumulo += delta * VELOCITA[velocita]
 		var passi := 0
-		while _accumulo >= 1.0 and passi < 15 and not sim.in_attesa() and sim.fondato and not sim.finito:
+		while _accumulo >= 1.0 and _anni_da_fare < sim.anni_per_passo() * (15 if sim.anni_per_passo() == 1 else 2) and passi < 15:
+			_anni_da_fare += sim.anni_per_passo()
+			_accumulo -= 1.0
+			passi += 1
+		# Se il calcolo resta indietro, l'accumulo non cresce oltre un passo.
+		_accumulo = minf(_accumulo, 1.0)
+	if _anni_da_fare > 0 and (sim.in_attesa() or sim.finito or not sim.fondato or hud.modale_aperta()):
+		_anni_da_fare = 0
+	if gioca and _anni_da_fare > 0:
+		var t0 := Time.get_ticks_usec()
+		var fatti := 0
+		# Il tetto cresce con la durata del fotogramma: se il gioco va lento, recupera.
+		var tetto := maxf(TEMPO_ANNI_MS, delta * 1000.0 * 0.5) * 1000.0
+		while _anni_da_fare > 0 and (fatti == 0 or Time.get_ticks_usec() - t0 < tetto):
 			sim.passo()
 			_abbatti_tagli()
 			scena.uso.avanza_anni(1)
-			_accumulo -= 1.0
-			passi += 1
-		if passi > 0:
-			vista.sincronizza()
-			aggiorna_hud()
-			_salvataggio_automatico()
+			_anni_da_fare -= 1
+			fatti += 1
+			if sim.in_attesa() or sim.finito or not sim.fondato:
+				_anni_da_fare = 0
+		vista.sincronizza()
+		aggiorna_hud()
+		_salvataggio_automatico()
 	# Gli alberi tagliati spariscono uno alla volta durante l'anno, alla velocità del tempo.
 	if velocita > 0 and not _coda_tagli.is_empty():
 		_svuota_coda_tagli(ceili(_coda_tagli.size() * minf(1.0, delta * VELOCITA[velocita] * 1.2)))
@@ -269,9 +291,20 @@ func _process(delta: float) -> void:
 	if velocita > 0:
 		vista.aggiorna_barre(_accumulo)
 	# Notifiche discrete: non fermano il gioco (decisione di Fede, ritmo meditativo).
+	# A decenni le notifiche uguali dello stesso passo si raccolgono in una (con quante volte).
+	var raccolte := {}
+	var ordine: Array = []
 	while not sim.avvisi.is_empty():
 		var a: Dictionary = sim.avvisi.pop_front()
-		hud.notifica(a["testo"], a["pericolo"], a["punto"])
+		if raccolte.has(a["testo"]):
+			raccolte[a["testo"]]["volte"] += 1
+		else:
+			raccolte[a["testo"]] = {"avviso": a, "volte": 1}
+			ordine.append(a["testo"])
+	for t in ordine:
+		var r: Dictionary = raccolte[t]
+		var a: Dictionary = r["avviso"]
+		hud.notifica(a["testo"] if r["volte"] == 1 else "%s (%d volte)" % [a["testo"], r["volte"]], a["pericolo"], a["punto"])
 	if famiglia != NESSUNA_CASA and hud.focus_aperto() != _titolo_famiglia:
 		_evidenzia_famiglia(NESSUNA_CASA)
 	_attesa_conseguenze -= delta
@@ -281,7 +314,7 @@ func _process(delta: float) -> void:
 	if sim.in_attesa() and not hud.modale_aperta():
 		_accumulo = 0.0
 		var d: Dictionary = sim.decisioni[0]
-		var tipi := {"sorgenti": "Presagio", "cometa": "Presagio", "primo_cattivo": "Momento decisivo", "affollamento": "Momento decisivo", "stranieri": "Evento", "pericolo": "Pericolo", "piena": "Evento", "abbandono": "Fallimento", "fine": "Fine del prototipo"}
+		var tipi := {"sorgenti": "Presagio", "cometa": "Presagio", "primo_cattivo": "Momento decisivo", "affollamento": "Momento decisivo", "stranieri": "Evento", "pericolo": "Pericolo", "piena": "Evento", "abbandono": "Fallimento", "fine": "Fine del prototipo", "soglia": "Evento soglia"}
 		if d["tipo"] == "tutorial":
 			hud.mostra_tutorial(d, _scelto.bind(d["id"], d["tipo"]))
 			return
@@ -801,7 +834,8 @@ func _testo_consenso() -> String:
 func _testo_tappa() -> String:
 	var k := sim.tappa
 	if k + 1 >= SimVillaggio.TAPPE.size():
-		return "Tutte le tappe del villaggio sono raggiunte."
+		var soglia := sim.attesa_soglia()
+		return "Tutte le tappe del villaggio sono raggiunte.%s%s" % [" Il tempo scorre a decenni." if sim.decenni else "", (" Il metallo: %s." % soglia) if soglia != "" else ""]
 	var dopo: Dictionary = SimVillaggio.TAPPE[k + 1]
 	return "Tappa raggiunta: %s. La prossima, «%s», arriva a %d abitanti. Le tappe raggiunte restano." % [SimVillaggio.TAPPE[k]["nome"], dopo["nome"], dopo["abitanti"]]
 

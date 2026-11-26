@@ -201,6 +201,8 @@ func _crea_interfaccia() -> void:
 		{"id": "anni", "icona": "anni", "testo": "Avanti di 10 anni (solo per prova: fa ricrescere il bosco anche senza villaggio)", "breve": "+10 anni", "tasto": "Y", "strumento": false},
 		# Scorreria di prova (Fede, 26/11/2026: le scorrerie non si erano potute provare).
 		{"id": "prova_scorreria", "icona": "torre", "testo": "Segni di scorreria (solo per prova)", "breve": "Scorreria", "tasto": "", "strumento": false},
+		# Evento soglia di prova (voce 6, 26/11/2026): per vederlo senza giocare tremila anni.
+		{"id": "prova_soglia", "icona": "anni", "testo": "Salta all'evento del metallo (solo per prova)", "breve": "Metallo", "tasto": "", "strumento": false},
 	], "strumenti")
 	hud.comando_scelto.connect(func(_id: String) -> void:
 		_aggiorna_pennello()
@@ -389,6 +391,10 @@ func applica_strumento() -> void:
 
 
 func _azione(id: String) -> void:
+	if id == "prova_soglia" and partita:
+		hud.imposta_messaggio(partita.sim.prova_soglia())
+		partita.aggiorna_hud()
+		return
 	if id == "prova_scorreria" and partita:
 		hud.imposta_messaggio(partita.sim.prova_scorreria())
 		partita.aggiorna_hud()

@@ -52,7 +52,7 @@ func _gioca(d: MappaDati, sito: Vector2i, k: int, seme: int, nome: String) -> Di
 	AiutiGiocatori.costruisci_legnaia(sim, caso, 0.5)
 	for caccia in [true, false]:
 		AiutiGiocatori.costruisci_edificio_risorse(sim, caso, 0.5, caccia)
-	while not sim.finito:
+	while not sim.finito and sim.anno < SimVillaggio.ANNO_PROVE:
 		while sim.in_attesa():
 			var dec: Dictionary = sim.decisioni[0]
 			if dec["tipo"] == "tutorial":

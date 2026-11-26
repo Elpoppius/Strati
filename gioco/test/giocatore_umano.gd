@@ -22,22 +22,28 @@ extends SceneTree
 ##   anziani lo vedono male;
 ## - risponde alle scelte d'istinto (presagi: metà e metà; chi legge ascolta più spesso le sorgenti).
 ## Uso: godot --headless --path gioco -s res://test/giocatore_umano.gd -- uscita.txt [semi] (72 partite
-## con 3 semi: 4 profili × 6 siti × 3)
+## con 3 semi: 4 profili × 6 siti × 3) [lunghe] [profili]. Di norma si giocano i primi cinque secoli
+## (fino a SimVillaggio.ANNO_PROVE, come le misure di prima); con "lunghe" fino all'evento soglia
+## (voce 6, 26/11/2026); profili: per esempio "legge,casual".
 
 var _righe: Array[String] = []
+var _anno_limite := SimVillaggio.ANNO_PROVE
 
 
 func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
 	var file := args[0] if args.size() > 0 else "/tmp/umano.txt"
 	var semi := int(args[1]) if args.size() > 1 else 3
+	if args.size() > 2 and args[2] == "lunghe":
+		_anno_limite = SimVillaggio.ANNO_FINE
+	var profili: Array = args[3].split(",") if args.size() > 3 else ["sbaglia", "legge", "genere", "casual"]
 	var d: MappaDati = load("res://mappe/pedecollinare/mappa.res")
-	_righe.append("profilo,sito,seme,pop_finale,pop_minima,carestie,carestie_gravi,abbandoni,scissioni,pause,tutorial,piene_grandi,granaio_anno,cosa_ha_imparato,legnaie,casali,nucleo,poste,capanni,luogo_sacro,bosco_sacro_ha,sacerdote,capi,pascolo_ha,segni,scorrerie,case_bruciate,torre,pericolo,sentieri_km,strade")
-	for profilo in ["sbaglia", "legge", "genere", "casual"]:
+	_righe.append("profilo,sito,seme,pop_finale,pop_minima,carestie,carestie_gravi,abbandoni,scissioni,pause,tutorial,piene_grandi,granaio_anno,cosa_ha_imparato,legnaie,casali,nucleo,poste,capanni,luogo_sacro,bosco_sacro_ha,sacerdote,capi,pascolo_ha,segni,scorrerie,case_bruciate,torre,pericolo,sentieri_km,strade,anno_fine,soglia,governo")
+	for profilo in profili:
 		for sito in d.siti:
 			for seme in range(1, semi + 1):
 				var r := _gioca(d, sito, profilo, seme * 31 + int(sito["n"]))
-				_righe.append("%s,%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%d,%d,%d,%d,%d,%d,%.1f,%d,%d,%.1f,%d,%d,%d,%d,%s,%.1f,%d" % [profilo, String(sito["nome"]).replace(",", " "), seme, r["pop"], r["minima"], r["carestie"], r["gravi"], r["abbandoni"], r["scissioni"], r["pause"], r["tutorial"], r["piene"], r["granaio"], r["imparato"], r["legnaie"], r["casali"], r["nucleo"], r["poste"], r["capanni"], r["sacro"], r["bosco_sacro"], r["sacerdote"], r["capi"], r["pascolo_ha"], r["segni"], r["scorrerie"], r["case_bruciate"], r["torre"], r["pericolo"], r["sentieri_km"], r["strade"]])
+				_righe.append("%s,%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%d,%d,%d,%d,%d,%d,%.1f,%d,%d,%.1f,%d,%d,%d,%d,%s,%.1f,%d,%d,%s,%s" % [profilo, String(sito["nome"]).replace(",", " "), seme, r["pop"], r["minima"], r["carestie"], r["gravi"], r["abbandoni"], r["scissioni"], r["pause"], r["tutorial"], r["piene"], r["granaio"], r["imparato"], r["legnaie"], r["casali"], r["nucleo"], r["poste"], r["capanni"], r["sacro"], r["bosco_sacro"], r["sacerdote"], r["capi"], r["pascolo_ha"], r["segni"], r["scorrerie"], r["case_bruciate"], r["torre"], r["pericolo"], r["sentieri_km"], r["strade"], r["anno_fine"], r["soglia"], r["governo"]])
 	var f := FileAccess.open(file, FileAccess.WRITE)
 	f.store_string("\n".join(_righe) + "\n")
 	f.close()
@@ -92,7 +98,7 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 	var torre_voluta := false
 	var caccia_spenta_anno := -1
 	var raccolto_provato := false
-	while not sim.finito:
+	while not sim.finito and sim.anno < _anno_limite:
 		while sim.in_attesa():
 			var dec: Dictionary = sim.decisioni[0]
 			if dec["tipo"] == "tutorial":
@@ -237,7 +243,8 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 		"sacro": 1 if sim.luogo_sacro_pronto() else 0, "bosco_sacro": snappedf(sim.ettari_bosco_sacro(), 0.1), "sacerdote": roundi(sim.consenso["sacerdote"]) if sim.sacerdote_attivo else -1,
 		"capi": roundi(sim.capi), "pascolo_ha": snappedf(sim.pascolo.size() * SimVillaggio.AREA_PIXEL_HA, 0.1),
 		"segni": sim.stat["segni"], "scorrerie": sim.stat["scorrerie"], "case_bruciate": sim.stat["case_bruciate"], "torre": 1 if sim.torre_pronta() else 0, "pericolo": sim.politica("pericolo"),
-		"sentieri_km": sim.sentieri.size() * sim.dati.metri_per_px / 1000.0, "strade": sim.strade.size()}
+		"sentieri_km": sim.sentieri.size() * sim.dati.metri_per_px / 1000.0, "strade": sim.strade.size(),
+		"anno_fine": sim.anno, "soglia": sim.soglia_scelta, "governo": sim.primo_governo.replace(" ", "_")}
 
 
 ## Posta di caccia e capanno da pesca all'inizio (decisioni di Fede del 25/11/2026): chi conosce il

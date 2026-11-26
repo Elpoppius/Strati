@@ -142,6 +142,14 @@ const SCHEDE := {
 		"dettaglio": "Nessuno costruisce le strade: le fanno i piedi di chi va ai campi, al pascolo, alla legnaia, al luogo sacro, ai casali. Con lo strumento Sentiero (V), passando con il puntatore su un tratto, vedi quanta gente ci passa e fra quanto diventerà strada. I campi vicini a una strada rendono più di quelli lungo un sentiero, le case nuove cominciano a nascere anche lungo la via, e i casali e le legnaie collegati ne guadagnano. Dove la strada passa un torrente o un terreno fradicio, si posano tronchi di traverso. Una strada si toglie solo demolendola.",
 		"avviso": "Strade: i sentieri più battuti diventano strade, e le strade restano.",
 	},
+	# Passo elastico (voce 6, 26/11/2026): quando il villaggio ha messo radici.
+	"decenni": {
+		"titolo": "Il tempo a decenni",
+		"testo": "Il villaggio ha messo radici. Da qui ogni passo del tempo è un decennio: le generazioni passano, e conta ciò che resta.",
+		"domanda": "Cosa cambia con i decenni?",
+		"dettaglio": "Le regole del villaggio sono le stesse: cambia solo quanto in fretta passa il tempo. Il villaggio cresce, i campi si stancano, il bosco ricresce dieci volte più in fretta di prima. Quando arriva una scelta il tempo si ferma nell'anno in cui arriva. Più avanti, quando il villaggio avrà riempito la sua terra, dalla valle arriveranno voci di un materiale nuovo: il metallo.",
+		"avviso": "Da qui il tempo scorre a decenni.",
+	},
 	"affollati": {
 		"titolo": "Villaggio affollato",
 		"testo": "Quando le case non bastano per tutte le famiglie, il villaggio deve scegliere: stringersi o lasciar partire qualcuno.",

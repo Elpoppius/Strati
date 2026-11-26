@@ -14,7 +14,40 @@ extends RefCounted
 ## La grafica legge lo stato (case, campi, sentieri, granaio) e lo disegna (VistaVillaggio).
 
 const ANNO_INIZIO := -6000
-const ANNO_FINE := -5500
+## La partita non finisce più a cinque secoli (Fede, 26/11/2026: "aumenta il periodo della demo"):
+## arriva fino all'evento soglia 1, nella finestra 3000–1800 a.C. ANNO_FINE resta come riparo.
+const ANNO_FINE := -1700
+## Le prove automatiche giocano i primi cinque secoli, come prima (si confrontano con le misure
+## vecchie); le partite lunghe si chiedono a parte.
+const ANNO_PROVE := -5500
+## Passo elastico (todo voce 6; proposta di Claude approvata da Fede il 26/11/2026): un anno per
+## passo nei primi quattro secoli (le pedine), poi un decennio. Le regole restano per anno: la partita
+## calcola i dieci anni uno per uno (`anni_per_passo`). Il decennio comincia dal 5600 a.C. se il
+## villaggio è arrivato alla tappa Territorio, altrimenti quando ci arriva, e comunque dal 5200.
+const ANNO_DECENNI := -5600
+const ANNO_DECENNI_COMUNQUE := -5200
+const ANNI_DECENNIO := 10
+## Evento soglia 1, "il metallo e lo scambio" (era-origini.md § 5; regole proposte da Claude e
+## approvate da Fede il 26/11/2026): presagi dal 3300 a.C., evento dal 3000 quando il territorio è
+## pieno (e ci sono stati almeno due presagi), al 1800 comunque.
+const ANNO_PRESAGI_SOGLIA := -3300
+const ANNO_SOGLIA := -3000
+const ANNO_SOGLIA_COMUNQUE := -1800
+const QUOTA_TERRITORIO_PIENO := 0.7
+const ABITANTI_TERRITORIO_PIENO := 600.0
+const PRESAGI_SOGLIA := [
+	"Stranieri di passaggio mostrano un oggetto mai visto: una lama di rame, lucida come l'acqua al sole.",
+	"Mercanti risalgono la valle con sale, conchiglie e piccole asce di metallo da scambiare.",
+	"Si racconta che nei villaggi oltre il fiume abbiano armi nuove, che non si spezzano.",
+]
+var decenni := false
+var presagi_soglia := 0
+var _prossimo_presagio_soglia := ANNO_PRESAGI_SOGLIA
+var soglia_scelta := ""  # "aprirsi" o "isolarsi" dopo l'evento
+var primo_governo := ""
+var rng_soglia := RandomNumberGenerator.new()
+var _terra_contado := -1
+var _firma_terra_contado := -1
 ## Pixel della mappa per cella del prototipo (lato): 160 m / 40 m.
 const PX_CELLA := 4
 const AREA_CELLA := 16
@@ -525,6 +558,8 @@ func _init(d: MappaDati, seme: int = 1) -> void:
 	rng_stranieri.seed = seme + 7919
 	# Anche le scorrerie hanno il loro generatore: le altre vicende restano quelle di prima.
 	rng_scorrerie.seed = seme + 104729
+	# Presagi dell'evento soglia: generatore a parte, come per scorrerie e stranieri.
+	rng_soglia.seed = seme + 15485863
 	bosco_presente = func(i: int) -> bool: return dati.copertura[i] > 127
 	_calcola_distanza_palude()
 
@@ -872,7 +907,27 @@ func _lotti_del_px(p: Vector2i) -> Rect2i:
 	return Rect2i(a, Vector2i(2, 2))
 
 
+## Mentre si scorrono molti punti senza cambiare le case (dissodamento): i punti con una casa,
+## calcolati una volta (prima si guardavano tutte le case per ogni punto della zona agricola).
+var _px_case := {}
+var _px_case_fermi := false
+
+func _segna_px_case() -> void:
+	_px_case = {}
+	for c in case:
+		var w := centro_lotto(c)
+		var q := px_da_mondo(w.x, w.y)
+		for oy in [-1, 0, 1]:
+			for ox in [-1, 0, 1]:
+				var p := q + Vector2i(ox, oy)
+				if _lotti_del_px(p).has_point(c):
+					_px_case[p] = true
+	_px_case_fermi = true
+
+
 func _occupato_da_case(p: Vector2i) -> bool:
+	if _px_case_fermi:
+		return _px_case.has(p)
 	var r := _lotti_del_px(p)
 	for c in case:
 		if r.has_point(c):
@@ -952,8 +1007,11 @@ func _dissoda_zona() -> int:
 	# scorte e fa crescere l'abbondanza (25/11/2026; prima +15%).
 	var fabbisogno := pop * MARGINE_RACCOLTO - ultima_caccia - ultima_pesca
 	var attesa := 0.0
+	_aggiorna_campi_serviti()
+	_serviti_fermi = true
 	for i in campi:
 		attesa += _resa_attesa(i)
+	_serviti_fermi = false
 	var mancante := fabbisogno - attesa
 	if mancante <= 0.0:
 		zona_piena = false
@@ -965,19 +1023,26 @@ func _dissoda_zona() -> int:
 	var c := mondo_di_px(centro)
 	var libero := raggio_abitato() + 20.0
 	var candidati: Array[int] = []
+	var gia := {}
+	for i in campi:
+		gia[i] = true
+	_segna_px_case()
 	for i in zona:
-		if campi.has(i):
+		if gia.has(i):
 			continue
 		var p := px_di(i)
 		if mondo_di_px(p).distance_to(c) < libero or motivo_campo(p) != "":
 			continue
 		candidati.append(i)
+	_px_case_fermi = false
 	# Zona piena: niente avviso (decisione di Fede del 25/11/2026), lo dice la mappa.
 	zona_piena = candidati.is_empty()
 	if candidati.is_empty():
 		return 0
-	candidati.sort_custom(func(a: int, b: int) -> bool:
-		return fert(a) - mondo_di_px(px_di(a)).distance_to(c) / 1500.0 > fert(b) - mondo_di_px(px_di(b)).distance_to(c) / 1500.0)
+	var pregio := {}
+	for i in candidati:
+		pregio[i] = fert(i) - mondo_di_px(px_di(i)).distance_to(c) / 1500.0
+	candidati.sort_custom(func(a: int, b: int) -> bool: return pregio[a] > pregio[b])
 	var nuovi := 0
 	for i in candidati:
 		if mancante <= 0.0 or nuovi >= massimo:
@@ -1466,6 +1531,23 @@ func prova_scorreria() -> String:
 		return "La scorreria annunciata arriverà l'anno prossimo."
 	_segni()
 	return "Segni di scorreria (prova): la scorreria arriverà tra %d anni." % segni_tra
+
+
+## Prova dell'evento soglia (menù Prova): il tempo salta al 3000 a.C. (se è prima), a decenni, con
+## i presagi già arrivati, e l'evento arriva subito anche se il territorio non è pieno.
+func prova_soglia() -> String:
+	if not fondato:
+		return "Prima bisogna fondare il villaggio."
+	if soglia_scelta != "":
+		return "L'evento del metallo c'è già stato."
+	anno = maxi(anno, ANNO_SOGLIA)
+	decenni = true
+	presagi_soglia = maxi(presagi_soglia, 2)
+	var prima := anno
+	anno = maxi(anno, ANNO_SOGLIA_COMUNQUE)
+	_soglia()
+	anno = prima
+	return "Evento del metallo (prova): il tempo è saltato al %s." % anno_testo(anno)
 
 
 func motivo_torre(punto: Vector2) -> String:
@@ -1980,17 +2062,62 @@ func cella_in_piedi(c: Vector2i) -> bool:
 		celle_tagliate.erase(c)
 	var w := (Vector2(c) + Vector2(0.5, 0.5)) * LATO_CELLA_TAGLIO
 	var i := px(px_da_mondo(w.x, w.y))
-	if campi.has(i) or bosco_sacro.has(i) or pascolo.has(i):
+	if (_insieme_campi.has(i) if _campi_fermi else campi.has(i)) or bosco_sacro.has(i) or pascolo.has(i):
 		return false
 	return albero_presente.call(w.x, w.y)
 
 
+## Mentre le legnaie lavorano i campi non cambiano: si guardano in un insieme invece che nella lista
+## (cercare in una lista di mille campi per ogni cella era il punto più lento delle legnaie).
+var _insieme_campi := {}
+var _campi_fermi := false
+
+
 ## Distanza dalla legnaia agli alberi in piedi più vicini (metri; -1 se non ce ne sono più).
 func _bosco_vicino_legnaia(l: Dictionary) -> float:
-	for voce in l["celle"]:
-		if cella_in_piedi(voce[1]):
-			return float(voce[0])
+	var celle: Array = l["celle"]
+	for k in range(_primo_in_piedi(l), celle.size()):
+		if cella_in_piedi(celle[k][1]):
+			return float(celle[k][0])
 	return -1.0
+
+
+## Le celle di una legnaia sono in ordine di distanza e quelle vicine, tagliate, restano giù finché
+## la legnaia lavora: si ricorda da dove ricominciare a cercare (prima si ripartiva ogni anno dalla
+## prima cella, scorrendo migliaia di celle già tagliate). Si riparte da capo quando qualcosa può
+## far tornare in piedi una cella: una legnaia che si ferma o riparte, campi o pascoli tolti, e
+## comunque ogni 25 anni (`_controlla_puntatori`).
+func _primo_in_piedi(l: Dictionary) -> int:
+	var celle: Array = l["celle"]
+	# Una cella saltata perché tagliata (fuori da una zona di taglio attiva) può ricrescere: quando
+	# arriva l'anno della prima ricrescita possibile si ricomincia da capo.
+	if anno >= int(l.get("rinascita", 1 << 30)):
+		l["primo"] = 0
+		l["rinascita"] = 1 << 30
+	var k := int(l.get("primo", 0))
+	while k < celle.size() and not cella_in_piedi(celle[k][1]):
+		var c: Vector2i = celle[k][1]
+		if celle_tagliate.has(c) and not celle_zona_attiva.has(c):
+			l["rinascita"] = mini(int(l.get("rinascita", 1 << 30)), int(celle_tagliate[c]) + ANNI_RICRESCITA)
+		k += 1
+	l["primo"] = k
+	return k
+
+
+var _misure_puntatori := []
+
+func _controlla_puntatori() -> void:
+	var attive := legnaie.map(func(l: Dictionary) -> bool: return legnaia_attiva(l))
+	var ora := [campi.size(), pascolo.size(), bosco_sacro.size(), attive, anno / 25]
+	var prima := _misure_puntatori
+	_misure_puntatori = ora
+	# Più campi, più pascolo o più bosco sacro tolgono celle, non ne fanno tornare: si continua.
+	if prima.size() == ora.size() and int(ora[0]) >= int(prima[0]) and int(ora[1]) >= int(prima[1]) \
+			and int(ora[2]) >= int(prima[2]) and ora[3] == prima[3] and ora[4] == prima[4]:
+		return
+	for l in legnaie:
+		l["primo"] = 0
+		l["rinascita"] = 1 << 30
 
 
 ## Quanti tronchi l'anno può tagliare una legnaia: pieni con gli alberi a ridosso, poi meno man mano
@@ -2105,6 +2232,16 @@ func stato_legnaia(l: Dictionary) -> String:
 ## poi i boscaioli tagliano gli alberi uno alla volta, dal più vicino, per rifare le case e tenere da
 ## parte il legname per costruire, fino alle braccia e a quanto riescono a portare.
 func _lavora_legnaie() -> void:
+	_insieme_campi = {}
+	for i in campi:
+		_insieme_campi[i] = true
+	_campi_fermi = true
+	_lavora_legnaie_dentro()
+	_campi_fermi = false
+
+
+func _lavora_legnaie_dentro() -> void:
+	_controlla_puntatori()
 	tagli_anno = []
 	raccolta_legna = 0.0
 	tronchi_legna = 0.0
@@ -2133,7 +2270,9 @@ func _lavora_legnaie() -> void:
 			if capacita[k] <= 0.0:
 				continue
 			l["debito"] = float(l["debito"]) + voluti * capacita[k] / capacita_taglio
-			for voce in l["celle"]:
+			var celle: Array = l["celle"]
+			for j in range(_primo_in_piedi(l), celle.size()):
+				var voce: Array = celle[j]
 				if float(l["debito"]) <= 0.0:
 					break
 				var c: Vector2i = voce[1]
@@ -2698,7 +2837,14 @@ func risorse_attorno(p: Vector2i) -> Dictionary:
 
 
 ## Campi serviti (sentiero collegato entro 120 m o centro entro 200 m) e campi al margine del bosco.
+## Vero mentre si scorrono tutti i campi senza cambiarli (resa, resa attesa): la firma dei campi
+## serviti non si ricalcola a ogni campo (era il punto più lento della simulazione: un hash di tutti
+## i campi per ogni campo, ogni anno).
+var _serviti_fermi := false
+
 func _aggiorna_campi_serviti() -> void:
+	if _serviti_fermi:
+		return
 	var firma := hash([campi.hash(), sentieri.hash(), centro, _anni_risorse, pixel_strada.size()])
 	if firma == _firma_serviti:
 		return
@@ -2740,13 +2886,36 @@ func _aggiorna_campi_serviti() -> void:
 		if mondo_di_px(p).distance_to(mondo_di_px(centro)) <= 200.0 or _fascia_sentieri.has(i):
 			_campi_serviti[i] = true
 	_campi_al_bosco = {}
-	for i in campi:
-		var p := px_di(i)
-		for dy in range(-2, 3):
-			for dx in range(-2, 3):
-				var q := p + Vector2i(dx, dy)
-				if q.x >= 0 and q.y >= 0 and q.x < n and q.y < n and bosco_presente.call(px(q)):
-					_campi_al_bosco[i] = true
+	# Campi al margine del bosco (bosco entro 2 punti): il bosco del riquadro che contiene i campi si
+	# legge una volta sola e si somma in una tabella cumulata, così ogni campo chiede la sua finestra
+	# 5 × 5 con quattro letture (stesso risultato di prima; prima erano 25 letture del bosco per campo).
+	if not campi.is_empty():
+		var a := Vector2i(n, n)
+		var b := Vector2i(-1, -1)
+		for i in campi:
+			var p := px_di(i)
+			a = Vector2i(mini(a.x, p.x), mini(a.y, p.y))
+			b = Vector2i(maxi(b.x, p.x), maxi(b.y, p.y))
+		a = Vector2i(maxi(a.x - 2, 0), maxi(a.y - 2, 0))
+		b = Vector2i(mini(b.x + 2, n - 1), mini(b.y + 2, n - 1))
+		var w := b.x - a.x + 1
+		var h := b.y - a.y + 1
+		var somme := PackedInt32Array()
+		somme.resize((w + 1) * (h + 1))
+		for y in h:
+			var riga := 0
+			for x in w:
+				if bosco_presente.call((a.y + y) * n + a.x + x):
+					riga += 1
+				somme[(y + 1) * (w + 1) + x + 1] = somme[y * (w + 1) + x + 1] + riga
+		for i in campi:
+			var p := px_di(i) - a
+			var x0 := maxi(p.x - 2, 0)
+			var y0 := maxi(p.y - 2, 0)
+			var x1 := mini(p.x + 2, w - 1) + 1
+			var y1 := mini(p.y + 2, h - 1) + 1
+			if somme[y1 * (w + 1) + x1] - somme[y0 * (w + 1) + x1] - somme[y1 * (w + 1) + x0] + somme[y0 * (w + 1) + x0] > 0:
+				_campi_al_bosco[i] = true
 
 
 func servito(i: int) -> bool:
@@ -2976,6 +3145,8 @@ func _applica_scelta(tipo: String, o: String) -> void:
 		"tutorial":
 			if o == "salta":
 				salta_tutorial()
+		"soglia":
+			_transizione(o)
 		"sorgenti":
 			presagio_vero["scelta"] = o
 			if o == "razionare":
@@ -3110,6 +3281,7 @@ func passo() -> void:
 	if anno > ANNO_INIZIO + 10 and sbloccato("stranieri") and not in_attesa() and rng_stranieri.randf() < PROB_STRANIERI * abbondanza:
 		_arrivo_stranieri()
 	_scorrerie()
+	_soglia()
 	if anni_sapere > 0:
 		anni_sapere -= 1
 	if ammodernamenti["agricolo"]:
@@ -3139,10 +3311,16 @@ func passo() -> void:
 	var lavorabili := int(braccia / 3.0 * AREA_CELLA) if fonti["agricoltura"] else 0
 	var ordinati := campi.duplicate()
 	# Si lavorano prima i campi che rendono di più: quelli stanchi restano incolti e si riposano.
-	ordinati.sort_custom(func(a: int, b: int) -> bool: return fert(a) * fattore_stanchezza(a) > fert(b) * fattore_stanchezza(b))
+	# (Il valore di ogni campo si calcola una volta sola prima di ordinare: stesso ordine di prima.)
+	var valore := {}
+	for i in ordinati:
+		valore[i] = fert(i) * fattore_stanchezza(i)
+	ordinati.sort_custom(func(a: int, b: int) -> bool: return valore[a] > valore[b])
 	var raccolto := 0.0
 	raccolto_potenziale = 0.0
 	var lavorati := {}
+	_aggiorna_campi_serviti()
+	_serviti_fermi = true
 	for k in ordinati.size():
 		var i: int = ordinati[k]
 		var r := _resa(i)
@@ -3155,6 +3333,7 @@ func passo() -> void:
 			stanchezza[i] = float(stanchezza[i]) - RIPOSO_PER_ANNO
 			if stanchezza[i] <= 0.0:
 				stanchezza.erase(i)
+	_serviti_fermi = false
 	ultimo_raccolto = raccolto
 	ultimi_lavorati = mini(lavorabili, ordinati.size())
 	_pascola(lavorati)
@@ -3318,7 +3497,8 @@ func passo() -> void:
 		if arr_g.size() > 30:
 			arr_g.pop_front()
 	anno += 1
-	if anno >= ANNO_FINE:
+	_aggiorna_decenni()
+	if anno >= ANNO_FINE and not finito:
 		_fine()
 
 
@@ -3961,7 +4141,122 @@ func _fine() -> void:
 		roundi(pop), (" (emigrazioni: %d)" % stat["emigrazioni"]) if stat.get("emigrazioni", 0) > 0 else "",
 		stat["carestie"], stat["piene"], stat["siccita"], stat["presagi_letti"], stat["presagi_totali"], stat["fondazioni"],
 		(" (abbandoni: %d)" % stat["abbandoni"]) if stat["abbandoni"] > 0 else ""]
-	_decidi("fine", "%s: cinque secoli dopo" % anno_testo(anno), testo, [{"id": "ok", "testo": "Resta a guardare la mappa", "nota": ""}])
+	_decidi("fine", "%s: la fine dei tempi del villaggio" % anno_testo(anno), testo, [{"id": "ok", "testo": "Resta a guardare la mappa", "nota": ""}])
+
+
+# ---------- passo elastico ed evento soglia 1 (todo voce 6, 26/11/2026) ----------
+
+## Quanti anni fa un passo della partita: uno nei primi secoli, dieci dopo (ANNI_DECENNIO).
+func anni_per_passo() -> int:
+	return ANNI_DECENNIO if decenni else 1
+
+
+func _aggiorna_decenni() -> void:
+	if decenni or not fondato or anno < ANNO_DECENNI:
+		return
+	if tappa < tappa_di("casali") and anno < ANNO_DECENNI_COMUNQUE:
+		return
+	decenni = true
+	_scrivi("Il villaggio ha messo radici. Da qui il tempo scorre a decenni: le generazioni passano, e conta ciò che resta.", "buono")
+	tutorial(["decenni"], "Il tempo a decenni")
+
+
+## La terra coltivabile del contado al raggio massimo (pixel), ricalcolata se il centro cambia.
+func terra_contado() -> int:
+	if _firma_terra_contado == px(centro):
+		return _terra_contado
+	_firma_terra_contado = px(centro)
+	_terra_contado = 0
+	var r := ceili(CONTADO_MAX / dati.metri_per_px)
+	var c := mondo_di_px(centro)
+	for dy in range(-r, r + 1):
+		for dx in range(-r, r + 1):
+			var q := centro + Vector2i(dx, dy)
+			if q.x < 0 or q.y < 0 or q.x >= n or q.y >= n:
+				continue
+			if mondo_di_px(q).distance_to(c) <= CONTADO_MAX and edificabile(px(q)):
+				_terra_contado += 1
+	return _terra_contado
+
+
+## Il territorio è pieno: contado al raggio massimo e quasi tutta la sua terra in campi o pascolo,
+## oppure un villaggio grande.
+func territorio_pieno() -> bool:
+	if pop >= ABITANTI_TERRITORIO_PIENO:
+		return true
+	if raggio_contado() < CONTADO_MAX:
+		return false
+	return campi.size() + pascolo.size() >= QUOTA_TERRITORIO_PIENO * maxi(terra_contado(), 1)
+
+
+## Quanto manca all'evento soglia, per lo specchietto (vuoto se non è ancora tempo di parlarne).
+func attesa_soglia() -> String:
+	if soglia_scelta != "" or anno < ANNO_PRESAGI_SOGLIA:
+		return ""
+	if anno < ANNO_SOGLIA:
+		return "le voci del metallo arrivano dalla valle"
+	return "il villaggio è pronto" if territorio_pieno() else "serve un territorio pieno"
+
+
+func _soglia() -> void:
+	if not fondato or soglia_scelta != "" or finito:
+		return
+	if anno >= ANNO_PRESAGI_SOGLIA and presagi_soglia < PRESAGI_SOGLIA.size() and anno >= _prossimo_presagio_soglia:
+		var testo: String = PRESAGI_SOGLIA[presagi_soglia]
+		presagi_soglia += 1
+		_prossimo_presagio_soglia = anno + rng_soglia.randi_range(60, 140)
+		_scrivi(testo)
+		_notifica(testo, false, mondo_di_px(centro))
+	if in_attesa() or anno < ANNO_SOGLIA:
+		return
+	if not (anno >= ANNO_SOGLIA_COMUNQUE or (territorio_pieno() and presagi_soglia >= 2)):
+		return
+	soglia_scelta = "attesa"
+	_decidi("soglia", "Il metallo e lo scambio",
+		"Lungo la valle passano mercanti con oggetti di rame, e i villaggi che commerciano crescono e si armano. Il villaggio ha riempito la sua terra: deve scegliere se aprirsi alle vie di passaggio o restare com'è sempre stato. La scelta resterà nella città che verrà.",
+		[{"id": "aprirsi", "testo": "Aprirsi alle vie di passaggio", "nota": "Arrivano il metallo, la ricchezza e gente nuova; ma anche più razzie, più malattie, e più potere a chi commercia."},
+		 {"id": "isolarsi", "testo": "Restare isolati", "nota": "Più sicuro, con le usanze di sempre; ma senza metallo il villaggio resterà indietro."}])
+
+
+## Il primo governo con un nome (era-origini.md § 5), dall'identità costruita nel villaggio: terra in
+## comune e molti che decidono danno la Comunità, terra alle famiglie e pochi che decidono la Casa
+## dominante, in mezzo il Consiglio dei clan. Anziani molto scontenti tolgono la Comunità.
+## Soglie: proposta di Claude.
+func governo_da_identita() -> String:
+	var verso := (float(identita["terra"]) - float(identita["decide"])) * 0.5
+	if verso < -0.15 and consenso["anziani"] >= 45.0:
+		return "Comunità"
+	if verso > 0.3:
+		return "Casa dominante"
+	return "Consiglio dei clan"
+
+
+const DESCRIZIONE_GOVERNI := {
+	"Comunità": "Le famiglie riunite decidono insieme: lavori comuni rapidi e consenso largo, ma scelte lente e poca difesa.",
+	"Consiglio dei clan": "I capi dei clan decidono insieme: concessioni di terra e alleanze, ma i clan si contendono il potere.",
+	"Casa dominante": "Un clan sta sopra gli altri: prestigio, scambi e opere in fretta, ma i comuni sono scontenti.",
+}
+
+
+## Dopo la scelta dell'evento soglia: l'identità prende il segno della scelta, nasce il primo governo,
+## arriva l'aratro, e il prototipo finisce con il riepilogo del villaggio (l'epoca 2 è sulla carta).
+func _transizione(o: String) -> void:
+	soglia_scelta = o
+	identita["apertura"] = clampf(float(identita["apertura"]) + (0.5 if o == "aprirsi" else -0.5), -1.0, 1.0)
+	primo_governo = governo_da_identita()
+	tecnica_corrente = maxi(tecnica_corrente, 1)
+	_scrivi("Il villaggio sceglie di %s. Nasce il primo governo: %s." % ["aprirsi alle vie di passaggio" if o == "aprirsi" else "restare isolato", primo_governo.to_lower()], "buono")
+	_scrivi("Arriva l'aratro: i campi nuovi rendono di più, e quelli vecchi si possono rifare (Ammodernamento).")
+	finito = true
+	var anni := anno - ANNO_INIZIO
+	var chi := consenso.keys().filter(func(g: String) -> bool: return g != "sacerdote" or sacerdote_attivo)
+	chi.sort_custom(func(a: String, b: String) -> bool: return consenso[a] > consenso[b])
+	var testo := "%d anni dalla fondazione. Il villaggio conta %d abitanti in %d case, %d nei casali; %d ettari di campi, %d strade.\nCarestie: %d · Piene grandi: %d · Scorrerie: %d · Abbandoni: %d\nConta di più: %s.\n\nIl primo governo: %s. %s\n%s\n\nArriva l'aratro. L'epoca dell'abitato protourbano è ancora sulla carta: il prototipo finisce qui." % [
+		anni, roundi(pop), case.size(), case_casale.size(), roundi(campi.size() * 0.16), strade.size(),
+		stat["carestie"], stat["piene"], stat["scorrerie"], stat["abbandoni"], ", ".join(chi.map(func(g: String) -> String: return {"anziani": "gli anziani", "famiglie": "le famiglie", "sacerdote": "il sacerdote"}[g])),
+		primo_governo, DESCRIZIONE_GOVERNI[primo_governo],
+		"La città nascerà aperta alle vie del commercio." if o == "aprirsi" else "La città nascerà chiusa e agricola, fedele alle usanze."]
+	_decidi("fine", "%s: il metallo e lo scambio" % anno_testo(anno), testo, [{"id": "ok", "testo": "Continua a guardare il villaggio", "nota": ""}])
 
 
 # ---------- cause, per i pannelli di focus (decisione di Fede del 25/11/2026) ----------

@@ -24,6 +24,7 @@ const LENTI_PER_INTERVALLO := 5
 ## Prove aperte del todo (26/11/2026 sera) da spuntare nella finestra Debug. Quando una prova si chiude
 ## o se ne apre una nuova, si cambia questo elenco.
 const PROVE := [
+	# Tutte le prove aperte per la prova al PC di Fede (aggiornate il 26/11/2026 notte, todo).
 	"Legna: alberi tagliati uno alla volta dalla legnaia",
 	"Scheda della legnaia (al lavoro, a riposo)",
 	"Cursori, cornice di selezione, puntatore rosso",
@@ -33,8 +34,13 @@ const PROVE := [
 	"Scorrerie: segni, scelta, torre (Prova: Scorreria)",
 	"Strade: traffico con Sentiero, strade, passerelle",
 	"Figure che camminano lungo sentieri e strade",
-	"Salvare (F5) e riprendere (F8) una partita",
+	"Case: varianti con orto, cataste, tettoia",
 	"Piena: l'acqua sale e si ritira",
+	"Salvare (F5) e riprendere (F8) una partita",
+	"Salvataggi automatici (tappe, ogni 50 anni)",
+	"Tempo a decenni dopo il 5600 a.C.: fluido?",
+	"Metallo: presagi, scelta, riepilogo (Prova: Metallo)",
+	"Fotogrammi al secondo a decenni e da vicino",
 ]
 
 var cartella := ""

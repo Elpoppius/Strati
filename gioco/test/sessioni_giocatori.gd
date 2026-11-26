@@ -91,7 +91,7 @@ func _gioca(d: MappaDati, sito: Vector2i, k: int, seme: int) -> Dictionary:
 	# Posta di caccia e capanno da pesca: chi gioca meglio li fa subito e nel punto giusto, e ne
 	# aggiunge quando non bastano; chi gioca peggio li fa tardi, dove capita.
 	_edifici_risorse(sim, caso, k, 0)
-	while not sim.finito:
+	while not sim.finito and sim.anno < SimVillaggio.ANNO_PROVE:
 		while sim.in_attesa():
 			var dec: Dictionary = sim.decisioni[0]
 			sim.scegli(dec["id"], _risposta(dec, caso, p_giusta, sim))
