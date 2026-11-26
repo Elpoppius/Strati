@@ -12,17 +12,18 @@ Voci più recenti in cima.
   - indicatore e pannello "Animali";
   - **stabbio** e **animali** (pecora, capra, maiale, bue) in Blender, sulla mappa in **greggi**, uno per stabbio, che si spostano piano nel pascolo. Foto: `docs/immagini/animali-26-11.jpg` e `greggi-nel-gioco-26-11.jpg`;
   - giocatori automatici, 15 verifiche nuove sulla simulazione e 2 sugli strumenti, tutte le 9 superate. Partite "umane": chi conosce il genere passa da 2,7 a 1,6 carestie a partita grazie alla scorta viva.
+- **Animali rifatti** (Fede: i primi erano "un po' abbozzati"): una sagoma propria per specie. Pecora a bioccoli bianchi con testa e zampe scure, capra slanciata con barba e corna all'indietro, maiale basso con grugno e criniera, bue con gobba, giogaia, corna a lira e ciuffo sulla coda; zampe in due pezzi con lo zoccolo (300–600 facce l'uno). Foto in fila e di profilo: `docs/immagini/animali-26-11.jpg`. Verifiche degli asset e della partita superate.
 
 **Decisioni**
 - Fede (25/11 sera): capi confermati; opzione "Togli"; le due zone si parlano senza entrare in conflitto (stoppie e maggese).
 - Proposte di Claude da confermare: tasto N; animali in greggi, uno per stabbio; righe "si macellano" al massimo ogni 5 anni.
-- Fede: i primi animali erano "un po' abbozzati". Rifatti con una sagoma propria per specie: pecora a bioccoli bianchi con testa e zampe scure, capra slanciata con barba e corna all'indietro, maiale basso con grugno e criniera, bue con gobba, giogaia, corna a lira e ciuffo sulla coda; zampe in due pezzi con lo zoccolo (300–600 facce l'uno). Foto: `docs/immagini/animali-26-11.jpg`.
 
 **Prossimo passo**
 - Fede:
   - guardare animali e greggi (foto) e provarli, con i fotogrammi al secondo;
   - confermare il **campo stanco visibile**: il campo si schiarisce e si riempie di erbacce, ed è più povero nella mappa della fertilità;
   - dire se il sacerdote deve chiedere il luogo sacro con una notifica.
+  - dire se le greggi vanno ingrandite (oggi 12 capi senza pascolo, 50–70 con 44 ettari).
 - Claude: campo stanco visibile appena confermato; poi le voci 4 (scorrerie) e 5 (strade).
 
 ## 25/11/2026 (notte, ancora più tardi)
