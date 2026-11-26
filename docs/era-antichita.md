@@ -143,4 +143,3 @@ Reticolo e centuriazione nel tracciato; via consolare come asse principale; temp
 ## 9. Domande aperte
 - **(?)** Come rappresentare i non cittadini senza diritti, servitù compresa: gruppo con lavoro e senza voce, con peso latente, nel tono serio e non moralista dei pilastri.
 - **(?)** Durata delle due epoche in passi e minuti di gioco (da verificare giocando, come per le Origini).
-- **(?)** Nomi delle forme di governo, qui e nell'epoca 2: proposta di Claude in attesa di Fede.
