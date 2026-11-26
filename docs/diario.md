@@ -2,6 +2,21 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (sera, chiusura) — umore e prestigio delle famiglie
+**Fatto**
+- **Umore di ogni famiglia** in sola lettura (`SimVillaggio.umore_famiglie`): il consenso delle famiglie più uno scarto dalla situazione della casa (piena disastrosa ricordata per 20 anni, zona delle piene, legna lontana, campi stanchi vicini, casale senza sentiero; vicinanza al focolare e al luogo sacro). Gli scarti si bilanciano: la media resta il consenso del gruppo, l'equilibrio del villaggio non cambia. Nella scheda della famiglia la barra e la parola sono quelle della famiglia, con i motivi a parole al passaggio del puntatore.
+- **Prestigio nascosto** di ogni famiglia (`SimVillaggio.prestigio_case`), che cresce ogni anno con la vicinanza al focolare e al luogo sacro e, con il raccolto alle famiglie, con gli animali: per dividere le famiglie nell'epoca 2.
+- Decisione scritta in `era-origini.md` § 6 e nello specchietto. Verifiche nuove in `verifica_partita.gd` (la media degli umori è il consenso, il prestigio si registra e non è uguale per tutte). Tutte le 9 verifiche superate; dinamiche invariate (stessi numeri della verifica di prima), quindi niente partite "umane".
+
+**Decisioni** (Fede)
+- Umore per famiglia: solo lettura nel villaggio ("in epoca 1 è ancora tutto in fase di definizione"). Dall'epoca 2 le famiglie si dividono col tempo in **eminenti e comuni** secondo la **posizione di prestigio** ottenuta; l'umore di tutte le famiglie compone il consenso generale, con più peso per le eminenti: il consenso dopo sarà caratterizzato da questa differenza.
+- Registrare il prestigio già nel villaggio, nascosto: sì.
+- Fine sessione dopo le famiglie: diario, verifica dei file e del repository.
+
+**Prossimo passo**
+- Fede: provare nel gioco persone, animazioni, specchietti, scheda della famiglia; dire se "comuni" va bene o preferisce "normali".
+- Claude: voce 4, scorrerie (prima il riepilogo); poi 9 (base tecnica, con il salvataggio), 6 (evento soglia), 10.
+
 ## 26/11/2026 (sera, tardi) — scheda della famiglia
 **Fatto**
 - **Scheda della famiglia** (resto della voce 7): un clic senza strumenti su una persona o su una casa apre nel pannello di focus "FAMIGLIA" il nome dal luogo, quante persone, casa e da quando (o "arrivati da fuori"), e le righe Lavoro, Ha, Umore e Vorrebbe, con il perché al passaggio del puntatore. La casa si incornicia sul terreno e i suoi membri si schiariscono; un clic altrove o Esc la chiudono. Descrizione in `prototipo0-godot.md` e `hud.md`, foto `docs/immagini/famiglia-26-11.jpg`.

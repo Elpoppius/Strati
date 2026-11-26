@@ -1817,7 +1817,7 @@ func _riempi_famiglia(dati: Dictionary) -> void:
 	var umore: Array = dati.get("umore", [])
 	var righe: Array = dati["famiglia"].duplicate()
 	if not umore.is_empty():
-		righe.insert(righe.size() - 1, ["Umore", "", "L'umore delle famiglie del villaggio."])
+		righe.insert(righe.size() - 1, ["Umore", "", String(umore[2]) if umore.size() > 2 else "L'umore delle famiglie del villaggio."])
 	for r in righe:
 		var riga := HBoxContainer.new()
 		riga.mouse_filter = Control.MOUSE_FILTER_PASS

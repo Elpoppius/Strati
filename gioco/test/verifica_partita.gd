@@ -227,6 +227,17 @@ func _verifica_famiglia(p: Partita, sim: SimVillaggio) -> void:
 		diversi[nomi[l]] = true
 	controlla(nomi.size() == sim.case.size() and diversi.size() == nomi.size(), "un nome per ogni casa, senza doppioni (%d case, per esempio \"%s\")" % [sim.case.size(), nomi.values()[0] if not nomi.is_empty() else ""])
 	controlla(not sim.nascita_case.is_empty() and sim.case.all(func(l: Vector2i) -> bool: return sim.nascita_case.has(l)), "ogni casa ricorda l'anno in cui è nata")
+	# Umore di ogni famiglia (decisione di Fede del 26/11/2026): solo lettura, la media è il consenso.
+	var umori := sim.umore_famiglie()
+	var somma := 0.0
+	var diversi_umori := {}
+	for l in umori:
+		somma += float(umori[l][0])
+		diversi_umori[roundi(float(umori[l][0]))] = true
+	var media := somma / maxf(1.0, umori.size())
+	controlla(umori.size() == sim.case.size() and absf(media - float(sim.consenso["famiglie"])) < 1.0, "ogni famiglia ha il suo umore, e la media è il consenso delle famiglie (%.1f contro %.1f, %d valori diversi)" % [media, sim.consenso["famiglie"], diversi_umori.size()])
+	# Le case nate dopo l'ultimo anno non hanno ancora prestigio (vale 0).
+	controlla(sim.prestigio_case.size() >= sim.case.size() / 2 and sim.prestigio_case.values().max() > sim.prestigio_case.values().min(), "il prestigio delle famiglie si registra, nascosto, e non è uguale per tutte (%d case su %d, da %.1f a %.1f)" % [sim.prestigio_case.size(), sim.case.size(), sim.prestigio_case.values().min(), sim.prestigio_case.values().max()])
 	# Clic su una persona: si apre la sua famiglia, e lei si illumina. La vista va sul villaggio.
 	var ci := sim.mondo_di_px(sim.centro)
 	_s.cam.vai_a(ci.x, ci.y)
@@ -261,10 +272,12 @@ func _verifica_famiglia(p: Partita, sim: SimVillaggio) -> void:
 		etichette.append(r[0])
 		if String(r[1]).length() > Partita.MASSIMO_RIGA_FAMIGLIA - 12 or String(r[2]) == "":
 			corte = false
-	controlla(corte and etichette.has("Lavoro") and etichette.has("Ha") and etichette.has("Vorrebbe") and (d["umore"] as Array).size() == 2, "la scheda ha righe brevi, ognuna con il suo perché: %s" % [d["famiglia"]])
+	corte = corte and (d["umore"] as Array).size() == 3 and String(d["umore"][2]) != ""
+	controlla(corte and etichette.has("Lavoro") and etichette.has("Ha") and etichette.has("Vorrebbe"), "la scheda ha righe brevi, ognuna con il suo perché: %s" % [d["famiglia"]])
 	var stampa := "%s · %s · %s" % [d["titolo"], d["valore"], d["descrizione"]]
 	for r in d["famiglia"]:
 		stampa += "\n      %s: %s" % [r[0], r[1]]
+	stampa += "\n      Umore: %d %s (%s)" % [roundi(float(d["umore"][0])), d["umore"][1], String(d["umore"][2]).replace("\n", " ")]
 	print("      " + stampa)
 	# Un clic sul prato chiude la scheda.
 	p.clic_sulla_mappa(Vector2(-1000, -1000), Vector2i(-5, -5))

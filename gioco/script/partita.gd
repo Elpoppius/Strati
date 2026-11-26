@@ -1522,9 +1522,14 @@ func dati_famiglia(l: Vector2i) -> Dictionary:
 	righe.append(["Ha", " · ".join(ha), "Con il raccolto alle famiglie ognuna tiene il suo, e gli animali sono suoi." if alle_famiglie else "Il raccolto e gli animali sono di tutto il villaggio."])
 	var desiderio := _desiderio(l)
 	righe.append(["Vorrebbe", desiderio[0], desiderio[1]])
-	var c: float = sim.consenso["famiglie"]
+	# L'umore della famiglia (decisione di Fede del 26/11/2026): il consenso delle famiglie più ciò che
+	# vive questa casa; i motivi a parole al passaggio del puntatore.
+	var umore: Array = sim.umore_famiglie().get(l, [float(sim.consenso["famiglie"]), []])
+	var c: float = umore[0]
 	var parole: Array = GRUPPI["famiglie"]["parole"]
 	var parola: String = parole[0 if c >= 70.0 else (1 if c >= 55.0 else (2 if c >= 40.0 else 3))]
+	var motivi: Array = umore[1]
+	var perche := "Come tutte le famiglie del villaggio." if motivi.is_empty() else "Come le altre famiglie, e in più:\n· " + "\n· ".join(motivi)
 	return {"titolo": "Famiglia " + nome, "valore": "%d persone" % quanti if quanti != 1 else "1 persona",
-		"descrizione": descrizione, "famiglia": righe, "umore": [c, parola.trim_suffix("e") + "a" if parola.ends_with("e") else parola],
+		"descrizione": descrizione, "famiglia": righe, "umore": [c, parola.trim_suffix("e") + "a" if parola.ends_with("e") else parola, perche],
 		"punto": w}

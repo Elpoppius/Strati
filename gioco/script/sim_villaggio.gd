@@ -382,6 +382,16 @@ var nascita_case := {}  # lotto -> anno
 var case_straniere := {}  # lotto -> anno dell'arrivo
 var _case_stranieri_da_fare := 0
 var _anno_stranieri := 0
+## Umore di ogni famiglia (decisione di Fede del 26/11/2026): nel villaggio è solo lettura, e la media
+## delle famiglie resta il consenso del gruppo. Dall'epoca 2 le famiglie si divideranno in eminenti e
+## comuni secondo la posizione di prestigio che hanno ottenuto, e il loro umore comporrà il consenso
+## (più peso alle eminenti). Il prestigio si registra già qui, nascosto: cresce ogni anno con la
+## vicinanza al focolare e al luogo sacro e, con il raccolto alle famiglie, con gli animali (proposta
+## di Claude accolta da Fede). Le case ricostruite dopo una piena disastrosa la ricordano.
+var prestigio_case := {}  # lotto -> prestigio accumulato
+var case_dopo_piena := {}  # lotto -> anno della piena che ha distrutto la casa di prima
+var _case_piena_da_fare := 0
+var _anno_piena := 0
 var gia_piena_disastrosa := false
 ## Presagi: al massimo uno ogni secolo circa (proposta approvata da Fede il 25/11/2026).
 const ANNI_TRA_PRESAGI := 100
@@ -2482,6 +2492,7 @@ func passo() -> void:
 		if macerie[l] <= 0:
 			macerie.erase(l)
 	disponi_case(true)
+	_aggiorna_prestigio()
 	# Villaggio affollato (dal 25/11/2026 una politica, non una pausa): quando mancano case per più
 	# di un sesto delle famiglie, ogni dieci anni l'abitato si allarga oppure qualcuno emigra.
 	if sbloccato("affollati") and affollamento > 0.15 and (anno - ANNO_INIZIO) % 10 == 0:
@@ -2717,6 +2728,8 @@ func _piena(disastrosa: bool) -> void:
 		gia_piena_disastrosa = true
 		_scrivi("Le piene grandi sono rare, ma arrivano dove la mappa del rischio di piena è rossa, e più spesso se si taglia il bosco attorno al villaggio. Le famiglie ricostruiranno lontano dall'acqua finché il ricordo resta vivo.")
 	if case_perse > 0:
+		_case_piena_da_fare = case_perse
+		_anno_piena = anno
 		_cambia_consenso("famiglie", -minf(8.0, case_perse))
 		_scrivi("Il fiume esce dal letto: %d case distrutte, %d campi allagati. Il ricordo del pericolo torna vivo." % [case_perse, campi_persi], "allarme")
 	else:
@@ -2851,11 +2864,101 @@ func _disponi_nucleo(servono: int, ci_sono: int, paga: bool) -> void:
 ## Memoria della scheda della famiglia: quando nasce una casa e se è di chi è arrivato da fuori.
 func _segna_casa(l: Vector2i) -> void:
 	nascita_case[l] = anno
+	prestigio_case.erase(l)
 	if _case_stranieri_da_fare > 0 and anno - _anno_stranieri <= 10:
 		case_straniere[l] = _anno_stranieri
 		_case_stranieri_da_fare -= 1
 	else:
 		case_straniere.erase(l)
+	if _case_piena_da_fare > 0 and anno - _anno_piena <= 10:
+		case_dopo_piena[l] = _anno_piena
+		_case_piena_da_fare -= 1
+	else:
+		case_dopo_piena.erase(l)
+
+
+## Prestigio delle famiglie (nascosto, per l'epoca 2): ogni anno un po' di più a chi abita vicino al
+## focolare e al luogo sacro; con il raccolto alle famiglie anche gli animali, che vanno di più a chi
+## ha già più prestigio. Cresce con gli anni, quindi le famiglie dei fondatori partono avanti.
+func _aggiorna_prestigio() -> void:
+	var c := mondo_di_px(centro)
+	var sacro := luogo_sacro_pronto()
+	var alle_famiglie := politica("raccolto") == "famiglie" and capi >= 1.0
+	var massimo := 0.0
+	for l in case:
+		massimo = maxf(massimo, float(prestigio_case.get(l, 0.0)))
+	var nuovo := {}
+	for l in case:
+		var w := centro_lotto(l)
+		var p := float(prestigio_case.get(l, 0.0))
+		var d := clampf(1.0 - w.distance_to(c) / 250.0, 0.0, 1.0)
+		if sacro:
+			d += 0.8 * clampf(1.0 - w.distance_to(luogo_sacro) / 150.0, 0.0, 1.0)
+		if alle_famiglie:
+			d += 0.5 * (p / massimo if massimo > 0.0 else 0.5)
+		nuovo[l] = p + 0.02 * d
+	prestigio_case = nuovo
+
+
+## Umore di ogni famiglia: il consenso delle famiglie più uno scarto dalla sua situazione; gli
+## scarti si bilanciano, così la media resta il consenso del gruppo. lotto -> [umore 0–100, motivi].
+func umore_famiglie() -> Dictionary:
+	var c := mondo_di_px(centro)
+	var legnaie_attive: Array = legnaie.filter(func(g: Dictionary) -> bool: return legnaia_attiva(g))
+	var sacro := luogo_sacro_pronto()
+	var scarti := {}
+	var somma := 0.0
+	for l in case:
+		var w := centro_lotto(l)
+		var i := px(px_da_mondo(w.x, w.y))
+		var s := 0.0
+		var motivi: Array[String] = []
+		if case_dopo_piena.has(l) and anno - int(case_dopo_piena[l]) < 20:
+			s -= 12.0 * (1.0 - (anno - int(case_dopo_piena[l])) / 20.0)
+			motivi.append("pesa: ha perso la casa nella piena del " + anno_testo(int(case_dopo_piena[l])))
+		if piena(i) > 0.5:
+			s -= 8.0
+			motivi.append("pesa: la casa è dove arrivano le piene")
+		if not legnaie_attive.is_empty():
+			var vicina := INF
+			for g in legnaie_attive:
+				vicina = minf(vicina, w.distance_to(g["punto"]))
+			if vicina > 500.0:
+				s -= 6.0
+				motivi.append("pesa: la legna è lontana")
+		var vicini := 0
+		var stanchi := 0
+		for f in campi:
+			if mondo_di_px(px_di(f)).distance_to(w) < 300.0:
+				vicini += 1
+				if fattore_stanchezza(f) < 0.9:
+					stanchi += 1
+		if vicini > 0 and stanchi > vicini * 0.4:
+			s -= 5.0
+			motivi.append("pesa: i campi vicini sono stanchi")
+		if case_casale.has(l):
+			var sentiero := false
+			var p := px_da_mondo(w.x, w.y)
+			for q in sentieri:
+				if Vector2(px_di(q) - p).length() <= 3.0:
+					sentiero = true
+					break
+			if not sentiero:
+				s -= 5.0
+				motivi.append("pesa: nessun sentiero verso il paese")
+		if w.distance_to(c) < 80.0:
+			s += 3.0
+			motivi.append("aiuta: vive vicino al focolare")
+		if sacro and w.distance_to(luogo_sacro) < 120.0:
+			s += 3.0
+			motivi.append("aiuta: il luogo sacro è vicino")
+		scarti[l] = [s, motivi]
+		somma += s
+	var media := somma / maxf(1.0, case.size())
+	var out := {}
+	for l in scarti:
+		out[l] = [clampf(float(consenso["famiglie"]) + float(scarti[l][0]) - media, 0.0, 100.0), scarti[l][1]]
+	return out
 
 
 func _vicino_a_legnaia(l: Vector2i) -> bool:
@@ -2993,6 +3096,8 @@ func _abbandona() -> void:
 	case_casale = {}
 	nascita_case = {}
 	case_straniere = {}
+	prestigio_case = {}
+	case_dopo_piena = {}
 	legnaie = []
 	poste = []
 	capanni = []
