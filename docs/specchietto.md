@@ -51,6 +51,8 @@ Territorio e sensibilità → opere e zone → **campi del lotto** → edifici c
 ## In gioco **D**
 - Due specchietti per il giocatore, già nel villaggio (priorità 1 del todo, voce A): **Conseguenze** (chi guadagna, chi perde, sul territorio, costo, resta) nella scheda dello strumento; **Rapporti di forza** (peso e umore dei gruppi, tensione, verso dove si muove la città) dal pannello del Consenso.
 
+- **Popolazione visibile** (voce 7): figure che fanno i lavori veri della simulazione, con animazioni; numeri da misurare con Fede.
+
 ## Regole da non dimenticare **D**
 - Ritmo meditativo: il gioco si ferma solo per le scelte vere (e per l'ultimo esemplare di un'epoca).
 - Le regole permettono, non costruiscono: una zona si riempie solo dove c'è domanda.

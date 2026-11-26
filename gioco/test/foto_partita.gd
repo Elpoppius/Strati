@@ -1,6 +1,7 @@
 extends SceneTree
 ## Foto di controllo di una partita: fondazione sul sito 1, campi attorno, un secolo e mezzo di
 ## tempo con un giocatore automatico semplice, poi la foto.
+## Con persone:mestiere la camera va su una figura di quel mestiere (contadino, boscaiolo, pescatore, cacciatore, pastore, costruttore, sacro, casa), o persone:centro per il focolare.
 ## Uso: xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto_partita.gd -- uscita.png [dimensione_vista] [anni] [mappa] [strumento | politiche | tecniche | anteprima | fondazione | focus:Indicatore | capanno | posta | cantiere | pascolo]
 ## Con capanno o posta la vista va sul primo capanno da pesca o sulla prima posta di caccia, con lo
 ## strumento scelto e il puntatore sopra (lettura dell'edificio).
@@ -140,6 +141,19 @@ func _process(_d: float) -> bool:
 			var nome := args[4].get_slice(":", 1) if args[4].contains(":") else "Abbondanza"
 			_s.partita.aggiorna_hud()
 			_s.hud.mostra_focus(_s.partita.dati_focus(nome))
+		elif args.size() > 4 and args[4].begins_with("persone"):
+			# Popolazione visibile (voce 7): la camera su una figura del mestiere indicato (per
+			# esempio persone:contadino), dopo qualche secondo di movimento.
+			var vp: VistaPersone = p.vista.persone
+			print("   figure %d (una ogni %d persone): %s" % [vp.figure().size(), vp.quota, vp.mestieri_contati()])
+			var voluto := args[4].get_slice(":", 1) if args[4].contains(":") else "contadino"
+			if voluto == "centro":
+				_s.cam.vai_a(c.x, c.y + 8.0, float(args[1]) if args.size() > 1 else 40.0)
+			for f in vp.figure():
+				if f["mestiere"] == voluto:
+					var q: Vector2 = f["pos"]
+					_s.cam.vai_a(q.x, q.y, float(args[1]) if args.size() > 1 else 40.0)
+					break
 		elif args.size() > 4 and args[4] == "legnaia":
 			_s.hud.seleziona_comando("legnaia")
 			_s.aggiorna_zone_taglio()

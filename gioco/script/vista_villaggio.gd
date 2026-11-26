@@ -36,6 +36,15 @@ func prepara(s: SimVillaggio, u: UsoSuolo, t: Terreno) -> void:
 	_immagine_zona = Image.create(sim.n, sim.n, false, Image.FORMAT_L8)
 	_texture_zona = ImageTexture.create_from_image(_immagine_zona)
 	terreno.materiale.set_shader_parameter("zona_agricola", _texture_zona)
+	# Popolazione visibile (voce 7 del todo, 26/11/2026).
+	persone = VistaPersone.new()
+	persone.name = "Persone"
+	add_child(persone)
+	persone.prepara(sim, terreno, self)
+
+
+## Le figure delle persone (script/vista_persone.gd).
+var persone: VistaPersone
 
 
 func numero_case() -> int:
@@ -462,6 +471,7 @@ func sincronizza() -> void:
 	_sincronizza_case()
 	_sincronizza_edifici()
 	_sincronizza_rovine()
+	persone.sincronizza()
 
 
 func _istanza(nome: String) -> Node3D:

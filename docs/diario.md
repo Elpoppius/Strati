@@ -2,6 +2,21 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (pomeriggio, sera) — popolazione visibile (voce 7)
+**Fatto**
+- **Persone** (`strumenti/blender/persone.py`, `gioco/asset/persone/`): 3 uomini (1,74 m) e 3 donne (1,62 m), corpo unico da volumi come gli animali, completo (2200 facce) e leggero (320). Vesti del Neolitico (tunica con la cintura, al ginocchio o al polpaccio, maniche corte; mantelli e pelli; calzari), capelli lunghi, corti, a crocchia, treccia o sciolti, barba per due uomini. Cinque attrezzi nella mano destra: zappa, ascia, lancia, bastone, cesto. Le braccia sono scostate dal corpo, così alzandole non si tende una membrana tra mano e fianco.
+- **Shader** (`shader/persone.gdshader`): colori per figura (quattro incarnati, cinque colori di capelli, sette vesti di colori naturali, quattro mantelli), sfumati tra i vertici; animazioni: camminare con la veste che segue le gambe, stare fermi, parlare, zappare, tagliare, la lancia con il colpo ogni tanto, raccogliere chini, costruire, il pastore al bastone.
+- **Nel gioco** (`script/vista_persone.gd`): al massimo 150 figure, una ogni 1, 2 o 5 persone; i mestieri seguono il lavoro vero dell'anno (contadini e raccoglitrici nei campi, boscaioli alle legnaie attive, pescatori ai capanni, cacciatori nel bosco dietro le poste, un pastore per gregge, costruttori ai cantieri, gente al luogo sacro); un terzo resta in paese, attorno al focolare e alle case. Camminano a 1,1 m/s senza scatti; si disegnano sotto i 450 m di vista.
+- Verifiche nuove in `verifica_partita.gd` (figure e quota, modelli e shader, ogni figura ha un luogo di lavoro vero, un minuto di movimento, nascoste da lontano) e la cartella delle persone in `verifica_asset.gd`. Tutte le 9 verifiche superate; le dinamiche non cambiano, quindi niente partite "umane". Foto: `docs/immagini/persone-26-11.jpg`, `persone-nel-gioco-26-11.jpg`, `contadino-26-11.jpg`; nuovo `test/foto_persone.gd`, modo `persone:mestiere` in `foto_partita.gd`.
+
+**Decisioni**
+- Fede: "vai procedi" (riepilogo della voce 7 lasciato in conversazione).
+- Proposte di Claude da guardare con Fede: le sei persone e i loro colori, i numeri (150 figure, 1/2/5 persone per figura, visibili sotto i 450 m), un terzo delle figure in paese.
+
+**Prossimo passo**
+- Fede: provare nel gioco specchietti e persone (aspetto e fotogrammi al secondo, anche con gli animali); i nomi delle forme di governo.
+- Claude: la scheda della famiglia con un clic su una persona; poi le voci 4 (scorrerie) e 5 (strade, con le figure che camminano sui sentieri).
+
 ## 26/11/2026 (pomeriggio, più tardi) — "Conseguenze"
 **Fatto**
 - Lo specchietto sopra la scheda dello strumento si chiama **Conseguenze** (prima "Cosa sto facendo"): titolo nel gioco, scheda del tutorial, documenti, foto rinominata in `docs/immagini/conseguenze-26-11.jpg`. Tutte le 9 verifiche superate.

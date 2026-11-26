@@ -163,6 +163,55 @@ func _verifica_specchietti(p: Partita, sim: SimVillaggio, h: Hud) -> void:
 	sim.politiche["raccolto"] = pol
 
 
+## Popolazione visibile (voce 7 del todo, 26/11/2026): figure per i lavori veri, al massimo TETTO,
+## che camminano senza scatti, con i modelli e lo shader delle persone; da lontano non si disegnano.
+func _verifica_persone(p: Partita, sim: SimVillaggio) -> void:
+	var vp: VistaPersone = p.vista.persone
+	vp.sincronizza()
+	var figure := vp.figure()
+	var attese := mini(VistaPersone.TETTO, ceili(sim.pop / vp.quota))
+	controlla(not figure.is_empty() and figure.size() == attese and figure.size() <= VistaPersone.TETTO, "una figura ogni %d persone (%d figure per %d abitanti)" % [vp.quota, figure.size(), roundi(sim.pop)])
+	var buone := true
+	for k in vp._corpi:
+		var mesh: Mesh = (vp._corpi[k] as MultiMeshInstance3D).multimesh.mesh
+		if mesh == null or (mesh.surface_get_material(0) as ShaderMaterial) == null or (mesh.surface_get_material(0) as ShaderMaterial).shader != Asset.SHADER_PERSONE:
+			buone = false
+	for k in vp._attrezzi:
+		if (vp._attrezzi[k] as MultiMeshInstance3D).multimesh.mesh == null:
+			buone = false
+	controlla(buone, "sei persone in due livelli e cinque attrezzi, con lo shader delle persone")
+	var conti := vp.mestieri_contati()
+	var luoghi_ok := (int(conti.get("boscaiolo", 0)) == 0 or not vp._legnaie_attive().is_empty()) \
+		and (int(conti.get("pescatore", 0)) == 0 or not sim.capanni.is_empty()) \
+		and (int(conti.get("cacciatore", 0)) == 0 or not sim.poste.is_empty()) \
+		and (int(conti.get("contadino", 0)) == 0 or not sim.campi.is_empty())
+	controlla(luoghi_ok and int(conti.get("contadino", 0)) + int(conti.get("raccoglitrice", 0)) > 0, "ogni figura fa un lavoro che c'è davvero: %s" % conti)
+	var vel_max := 0.0
+	var numeri_ok := true
+	var hanno_camminato := {}
+	for _k in 600:
+		vp._muovi(0.1)
+		for j in figure.size():
+			var f: Dictionary = figure[j]
+			vel_max = maxf(vel_max, float(f["vel"]))
+			if is_nan((f["pos"] as Vector2).x) or is_nan(float(f["fase"])):
+				numeri_ok = false
+			if f["stato"] == "va" and float(f["vel"]) > 0.3:
+				hanno_camminato[j] = true
+	controlla(numeri_ok and vel_max <= VistaPersone.VELOCITA + 0.001 and hanno_camminato.size() > 0, "un minuto di vita: le figure camminano a passo d'uomo (%d hanno camminato, velocità massima %.2f m/s)" % [hanno_camminato.size(), vel_max])
+	var cam: CameraIsometrica = p.vista.cam
+	var dim := cam.dimensione
+	cam.dimensione = VistaPersone.DIM_VISIBILI + 100.0
+	vp._process(0.016)
+	var nascoste := true
+	for k in vp._corpi:
+		if (vp._corpi[k] as Node3D).visible:
+			nascoste = false
+	cam.dimensione = dim
+	vp._process(0.016)
+	controlla(nascoste, "da lontano le persone non si disegnano")
+
+
 ## Campo stanco visibile (proposta confermata da Fede il 26/11/2026): la stanchezza e il maggese
 ## arrivano allo shader del terreno.
 func _verifica_campo_stanco(p: Partita, sim: SimVillaggio) -> void:
@@ -458,6 +507,7 @@ func _process(_d: float) -> bool:
 		controlla(not sim.pascolo.is_empty() and p.vista._immagine_pascolo != null, "pascolo a pennello (%d pixel)" % sim.pascolo.size())
 		_verifica_animali(p, sim)
 		_verifica_campo_stanco(p, sim)
+		_verifica_persone(p, sim)
 		p._azione("togli_pascolo")
 		p.inizia_pennellata()
 		_s.applica_strumento()

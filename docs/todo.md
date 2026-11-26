@@ -11,7 +11,7 @@ Legenda: `[x]` fatto · `[~]` in parte · `[ ]` da fare · **(?)** serve una dec
 4. **Alla fine:** voce in cima al diario, todo aggiornato, commit e push.
 
 ## A che punto siamo (26/11/2026, mattina tardi)
-**Ordine (Fede, 26/11/2026 pomeriggio):** la voce A (specchietti in gioco) è fatta; ora la **7 (popolazione visibile, con animazioni e grande cura del livello di dettaglio)**, poi le altre voci aperte (4, 5, 6, 9, 10).
+**Ordine (Fede, 26/11/2026 pomeriggio):** le voci A (specchietti in gioco) e 7 (popolazione visibile) sono fatte, in attesa della prova di Fede; ora le altre voci aperte (4, 5, 6, 9, 10).
 
 Fatte e collaudate le basi della prima epoca e le voci 0 (cantieri visibili), 1 (capanno e posta), 2 (pascolo e animali: restano la prova di Fede dei fotogrammi al secondo e due domande), 3 (luogo sacro, sacerdote, bosco sacro) e 8 (mappe tematiche). Restano le voci 4, 5, 6, 7, 9 e 10 (menù delle impostazioni). Fatta anche la 2b (tutorial alle tappe).
 
@@ -127,7 +127,8 @@ Si muove verso    terra alle famiglie · più aperta
 ### 6. [ ] Evento soglia "il metallo e lo scambio" e passo elastico
 **Deciso** (`era-origini.md` § 2 e § 5): si apre quando il territorio è pieno e si è dentro la finestra (~3000–1800 a.C.); presagi (oggetti di rame, mercanti), dilemma aprirsi o restare isolati, transizione con riepilogo. **Passo elastico:** un anno per passo nei primi quattro secoli, poi un decennio (le regole vanno scritte per anno e moltiplicate per il passo). Oggi la partita finisce a 5500 a.C. (`ANNO_FINE`).
 
-### 7. [ ] Popolazione visibile
+### 7. [~] Popolazione visibile
+**Fatto il 26/11/2026 pomeriggio** (descrizione in `prototipo0-godot.md` e `asset.md`; foto `docs/immagini/persone-26-11.jpg`, `persone-nel-gioco-26-11.jpg`): sei persone in due livelli con le vesti del Neolitico, cinque attrezzi, colori per figura e animazioni nello shader, figure legate ai lavori della simulazione, tetto di 150 figure. **Resta:** la prova di Fede (aspetto delle persone e fotogrammi al secondo, anche insieme agli animali), la scheda della famiglia con un clic su una persona, le figure che camminano lungo i sentieri (con la voce 5).
 **Deciso** (25/11/2026): ogni figura fa un lavoro vero della simulazione (campi, bosco, fiume, pascolo, cantieri, sentieri, luogo sacro); **3 modelli di uomini e 3 di donne** che si ripetono, con capelli, incarnato e vesti che variano; animazioni dallo shader; MultiMesh; si vedono solo da vicino; **scala da verificare con la simulazione** (800 persone a schermo sono troppe: tetto di figure visibili, una figura per 1, 2 o 5 persone). Clic su una persona: la scheda della sua famiglia. Prima il bestiame (voce 2), poi i lavoratori, poi chi cammina, poi la scheda.
 **Deciso** (Fede, 26/11/2026): viene subito dopo la voce A; **servono anche le animazioni** (camminare, lavorare secondo il mestiere, stare fermi, parlare in gruppo) e **attenzione al livello di dettaglio**, con la stessa cura degli animali (corpo unico, vesti e capelli verosimili, due livelli di dettaglio secondo lo zoom, riferimento Age of Empires IV). A ogni modello, foto a Fede.
 
