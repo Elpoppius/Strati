@@ -836,7 +836,8 @@ func _sincronizza_case() -> void:
 ## Cantieri (decisione di Fede del 25/11/2026 sera): finché un edificio si costruisce si vede il suo
 ## scheletro, con sopra una barra discreta che avanza anno dopo anno; poi il modello finito.
 const CANTIERI := {"granaio_su_pali": "cantiere_granaio", "legnaia": "cantiere_legnaia",
-	"capanno_pesca": "cantiere_capanno_pesca", "posta_caccia": "cantiere_posta_caccia", "luogo_sacro": "cantiere_luogo_sacro"}
+	"capanno_pesca": "cantiere_capanno_pesca", "posta_caccia": "cantiere_posta_caccia", "luogo_sacro": "cantiere_luogo_sacro",
+	"torre_avvistamento": "cantiere_torre_avvistamento"}
 const ALTEZZA_BARRA := 6.5
 var _edifici := {}  # punto -> {nodo, modello, raggio, barra}
 ## Cantieri aperti per le barre: punto -> [anni fatti, anni totali].
@@ -851,6 +852,10 @@ func _sincronizza_edifici() -> void:
 		ora[sim.granaio] = ["granaio_su_pali", 0.0, 6.0, "granaio", sim.cantiere_granaio, SimVillaggio.ANNI_CANTIERE_GRANAIO]
 	if sim.luogo_sacro.x >= 0:
 		ora[sim.luogo_sacro] = ["luogo_sacro", 0.0, 7.0, "luogo_sacro", sim.cantiere_luogo_sacro, SimVillaggio.ANNI_CANTIERE_LUOGO_SACRO]
+	if sim.torre.x >= 0:
+		# La scala e la pira guardano verso il centro del villaggio.
+		var v := sim.mondo_di_px(sim.centro) - sim.torre
+		ora[sim.torre] = ["torre_avvistamento", rad_to_deg(atan2(-v.x, -v.y)), 6.0, "torre_avvistamento", sim.cantiere_torre, SimVillaggio.ANNI_CANTIERE_TORRE]
 	for l in sim.legnaie:
 		var p: Vector2 = l["punto"]
 		ora[p] = ["legnaia", float(int(p.x * 7.0 + p.y * 13.0) % 360), 7.0, "legnaia", int(l["cantiere"]), SimVillaggio.ANNI_CANTIERE_LEGNAIA]

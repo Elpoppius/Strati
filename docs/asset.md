@@ -149,6 +149,10 @@ Script `strumenti/blender/villaggio.py` → `gioco/asset/villaggio/`, nello stil
 | recinto_animali | 9,7 × 10,2 × 1,6 | 844 | graticcio di vimini intrecciati, con un'apertura |
 | catasta_legna | 2,4 × 1,3 × 0,9 | 81 | |
 | roccia_1, _2, _3 | da 1,0 a 2,4 | 80 | |
+| torre_avvistamento | 7,0 × 4,2 × 7,2 | 1055 | scorrerie, 26/11/2026 (proposta di Claude): quattro pali con controventi, piano di assi a 4,5 m con parapetto di graticcio, tettuccio di paglia a una falda, scala a pioli, pira per il fuoco di segnalazione e frasche verdi; scala e pira guardano verso il villaggio |
+| cantiere_torre_avvistamento | 6,3 × 5,7 × 6,0 | 330 | pali e un lato di controventi, telaio del piano, scala, assi e pali a terra |
+
+Dal 26/11/2026 `villaggio.py` accetta i nomi dei modelli da esportare (`… gioco/asset/villaggio torre_avvistamento,cantiere_torre_avvistamento`): così gli altri file non si riscrivono.
 
 Foto di controllo: `gioco/test/foto_villaggio.gd` compone a mano un villaggio sul terrazzo centrale (palizzata, case, luogo sacro, recinto, campi e terra battuta con l'uso del suolo). Immagine: `docs/immagini/villaggio-24-11.jpg`. È solo una prova degli asset: nel gioco il villaggio crescerà da sé (abitato spontaneo, decisione di Fede del 24/11).
 

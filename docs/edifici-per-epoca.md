@@ -180,7 +180,7 @@
 ## 9. Difesa e confine
 | Edificio | Epoche | Perché lo scelgo | Muove |
 |---|---|---|---|
-| Torre di avvistamento sul colle | 1–7 | vede arrivare le scorrerie: dà i segni prima, il tempo di mettere al riparo animali e scorte | sicurezza, presagi |
+| Torre di avvistamento sul colle | 1–7 | vede arrivare le scorrerie: dà i segni prima, il tempo di mettere al riparo animali e scorte. **Nel gioco dal 26/11/2026** (epoca 1: piattaforma su pali) | sicurezza, presagi |
 | Terrapieno con fossato e palizzata | 2 | il recinto: dentro e fuori, difesa, prima regola dello spazio; la sua linea diventa quella delle mura | capi, regolazione |
 | Porta | 2–9 | dove si entra: controllo, dazio, mercato accanto; dopo le mura resta isolata | sicurezza, bilancio |
 | Mura | 3–8 | sicurezza, ma limitano la crescita e costano manutenzione | sicurezza, densità |

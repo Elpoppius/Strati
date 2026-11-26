@@ -263,6 +263,128 @@ func _verifica_pascolo(d: MappaDati) -> void:
 	controlla(pendii == 0 or e.pascolo_eccessivo > 0.0, "la mandria piena sui pendii dà erosione (%d pixel in pendio, %.2f)" % [pendii, e.pascolo_eccessivo])
 
 
+## Scorrerie e torre di avvistamento (decisioni di Fede del 26/11/2026).
+func _verifica_scorrerie(d: MappaDati) -> void:
+	var s := SimVillaggio.new(d, 17)
+	var c := Vector2i(d.siti[0]["px"])
+	s.fonda(c)
+	var cm := s.mondo_di_px(c)
+	s.capi = 60.0
+	s.cibo = 400.0
+	controlla(not s.scorrerie_aperte() and s.calcola_rischio_scorrerie()["p"] > 0.0, "prima della tappa dei 100 abitanti niente scorrerie")
+	s.pop = 110.0
+	s._aggiorna_tappa()
+	s.decisioni.clear()
+	controlla(s.scorrerie_aperte() and not s.sbloccato("pericolo") and not s.sbloccato("torre"), "dalla tappa del pascolo le scorrerie sono possibili; politica e torre aspettano i primi segni")
+	# Rischio: più ricchezza ed esposizione, più rischio; più difesa, meno.
+	var base := float(s.calcola_rischio_scorrerie()["p"])
+	s.capi = 5.0
+	s.cibo = 10.0
+	var povero := float(s.calcola_rischio_scorrerie()["p"])
+	controlla(povero < base * 0.6, "un villaggio povero attira meno scorrerie (%.4f contro %.4f)" % [povero, base])
+	s.capi = 60.0
+	s.cibo = 400.0
+	s.casali = [s.lotto_da_mondo(cm.x + 600.0, cm.y), s.lotto_da_mondo(cm.x - 600.0, cm.y), s.lotto_da_mondo(cm.x, cm.y + 600.0)]
+	var sparso := float(s.calcola_rischio_scorrerie()["p"])
+	controlla(sparso > base * 1.2, "i casali espongono di più (%.4f contro %.4f)" % [sparso, base])
+	s.casali = []
+	var dopo := s.anno
+	s.anno = SimVillaggio.ANNO_SCORRERIE_FREQUENTI
+	controlla(is_equal_approx(float(s.calcola_rischio_scorrerie()["p"]), base * 2.0), "dal 4300 a.C. le scorrerie sono il doppio")
+	s.anno = dopo
+	controlla(base > 0.0005 and base < SimVillaggio.PROB_SCORRERIA, "rischio di un villaggio medio, ricco: %.4f l'anno (una ogni %d anni)" % [base, roundi(1.0 / base)])
+	# Primi segni: ferma il gioco una volta (tutorial e scelta) e apre politica e torre.
+	s._segni()
+	var tipi: Array = s.decisioni.map(func(x: Dictionary) -> String: return x["tipo"])
+	controlla(s.gia_segni and s.in_allerta() and "pericolo" in tipi and s.sbloccato("pericolo") and s.sbloccato("torre"), "i primi segni fermano il gioco e aprono politica e torre (%s)" % ", ".join(tipi))
+	controlla(s.segni_punto.x >= 0 and s.segni_da != "" and s.avvisi.any(func(a: Dictionary) -> bool: return String(a["testo"]).contains(s.segni_da)), "i segni dicono da dove arriveranno, con un punto sulla mappa")
+	for dec in s.decisioni.duplicate():
+		s.scegli(dec["id"], "raccogliere" if dec["tipo"] == "pericolo" else "continua")
+	controlla(s.politica("pericolo") == "raccogliere", "la scelta dei primi segni diventa la regola")
+	# La scorreria arriva dopo 1–2 anni.
+	var capi0 := s.capi
+	var cibo0 := s.cibo
+	var anni := 0
+	while s.in_allerta() and anni < 5:
+		s.decisioni.clear()
+		s._scorrerie()
+		anni += 1
+	controlla(not s.in_allerta() and anni >= 1 and anni <= 2 and s.stat["scorrerie"] == 1, "la scorreria arriva 1–2 anni dopo i segni (%d)" % anni)
+	controlla(s.capi < capi0 and s.cibo < cibo0, "si perdono animali e scorte (%d → %d capi, %d → %d cibo)" % [roundi(capi0), roundi(s.capi), roundi(cibo0), roundi(s.cibo)])
+	controlla(s.memoria_scorrerie >= 99.0 and s.cause_di("Animali").any(func(x: String) -> bool: return x.contains("Scorreria del")), "la scorreria resta nella memoria e nei pannelli")
+	# Le perdite: raccogliere dimezza, vegliare riduce, la torre riduce ancora.
+	var perdite := {}
+	for pol in ["avanti", "raccogliere", "vegliare"]:
+		var somma := 0.0
+		for k in 40:
+			var t := SimVillaggio.new(d, 200 + k)
+			t.fonda(c)
+			t.pop = 110.0
+			t._aggiorna_tappa()
+			t.decisioni.clear()
+			t.capi = 60.0
+			t.cibo = 400.0
+			t.gia_segni = true
+			t.politiche["pericolo"] = pol
+			t.segni_punto = cm + Vector2(300, 0)
+			t.segni_da = "est"
+			t._scorreria()
+			somma += 400.0 - t.cibo
+		perdite[pol] = somma / 40.0
+	controlla(perdite["raccogliere"] < perdite["avanti"] * 0.65 and perdite["vegliare"] < perdite["avanti"] * 0.75, "raccogliere e vegliare riducono le perdite (cibo perso: %d, %d, %d)" % [roundi(perdite["avanti"]), roundi(perdite["raccogliere"]), roundi(perdite["vegliare"])])
+	# Torre: solo su un'altura, entro 1200 m, una sola; segni prima.
+	var u := SimVillaggio.new(d, 19)
+	u.fonda(c)
+	u.legna = 40.0
+	controlla(u.motivo_torre(cm + Vector2(200, 0)).contains("primi segni"), "la torre si apre con i primi segni di pericolo")
+	u.gia_segni = true
+	var alto := Vector2(-1, -1)
+	var basso := Vector2(-1, -1)
+	for r in [200.0, 400.0, 600.0, 800.0, 1000.0]:
+		for k in 24:
+			var w: Vector2 = cm + Vector2.from_angle(TAU * k / 24.0) * r
+			var q := u.px_da_mondo(w.x, w.y)
+			var m := u.motivo_torre(w)
+			if alto.x < 0 and m == "":
+				alto = w
+			if basso.x < 0 and m.contains("dosso"):
+				basso = w
+	controlla(alto.x >= 0, "attorno al sito 1 c'è un'altura per la torre")
+	controlla(basso.x >= 0, "in pianura la torre non si può fare: «%s»" % (u.motivo_torre(basso) if basso.x >= 0 else ""))
+	controlla(u.motivo_torre(cm + Vector2(1500, 0)) != "", "la torre va vicino al villaggio")
+	controlla(u.costruisci_torre(alto) == "" and u.cantiere_torre == SimVillaggio.ANNI_CANTIERE_TORRE and is_equal_approx(u.legna, 25.0), "la torre costa 15 di legna e due anni di cantiere")
+	controlla(u.motivo_torre(alto + Vector2(40, 0)).contains("c'è già"), "una torre sola")
+	u.cantiere_torre = 0
+	u.pop = 110.0
+	u._aggiorna_tappa()
+	var anni_torre := []
+	for k in 20:
+		u.decisioni.clear()
+		u.segni_tra = -1
+		u._segni()
+		anni_torre.append(u.segni_tra)
+	controlla(anni_torre.min() >= 2 and anni_torre.max() <= 3, "con la torre i segni arrivano 2–3 anni prima")
+	controlla(u.demolisci(alto, 20.0)["torre"] and u.torre.x < 0, "la torre si demolisce")
+	# Memoria della paura: dopo una scorreria le case nuove nascono più vicine al centro.
+	var media := func(sim: SimVillaggio) -> float:
+		var tot := 0.0
+		for l in sim.case:
+			tot += sim.centro_lotto(l).distance_to(sim.mondo_di_px(sim.centro))
+		return tot / maxf(sim.case.size(), 1.0)
+	var calmo := SimVillaggio.new(d, 23)
+	calmo.fonda(c)
+	calmo.pop = 200.0
+	calmo.legna = 500.0
+	calmo.disponi_case(false)
+	var impaurito := SimVillaggio.new(d, 23)
+	impaurito.fonda(c)
+	impaurito.memoria_scorrerie = 100.0
+	impaurito.pop = 200.0
+	impaurito.legna = 500.0
+	impaurito.disponi_case(false)
+	controlla(media.call(impaurito) < media.call(calmo), "dopo una scorreria l'abitato si stringe (%d m contro %d m dal centro)" % [roundi(media.call(impaurito)), roundi(media.call(calmo))])
+
+
 func _gioca(sim: SimVillaggio, sito: Vector2i, scelta_presagi := "") -> Dictionary:
 	_caso_giocatore.seed = 12345
 	sim.fonda(sito)
@@ -303,7 +425,7 @@ func _gioca(sim: SimVillaggio, sito: Vector2i, scelta_presagi := "") -> Dictiona
 				var w := sim.centro_lotto(l)
 				if not sim.edificabile(sim.px(sim.px_da_mondo(w.x, w.y))):
 					case_sbagliate += 1
-	return {"pop": sim.pop, "minimo": minimo_pop, "case": massimo_case, "sbagliate": case_sbagliate, "abbandoni": sim.stat["abbandoni"], "carestie": sim.stat["carestie"], "piene": sim.stat["piene"]}
+	return {"pop": sim.pop, "minimo": minimo_pop, "case": massimo_case, "sbagliate": case_sbagliate, "abbandoni": sim.stat["abbandoni"], "carestie": sim.stat["carestie"], "piene": sim.stat["piene"], "scorrerie": sim.stat["scorrerie"]}
 
 
 func _initialize() -> void:
@@ -495,12 +617,13 @@ func _initialize() -> void:
 	_verifica_capanno_e_posta(d)
 	_verifica_sacro(d)
 	_verifica_pascolo(d)
+	_verifica_scorrerie(d)
 	# Partite intere.
 	var sopravvissuti := 0
 	for s in d.siti:
 		var sim2 := SimVillaggio.new(d, 100 + int(s["n"]))
 		var r := _gioca(sim2, Vector2i(s["px"]))
-		print("   sito %d %s: %d abitanti dopo 500 anni (minimo %d), fino a %d case, carestie %d, piene %d, abbandoni %d" % [s["n"], s["nome"], roundi(r["pop"]), roundi(r["minimo"]), r["case"], r["carestie"], r["piene"], r["abbandoni"]])
+		print("   sito %d %s: %d abitanti dopo 500 anni (minimo %d), fino a %d case, carestie %d, piene %d, scorrerie %d, abbandoni %d" % [s["n"], s["nome"], roundi(r["pop"]), roundi(r["minimo"]), r["case"], r["carestie"], r["piene"], r["scorrerie"], r["abbandoni"]])
 		if r["abbandoni"] == 0:
 			sopravvissuti += 1
 		controlla(r["sbagliate"] == 0, "sito %d: nessuna casa sull'acqua o nella palude" % s["n"])

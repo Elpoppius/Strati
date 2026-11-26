@@ -4,9 +4,12 @@ Riusa materiali e forme della prova di stile (prova_stile_verosimile.py): case l
 misure, capanne tonde in due, granaio su pali, palizzata (tratto e varco), luogo sacro,
 focolare, fossa-silo, recinto per gli animali, catasta di legna, rocce; legnaia, capanno da pesca e posta di caccia (25/11/2026);
 i cantieri di granaio, legnaia, capanno, posta e luogo sacro (scheletri, 25/11/2026 sera);
-lo stabbio del pascolo (26/11/2026). Gli animali: strumenti/blender/animali.py.
+lo stabbio del pascolo (26/11/2026); la torre di avvistamento e il suo cantiere (scorrerie,
+26/11/2026 sera). Gli animali: strumenti/blender/animali.py.
 
-Uso:  blender-py strumenti/blender/villaggio.py gioco/asset/villaggio
+Uso:  blender-py strumenti/blender/villaggio.py gioco/asset/villaggio [nome,nome…]
+Con i nomi si esportano solo quei modelli (gli altri restano come sono: riesportati, alcuni
+cambiano di qualche byte senza motivo).
 
 Le texture si generano prima con strumenti/blender/texture_procedurali.py.
 """
@@ -627,6 +630,119 @@ def stabbio(nome, seme):
 # Gli animali del pascolo stanno in strumenti/blender/animali.py (terza versione, 26/11/2026).
 
 
+# ---------- scorrerie (decisioni di Fede del 26/11/2026) ----------
+
+def _graticcio_dritto(parti, m, rnd, a, b, z0, righe, passo=0.17):
+    """Graticcio tra due pali (a e b in pianta): vimini che passano davanti e dietro."""
+    ax, ay = a
+    bx, by = b
+    lungo = math.hypot(bx - ax, by - ay)
+    nx, ny = -(by - ay) / lungo, (bx - ax) / lungo
+    for riga in range(righe):
+        s = 0.05 if riga % 2 == 0 else -0.05
+        z = z0 + riga * passo + rnd.uniform(-0.015, 0.015)
+        parti.append(base.cilindro_tra("vimine", (ax + nx * s, ay + ny * s, z), (bx - nx * s, by - ny * s, z + rnd.uniform(-0.02, 0.02)), 0.03, 0.03, m["legno"], lati=4, uv_tile=0.8))
+
+
+def torre_avvistamento(nome, seme):
+    """Torre di avvistamento sul colle (catalogo degli edifici, epoca 1): quattro pali alti e appena
+    convergenti, controventi incrociati, un piano di assi a 4,5 m con un parapetto di graticcio e un
+    tettuccio di paglia a una falda; una scala a pioli appoggiata; a terra la catasta per il fuoco
+    di segnalazione e un mucchio di frasche verdi (fanno fumo). Proposta di Claude."""
+    m = materiali()
+    rnd = random.Random(seme)
+    parti = []
+    piano = 4.5
+    base_l, cima_l = 1.55, 1.25  # mezzo lato del quadrato a terra e al piano
+    angoli = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
+    for sx, sy in angoli:
+        a = (sx * base_l + rnd.uniform(-0.05, 0.05), sy * base_l + rnd.uniform(-0.05, 0.05), -0.2)
+        b = (sx * cima_l, sy * cima_l, piano + 1.25)
+        parti.append(base.cilindro_tra("palo", a, b, 0.15, 0.11, m["corteccia"], lati=7))
+    # Controventi a croce su due lati opposti e travi del piano.
+    for sy in (-1, 1):
+        parti.append(base.cilindro_tra("controvento", (-base_l * 0.98, sy * base_l * 0.98, 0.4), (cima_l * 1.02, sy * cima_l * 1.02, piano - 0.3), 0.055, 0.05, m["corteccia"], lati=5))
+        parti.append(base.cilindro_tra("controvento", (base_l * 0.98, sy * base_l * 0.98, 0.4), (-cima_l * 1.02, sy * cima_l * 1.02, piano - 0.3), 0.055, 0.05, m["corteccia"], lati=5))
+    for sx in (-1, 1):
+        parti.append(base.cilindro_tra("traversa", (sx * 1.45, -1.45, 1.8), (sx * 1.4, 1.45, 1.8), 0.05, 0.05, m["corteccia"], lati=5))
+    for sy in (-1, 1):
+        parti.append(base.cilindro_tra("trave", (-1.75, sy * 1.3, piano - 0.08), (1.75, sy * 1.3, piano - 0.08), 0.08, 0.08, m["corteccia"], lati=6))
+    # Piano di assi che sporge un poco oltre i pali.
+    for k in range(9):
+        x = -1.6 + k * 0.4 + rnd.uniform(-0.02, 0.02)
+        parti.append(base.scatola("asse", (0.36, 3.2 + rnd.uniform(-0.1, 0.1), 0.06), (x, 0, piano + 0.02), m["legno"]))
+    # Parapetto di graticcio su tre lati; il lato della scala resta aperto per metà.
+    alto = piano + 0.12
+    lati = [((-1.6, -1.6), (1.6, -1.6)), ((1.6, -1.6), (1.6, 1.6)), ((1.6, 1.6), (-1.6, 1.6)), ((-1.6, 1.6), (-1.6, 0.1))]
+    for a, b in lati:
+        _graticcio_dritto(parti, m, rnd, a, b, alto + 0.08, 5)
+        parti.append(base.cilindro_tra("corrimano", (a[0], a[1], alto + 0.95), (b[0], b[1], alto + 0.95), 0.045, 0.045, m["legno"], lati=5))
+    for x, y in ((-1.6, -1.6), (1.6, -1.6), (1.6, 1.6), (-1.6, 1.6), (-1.6, 0.1)):
+        parti.append(base.cilindro_tra("montante", (x, y, alto), (x, y, alto + 1.0), 0.05, 0.045, m["corteccia"], lati=5))
+    # Tettuccio a una falda sui pali, per la vedetta: più alto verso valle (y negativo).
+    falda = base.scatola("falda", (3.6, 3.4, 0.18), (0, 0, 0), m["paglia"], tagli=3)
+    for v in falda.data.vertices:
+        v.co.z += rnd.uniform(-0.04, 0.04)
+    falda.rotation_euler = (-0.28, 0, 0)
+    falda.location = (0, 0, piano + 1.95)
+    parti.append(falda)
+    for sx in (-1, 1):
+        parti.append(base.cilindro_tra("puntone", (sx * cima_l, -cima_l, piano + 1.25), (sx * cima_l, -cima_l, piano + 2.35), 0.05, 0.045, m["corteccia"], lati=5))
+        parti.append(base.cilindro_tra("puntone", (sx * cima_l, cima_l, piano + 1.25), (sx * cima_l, cima_l, piano + 1.6), 0.05, 0.045, m["corteccia"], lati=5))
+    # Scala a pioli appoggiata al lato aperto.
+    for dy in (-0.26, 0.26):
+        parti.append(base.cilindro_tra("staggio", (-3.3, -0.75 + dy, 0.0), (-1.62, -0.75 + dy, piano + 0.4), 0.04, 0.035, m["legno"], lati=5))
+    for k in range(11):
+        t = (k + 0.6) / 11.5
+        x, z = -3.3 + 1.68 * t, (piano + 0.4) * t
+        parti.append(base.cilindro_tra("piolo", (x, -1.01, z), (x, -0.49, z), 0.028, 0.028, m["legno"], lati=4))
+    # A terra: la catasta per il fuoco di segnalazione (tronchi incrociati a pira) e le frasche.
+    px, py = 2.9, 1.9
+    for strato in range(5):
+        for k in range(3):
+            o = (k - 1) * 0.32
+            z = 0.1 + strato * 0.17
+            if strato % 2 == 0:
+                parti.append(base.cilindro_tra("pira", (px - 0.6, py + o, z), (px + 0.6, py + o, z), 0.08, 0.08, m["corteccia"], lati=6, uv_tile=1.0))
+            else:
+                parti.append(base.cilindro_tra("pira", (px + o, py - 0.6, z), (px + o, py + 0.6, z), 0.08, 0.08, m["corteccia"], lati=6, uv_tile=1.0))
+    frasche = base.materiale("frasche", "foglie_quercia", tinta=(0.42, 0.5, 0.3))
+    for k in range(4):
+        fx, fy = px + rnd.uniform(-0.9, 0.9), py - 1.3 + rnd.uniform(-0.3, 0.3)
+        parti.append(sasso("frasche", (0.9, 0.6, 0.45), (fx, fy, 0), frasche, seme + 70 + k))
+    parti.append(sasso("pietra", (0.5, 0.4, 0.3), (-2.4, 2.2, 0), m["pietra"], seme + 90))
+    return base.unisci(nome, parti)
+
+
+def cantiere_torre(nome, seme):
+    """Torre in costruzione: i quattro pali già piantati con i controventi di un lato, il primo telaio
+    del piano senza assi; a terra pali, assi, fasci di paglia e la scala."""
+    m = materiali()
+    rnd = random.Random(seme)
+    parti = []
+    piano = 4.5
+    base_l, cima_l = 1.55, 1.25
+    for sx, sy in [(-1, -1), (1, -1), (1, 1), (-1, 1)]:
+        a = (sx * base_l, sy * base_l, -0.2)
+        b = (sx * cima_l, sy * cima_l, piano + 1.25)
+        parti.append(base.cilindro_tra("palo", a, b, 0.15, 0.11, m["corteccia"], lati=7))
+    parti.append(base.cilindro_tra("controvento", (-base_l, -base_l, 0.4), (cima_l, -cima_l, piano - 0.3), 0.055, 0.05, m["corteccia"], lati=5))
+    parti.append(base.cilindro_tra("controvento", (base_l, -base_l, 0.4), (-cima_l, -cima_l, piano - 0.3), 0.055, 0.05, m["corteccia"], lati=5))
+    for sy in (-1, 1):
+        parti.append(base.cilindro_tra("trave", (-1.75, sy * 1.3, piano - 0.08), (1.75, sy * 1.3, piano - 0.08), 0.08, 0.08, m["corteccia"], lati=6))
+    # Scala appoggiata a un palo e assi impilate a terra.
+    for dy in (-0.26, 0.26):
+        parti.append(base.cilindro_tra("staggio", (-3.2, -1.5 + dy, 0.0), (-1.55, -1.5 + dy, 3.6), 0.04, 0.035, m["legno"], lati=5))
+    for k in range(8):
+        t = (k + 0.6) / 8.5
+        x, z = -3.2 + 1.65 * t, 3.6 * t
+        parti.append(base.cilindro_tra("piolo", (x, -1.76, z), (x, -1.24, z), 0.028, 0.028, m["legno"], lati=4))
+    for k in range(5):
+        parti.append(base.scatola("asse", (0.36, 3.2, 0.06), (2.9, 0.4 + rnd.uniform(-0.05, 0.05), 0.04 + k * 0.065), m["legno"]))
+    materiali_a_terra(parti, m, rnd, 0.0, -3.2, seme)
+    return base.unisci(nome, parti)
+
+
 def roccia(nome, seme, dim):
     m = materiali()
     return base.unisci(nome, [sasso("roccia", dim, (0, 0, 0), m["pietra"], seme)])
@@ -655,6 +771,8 @@ ASSET = [
     ("cantiere_posta_caccia", lambda n: cantiere_posta(n, 37)),
     ("cantiere_luogo_sacro", lambda n: cantiere_luogo_sacro(n, 38)),
     ("stabbio", lambda n: stabbio(n, 39)),
+    ("torre_avvistamento", lambda n: torre_avvistamento(n, 41)),
+    ("cantiere_torre_avvistamento", lambda n: cantiere_torre(n, 42)),
     ("roccia_1", lambda n: roccia(n, 28, (1.6, 1.2, 0.9))),
     ("roccia_2", lambda n: roccia(n, 29, (2.4, 1.8, 1.3))),
     ("roccia_3", lambda n: roccia(n, 30, (0.9, 0.8, 0.6))),
@@ -666,7 +784,10 @@ def main():
     os.makedirs(USCITA, exist_ok=True)
     bpy.context.scene.world = bpy.data.worlds.new("Mondo")
     bpy.ops.mesh.primitive_plane_add(size=60, location=(0, 0, 0))
+    solo = sys.argv[2].split(",") if len(sys.argv) > 2 and sys.argv[2] else None
     for nome, fabbrica in ASSET:
+        if solo and nome not in solo:
+            continue
         ob = fabbrica(nome)
         base.cuoci_occlusione(ob, 0.45)
         base.esporta(ob, os.path.join(USCITA, nome + ".glb"))

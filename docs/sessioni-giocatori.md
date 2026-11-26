@@ -198,3 +198,17 @@ Le dinamiche non cambiano: mediane 616, 454, 742, 116 abitanti; carestie 2,7, 2,
 
 - I tutorial si concentrano all'inizio: 8 riquadri prima che il tempo cominci a scorrere, poi 2–3 a ogni tappa.
 - I giocatori automatici non imparano ancora dai tutorial (chi legge erige il luogo sacro 7 volte su 18, come prima): si potrà far leggere loro il riquadro del luogo sacro come si fa con le cause dei pannelli.
+
+## Con le scorrerie e la torre di avvistamento (26/11/2026, sera)
+**Giocatori "umani"** (72 partite, 3 semi): i giocatori rispondono alla prima scelta sui segni d'istinto (chi legge protegge di più), provano la torre quando vedono i segni o quando il pannello degli Animali dice che il rischio è alto.
+| Profilo | Mediana abitanti | Carestie | Pause vere | Scorrerie a partita | Case bruciate (in tutto) | Torri |
+|---|---|---|---|---|---|---|
+| impara sbagliando | 599 (prima 616) | 2,8 (2,7) | 4,3 | 0,94 | 3 | 0 |
+| legge | 561 (454) | 3,0 (2,5) | 4,2 | 0,94 | 3 | 0 |
+| conosce il genere | 778 (742) | 2,2 (1,6) | 4,6 | 1,22 | 6 | 1 |
+| casual | 116 (116) | 2,2 (2,2) | 3,9 | 0,39 | 0 | 0 |
+
+Per sito, scorrerie a partita: Sbocco del fiume 1,67, Pianura aperta 1,17, Terrazzo centrale 0,92, Sperone collinare 0,83, Dosso nelle paludi 0,42, Area dei gessi 0,25. **Cosa si vede:** circa una scorreria ogni 500 anni nei villaggi avviati, di più nei siti bassi e aperti, quasi mai per chi resta piccolo; le carestie salgono un poco per chi legge e chi conosce il genere (le scorte rubate); le pause vere salgono di circa mezza a partita (la prima scelta sui segni). La torre si fa di rado: solo quattro siti hanno un'altura entro 1200 m (Sperone collinare 25 punti adatti su 96, Area dei gessi 34, Sbocco del fiume 6, Terrazzo centrale 3; Dosso nelle paludi e Pianura aperta nessuno).
+
+**Registro degli avvisi** (5 partite, livello 5): nessuna scorreria (il giocatore automatico del registro non stende il pascolo, quindi la ricchezza resta bassa); 4,2 pause vere e 16 riquadri di tutorial a partita, come prima.
+

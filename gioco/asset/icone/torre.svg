@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="miter">
+<!-- Torre di avvistamento: piattaforma su pali con il tettuccio e il fuoco di segnalazione -->
+<path d="M8 9 L24 7 L24 9 L8 11 Z" fill="#ffffff" stroke="none"/>
+<line x1="9" y1="14" x2="23" y2="14"/>
+<line x1="10" y1="14" x2="8" y2="29"/>
+<line x1="22" y1="14" x2="24" y2="29"/>
+<line x1="10" y1="11" x2="10" y2="14"/>
+<line x1="22" y1="9" x2="22" y2="14"/>
+<line x1="9.5" y1="18" x2="22.5" y2="25"/>
+<line x1="22.5" y1="18" x2="9.5" y2="25"/>
+<path d="M27 29 L29.5 29 L28.2 24.5 Z" fill="#ffffff" stroke="none"/>
+<line x1="3" y1="29" x2="29" y2="29"/>
+</svg>

@@ -119,6 +119,21 @@ const SCHEDE := {
 		"dettaglio": "In Gestione, tra le Politiche (tasto P). Se il villaggio è aperto, chi arriva resta: porta braccia, animali e nuovi modi di coltivare, ma anche qualche malattia e un po' di attrito. Caso per caso: a ogni arrivo ci si ferma e gli anziani decidono. Se è chiuso, gli stranieri vengono mandati via e il villaggio resta com'è.",
 		"avviso": "Stranieri: nelle Politiche (P) decidi l'usanza dell'accoglienza.",
 	},
+	# Scorrerie (decisioni di Fede del 26/11/2026): le due schede si mostrano ai primi segni.
+	"scorrerie": {
+		"titolo": "Scorrerie",
+		"testo": "Il villaggio ora ha animali e scorte, e qualcuno dalle colline se n'è accorto. Prima di una scorreria arrivano sempre dei segni.",
+		"domanda": "Cosa attira le scorrerie?",
+		"dettaglio": "Le attira la ricchezza che si vede: la mandria, le scorte che avanzano. Colpiscono dove il villaggio è scoperto: i casali sparsi, gli animali al pascolo lontano dalle case, i margini del contado che nessuno usa. Un villaggio su un'altura e con le case raccolte si difende meglio. Ai segni (fuochi sulle colline, tracce, fuggiaschi) passano uno o due anni. In Gestione, tra le Politiche (tasto P), decidi cosa si fa ai segni: andare avanti, raccogliere animali e scorte vicino alle case, oppure vegliare ai margini. Dopo una scorreria le famiglie costruiscono più vicine al centro, finché il ricordo resta vivo.",
+		"avviso": "Scorrerie: nelle Politiche (P) decidi cosa si fa ai segni di pericolo.",
+	},
+	"torre": {
+		"titolo": "Torre di avvistamento",
+		"testo": "Da un'altura si vede arrivare chi viene dalle colline. Una torre dà il tempo di prepararsi.",
+		"domanda": "A cosa serve la torre?",
+		"dettaglio": "In Edifici, con il tasto U: una piattaforma su quattro pali, con la catasta per il fuoco di segnalazione. Va su un dosso o un colle, non lontano dal villaggio, e ne basta una. Servono 15 di legna e due anni di lavoro. Dalla torre i segni arrivano prima, e quando la scorreria arriva si perde meno.",
+		"avviso": "Torre di avvistamento (U): su un'altura, dà i segni prima e si perde meno.",
+	},
 	"affollati": {
 		"titolo": "Villaggio affollato",
 		"testo": "Quando le case non bastano per tutte le famiglie, il villaggio deve scegliere: stringersi o lasciar partire qualcuno.",

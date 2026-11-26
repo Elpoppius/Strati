@@ -60,6 +60,21 @@ func _process(_d: float) -> bool:
 	controlla(not h._menu.has("usanze") and not h._menu_di.has("comune"), "le politiche non stanno tra i menù delle costruzioni")
 	var sim: SimVillaggio = _s.partita.sim
 	controlla(not h.politiche_aperte(), "il pannello delle politiche parte chiuso")
+	# Scorrerie (26/11/2026): la torre in Edifici e la politica sul pericolo, spente fino ai primi segni.
+	controlla(h._menu_di.get("torre", "") == "edifici" and (h._righe_comandi["torre"] as Button).has_node("Icona"), "la torre di avvistamento sta in Edifici, con il suo pittogramma")
+	# Prima della fondazione le politiche si scelgono tutte (come le altre); dopo, aspetta i primi segni.
+	var prova := SimVillaggio.new(_s.dati, 5)
+	prova.fonda(Vector2i(_s.dati.siti[0]["px"]))
+	var sim_vera: SimVillaggio = _s.partita.sim
+	_s.partita.sim = prova
+	_s.partita.aggiorna_hud()
+	var spenta := not h.politica_attiva("pericolo") and (h._righe_comandi["torre"] as Button).disabled
+	prova.gia_segni = true
+	_s.partita.aggiorna_hud()
+	var accesa := h.politica_attiva("pericolo")
+	_s.partita.sim = sim_vera
+	_s.partita.aggiorna_hud()
+	controlla(h._politiche.has("pericolo") and spenta and accesa, "la politica «Ai segni di pericolo» e la torre, dopo la fondazione, aspettano i primi segni")
 	controlla(not h._politiche.has("ammodernamento") and h._menu["ammodernamento"]["blocco"] == "gestione", "l'ammodernamento è una scheda di Gestione, allo stesso livello delle politiche")
 	controlla(h._menu_di.get("amm_agricolo", "") == "ammodernamento" and (h._righe_azioni["amm_agricolo"] as Button).disabled, "il tasto Agricolo c'è già, spento finché non ci sono campi vecchi")
 	(h._righe_azioni["politiche"] as Button).emit_signal("pressed")

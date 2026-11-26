@@ -32,6 +32,7 @@ const PROVE := [
 	"Fluidità con 400 animali e 150 figure vicini",
 	"Specchietti: Conseguenze e Rapporti di forza (R)",
 	"Tutorial alle tappe",
+	"Scorrerie: segni, scelta, torre di avvistamento",
 ]
 
 var cartella := ""

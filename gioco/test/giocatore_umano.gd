@@ -32,12 +32,12 @@ func _initialize() -> void:
 	var file := args[0] if args.size() > 0 else "/tmp/umano.txt"
 	var semi := int(args[1]) if args.size() > 1 else 3
 	var d: MappaDati = load("res://mappe/pedecollinare/mappa.res")
-	_righe.append("profilo,sito,seme,pop_finale,pop_minima,carestie,carestie_gravi,abbandoni,scissioni,pause,tutorial,piene_grandi,granaio_anno,cosa_ha_imparato,legnaie,casali,nucleo,poste,capanni,luogo_sacro,bosco_sacro_ha,sacerdote,capi,pascolo_ha")
+	_righe.append("profilo,sito,seme,pop_finale,pop_minima,carestie,carestie_gravi,abbandoni,scissioni,pause,tutorial,piene_grandi,granaio_anno,cosa_ha_imparato,legnaie,casali,nucleo,poste,capanni,luogo_sacro,bosco_sacro_ha,sacerdote,capi,pascolo_ha,segni,scorrerie,case_bruciate,torre,pericolo")
 	for profilo in ["sbaglia", "legge", "genere", "casual"]:
 		for sito in d.siti:
 			for seme in range(1, semi + 1):
 				var r := _gioca(d, sito, profilo, seme * 31 + int(sito["n"]))
-				_righe.append("%s,%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%d,%d,%d,%d,%d,%d,%.1f,%d,%d,%.1f" % [profilo, String(sito["nome"]).replace(",", " "), seme, r["pop"], r["minima"], r["carestie"], r["gravi"], r["abbandoni"], r["scissioni"], r["pause"], r["tutorial"], r["piene"], r["granaio"], r["imparato"], r["legnaie"], r["casali"], r["nucleo"], r["poste"], r["capanni"], r["sacro"], r["bosco_sacro"], r["sacerdote"], r["capi"], r["pascolo_ha"]])
+				_righe.append("%s,%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%d,%d,%d,%d,%d,%d,%.1f,%d,%d,%.1f,%d,%d,%d,%d,%s" % [profilo, String(sito["nome"]).replace(",", " "), seme, r["pop"], r["minima"], r["carestie"], r["gravi"], r["abbandoni"], r["scissioni"], r["pause"], r["tutorial"], r["piene"], r["granaio"], r["imparato"], r["legnaie"], r["casali"], r["nucleo"], r["poste"], r["capanni"], r["sacro"], r["bosco_sacro"], r["sacerdote"], r["capi"], r["pascolo_ha"], r["segni"], r["scorrerie"], r["case_bruciate"], r["torre"], r["pericolo"]])
 	var f := FileAccess.open(file, FileAccess.WRITE)
 	f.store_string("\n".join(_righe) + "\n")
 	f.close()
@@ -89,6 +89,7 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 	var sacro_voluto := false
 	var bosco_voluto := false
 	var pascolo_voluto := false
+	var torre_voluta := false
 	var caccia_spenta_anno := -1
 	var raccolto_provato := false
 	while not sim.finito:
@@ -123,6 +124,9 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 				pascolo_voluto = genere or caso.randf() < (0.4 if casual else 0.6)
 			if t.contains("bosco sacro"):
 				bosco_voluto = genere or caso.randf() < (0.2 if casual else 0.5)
+			# Scorrerie: i segni (o la scheda saltata della torre) invogliano a provare la torre.
+			if t.contains("Torre di avvistamento") or t.contains("Fuochi") or t.contains("Tracce") or t.contains("fuggiaschi"):
+				torre_voluta = torre_voluta or genere or caso.randf() < (0.15 if casual else 0.35)
 			if t.contains("si divide"):
 				scissioni += 1
 		if eta >= prossimo and sim.fondato:
@@ -164,6 +168,9 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 					elif c.contains("Serve più pascolo") or c.contains("Stendi il pascolo"):
 						AiutiGiocatori.stendi_pascolo(sim, caso, 0.7, 8.0)
 						imparato["pascolo"] = true
+					elif c.contains("Rischio di scorrerie alto") or c.contains("Scorreria del"):
+						torre_voluta = true
+						imparato["torre"] = true
 					elif c.contains("bosco sacro più grande"):
 						AiutiGiocatori.stendi_bosco_sacro(sim, caso, 0.7, 6.0)
 						imparato["bosco_sacro"] = true
@@ -194,6 +201,8 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 				caccia_spenta_anno = -1
 			if sacro_voluto and sim.luogo_sacro.x < 0 and sim.sbloccato("luogo_sacro") and sim.legna >= SimVillaggio.COSTO_LUOGO_SACRO:
 				AiutiGiocatori.costruisci_luogo_sacro(sim)
+			if torre_voluta and sim.torre.x < 0 and sim.sbloccato("torre") and sim.legna >= SimVillaggio.COSTO_TORRE + SimVillaggio.COSTO_CASA:
+				AiutiGiocatori.costruisci_torre(sim, caso, 0.9 if genere else (0.3 if casual else 0.6))
 			if pascolo_voluto and sim.pascolo.is_empty() and sim.sbloccato("pascolo"):
 				AiutiGiocatori.stendi_pascolo(sim, caso, 0.9 if genere else (0.2 if casual else 0.5), 15.0 if genere else 8.0)
 			# Chi conosce il genere allarga il pascolo quando l'erba finisce.
@@ -224,7 +233,8 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 		"granaio": granaio_anno, "imparato": " ".join(imparato.keys()), "legnaie": sim.legnaie.size(), "casali": sim.casali.size(), "nucleo": roundi(sim.abitanti_nucleo()),
 		"poste": sim.poste.size(), "capanni": sim.capanni.size(),
 		"sacro": 1 if sim.luogo_sacro_pronto() else 0, "bosco_sacro": snappedf(sim.ettari_bosco_sacro(), 0.1), "sacerdote": roundi(sim.consenso["sacerdote"]) if sim.sacerdote_attivo else -1,
-		"capi": roundi(sim.capi), "pascolo_ha": snappedf(sim.pascolo.size() * SimVillaggio.AREA_PIXEL_HA, 0.1)}
+		"capi": roundi(sim.capi), "pascolo_ha": snappedf(sim.pascolo.size() * SimVillaggio.AREA_PIXEL_HA, 0.1),
+		"segni": sim.stat["segni"], "scorrerie": sim.stat["scorrerie"], "case_bruciate": sim.stat["case_bruciate"], "torre": 1 if sim.torre_pronta() else 0, "pericolo": sim.politica("pericolo")}
 
 
 ## Posta di caccia e capanno da pesca all'inizio (decisioni di Fede del 25/11/2026): chi conosce il
@@ -275,4 +285,8 @@ func _istinto(dec: Dictionary, caso: RandomNumberGenerator, legge: float) -> Str
 			return "accogliere" if caso.randf() < 0.6 else "respingere"
 		"affollamento":
 			return "restare" if caso.randf() < 0.7 else "emigrare"
+		"pericolo":
+			# Chi legge protegge di più; d'istinto si raccolgono gli animali o si veglia.
+			var x := caso.randf()
+			return "avanti" if x < 0.35 - 0.2 * legge else ("raccogliere" if x < 0.7 else "vegliare")
 	return opzioni[caso.randi() % opzioni.size()]["id"]

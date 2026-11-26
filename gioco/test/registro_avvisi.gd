@@ -161,6 +161,8 @@ func _risposta(dec: Dictionary, caso: RandomNumberGenerator, p: float, sim: SimV
 				return "accogliere"
 			"affollamento":
 				return "restare"
+			"pericolo":
+				return "raccogliere"
 			"primo_cattivo":
 				return "caccia" if sim.selvaggina > 0.5 else "razionare"
 	return opzioni[caso.randi() % opzioni.size()]["id"]

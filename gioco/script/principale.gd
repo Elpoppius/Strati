@@ -317,8 +317,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 				imposta_modo((ev as InputEventKey).keycode - KEY_1)
 			KEY_HOME:
 				torna_al_sito()
-			KEY_X, KEY_F, KEY_C, KEY_Z, KEY_V, KEY_H, KEY_L, KEY_K, KEY_T, KEY_O, KEY_B, KEY_N:
-				var id: String = {KEY_X: "demolisci", KEY_F: "fonda", KEY_C: "campi", KEY_Z: "zona", KEY_V: "sentiero", KEY_H: "granaio", KEY_L: "legnaia", KEY_K: "capanno", KEY_T: "posta", KEY_O: "luogo_sacro", KEY_B: "bosco_sacro", KEY_N: "pascolo"}[(ev as InputEventKey).keycode]
+			KEY_X, KEY_F, KEY_C, KEY_Z, KEY_V, KEY_H, KEY_L, KEY_K, KEY_T, KEY_O, KEY_U, KEY_B, KEY_N:
+				var id: String = {KEY_X: "demolisci", KEY_F: "fonda", KEY_C: "campi", KEY_Z: "zona", KEY_V: "sentiero", KEY_H: "granaio", KEY_L: "legnaia", KEY_K: "capanno", KEY_T: "posta", KEY_O: "luogo_sacro", KEY_U: "torre", KEY_B: "bosco_sacro", KEY_N: "pascolo"}[(ev as InputEventKey).keycode]
 				hud.seleziona_comando("" if hud.comando() == id else id)
 				_aggiorna_pennello()
 			KEY_P:
@@ -424,7 +424,7 @@ func _aggiorna_pennello() -> void:
 		"campi", "zona":
 			# Celle da 40 m centrate sui punti della mappa: si prendono quelle col centro nel cerchio.
 			griglia = Vector3(dati.metri_per_px, dati.metri_per_px * 0.5, r * 1.15)
-		"granaio", "luogo_sacro":
+		"granaio", "luogo_sacro", "torre":
 			# Lotti da 20 m: l'edificio si aggancia al centro del lotto sotto il puntatore.
 			centro = (Vector2(floorf(p.x / LATO_LOTTO), floorf(p.z / LATO_LOTTO)) + Vector2(0.5, 0.5)) * LATO_LOTTO
 			griglia = Vector3(LATO_LOTTO, 0.0, 70.0)

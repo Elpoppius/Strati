@@ -46,11 +46,14 @@ var bonus := {"anziani": 0.0, "famiglie": 0.0, "sacerdote": 0.0}
 ## stranieri (proposta di Claude): "aperta" (si accolgono sempre), "chiusa" (si respingono sempre),
 ## "caso" (ogni arrivo ferma il tempo e si decide). Dal 25/11/2026 (Fede: ritmo meditativo) si parte
 ## con "aperta": il primo arrivo ferma il gioco una volta e la scelta diventa la regola.
-var politiche := {"raccolto": "comune", "stranieri": "aperta", "affollati": "allargare"}
+## pericolo (scorrerie, decisione di Fede del 26/11/2026): cosa si fa ai segni di pericolo; si apre con
+## i primi segni, che fermano il gioco una volta: la scelta di allora diventa la regola.
+var politiche := {"raccolto": "comune", "stranieri": "aperta", "affollati": "allargare", "pericolo": "avanti"}
 const POLITICHE := {
 	"raccolto": ["comune", "famiglie"],
 	"stranieri": ["aperta", "caso", "chiusa"],
 	"affollati": ["allargare", "emigrare"],
+	"pericolo": ["avanti", "raccogliere", "vegliare"],
 }
 ## Ammodernamento tecnologico (decisione di Fede del 24/11/2026), nel blocco Gestione allo stesso
 ## livello delle politiche, diviso per settore: agricolo ora; viario, abitativo… più avanti. Attivo,
@@ -307,6 +310,39 @@ const ANNI_CANTIERE_LUOGO_SACRO := 3
 const DISTANZA_LUOGO_SACRO := 400.0
 var luogo_sacro := Vector2(-1, -1)
 var cantiere_luogo_sacro := 0
+## Scorrerie (voce 4 del todo; principi in era-origini.md, numeri: proposta di Claude approvata da Fede
+## il 26/11/2026). Il primo "campo di sicurezza": le attira la ricchezza che si vede (animali, scorte),
+## i casali, i pascoli lontani e i margini del contado poco usati; le frenano un sito alto e un abitato
+## raccolto. Prima arrivano i segni (1–2 anni prima, 2–3 con la torre di avvistamento). Si aprono con
+## la tappa dei 100 abitanti (quella del pascolo): furti di bestiame e bande di passaggio, più rari prima
+## del 4300 a.C. (Neolitico recente) e il doppio dopo. Le perdite dipendono dalla politica "pericolo" e
+## dalla torre; dopo una scorreria le case nuove nascono più strette (memoria della paura).
+const PROB_SCORRERIA := 0.016  # all'anno con ricchezza ed esposizione piene, senza difesa
+const ANNO_SCORRERIE_FREQUENTI := -4300
+const CAPI_RICCHEZZA := 80.0  # tanti capi fanno una ricchezza "piena"
+const MESI_RICCHEZZA := 18.0
+const PASCOLO_LONTANO := 300.0  # metri dal centro: oltre, gli animali sono esposti
+const MARGINE_ABITATO := 150.0  # case del nucleo più lontane di così dal centro: ai margini
+const ANNI_MEMORIA_RAZZIA := 15
+## Torre di avvistamento (catalogo degli edifici, epoca 1; Fede: "perfetto tutto" del 26/11/2026).
+const COSTO_TORRE := 15.0
+const ANNI_CANTIERE_TORRE := 2
+const DISTANZA_TORRE := 1200.0
+const RILIEVO_TORRE := 2.0  # metri sopra la media dei dintorni: un dosso o un colle
+const PERDITE_TORRE := 0.7
+var torre := Vector2(-1, -1)
+var cantiere_torre := 0
+var gia_segni := false
+var segni_tra := -1  # anni alla scorreria annunciata dai segni (-1: nessuna)
+var segni_punto := Vector2(-1, -1)  # dove colpirà (nel mondo)
+var segni_da := ""  # da dove: "nord", "sud-est"…
+var memoria_scorrerie := 0.0
+var case_razziate := {}  # lotto -> anno della scorreria vicina
+var ultima_scorreria := {}  # {anno, capi, cibo, case, da}
+var rischio_scorrerie := {}  # ultimo calcolo: {p, ricchezza, esposizione, difesa, …}
+var rng_scorrerie := RandomNumberGenerator.new()
+var _difesa_sito := 0.0
+var _pericolo_prima := false
 ## Bosco sacro (tappa dei 150): la riserva, stesa a pennello sul bosco entro 1 km dal centro. Le
 ## legnaie non lo tagliano e le famiglie non vi dissodano; tagliarlo (Demolisci) offende il sacerdote,
 ## che lo vuole grande (pieno da circa 10 ettari).
@@ -401,7 +437,7 @@ var _stranieri_prima := false
 var gia_carestia := false
 ## La zona agricola è piena (niente avviso: lo dice la mappa; decisione di Fede del 25/11/2026).
 var zona_piena := false
-var stat := {"carestie": 0, "piene": 0, "siccita": 0, "fondazioni": 0, "presagi_letti": 0, "presagi_totali": 0, "abbandoni": 0, "febbri": 0}
+var stat := {"carestie": 0, "piene": 0, "siccita": 0, "fondazioni": 0, "presagi_letti": 0, "presagi_totali": 0, "abbandoni": 0, "febbri": 0, "segni": 0, "scorrerie": 0, "case_bruciate": 0}
 var storia := {"pop": [], "cibo": [], "salute": [], "legittimita": [], "abbondanza": [], "legna": [], "capi": []}
 ## Cronaca: [{anno, testo, tipo ("", "buono", "allarme")}], la più recente in testa.
 var cronaca: Array = []
@@ -434,6 +470,8 @@ func _init(d: MappaDati, seme: int = 1) -> void:
 	n = d.lato
 	rng.seed = seme
 	rng_stranieri.seed = seme + 7919
+	# Anche le scorrerie hanno il loro generatore: le altre vicende restano quelle di prima.
+	rng_scorrerie.seed = seme + 104729
 	bosco_presente = func(i: int) -> bool: return dati.copertura[i] > 127
 	_calcola_distanza_palude()
 
@@ -687,6 +725,8 @@ func fonda(p: Vector2i) -> void:
 	cantiere_luogo_sacro = 0
 	bosco_sacro = {}
 	cantiere_granaio = 0
+	_azzera_scorrerie()
+	_difesa_sito = float(valuta_sito(p)["valori"]["difesa"])
 	limo = {}
 	piena_tra = -1
 	zona_piena = false
@@ -1104,7 +1144,9 @@ func _pascola(lavorati: Dictionary) -> void:
 			in_pendio += 1
 	concimati = nuovi_concimati
 	var famiglie := politica("raccolto") == "famiglie"
-	if capi < portata_capi:
+	# Ai segni di pericolo, con animali raccolti vicino alle case, la mandria non cresce.
+	var raccolti := in_allerta() and politica("pericolo") == "raccogliere"
+	if capi < portata_capi and not raccolti:
 		capi = minf(portata_capi, capi * (1.0 + (CRESCITA_CAPI_FAMIGLIE if famiglie else CRESCITA_CAPI)))
 	else:
 		# Più capi che erba (la zona si è ristretta): una parte si vende o si macella.
@@ -1157,6 +1199,234 @@ func costruisci_luogo_sacro(punto: Vector2) -> String:
 
 func luogo_sacro_pronto() -> bool:
 	return luogo_sacro.x >= 0 and cantiere_luogo_sacro <= 0
+
+
+# ---------- scorrerie e torre di avvistamento (decisioni di Fede del 26/11/2026) ----------
+
+func _azzera_scorrerie() -> void:
+	torre = Vector2(-1, -1)
+	cantiere_torre = 0
+	segni_tra = -1
+	segni_punto = Vector2(-1, -1)
+	segni_da = ""
+	memoria_scorrerie = 0.0
+	case_razziate = {}
+	rischio_scorrerie = {}
+
+
+## Le scorrerie sono possibili dalla tappa del pascolo (100 abitanti).
+func scorrerie_aperte() -> bool:
+	return fondato and tappa >= tappa_di("pascolo")
+
+
+## Vero tra i segni e la scorreria annunciata.
+func in_allerta() -> bool:
+	return segni_tra > 0
+
+
+func torre_pronta() -> bool:
+	return torre.x >= 0 and cantiere_torre <= 0
+
+
+## Da dove, a parole, guardando dal centro (x verso est, z verso sud).
+static func direzione(v: Vector2) -> String:
+	var a := rad_to_deg(atan2(v.x, -v.y))
+	return ["nord", "nord-est", "est", "sud-est", "sud", "sud-ovest", "ovest", "nord-ovest"][posmod(roundi(a / 45.0), 8)]
+
+
+## Quanto un punto sta sopra i dintorni (metri): un dosso o un colle si vede da lontano.
+func rilievo(p: Vector2i) -> float:
+	var somma := 0.0
+	var conta := 0
+	for dy in range(-8, 9, 2):
+		for dx in range(-8, 9, 2):
+			var q := p + Vector2i(dx, dy)
+			if q.x < 0 or q.y < 0 or q.x >= n or q.y >= n:
+				continue
+			somma += dati.altezze[px(q)]
+			conta += 1
+	return dati.altezze[px(p)] - somma / maxf(conta, 1)
+
+
+## Il rischio di una scorreria quest'anno, con le sue parti (per i pannelli e le prove):
+## ricchezza visibile × esposizione × (1 − difesa), più alto dal Neolitico recente.
+func calcola_rischio_scorrerie() -> Dictionary:
+	var c := mondo_di_px(centro)
+	var ricchezza := clampf(capi / CAPI_RICCHEZZA, 0.0, 1.0) * 0.6 + clampf(mesi_di_scorta() / MESI_RICCHEZZA, 0.0, 1.0) * 0.4
+	var lontani := 0
+	for i in pascolo:
+		if mondo_di_px(px_di(i)).distance_to(c) > PASCOLO_LONTANO:
+			lontani += 1
+	var pascolo_lontano := float(lontani) / maxf(pascolo.size(), 1.0) if capi >= 1.0 else 0.0
+	var r_px := raggio_campi()
+	var usati := float(campi.size() + pascolo.size())
+	var margini_vuoti := 1.0 - clampf(usati / maxf(PI * r_px * r_px * 0.35, 1.0), 0.0, 1.0)
+	var esposizione := 0.3 + 0.25 * clampf(casali.size() / 3.0, 0.0, 1.0) + 0.25 * pascolo_lontano + 0.2 * margini_vuoti
+	var nucleo := case_nel_nucleo()
+	var distanza := 0.0
+	for l in nucleo:
+		distanza += centro_lotto(l).distance_to(c)
+	distanza /= maxf(nucleo.size(), 1.0)
+	var compatto := clampf(1.0 - (distanza - 60.0) / 140.0, 0.0, 1.0)
+	var difesa := clampf(0.55 * _difesa_sito + 0.45 * compatto, 0.0, 1.0)
+	var tempo := 2.0 if anno >= ANNO_SCORRERIE_FREQUENTI else 1.0
+	return {"p": PROB_SCORRERIA * ricchezza * esposizione * (1.0 - 0.7 * difesa) * tempo,
+		"ricchezza": ricchezza, "esposizione": esposizione, "difesa": difesa, "pascolo_lontano": pascolo_lontano,
+		"margini_vuoti": margini_vuoti, "compatto": compatto, "sito": _difesa_sito}
+
+
+## Ogni anno: la scorreria annunciata arriva, oppure (se non c'è) forse arrivano i segni.
+func _scorrerie() -> void:
+	if not scorrerie_aperte():
+		return
+	memoria_scorrerie = maxf(0.0, memoria_scorrerie - 100.0 / ANNI_MEMORIA_RAZZIA / 2.0)
+	if segni_tra > 0:
+		segni_tra -= 1
+		if segni_tra == 0:
+			segni_tra = -1
+			_scorreria()
+		return
+	rischio_scorrerie = calcola_rischio_scorrerie()
+	if not in_attesa() and rng_scorrerie.randf() < float(rischio_scorrerie["p"]):
+		_segni()
+
+
+## Dove colpirà: un casale, un pascolo lontano o il margine del contado.
+func _bersaglio_scorreria() -> Vector2:
+	var c := mondo_di_px(centro)
+	if not casali.is_empty() and rng_scorrerie.randf() < 0.5:
+		return centro_lotto(casali[rng_scorrerie.randi() % casali.size()])
+	var lontani: Array = []
+	for i in pascolo:
+		if mondo_di_px(px_di(i)).distance_to(c) > PASCOLO_LONTANO:
+			lontani.append(i)
+	if not lontani.is_empty() and capi >= 1.0:
+		return mondo_di_px(px_di(lontani[rng_scorrerie.randi() % lontani.size()]))
+	var a := rng_scorrerie.randf() * TAU
+	return c + Vector2(cos(a), sin(a)) * raggio_contado() * 0.8
+
+
+func _segni() -> void:
+	segni_punto = _bersaglio_scorreria()
+	segni_da = direzione(segni_punto - mondo_di_px(centro))
+	segni_tra = (2 + rng_scorrerie.randi() % 2) if torre_pronta() else (1 + rng_scorrerie.randi() % 2)
+	stat["segni"] += 1
+	var testi := [
+		"Fuochi sulle colline a %s: qualcuno si muove ai margini del contado.",
+		"Tracce di sconosciuti nel bosco a %s: impronte, un bivacco spento.",
+		"Dei fuggiaschi arrivano da %s: un villaggio vicino è stato razziato.",
+	]
+	var testo: String = testi[rng_scorrerie.randi() % testi.size()] % segni_da
+	if torre_pronta():
+		testo = "Dalla torre: " + testo.substr(0, 1).to_lower() + testo.substr(1)
+	_scrivi(testo, "allarme")
+	_notifica(testo, false, segni_punto)
+	# I primi segni fermano il gioco una volta: tutorial e scelta, che diventa la regola.
+	if not gia_segni:
+		gia_segni = true
+		_pericolo_prima = true
+		tutorial(["scorrerie", "torre"], "Primi segni di pericolo")
+		_decidi("pericolo", "Segni di pericolo",
+			testo + "\nGli anziani si riuniscono: cosa si fa ai segni di pericolo? La scelta di oggi diventa l'usanza del villaggio: potrai cambiarla dalle politiche.",
+			[{"id": "avanti", "testo": "Andare avanti", "nota": "Nessun costo oggi; se arrivano, prendono quello che trovano."},
+			 {"id": "raccogliere", "testo": "Raccogliere animali e scorte", "nota": "Perdite dimezzate; finché dura il pericolo meno caccia e la mandria non cresce."},
+			 {"id": "vegliare", "testo": "Vegliare ai margini", "nota": "Perdite minori e case più sicure; gli anziani sono contenti, ma qualche braccio lascia i campi."}])
+		return
+	_reagisci_ai_segni()
+
+
+func _reagisci_ai_segni() -> void:
+	match politica("pericolo"):
+		"vegliare":
+			_cambia_consenso("anziani", 2.0)
+			_scrivi("Gli uomini vegliano ai margini del contado.")
+		"raccogliere":
+			_scrivi("Animali e scorte si raccolgono vicino alle case.")
+
+
+## La scorreria: animali e scorte persi, a volte case bruciate ai margini; gli anziani perdono
+## credito; la paura stringe l'abitato.
+func _scorreria() -> void:
+	var r := calcola_rischio_scorrerie()
+	var f_politica: float = {"avanti": 1.0, "raccogliere": 0.5, "vegliare": 0.6}.get(politica("pericolo"), 1.0)
+	var f := lerpf(1.0, f_politica, efficacia_usanze()) * (PERDITE_TORRE if torre_pronta() else 1.0)
+	var quota_capi := clampf((0.1 + 0.3 * float(r["pascolo_lontano"]) * rng_scorrerie.randf_range(0.5, 1.0)) * f, 0.0, 0.4)
+	var capi_persi := floori(capi * quota_capi)
+	var cibo_perso := cibo * rng_scorrerie.randf_range(0.1, 0.25) * f * (0.7 if granaio_pronto() else 1.0)
+	capi -= capi_persi
+	cibo -= cibo_perso
+	# Case: i casali e le case del nucleo ai margini, le più vicine a dove colpiscono.
+	var c := mondo_di_px(centro)
+	var esposte: Array = case.filter(func(l: Vector2i) -> bool: return case_casale.has(l) or centro_lotto(l).distance_to(c) > MARGINE_ABITATO)
+	esposte.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return centro_lotto(a).distance_to(segni_punto) < centro_lotto(b).distance_to(segni_punto))
+	var bruciate := 0
+	var p_case := 0.35 * (1.0 - float(r["difesa"])) * (0.5 if politica("pericolo") == "vegliare" else 1.0) * (PERDITE_TORRE if torre_pronta() else 1.0)
+	if not esposte.is_empty() and rng_scorrerie.randf() < p_case:
+		bruciate = mini(esposte.size(), 2 if rng_scorrerie.randf() < 0.3 else 1)
+		for k in bruciate:
+			var l: Vector2i = esposte[k]
+			case.erase(l)
+			case_casale.erase(l)
+			macerie[l] = ANNI_MACERIE
+			rovine.append(centro_lotto(l))
+		pop -= minf(pop, bruciate * 2.5)
+	for l in case:
+		if centro_lotto(l).distance_to(segni_punto) < 300.0:
+			case_razziate[l] = anno
+	_cambia_consenso("anziani", -8.0 * f)
+	_cambia_consenso("famiglie", -3.0 - 3.0 * bruciate)
+	memoria_scorrerie = 100.0
+	stat["scorrerie"] += 1
+	stat["case_bruciate"] += bruciate
+	ultima_scorreria = {"anno": anno, "capi": capi_persi, "cibo": roundi(cibo_perso), "case": bruciate, "da": segni_da}
+	if stat["scorrerie"] == 1:
+		_scrivi("Le scorrerie le attirano gli animali e le scorte che si vedono, i casali e i pascoli lontani, i margini del contado lasciati vuoti; le frenano un villaggio in alto e le case raccolte. Finché il ricordo resta vivo, le famiglie costruiranno più vicine al centro.")
+	var cosa: Array[String] = []
+	if capi_persi > 0:
+		cosa.append("%d capi" % capi_persi)
+	if roundi(cibo_perso) > 0:
+		cosa.append("%d di cibo" % roundi(cibo_perso))
+	var testo := "Scorreria da %s: portati via %s" % [segni_da, " e ".join(cosa) if not cosa.is_empty() else "poco o niente"]
+	if bruciate > 0:
+		testo += "; %s ai margini" % ("bruciata una casa" if bruciate == 1 else "bruciate %d case" % bruciate)
+	_scrivi(testo + ".", "allarme")
+	_notifica(testo + ".", true, segni_punto)
+	segni_punto = Vector2(-1, -1)
+	disponi_case()
+
+
+func motivo_torre(punto: Vector2) -> String:
+	if not fondato:
+		return "Prima bisogna fondare il villaggio."
+	if torre.x >= 0:
+		return "La torre di avvistamento c'è già."
+	if not sbloccato("torre"):
+		return "La torre di avvistamento si apre con i primi segni di pericolo."
+	if legna < COSTO_TORRE:
+		return "Servono %d di legna per la torre (ora %d)." % [roundi(COSTO_TORRE), floori(legna)]
+	var p := px_da_mondo(punto.x, punto.y)
+	var i := px(p)
+	if not edificabile(i) or campi.has(i) or sentieri.has(i) or p == centro:
+		return "La torre va su terra asciutta e libera, non su campi o sentieri."
+	if punto.distance_to(mondo_di_px(centro)) > DISTANZA_TORRE:
+		return "La torre va entro %d m dal centro del villaggio." % roundi(DISTANZA_TORRE)
+	if rilievo(p) < RILIEVO_TORRE:
+		return "Da qui non si vede lontano: la torre va su un dosso o un colle."
+	return ""
+
+
+func costruisci_torre(punto: Vector2) -> String:
+	var m := motivo_torre(punto)
+	if m != "":
+		return m
+	var l := lotto_da_mondo(punto.x, punto.y)
+	case = case.filter(func(c: Vector2i) -> bool: return cheb(c, l) > 1)
+	torre = centro_lotto(l)
+	legna -= COSTO_TORRE
+	cantiere_torre = ANNI_CANTIERE_TORRE
+	_scrivi("Si comincia a costruire la torre di avvistamento: servono %d anni di lavoro." % ANNI_CANTIERE_TORRE)
+	disponi_case()
+	return ""
 
 
 ## Ettari di bosco sacro ancora in piedi.
@@ -1904,6 +2174,11 @@ func demolisci(punto: Vector2, raggio: float) -> Dictionary:
 		_scrivi("Demolita la posta di caccia.")
 	if esito["capanni"] > 0:
 		_scrivi("Demolito il capanno da pesca.")
+	if torre.x >= 0 and torre.distance_to(punto) <= raggio:
+		torre = Vector2(-1, -1)
+		cantiere_torre = 0
+		esito["torre"] = true
+		_scrivi("Demolita la torre di avvistamento.")
 	if luogo_sacro.x >= 0 and luogo_sacro.distance_to(punto) <= raggio:
 		luogo_sacro = Vector2(-1, -1)
 		cantiere_luogo_sacro = 0
@@ -2081,6 +2356,9 @@ static func tappa_di(cosa: String) -> int:
 
 ## Vero se lo strumento o la politica è già aperto (le tappe raggiunte restano).
 func sbloccato(cosa: String) -> bool:
+	# La politica sul pericolo e la torre si aprono con i primi segni di una scorreria.
+	if cosa in ["pericolo", "torre"]:
+		return gia_segni
 	return tappa >= tappa_di(cosa)
 
 
@@ -2145,6 +2423,12 @@ func imposta_politica(id: String, valore: String) -> bool:
 			_scrivi("Gli anziani decidono: gli stranieri non restano.")
 		"stranieri:caso":
 			_scrivi("Gli anziani decideranno ogni volta chi accogliere.")
+		"pericolo:avanti":
+			_scrivi("Gli anziani decidono: ai segni di pericolo si va avanti come sempre.")
+		"pericolo:raccogliere":
+			_scrivi("Gli anziani decidono: ai segni di pericolo animali e scorte si raccolgono vicino alle case.")
+		"pericolo:vegliare":
+			_scrivi("Gli anziani decidono: ai segni di pericolo gli uomini vegliano ai margini.")
 	return true
 
 
@@ -2251,6 +2535,11 @@ func _applica_scelta(tipo: String, o: String) -> void:
 				_cambia_consenso("anziani", 1.0)
 				_scrivi("Gli stranieri vengono mandati via.")
 			_gruppo_stranieri = 0
+		"pericolo":
+			if _pericolo_prima:
+				_pericolo_prima = false
+				politiche["pericolo"] = o
+			_reagisci_ai_segni()
 		"affollamento":
 			if o == "restare":
 				raggio_extra += 1
@@ -2333,6 +2622,7 @@ func passo() -> void:
 	# arriva un gruppo ogni 60 anni circa.
 	if anno > ANNO_INIZIO + 10 and not in_attesa() and rng_stranieri.randf() < PROB_STRANIERI * abbondanza:
 		_arrivo_stranieri()
+	_scorrerie()
 	if anni_sapere > 0:
 		anni_sapere -= 1
 	if ammodernamenti["agricolo"]:
@@ -2346,11 +2636,18 @@ func passo() -> void:
 		cantiere_luogo_sacro -= 1
 		if cantiere_luogo_sacro == 0:
 			_scrivi("Il luogo sacro è finito: il sacerdote è soddisfatto.", "buono")
+	if cantiere_torre > 0:
+		cantiere_torre -= 1
+		if cantiere_torre == 0:
+			_scrivi("La torre di avvistamento è finita: dall'alto si vedono i margini del contado.", "buono")
 	# Raccolto: le braccia lavorano prima i campi più fertili. Famiglie contente lavorano di più
 	# (decisione di Fede del 25/11/2026); un cantiere aperto toglie un po' di braccia.
 	var in_cantiere := func(e: Dictionary) -> bool: return int(e["cantiere"]) > 0
-	var cantieri := (1 if cantiere_granaio > 0 else 0) + (1 if cantiere_luogo_sacro > 0 else 0) + legnaie.filter(in_cantiere).size() + poste.filter(in_cantiere).size() + capanni.filter(in_cantiere).size()
+	var cantieri := (1 if cantiere_granaio > 0 else 0) + (1 if cantiere_luogo_sacro > 0 else 0) + (1 if cantiere_torre > 0 else 0) + legnaie.filter(in_cantiere).size() + poste.filter(in_cantiere).size() + capanni.filter(in_cantiere).size()
 	var lavoro: float = (0.9 + 0.2 * consenso["famiglie"] / 100.0) * (1.0 - 0.05 * mini(cantieri, 3))
+	# Ai segni di pericolo, con la veglia ai margini, un po' di braccia lascia i campi.
+	if in_allerta() and politica("pericolo") == "vegliare":
+		lavoro *= 1.0 - 0.08 * efficacia_usanze()
 	var braccia: float = pop * 0.55 * lavoro * (1.0 + (0.0 if fonti["caccia"] else 0.2) + (0.0 if fonti["pesca"] else 0.1))
 	var lavorabili := int(braccia / 3.0 * AREA_CELLA) if fonti["agricoltura"] else 0
 	var ordinati := campi.duplicate()
@@ -2391,6 +2688,9 @@ func passo() -> void:
 	_riprendi_scorte(scorta_pesce, RIPRESA_PESCE)
 	var esito_caccia := _caccia_o_pesca(true, pop * QUOTA_CACCIA * piu_braccia if fonti["caccia"] else 0.0)
 	ultima_caccia = esito_caccia[0]
+	# Animali e scorte raccolti vicino alle case: si caccia meno lontano finché dura il pericolo.
+	if in_allerta() and politica("pericolo") == "raccogliere":
+		ultima_caccia *= 1.0 - 0.3 * efficacia_usanze()
 	offerta_caccia = esito_caccia[1]
 	var esito_pesca := _caccia_o_pesca(false, pop * QUOTA_PESCA * piu_braccia if fonti["pesca"] else 0.0)
 	ultima_pesca = esito_pesca[0]
@@ -2835,16 +3135,21 @@ func _disponi_nucleo(servono: int, ci_sono: int, paga: bool) -> void:
 				var i := px(p)
 				if not edificabile(i) or campi.has(i) or sentieri.has(i):
 					continue
+				# Le case lasciano un lotto libero attorno; dopo una scorreria (memoria della paura) si
+				# stringono e basta un lotto libero di lato: in diagonale possono toccarsi.
+				var stretti := memoria_scorrerie > 50.0
 				var vicina := false
 				for oy in [-1, 0, 1]:
 					for ox in [-1, 0, 1]:
+						if stretti and ox != 0 and oy != 0:
+							continue
 						if occupati.has(l + Vector2i(ox, oy)):
 							vicina = true
 				if vicina:
 					continue
 				var d := Vector2(dx, dy).length() * LOTTO / 40.0
 				var caso := float((l.x * 73856093 ^ l.y * 19349663) & 0xffff) / 65536.0
-				var sc := -d * 1.2 - piena(i) * paura * 8.0 + acqua_qualsiasi(i) - (1.0 if dati.tipo[i] == MappaDati.GESSI else 0.0) + caso * 0.25
+				var sc := -d * (1.2 + 1.5 * memoria_scorrerie / 100.0) - piena(i) * paura * 8.0 + acqua_qualsiasi(i) - (1.0 if dati.tipo[i] == MappaDati.GESSI else 0.0) + caso * 0.25
 				# Il luogo sacro attira le case (decisione di Fede del 24/11/2026: il germe della piazza).
 				if luogo_sacro.x >= 0:
 					sc += 2.5 * clampf(1.0 - w.distance_to(luogo_sacro) / 400.0, 0.0, 1.0)
@@ -2919,6 +3224,9 @@ func umore_famiglie() -> Dictionary:
 		if piena(i) > 0.5:
 			s -= 8.0
 			motivi.append("pesa: la casa è dove arrivano le piene")
+		if case_razziate.has(l) and anno - int(case_razziate[l]) < ANNI_MEMORIA_RAZZIA:
+			s -= 10.0 * (1.0 - (anno - int(case_razziate[l])) / float(ANNI_MEMORIA_RAZZIA))
+			motivi.append("pesa: la scorreria del " + anno_testo(int(case_razziate[l])))
 		if not legnaie_attive.is_empty():
 			var vicina := INF
 			for g in legnaie_attive:
@@ -3047,7 +3355,8 @@ func _sito_casale() -> Vector2i:
 					var v := q + Vector2i(ox, oy)
 					if v.x >= 0 and v.y >= 0 and v.x < n and v.y < n and coltivati.has(px(v)):
 						vicini += 1
-			var sc := vicini * 0.2 - piena(i) * (0.5 + paura) * 8.0 + acqua_qualsiasi(i) - d / 1000.0
+			# Dopo una scorreria i casali nuovi nascono più vicini al villaggio (memoria della paura).
+			var sc := vicini * 0.2 - piena(i) * (0.5 + paura) * 8.0 + acqua_qualsiasi(i) - d / 1000.0 * (1.0 + 3.0 * memoria_scorrerie / 100.0)
 			if sc > punteggio:
 				punteggio = sc
 				migliore = lotto_da_mondo(w.x, w.y)
@@ -3061,9 +3370,14 @@ func _lotto_nel_casale(centro_casale: Vector2i, occupati: Dictionary) -> Vector2
 				var l := centro_casale + Vector2i(dx, dy)
 				if occupati.has(l):
 					continue
+				# Le case lasciano un lotto libero attorno; dopo una scorreria (memoria della paura) si
+				# stringono e basta un lotto libero di lato: in diagonale possono toccarsi.
+				var stretti := memoria_scorrerie > 50.0
 				var vicina := false
 				for oy in [-1, 0, 1]:
 					for ox in [-1, 0, 1]:
+						if stretti and ox != 0 and oy != 0:
+							continue
 						if occupati.has(l + Vector2i(ox, oy)):
 							vicina = true
 				if vicina:
@@ -3104,6 +3418,7 @@ func _abbandona() -> void:
 	luogo_sacro = Vector2(-1, -1)
 	cantiere_luogo_sacro = 0
 	bosco_sacro = {}
+	_azzera_scorrerie()
 	campi = []
 	_tecnica_campi = {}
 	zona = {}
@@ -3209,6 +3524,10 @@ func cause_di(nome: String) -> Array[String]:
 				out.append("Gli anziani sono scontenti: le usanze si rispettano meno.")
 			if consenso["famiglie"] < 30.0:
 				out.append("Le famiglie molto scontente cominciano ad andarsene.")
+			if not ultima_scorreria.is_empty() and anno - int(ultima_scorreria["anno"]) < 10:
+				out.append("Gli anziani hanno perso credito con la scorreria del %s." % anno_testo(int(ultima_scorreria["anno"])))
+			if in_allerta() and politica("pericolo") == "vegliare":
+				out.append("Gli uomini vegliano ai margini: gli anziani sono contenti, ma lavorano meno nei campi.")
 			# Il sacerdote (decisioni di Fede del 24–25/11/2026).
 			if sbloccato("luogo_sacro") and luogo_sacro.x < 0:
 				out.append("Il sacerdote è contrariato finché non si erige il luogo sacro (Edifici): i presagi si fanno ambigui.")
@@ -3258,6 +3577,40 @@ func cause_di(nome: String) -> Array[String]:
 				out.append("Quest'anno si sono macellati %d capi per l'annata cattiva." % ultimi_macellati)
 			if politica("raccolto") == "famiglie":
 				out.append("Gli animali sono delle famiglie: la mandria cresce più in fretta, ma chi ne ha di più si arricchisce (disuguaglianza %d%%)." % roundi(disuguaglianza * 100.0))
+			out.append_array(cause_scorrerie())
+	return out
+
+
+## Le scorrerie a parole (pannelli degli Animali e del Consenso): il rischio, i segni, l'ultima.
+func cause_scorrerie() -> Array[String]:
+	var out: Array[String] = []
+	if not gia_segni:
+		return out
+	if in_allerta():
+		var pol: String = {"avanti": "si va avanti come sempre", "raccogliere": "animali e scorte sono raccolti vicino alle case: la mandria non cresce", "vegliare": "gli uomini vegliano ai margini"}.get(politica("pericolo"), "")
+		out.append("Segni di pericolo da %s: %s." % [segni_da, pol])
+	if not rischio_scorrerie.is_empty():
+		var p := float(rischio_scorrerie["p"])
+		var livello := "alto" if p > 0.008 else ("medio" if p > 0.003 else "basso")
+		var attira: Array[String] = []
+		if float(rischio_scorrerie["ricchezza"]) > 0.4:
+			attira.append("gli animali e le scorte che si vedono")
+		if not casali.is_empty():
+			attira.append("i casali")
+		if float(rischio_scorrerie["pascolo_lontano"]) > 0.4:
+			attira.append("i pascoli lontani")
+		if float(rischio_scorrerie["margini_vuoti"]) > 0.6:
+			attira.append("i margini del contado vuoti")
+		var testo := "Rischio di scorrerie %s" % livello
+		if not attira.is_empty():
+			testo += ": attirano " + ", ".join(attira)
+		if float(rischio_scorrerie["difesa"]) > 0.5:
+			testo += "; il sito e le case raccolte aiutano a difendersi"
+		out.append(testo + ".")
+	if not ultima_scorreria.is_empty() and anno - int(ultima_scorreria["anno"]) < 15:
+		out.append("Scorreria del %s da %s: %d capi, %d di cibo, %d case perse." % [anno_testo(int(ultima_scorreria["anno"])), ultima_scorreria["da"], ultima_scorreria["capi"], ultima_scorreria["cibo"], ultima_scorreria["case"]])
+	if torre.x >= 0:
+		out.append(("La torre di avvistamento è in costruzione: ancora %d anni." % cantiere_torre) if cantiere_torre > 0 else "La torre di avvistamento dà i segni prima e le perdite sono minori.")
 	return out
 
 

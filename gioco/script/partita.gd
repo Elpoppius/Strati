@@ -5,7 +5,7 @@ extends Node
 ## Tempo continuo con pausa e tre velocità; si ferma da solo nei momenti decisivi
 ## (decisione di Fede del 23/11/2026).
 
-const STRUMENTI := ["fonda", "zona", "campi", "pascolo", "sentiero", "granaio", "legnaia", "capanno", "posta", "luogo_sacro", "bosco_sacro", "demolisci"]
+const STRUMENTI := ["fonda", "zona", "campi", "pascolo", "sentiero", "granaio", "legnaia", "capanno", "posta", "luogo_sacro", "torre", "bosco_sacro", "demolisci"]
 const VELOCITA := [0.0, 1.0, 6.0, 15.0]  # anni al secondo (velocità 1 più calma: decisione di Fede del 25/11/2026)
 const NOMI_VELOCITA := ["Pausa", "1 anno al secondo", "6 anni al secondo", "15 anni al secondo"]
 
@@ -91,6 +91,9 @@ func avvia(s: Node, seme_voluto: int = -1) -> void:
 		# rendono un terzo. Tasti K e T: proposta di Claude.
 		{"id": "luogo_sacro", "icona": "luogo_sacro", "testo": "Luogo sacro (20 di legna)", "breve": "L. sacro", "tasto": "O",
 		 "descrizione": "Un cerchio di pali attorno a una pietra, vicino al villaggio. Costa 20 di legna e tre anni di lavoro. Il sacerdote è contrariato finché non c'è; contento, i presagi sono più chiari, scontento, ambigui. Le case gli crescono attorno."},
+		# Torre di avvistamento (scorrerie, decisione di Fede del 26/11/2026); tasto U: proposta di Claude.
+		{"id": "torre", "icona": "torre", "testo": "Torre di avvistamento (15 di legna)", "breve": "Torre", "tasto": "U",
+		 "descrizione": "Una piattaforma su pali con la catasta per il fuoco di segnalazione. Va su un dosso o un colle, entro 1200 m dal centro; ne basta una. Costa 15 di legna e due anni di lavoro. Dalla torre i segni di una scorreria arrivano prima, e quando arriva si perde meno."},
 		{"id": "capanno", "icona": "capanno_pesca", "testo": "Capanno da pesca", "breve": "Capanno", "tasto": "K",
 		 "descrizione": "Senza capanno le famiglie pescano come capita e rendono un terzo. Va sulla riva di un fiume o di un torrente: si aggancia da solo alla riva più vicina. Il fiume dà più pesce dei torrenti; più capanni vicini si dividono il pesce di quel tratto, e troppi lo fanno calare."},
 		{"id": "posta", "icona": "posta_caccia", "testo": "Posta di caccia", "breve": "Posta", "tasto": "T",
@@ -146,6 +149,13 @@ func avvia(s: Node, seme_voluto: int = -1) -> void:
 		 "opzioni": [
 			{"id": "allargare", "testo": "Allargare l'abitato", "nota": "Le case si stringono e l'abitato cresce verso i campi; per qualche anno la salute ne risente."},
 			{"id": "emigrare", "testo": "Emigrare", "nota": "Chi non trova posto parte in cerca di terra altrove: meno bocche e meno braccia."}]},
+		# Scorrerie (decisione di Fede del 26/11/2026): si apre con i primi segni di pericolo.
+		{"id": "pericolo", "titolo": "Ai segni di pericolo",
+		 "descrizione": "Cosa si fa quando dalle colline arrivano segni di una scorreria.",
+		 "opzioni": [
+			{"id": "avanti", "testo": "Andare avanti", "nota": "Nessun costo: se arrivano, prendono quello che trovano."},
+			{"id": "raccogliere", "testo": "Raccogliere", "nota": "Animali e scorte vicino alle case: perdite dimezzate, ma meno caccia e la mandria non cresce finché dura il pericolo."},
+			{"id": "vegliare", "testo": "Vegliare", "nota": "Gli uomini vegliano ai margini: perdite minori e case più sicure, anziani contenti; qualche braccio lascia i campi."}]},
 	])
 	hud.interruttore_scelto.connect(func(_politica: String, fonte: String, accesa: bool) -> void:
 		if not sim.imposta_fonte(fonte, accesa):
@@ -254,7 +264,7 @@ func _process(delta: float) -> void:
 	if sim.in_attesa() and not hud.modale_aperta():
 		_accumulo = 0.0
 		var d: Dictionary = sim.decisioni[0]
-		var tipi := {"sorgenti": "Presagio", "cometa": "Presagio", "primo_cattivo": "Momento decisivo", "affollamento": "Momento decisivo", "stranieri": "Evento", "piena": "Evento", "abbandono": "Fallimento", "fine": "Fine del prototipo"}
+		var tipi := {"sorgenti": "Presagio", "cometa": "Presagio", "primo_cattivo": "Momento decisivo", "affollamento": "Momento decisivo", "stranieri": "Evento", "pericolo": "Pericolo", "piena": "Evento", "abbandono": "Fallimento", "fine": "Fine del prototipo"}
 		if d["tipo"] == "tutorial":
 			hud.mostra_tutorial(d, _scelto.bind(d["id"], d["tipo"]))
 			return
@@ -418,6 +428,8 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 				parti.append("la legnaia")
 			if esito.get("luogo_sacro", false):
 				parti.append("il luogo sacro")
+			if esito.get("torre", false):
+				parti.append("la torre di avvistamento")
 			if esito.get("bosco_sacro", 0) > 0:
 				parti.append("%d alberi del bosco sacro" % esito["bosco_sacro"])
 			if esito.get("poste", 0) > 0:
@@ -444,6 +456,9 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 		"luogo_sacro":
 			var m := sim.costruisci_luogo_sacro(Vector2(punto.x, punto.z))
 			hud.imposta_messaggio(("Il luogo sacro si comincia a erigere: tra %d anni il sacerdote sarà soddisfatto." % SimVillaggio.ANNI_CANTIERE_LUOGO_SACRO) if m == "" else m)
+		"torre":
+			var m := sim.costruisci_torre(Vector2(punto.x, punto.z))
+			hud.imposta_messaggio(("Torre di avvistamento in costruzione: tra %d anni si vedranno i margini del contado." % SimVillaggio.ANNI_CANTIERE_TORRE) if m == "" else m)
 		"bosco_sacro":
 			if not sim.fondato:
 				return
@@ -573,6 +588,8 @@ func raggio_strumento(comando: String, raggio: float) -> float:
 			return 8.0
 		"luogo_sacro":
 			return 6.0
+		"torre":
+			return 5.0
 	return -1.0
 
 
@@ -666,12 +683,21 @@ func aggiorna_hud() -> void:
 	elif not sim.sbloccato("luogo_sacro"):
 		testo_sacro = "Luogo sacro (si apre a %d abitanti)" % SimVillaggio.TAPPE[SimVillaggio.tappa_di("luogo_sacro")]["abitanti"]
 	hud.cambia_testo("luogo_sacro", testo_sacro, "L. sacro")
+	# Torre di avvistamento: si apre con i primi segni di una scorreria.
+	hud.abilita("torre", on and sim.torre.x < 0 and not sim.finito and sim.sbloccato("torre"))
+	var testo_torre := "Torre di avvistamento (%d di legna, %d anni di lavoro)" % [roundi(SimVillaggio.COSTO_TORRE), SimVillaggio.ANNI_CANTIERE_TORRE]
+	if sim.torre.x >= 0:
+		testo_torre = ("Torre di avvistamento (in costruzione: ancora %d anni)" % sim.cantiere_torre) if sim.cantiere_torre > 0 else "Torre di avvistamento (già costruita)"
+	elif not sim.sbloccato("torre"):
+		testo_torre = "Torre di avvistamento (si apre con i primi segni di pericolo)"
+	hud.cambia_testo("torre", testo_torre, "Torre")
 	hud.abilita("bosco_sacro", on and not sim.finito and sim.sbloccato("bosco_sacro"))
 	hud.cambia_testo("bosco_sacro", "Bosco sacro" if sim.sbloccato("bosco_sacro") else "Bosco sacro (si apre a %d abitanti)" % SimVillaggio.TAPPE[SimVillaggio.tappa_di("bosco_sacro")]["abitanti"], "B. sacro")
 	# Le tappe aprono le politiche (decisione di Fede del 25/11/2026).
 	for id in ["raccolto", "stranieri", "affollati"]:
 		var aperta := not on or sim.sbloccato(id)
 		hud.abilita_politica(id, aperta, "" if aperta else "Si apre con la tappa «%s» (%d abitanti)." % [SimVillaggio.TAPPE[SimVillaggio.tappa_di(id)]["nome"], SimVillaggio.TAPPE[SimVillaggio.tappa_di(id)]["abitanti"]])
+	hud.abilita_politica("pericolo", not on or sim.sbloccato("pericolo"), "" if not on or sim.sbloccato("pericolo") else "Si apre con i primi segni di una scorreria.")
 	for id in SimVillaggio.POLITICHE:
 		hud.imposta_politica(id, sim.politica(id))
 	# Ammodernamento agricolo: il tasto c'è già (decisione di Fede), spento finché non ci sono campi
@@ -1003,6 +1029,16 @@ func conseguenze(cmd: String, punto: Vector2, raggio: float) -> Dictionary:
 				"territorio": "le case gli crescono attorno",
 				"costo": "%d di legna · %d anni di lavoro%s" % [roundi(c_s), SimVillaggio.ANNI_CANTIERE_LUOGO_SACRO, "" if sim.legna >= c_s else " (ne hai %d)" % floori(sim.legna)],
 				"resta": "il centro sacro: poi tempio e piazza"}
+		"torre":
+			var c_t := SimVillaggio.COSTO_TORRE
+			var motivo_t := sim.motivo_torre(punto)
+			if motivo_t.contains("dosso"):
+				return {"titolo": "Torre di avvistamento", "guadagna": nessuno, "perde": nessuno, "territorio": "qui la vista è chiusa: serve un'altura"}
+			return {"titolo": "Torre di avvistamento", "guadagna": "Anziani ▲  (segni prima, si perde meno)",
+				"perde": "Famiglie ▼  (meno legna per le case)" if poca_legna.call(c_t) else nessuno,
+				"territorio": "si vedono i margini del contado",
+				"costo": "%d di legna · %d anni di lavoro%s" % [roundi(c_t), SimVillaggio.ANNI_CANTIERE_TORRE, "" if sim.legna >= c_t else " (ne hai %d)" % floori(sim.legna)],
+				"resta": "un punto di guardia sull'altura"}
 		"bosco_sacro":
 			if not bosco:
 				return {"titolo": "Bosco sacro", "guadagna": nessuno, "perde": nessuno, "territorio": "qui non c'è bosco da proteggere"}
@@ -1034,6 +1070,7 @@ func _conseguenze_demolizione(punto: Vector2, raggio: float) -> Dictionary:
 			n_sacri += 1
 	var luogo := sim.luogo_sacro.x >= 0 and sim.luogo_sacro.distance_to(punto) <= raggio
 	var granaio := sim.granaio.x >= 0 and sim.granaio.distance_to(punto) <= raggio
+	var torre := sim.torre.x >= 0 and sim.torre.distance_to(punto) <= raggio
 	var perde: Array[String] = []
 	var cose: Array[String] = []
 	if n_case > 0 or n_campi > 0:
@@ -1045,9 +1082,12 @@ func _conseguenze_demolizione(punto: Vector2, raggio: float) -> Dictionary:
 	if luogo or n_sacri > 0:
 		perde.append("Sacerdote %s" % ("▼▼▼" if luogo else "▼▼"))
 		cose.append("il luogo sacro" if luogo else "bosco sacro")
-	if granaio:
+	if granaio or torre:
 		perde.append("Anziani ▼")
+	if granaio:
 		cose.append("il granaio")
+	if torre:
+		cose.append("la torre")
 	if cose.is_empty():
 		return {"titolo": "Demolisci", "guadagna": "nessuno", "perde": "nessuno", "territorio": "alberi e sentieri nel cerchio, se ci sono",
 			"costo": "irreversibile", "irreversibile": true, "resta": "terra libera: il bosco può ricrescere"}
@@ -1061,7 +1101,7 @@ func _conseguenze_demolizione(punto: Vector2, raggio: float) -> Dictionary:
 func leggi_per_strumento(punto: Vector3) -> void:
 	var hud: Hud = scena.hud
 	var cmd := hud.comando()
-	if not sim.fondato or not cmd in ["zona", "campi", "granaio", "legnaia", "sentiero", "capanno", "posta", "luogo_sacro", "bosco_sacro", "pascolo"]:
+	if not sim.fondato or not cmd in ["zona", "campi", "granaio", "legnaia", "sentiero", "capanno", "posta", "luogo_sacro", "torre", "bosco_sacro", "pascolo"]:
 		hud.imposta_lettura_strumento([])
 		return
 	if cmd in ["capanno", "posta"]:
@@ -1123,6 +1163,11 @@ func leggi_per_strumento(punto: Vector3) -> void:
 			voci.append(["Bosco attorno", "%d%%" % roundi(float(b["quota"]) * 100.0), float(b["quota"]), float(b["quota"]) < 0.15])
 			voci.append(["Distanza dal centro", "%d m" % roundi(d), 1.0 - clampf(d / SimVillaggio.DISTANZA_MASSIMA_LEGNAIA, 0.0, 1.0), d > SimVillaggio.DISTANZA_MASSIMA_LEGNAIA])
 			voci.append(piena_voce)
+		"torre":
+			var ril := sim.rilievo(sim.px_da_mondo(punto.x, punto.z))
+			voci.append(["Altura", ("%d m sopra i dintorni" % roundi(ril)) if ril >= 0.5 else "nessuna: vista chiusa", clampf(ril / 10.0, 0.0, 1.0), ril < SimVillaggio.RILIEVO_TORRE])
+			voci.append(["Distanza dal centro", "%d m" % roundi(d), 1.0 - clampf(d / SimVillaggio.DISTANZA_TORRE, 0.0, 1.0), d > SimVillaggio.DISTANZA_TORRE])
+			voci.append(["Legna", "%d / %d" % [floori(sim.legna), roundi(SimVillaggio.COSTO_TORRE)], sim.legna / SimVillaggio.COSTO_TORRE, sim.legna < SimVillaggio.COSTO_TORRE])
 		"luogo_sacro":
 			voci.append(["Distanza dal centro", "%d m" % roundi(d), 1.0 - clampf(d / SimVillaggio.DISTANZA_LUOGO_SACRO, 0.0, 1.0), d > SimVillaggio.DISTANZA_LUOGO_SACRO])
 			voci.append(["Legna", "%d / %d" % [floori(sim.legna), roundi(SimVillaggio.COSTO_LUOGO_SACRO)], sim.legna / SimVillaggio.COSTO_LUOGO_SACRO, sim.legna < SimVillaggio.COSTO_LUOGO_SACRO])

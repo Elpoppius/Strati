@@ -92,6 +92,27 @@ static func costruisci_luogo_sacro(sim: SimVillaggio) -> bool:
 	return false
 
 
+## Torre di avvistamento (scorrerie, 26/11/2026): qualita 1 cerca l'altura più alta vicino al
+## villaggio; qualita bassa prende la prima che va bene, girando a caso.
+static func costruisci_torre(sim: SimVillaggio, caso: RandomNumberGenerator, qualita: float) -> bool:
+	var c := sim.mondo_di_px(sim.centro)
+	var migliore := Vector2(-1, -1)
+	var piu_alto := -INF
+	var giro := caso.randf() * TAU
+	for r: float in [200.0, 350.0, 500.0, 700.0, 900.0, 1100.0]:
+		for k in 16:
+			var w := c + Vector2.from_angle(giro + k * TAU / 16.0) * r
+			if sim.motivo_torre(w) != "":
+				continue
+			if qualita < 0.6:
+				return sim.costruisci_torre(w) == ""
+			var ril := sim.rilievo(sim.px_da_mondo(w.x, w.y)) - r / 1000.0
+			if ril > piu_alto:
+				piu_alto = ril
+				migliore = w
+	return migliore.x >= 0 and sim.costruisci_torre(migliore) == ""
+
+
 ## Stende il bosco sacro: qualita 1 sceglie il bosco più vicino al villaggio e ne stende circa
 ## `ettari`; qualita bassa ne stende meno, dove capita. Restituisce gli ettari stesi.
 static func stendi_bosco_sacro(sim: SimVillaggio, caso: RandomNumberGenerator, qualita: float, ettari: float) -> float:

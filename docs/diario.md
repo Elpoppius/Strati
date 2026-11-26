@@ -2,6 +2,22 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (sera) — scorrerie e torre di avvistamento (voce 4)
+**Fatto**
+- **Scorrerie** nella simulazione (`sim_villaggio.gd`, generatore a parte `rng_scorrerie`). Partono dalla tappa dei 100 abitanti e sono più rare prima del 4300 a.C. Il rischio è ricchezza visibile × esposizione × (1 − difesa): la ricchezza sono animali e scorte; l'esposizione sono casali, pascoli oltre 300 m e margini del contado vuoti; la difesa sono il sito e l'abitato raccolto. Prima arrivano i segni (fuochi, tracce, fuggiaschi), con la direzione e un punto sulla mappa, e la scorreria arriva 1–2 anni dopo. Si perdono animali e scorte e a volte bruciano 1–2 case ai margini, che lasciano macerie e rovine. Gli anziani perdono consenso, l'umore delle famiglie vicine cala per 15 anni e la memoria della paura stringe l'abitato: le case nuove nascono più vicine e possono toccarsi in diagonale.
+- **Politica "Ai segni di pericolo"** (andare avanti, raccogliere, vegliare): si apre ai primi segni, che fermano il gioco una volta con le schede di tutorial "Scorrerie" e "Torre di avvistamento" e con la scelta, che diventa la regola.
+- **Torre di avvistamento** (Edifici, tasto U): 15 di legna e 2 anni di cantiere, una sola, su un'altura entro 1200 m. Dà i segni un anno prima e le perdite scendono al 70%. Ci sono il modello e il suo scheletro in `villaggio.py` (che ora esporta anche solo i modelli indicati), l'icona, le Conseguenze, la lettura sotto il puntatore e la demolizione. Foto `docs/immagini/torre-avvistamento-26-11.jpg`.
+- Il rischio, i segni e l'ultima scorreria compaiono nei pannelli degli Animali e del Consenso. I giocatori automatici rispondono alla scelta e provano la torre. C'è una nuova prova nella finestra Debug.
+- Prove: 24 verifiche nuove in `verifica_villaggio.gd` e 2 in `verifica_hud.gd`; tutte le 10 verifiche superate. Con le 72 partite "umane" si ha circa una scorreria per partita nei villaggi avviati e 0,4 per il casual. Le carestie salgono un poco e le pause di circa mezza a partita (`sessioni-giocatori.md`). Il registro degli avvisi è invariato.
+- Documenti: `prototipo0-godot.md`, `era-origini.md`, `edifici-per-epoca.md`, `hud.md`, `asset.md`, `specchietto.md`, `CLAUDE.md`, `todo.md`.
+
+**Decisioni** (Fede)
+- Riepilogo della voce 4 approvato ("perfetto tutto"): scorrerie dalla tappa dei 100 abitanti, più rare prima del 4300 a.C.; torre di avvistamento subito; politica "Ai segni di pericolo" con tre opzioni.
+
+**Prossimo passo**
+- Fede: guardare il modello della torre e rispondere alle due domande nel todo (torre in pianura? pause in più). Al PC: Pull, prova in gioco e registro.
+- Claude: voce 5, sentieri che diventano strade (prima il riepilogo).
+
 ## 26/11/2026 (sera, ripresa) — registro tecnico in gioco (voce B)
 **Fatto**
 - **Registro tecnico** (`gioco/script/registro.gd`, classe `Registro`): il gioco scrive da solo un file di testo per sessione in `D:\Godot\Strati\Registro`, con ripiego su `user://registro/` dichiarato nella prima riga. Si tengono le ultime 10 sessioni. In testa ci sono commit, Godot, sistema, scheda video e driver, renderer e risoluzione. Ogni 10 s una riga di numeri: fotogrammi al secondo medi e minimo, fotogramma più lento, disegni, memoria, zoom, anno, alberi, animali, figure. In mezzo gli eventi: caricamenti, fotogrammi sopra 100 ms con cosa stava succedendo, errori e avvisi di Godot, spunte, segnalibri. Parte solo nel gioco vero, non nelle verifiche e nelle foto. La cartella `Registro/` è nel `.gitignore`.
