@@ -146,7 +146,9 @@ Solo documenti, senza toccare codice o modelli (richiesta di Fede).
 - [x] Sistemi che attraversano le epoche, identità e regime, proprietà, vita delle costruzioni, dinamica calda, sottosuolo: `epoche-future.md` (approvato da Fede il 26/11/2026).
 - [~] Catalogo degli edifici per categoria di gioco, con scopo, epoche e cosa muove: `edifici-per-epoca.md` (proposta di Claude, da rivedere con Fede; la realizzazione dei modelli si decide dopo).
 - [ ] Età industriale sulla carta, con la profondità di `era-origini.md`.
-- [ ] Antichità sulla carta.
+- [x] Prime due Ere riviste con lo schema (26/11/2026, ok di Fede): `era-origini.md` (§ 4 "Lo schema nel villaggio", § 5 primo governo, § 6 zone e concessione) e nuovo `era-antichita.md`.
+- [x] Specchietto riassuntivo: `specchietto.md`.
+- [ ] Nomi delle forme di governo (epoche 2–4): proposta di Claude, da confermare con Fede.
 - [ ] Da raffinare: salute e scarti, bilancio della città. Da ragionare: stratificazione in altezza.
 
 ## Per l'abitato protourbano (dopo il villaggio)

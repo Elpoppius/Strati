@@ -143,6 +143,16 @@ Mappe tematiche da aggiungere [ok di Fede, 25/11/2026]: boschi e selvaggina, abi
 - Clic su una persona: la scheda della sua famiglia (casa, lavoro, contentezza, gruppo).
 - I problemi si leggono anche qui (gente ferma senza lavoro, file al granaio), sempre insieme a indicatori e pannelli di focus.
 
+### Lo schema nel villaggio
+**[Deciso, 26/11/2026]** (revisione delle prime due Ere alla luce dello schema di `epoche-future.md` § 9; Fede: "mi pare tutto ottimo"). Il villaggio è il primo tutorial dello schema: quasi tutto è nascosto e semplice.
+- **Campi del lotto:** solo **salute** e **accesso**, impliciti (la lettura del terreno di oggi, i sentieri che velocizzano i campi, il luogo sacro che attira le case).
+- **Abitare:** spontaneo (l'unica epoca in cui lo è).
+- **Identità:** le politiche di oggi spostano gli assi senza mostrarli: raccolto in comune o alle famiglie (di chi è la terra), stranieri (apertura), consenso degli anziani (chi decide).
+- **Governo:** gli anziani, senza un nome di regime (§ 5).
+- **Bilancio:** nessuno; si paga con braccia e legna.
+- **Catene:** legna → case. **Complessi:** luogo sacro + bosco sacro. **Conflitti:** legnaie contro bosco sacro.
+- **Lavori in corso che preparano lo schema:** le scorrerie (todo, voce 4) si scrivono come il primo **campo di sicurezza** (margini scoperti, sito difeso); i sentieri che diventano strade (voce 5) come il primo **campo di accesso**.
+
 ### Orti e crescita
 - **[Deciso, 25/11/2026]** Gli orti si calibrano sulla frustrazione e sulla crescita; se la crescita è troppo ripida o il gioco troppo "da fattoria", si cercano espedienti.
 - **[Deciso, 24/11/2026]** La scelta tra "il tetto apre l'epoca" e "abitanti contati sul territorio" (`sessioni-giocatori.md`) si fa a epoca completa.
@@ -152,6 +162,16 @@ Mappe tematiche da aggiungere [ok di Fede, 25/11/2026]: boschi e selvaggina, abi
 - **Presagi:** oggetti di rame portati da stranieri, mercanti di passaggio, armi nuove nei villaggi vicini.
 - **Dilemma [Deciso, dai pilastri]:** aprirsi alle vie di passaggio o restare isolati. **[Deciso, 25/11/2026]** Aprirsi dà metallo, ricchezza e crescita, ma più razzie, più malattie e più potere a pochi; restare isolati è più sicuro, ma senza metallo il villaggio resta indietro. La scelta lascia un tratto nella cultura della città (più mercantile o più chiusa e agricola).
 - **Transizione [Deciso, 25/11/2026]:** riepilogo del villaggio; cambiano sensibilità, governo e gruppi; arrivano l'aratro (i campi nuovi rendono di più, l'ammodernamento agricolo si accende), il metallo, il recinto.
+- **[Deciso, 26/11/2026] Il primo governo con un nome** nasce qui, dall'identità costruita nel villaggio: è la prima volta che il giocatore vede che le sue politiche hanno formato la città. Si apre il pannello dell'identità (`epoche-future.md` § 2).
+- **[Proposta, 26/11/2026] Le forme di governo dell'epoca 2** (Fede: monarchia e tirannide sono premature). Nomi che descrivono chi decide, mai etichette politiche:
+
+| Forma | Quando nasce | Chi decide | Cosa permette | Rischio |
+|---|---|---|---|---|
+| **Comunità** | raccolto in comune, poca disuguaglianza, anziani contenti | le famiglie riunite | lavori comuni rapidi (recinto, fossato), consenso largo | lentezza nelle scelte, poca difesa |
+| **Consiglio dei lignaggi** | via di mezzo: alcune famiglie più forti | i capi dei lignaggi insieme | concessioni di lotti, alleanze | i lignaggi si contendono il potere |
+| **Casa dominante** | raccolto e animali alle famiglie, disuguaglianza alta | un lignaggio sopra gli altri | prestigio, scambi, opere in fretta | i comuni scontenti, peso latente |
+
+  **Capo di guerra** non è una forma di partenza ma uno **stato d'emergenza**: con le razzie la comunità o il consiglio affidano il comando a un capo; se la guerra dura, il comando resta e la forma scivola verso la casa dominante. È il germe dei signori delle epoche dopo.
 - **Resta:** tutto ciò che c'è. I sentieri più usati diventano gli assi, il luogo sacro resta come centro, i campi a zappa restano finché non si ammodernano.
 
 ## 6. Epoca 2 — L'abitato protourbano (sulla carta)
@@ -163,7 +183,7 @@ Mappe tematiche da aggiungere [ok di Fede, 25/11/2026]: boschi e selvaggina, abi
 | Sensibilità emergenti | scambio, ordine (preparano la città-stato) |
 | Chi governa | capi guerrieri, aristocrazie |
 | Gruppi di consenso | **[Deciso, 25/11/2026]** capi, lignaggi, sacerdote |
-| Regolazione dello spazio | **[Deciso, 25/11/2026]** il **recinto** entra qui come regolazione dello spazio: terrapieno e fossato, un dentro e un fuori. Gli insediamenti cominciano a darsi delle regole |
+| Regolazione dello spazio | **[Deciso, 25/11/2026]** il **recinto** entra qui come regolazione dello spazio: terrapieno e fossato, un dentro e un fuori. Gli insediamenti cominciano a darsi delle regole. **[Deciso, 26/11/2026]** Le **prime zone**: si dipinge l'abitato dentro o fuori dal recinto, con una sola densità; si riempie dove c'è domanda. La **prima concessione**: il giocatore concede i lotti ai lignaggi (casa del capo, tumulo), il modo concreto di governare gli equilibri di potere |
 | Strumenti di espansione | recinto o palizzata, alleanze o razzie |
 | Risorse | cibo, legna, braccia, animali, **metallo** (solo con lo scambio), beni di prestigio |
 | Tecniche | aratro in croce; ammodernamento agricolo attivo |
@@ -174,9 +194,18 @@ Mappe tematiche da aggiungere [ok di Fede, 25/11/2026]: boschi e selvaggina, abi
 - **Famiglie eminenti e comuni [Deciso, 25/11/2026: gestire con attenzione gli equilibri di potere].** **[Deciso, 25/11/2026]** La divisione non si impone al cambio d'epoca: **nasce dalla partita.** Le famiglie si dividono in due solo quando la disuguaglianza supera una soglia, e la disuguaglianza viene da ciò che il giocatore ha fatto (raccolto alle famiglie, animali, metallo dallo scambio). Le eminenti vogliono prestigio, difesa e scambi; le comuni terra, cibo e protezione. Il rischio da governare è che le eminenti si prendano il potere (pilastro 3). Va pensato in modo che il giocatore veda la divisione crescere (indicatore di disuguaglianza, scheda della famiglia) e possa tenerla in equilibrio senza che diventi una punizione.
 - **Casali e centro [Deciso, 25/11/2026]:** i casali sparsi nel contado nell'epoca 1 si uniscono nel centro protourbano (come a Bologna nell'VIII secolo a.C.): è la strada verso l'evento soglia 2.
 
+**Lo schema nell'epoca 2 [Deciso, 26/11/2026]**
+- **Campi:** si aggiungono la **sicurezza** (scorrerie, recinto) e il **prestigio** dei lotti vicini alla casa del capo.
+- **Identità:** compare il pannello, con il primo governo (§ 5).
+- **Gruppi:** capi, lignaggi, sacerdote; famiglie eminenti e comuni. **Bilancio:** beni di prestigio, ancora niente moneta.
+- **Catene:** scambio → metallo → fabbro → aratro e armi. **Complessi:** casa del capo + santuario + porta. **Conflitti:** eminenti contro comuni.
+- **Dinamica calda:** i villaggi abbandonati diventano rovine. **Sottosuolo:** il suolo sale con i rifacimenti delle case sugli impalcati; il crollo lascia un abitato sepolto.
+- **Vie e trasporti:** ponte, approdo.
+
 ## 7. Evento soglia 2 — La città si dà leggi (maggiore)
 - **Finestra:** ~900–600 a.C. Chiude l'Era delle Origini e apre l'Antichità (città-stato), con sistemi nuovi: leggi, tasse, spazio pubblico, templi.
 - **Dilemma [dai pilastri]:** a chi dare la cittadinanza?
+- Il seguito, con le forme di governo della città-stato: `era-antichita.md`.
 
 ## 8. Cosa passa da un'epoca all'altra (strati)
 Sentieri → strade → assi; luogo sacro → tempio, chiesa, piazza; appezzamenti delle famiglie → primi lotti; recinto (epoca 2) → linea delle future mura; rovine dei villaggi abbandonati nel sottosuolo; nomi dei luoghi.

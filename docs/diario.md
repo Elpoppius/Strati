@@ -2,6 +2,19 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (pomeriggio) — prime due Ere riviste, specchietto
+**Fatto** (solo documenti)
+- **Prime due Ere riviste con lo schema** (ok di Fede: "mi pare tutto ottimo"): le Origini e l'Antichità sono il tutorial dello schema, ogni epoca accende pochi pezzi nuovi. In `era-origini.md`: "Lo schema nel villaggio" (§ 4), il primo governo con un nome all'evento soglia 1 (§ 5), prime zone dentro e fuori il recinto e concessione dei lotti ai lignaggi nell'epoca 2 (§ 6). Nuovo `era-antichita.md`: cronologia emiliana, nomenclatura, Città-stato (cittadinanza, reticolo e città vecchia, primo bilancio, colonie, tempio sul luogo sacro), evento soglia 3 con quattro esiti, Città imperiale (potere esterno, manutenzione annua, notabili che pagano le opere, centuriazione e coloni, reticolo sulla città vecchia, curatore), evento soglia 4.
+- **Specchietto** (richiesta di Fede): nuovo `docs/specchietto.md` con le epoche in una tabella, lo schema in una riga, tutte le liste di riferimento e le regole; `CLAUDE.md` dice di leggerlo per orientarsi e di tenerlo aggiornato.
+
+**Decisioni** (Fede)
+- Revisione delle prime due Ere approvata.
+- Parlare di monarchia o tirannide per il primo governo è prematuro: Claude propone nomi per ogni fase (Comunità, Consiglio dei lignaggi, Casa dominante e Capo di guerra; Assemblea dei cittadini, Consiglio dei maggiorenti, Capo sacro e Signore della città; Città alleata, Municipio, Colonia e Curatore inviato), da confermare.
+
+**Prossimo passo**
+- Fede: dire se i nomi delle forme di governo vanno bene.
+- Claude: poi, se Fede vuole, l'Età industriale sulla carta.
+
 ## 26/11/2026 (primo pomeriggio) — schema delle dinamiche
 **Fatto** (solo documenti)
 - In `epoche-future.md` nuovo § 9: schema delle dinamiche (territorio e sensibilità → opere e zone → campi del lotto → edifici e gruppi sociali → consenso per quartiere → regime e bilancio), zone dal protourbano, concessione dei lotti alle famiglie, sette menù con sottomenù, campi del lotto, quattro tipi di sinergia (raggio, catene, complessi, conflitti), Haussmann come esempio. Mostrato a Fede con uno schema disegnato.
