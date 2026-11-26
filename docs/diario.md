@@ -2,6 +2,34 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (chiusura della sessione) — decisioni di Fede e piano per il 27/11
+**Decisioni di Fede**
+- **Menù delle impostazioni (voce 10):** proposta di Claude approvata così com'è:
+  - Partita: tutorial, salvataggi automatici, velocità di partenza.
+  - Grafica: qualità a tre livelli, fotogrammi massimi, schermo intero, scala dell'interfaccia.
+  - Comandi da leggere e Registro acceso o spento.
+  - Si apre con F10 o da Strumenti › Partita; le scelte vanno in `D:\Godot\Strati\impostazioni.cfg`.
+- **Presagi:** più radi a decenni, più fitti con il sacerdote scontento.
+- **Primo governo:** soglie da rifare, devono uscire tutte e tre le forme.
+- **Strade:**
+  - niente passerella sui torrenti larghi (servirà il ponte nell'epoca dopo);
+  - le case lungo la via restano come sono ("è più organico");
+  - i sentieri li costruisce solo il giocatore.
+- **Scorrerie:** la mezza pausa in più va bene, con attenzione al bilanciamento.
+- **Direzione artistica:** da verificare nella prova al PC.
+- **Proposte di Claude:** numeri, testi e tasti tutti approvati.
+- **Prossima Era sulla carta:** si decide domani. L'Età industriale era la prossima in `epoche-future.md` (progettare all'indietro da Haussmann); Fede nota che le epoche si stanno già ragionando in prospettiva futura.
+
+**Prossimo passo (27/11, il piano è in testa al todo)**
+- Claude:
+  - menù delle impostazioni;
+  - presagi più radi a decenni e più fitti con il sacerdote scontento;
+  - soglie del governo;
+  - passerelle solo sui corsi stretti;
+  - prove con i giocatori "umani";
+  - poi la lettura del Registro dopo la prova di Fede.
+- Fede: prova al PC con le 16 caselle della finestra F3.
+
 ## 26/11/2026 (notte fonda) — evento soglia e passo elastico (voce 6), partita più lunga, prove in gioco
 **Fatto**
 - **La partita è più lunga** (Fede: "aumenta il periodo di tempo della demo"): non finisce più al 5500 a.C. ma con l'evento del metallo, tra il 3000 e il 1800 a.C.

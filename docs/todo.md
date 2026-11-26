@@ -46,11 +46,11 @@ In tutto **7–10 ore di lavoro di Claude**, cioè 2–3 giornate, più le confe
 1. Menù delle impostazioni: **tutto ok** come proposto (qualità a tre livelli, F10, Strumenti › Partita, `impostazioni.cfg`).
 2. Presagi: **allentarli** a decenni, e **più frequenti con il sacerdote scontento**.
 3. Soglie del primo governo: **da rifare** (devono uscire tutte e tre le forme).
-4. Strade: **niente passerella sui torrenti larghi** (servirà il ponte nell'epoca dopo: lì la strada si ferma al guado); le passerelle restano sui corsi stretti e sul fradicio. Case lungo la via: **da capire** (Claude spiega). **I sentieri li costruisce solo il giocatore** (niente sentieri battuti da soli).
+4. Strade: **niente passerella sui torrenti larghi** (servirà il ponte nell'epoca dopo: lì la strada si ferma al guado); le passerelle restano sui corsi stretti e sul fradicio. Case lungo la via: **si lascia così** (Fede, 23:28: "è più organico"; il borgo lungo la via compare solo quando il centro è pieno). **I sentieri li costruisce solo il giocatore** (niente sentieri battuti da soli).
 5. Scorrerie: la mezza pausa in più **va bene**, con attenzione al bilanciamento.
 6. Direzione artistica: **da verificare** nella prova al PC.
 7. Numeri, testi e tasti proposti da Claude: **tutto ok**.
-8. Fede chiede perché l'Età industriale prima delle Ere che vengono prima: Claude spiega; l'ordine dei documenti sulla carta lo decide Fede.
+8. Fede chiede perché l'Età industriale prima delle Ere che vengono prima: Claude spiega (viene da `epoche-future.md`, progettare all'indietro da Haussmann). Fede: **domani si vede**; le epoche si stanno già ragionando in prospettiva futura.
 
 **Fede decideva** (nell'ordine):
 1. Menù delle impostazioni (voce 10): il contenuto proposto da Claude (Partita: tutorial, salvataggi automatici, velocità di partenza; Grafica: qualità a tre livelli, fotogrammi massimi, schermo intero, scala dell'interfaccia; Comandi in sola lettura; Registro acceso o spento; file `D:\Godot\Strati\impostazioni.cfg`; tasto F10 e voce in Strumenti › Partita). Qualità a tre livelli o voce per voce?
@@ -68,7 +68,7 @@ In tutto **7–10 ore di lavoro di Claude**, cioè 2–3 giornate, più le confe
 2. Le decisioni 2–5 di Fede, con le prove dei giocatori "umani" (anche lunghe) e il registro degli avvisi.
 3. Lettura del Registro dopo la prova di Fede e correzioni (come la voce C del 26/11).
 4. Ritocchi di direzione artistica che Fede chiede.
-5. In parallelo, sulla carta: la prossima Era che sceglie Fede (domanda aperta: si segue l'ordine, cioè la Città in contrazione, o si parte dall'Età industriale come in `epoche-future.md`?).
+5. Sulla carta: la prossima Era si decide domani con Fede (in ordine la Città in contrazione, oppure l'Età industriale come in `epoche-future.md`).
 6. Dopo: l'abitato protourbano (epoca 2), da progettare con Fede.
 
 ## Per chi riprende: il lavoro in ordine
@@ -212,10 +212,10 @@ Un menù delle impostazioni del gioco, con dentro anche l'opzione dei tutorial (
 - **Partite lunghe (voce 6, 26/11/2026 notte):** a decenni i presagi (sorgenti, cometa) fermano il gioco circa ogni 200 anni, cioè ogni 20 secondi a velocità 1: troppo fitti. Proposta di Claude: a decenni più rari (ogni 5–8 secoli) o notifiche grigie senza pausa. Inoltre nelle 18 partite lunghe nessun villaggio ha avuto il Consiglio dei clan: le soglie del primo governo sono da rivedere con Fede (`sessioni-giocatori.md`).
 - **Salvataggio e piene (voce 9, 26/11/2026 notte), proposte di Claude:** cartella `D:\Godot\Strati\Salvataggi`, F5 salva e F8 riprende, Strumenti › Partita, automatici a ogni tappa e ogni 50 anni (ultimi 3); acqua della piena torbida e bruna, 3 s su, 5 fermi, 7 giù.
 - **Strade (voce 5, 26/11/2026 sera), domande di Claude:**
-  - Le **passerelle sui torrenti** ora sono tronchi posati da una riva all'altra all'altezza delle rive, senza pali: su un torrente largo sembrano un ponte. Va bene, o sui corsi larghi la strada deve fermarsi al guado (come il sentiero) e le passerelle restare solo sul fradicio?
-  - Le **case lungo le strade** compaiono solo quando il centro è già pieno (oltre i 150–200 m): nelle prove si vedono poco. Le vuoi più evidenti (il borgo lungo la via prima del pieno)?
+  - Le **passerelle sui torrenti**: **niente passerella sui torrenti larghi** (Fede, 26/11/2026: servirà il ponte nell'epoca dopo); restano sui corsi stretti e sul fradicio. Da fare il 27/11.
+  - Le **case lungo le strade** compaiono solo quando il centro è già pieno: **si lascia così** (Fede, 26/11/2026: "è più organico").
   - I numeri (40 persone, 20 anni, +15%, 500 m, +3 di umore, +10% di taglio) e l'aspetto (5 m, terra più chiara con i solchi dei carri) sono proposte da guardare in prova.
-  - I **sentieri tracciati non diventano strade da soli se nessuno li traccia**: le strade nascono solo dalla rete del giocatore. Va bene, o le famiglie devono battere da sole le vie più usate (sentieri spontanei)?
+  - **I sentieri li costruisce solo il giocatore** (Fede, 26/11/2026): niente sentieri spontanei.
 - **Secondario, direzione artistica:** il maiale che sembra un facocero.
 - **Famiglie "eminenti e comuni":** nome confermato da Fede il 26/11/2026.
 - Carestie nei siti di caccia (25/11/2026 sera): chi legge passa da 1,3 a 2,4 carestie a partita, quasi tutte all'Area dei gessi e allo Sperone collinare. **Si lascia così** (Fede, 25/11/2026): nei siti che vivono di caccia le carestie sono normali.
