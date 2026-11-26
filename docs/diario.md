@@ -31,7 +31,7 @@ Voci più recenti in cima.
 **Decisioni** (Fede)
 - Il concetto della legna: un albero ha un suo valore, verosimile col periodo. Si parte dai 3–4 alberi attorno alla legnaia e poi si passa ai successivi. Il primo non ricresce finché la zona è di passaggio. La velocità di taglio è quella di Age of Empires.
 - "Il resto va bene": cerchio, scheda della legnaia, cose che compaiono, tasti tra parentesi, puntatore, HUD fermo, cursore di selezione, stranieri dalla loro tappa, edifici più grandi (1,8 e 1,4), scorreria di prova. In più "un cursore vero e proprio per il puntatore".
-- La divisione della legna (da ardere senza abbattere, tronchi abbattendo) e i suoi numeri: Claude li ha presi come approvati con il resto, mentre Fede era lontano; sono da confermare alla prova.
+- La divisione della legna (da ardere senza abbattere, tronchi abbattendo) e i suoi numeri: confermati da Fede la sera stessa ("se in prova non convincono, si cambiano").
 
 **Prossimo passo**
 - Fede: Pull e prova al PC, con le caselle della finestra Debug (F3) e i segnalibri (F9). Poi dire a Claude di leggere il registro.
