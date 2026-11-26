@@ -42,7 +42,17 @@ Le stime di prima erano da 2 a 8 volte troppo alte: erano pensate come ore di la
 In tutto **7–10 ore di lavoro di Claude**, cioè 2–3 giornate, più le conferme e le prove di Fede (che oggi sono la parte più lunga), poi la prova fisica e le correzioni.
 
 ## Piano per il 27/11/2026 (deciso con Fede la sera del 26/11)
-**Fede decide** (nell'ordine):
+**Decisioni di Fede (26/11/2026, 23:24):**
+1. Menù delle impostazioni: **tutto ok** come proposto (qualità a tre livelli, F10, Strumenti › Partita, `impostazioni.cfg`).
+2. Presagi: **allentarli** a decenni, e **più frequenti con il sacerdote scontento**.
+3. Soglie del primo governo: **da rifare** (devono uscire tutte e tre le forme).
+4. Strade: **niente passerella sui torrenti larghi** (servirà il ponte nell'epoca dopo: lì la strada si ferma al guado); le passerelle restano sui corsi stretti e sul fradicio. Case lungo la via: **da capire** (Claude spiega). **I sentieri li costruisce solo il giocatore** (niente sentieri battuti da soli).
+5. Scorrerie: la mezza pausa in più **va bene**, con attenzione al bilanciamento.
+6. Direzione artistica: **da verificare** nella prova al PC.
+7. Numeri, testi e tasti proposti da Claude: **tutto ok**.
+8. Fede chiede perché l'Età industriale prima delle Ere che vengono prima: Claude spiega; l'ordine dei documenti sulla carta lo decide Fede.
+
+**Fede decideva** (nell'ordine):
 1. Menù delle impostazioni (voce 10): il contenuto proposto da Claude (Partita: tutorial, salvataggi automatici, velocità di partenza; Grafica: qualità a tre livelli, fotogrammi massimi, schermo intero, scala dell'interfaccia; Comandi in sola lettura; Registro acceso o spento; file `D:\Godot\Strati\impostazioni.cfg`; tasto F10 e voce in Strumenti › Partita). Qualità a tre livelli o voce per voce?
 2. Presagi a decenni: più rari (ogni 5–8 secoli) o notifiche grigie senza pausa?
 3. Soglie del primo governo (il Consiglio dei clan non esce mai).
@@ -58,7 +68,7 @@ In tutto **7–10 ore di lavoro di Claude**, cioè 2–3 giornate, più le confe
 2. Le decisioni 2–5 di Fede, con le prove dei giocatori "umani" (anche lunghe) e il registro degli avvisi.
 3. Lettura del Registro dopo la prova di Fede e correzioni (come la voce C del 26/11).
 4. Ritocchi di direzione artistica che Fede chiede.
-5. In parallelo, sulla carta: l'Età industriale con la profondità di `era-origini.md`.
+5. In parallelo, sulla carta: la prossima Era che sceglie Fede (domanda aperta: si segue l'ordine, cioè la Città in contrazione, o si parte dall'Età industriale come in `epoche-future.md`?).
 6. Dopo: l'abitato protourbano (epoca 2), da progettare con Fede.
 
 ## Per chi riprende: il lavoro in ordine
