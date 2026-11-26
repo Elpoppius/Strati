@@ -11,7 +11,7 @@ Legenda: `[x]` fatto · `[~]` in parte · `[ ]` da fare · **(?)** serve una dec
 4. **Alla fine:** voce in cima al diario, todo aggiornato, commit e push.
 
 ## A che punto siamo (26/11/2026, fine sessione)
-**Ordine (proposto da Claude e accolto da Fede il 26/11/2026 sera):** B (registro tecnico in gioco, richiesta di Fede) → 4 (scorrerie) → 5 (strade, con le figure sui sentieri) → 9 (base tecnica, con il salvataggio) → 6 (evento soglia e passo elastico: chiude l'epoca, va per ultima) → 10 (menù delle impostazioni) → prova fisica di Fede. In parallelo, sulla carta: l'Età industriale.
+**Ordine (proposto da Claude e accolto da Fede il 26/11/2026 sera):** B (registro tecnico in gioco, richiesta di Fede; rimandato a dopo, da riprendere quando lo dice Fede) → 4 (scorrerie) → 5 (strade, con le figure sui sentieri) → 9 (base tecnica, con il salvataggio) → 6 (evento soglia e passo elastico: chiude l'epoca, va per ultima) → 10 (menù delle impostazioni) → prova fisica di Fede. In parallelo, sulla carta: l'Età industriale.
 
 **Divisione del lavoro (Fede, 26/11/2026):** Fede nelle prove si sofferma sulla **direzione artistica**; le questioni tecniche (fotogrammi al secondo, tempi, errori) le raccoglie il registro tecnico della voce B, che Claude legge.
 
@@ -43,7 +43,7 @@ In tutto **7–10 ore di lavoro di Claude**, cioè 2–3 giornate, più le confe
 
 ## Per chi riprende: il lavoro in ordine
 
-### B. [ ] Registro tecnico in gioco (richiesta di Fede del 26/11/2026)
+### B. [ ] Registro tecnico in gioco (richiesta di Fede del 26/11/2026; rimandato: "lo teniamo per dopo")
 **Richiesta di Fede:** un registro interno che il gioco salva da solo mentre lui gioca, con le questioni tecniche, così nelle prove lui guarda la direzione artistica e Claude legge il registro.
 **Proposta di Claude (da confermare prima del codice):**
 - **Cartella (Fede, 26/11/2026): `D:\Godot\Strati\Registro`**; un file per sessione di gioco, testo semplice; si tengono gli ultimi 10. Se su un PC il disco D: non c'è o non si può scrivere, il gioco ripiega su `user://registro/` e lo dice nella prima riga.

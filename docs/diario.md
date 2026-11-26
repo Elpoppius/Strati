@@ -2,6 +2,22 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (chiusura della giornata) — todo riordinato, registro tecnico sulla carta
+**Fatto**
+- Todo aggiornato: ordine delle voci (B, 4, 5, 9, 6, 10, prova fisica), prove aperte di Fede, proposte di Claude in attesa di uno sguardo, voce 7 chiusa.
+- Voce B, **registro tecnico in gioco**, descritta nel todo (nessun codice).
+
+**Decisioni** (Fede)
+- Nelle prove Fede si sofferma sulla **direzione artistica**; le questioni tecniche le raccoglie un registro interno che il gioco salva da solo e che legge Claude.
+- Il registro si salva in **`D:\Godot\Strati\Registro`**; Claude chiede l'accesso a quella cartella con l'app desktop collegata per leggerlo.
+- Nel registro anche una **piccola finestra Debug in gioco** con le prove da verificare (le spunte finiscono nel registro).
+- Il registro **si tiene per dopo** (stima: 40–60 minuti con la finestra Debug).
+- Le famiglie dell'epoca 2 si chiamano **eminenti e comuni** ("comuni va benissimo").
+
+**Prossimo passo**
+- Fede: prove in gioco sulla direzione artistica (persone, animazioni, scheda della famiglia, maiale).
+- Claude: alla ripresa, chiedere a Fede se fare prima il registro tecnico (B) o le scorrerie (4); prima del codice, il riepilogo.
+
 ## 26/11/2026 (sera, chiusura) — umore e prestigio delle famiglie
 **Fatto**
 - **Umore di ogni famiglia** in sola lettura (`SimVillaggio.umore_famiglie`): il consenso delle famiglie più uno scarto dalla situazione della casa (piena disastrosa ricordata per 20 anni, zona delle piene, legna lontana, campi stanchi vicini, casale senza sentiero; vicinanza al focolare e al luogo sacro). Gli scarti si bilanciano: la media resta il consenso del gruppo, l'equilibrio del villaggio non cambia. Nella scheda della famiglia la barra e la parola sono quelle della famiglia, con i motivi a parole al passaggio del puntatore.
