@@ -451,3 +451,39 @@ func _aggiorna_immagine(lista: Array[Vector2i]) -> void:
 		immagine_memoria.set_pixel(c.x, c.y, Color(1.0 if s != NATURALE and v & MEMORIA_BOSCO else 0.0, 0, 0))
 	texture.update(immagine)
 	texture_memoria.update(immagine_memoria)
+
+
+# ---------- salvataggio (todo voce 9, 26/11/2026) ----------
+
+## Lo stato da salvare: celle, anni, tecniche, ricrescita, ceppaie, zone bloccate, blocchi toccati e
+## le immagini per lo shader (rifarle da capo pixel per pixel richiederebbe secondi).
+func stato_salvato() -> Dictionary:
+	return {"n": n, "celle": celle, "anni": anni, "tecniche": tecniche, "in_ricrescita": _in_ricrescita,
+		"ceppaie": ceppaie, "bloccate": bloccate, "toccati": _toccati,
+		"immagine": immagine.get_data(), "memoria": immagine_memoria.get_data(), "immagine_tecniche": immagine_tecniche.get_data()}
+
+
+## Rimette uno stato salvato. I blocchi di alberi toccati ora o nel salvataggio si segnano come
+## cambiati, così la vista rifiltra gli alberi di entrambi.
+func ripristina(d: Dictionary) -> void:
+	if int(d.get("n", 0)) != n:
+		return
+	var prima := _toccati.duplicate()
+	celle = d["celle"]
+	anni = d["anni"]
+	tecniche = d["tecniche"]
+	_in_ricrescita = d["in_ricrescita"]
+	ceppaie = d["ceppaie"]
+	bloccate = d["bloccate"]
+	_toccati = d["toccati"]
+	immagine.set_data(n, n, false, Image.FORMAT_RGBA8, d["immagine"])
+	immagine_memoria.set_data(n, n, false, Image.FORMAT_R8, d["memoria"])
+	immagine_tecniche.set_data(n, n, false, Image.FORMAT_R8, d["immagine_tecniche"])
+	texture.update(immagine)
+	texture_memoria.update(immagine_memoria)
+	texture_tecniche.update(immagine_tecniche)
+	_cambiati = []
+	for k in _toccati.size():
+		if _toccati[k] != 0 or prima[k] != 0:
+			_cambiati.append(Vector2i(k % _nb, k / _nb))
+

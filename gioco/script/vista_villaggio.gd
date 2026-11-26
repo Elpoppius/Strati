@@ -21,6 +21,8 @@ var _celle_nastro := {}  # tutte le celle sotto i nastri
 var _firma_sentieri := ""
 var _firma_campi := 0
 var _nastri: MeshInstance3D
+var _nastri_strada: MeshInstance3D
+var _passerelle: Node3D
 var _focolare: Node3D
 var _centro := Vector2i(-1, -1)
 var _rovine := 0
@@ -37,6 +39,7 @@ func prepara(s: SimVillaggio, u: UsoSuolo, t: Terreno) -> void:
 		for nome in [k, CANTIERI[k]]:
 			if not _scene.has(nome):
 				_scene[nome] = load(CARTELLA + nome + ".glb")
+	_scene["passerella"] = load(CARTELLA + "passerella.glb")
 	# Zona agricola: un byte per punto della mappa, letto dallo shader del terreno (si vede mentre
 	# si destina la terra).
 	_immagine_zona = Image.create(sim.n, sim.n, false, Image.FORMAT_L8)
@@ -381,6 +384,7 @@ func _ciuffo_vicino(a: Dictionary) -> Vector2:
 
 
 func _process(delta: float) -> void:
+	_anima_piena(delta)
 	if _animali.is_empty():
 		return
 	_aggiorna_livello_animali()
@@ -412,6 +416,44 @@ func _sincronizza_pascolo() -> void:
 		var p := sim.px_di(i)
 		_immagine_pascolo.set_pixel(p.x, p.y, Color(1, 1, 1))
 	_texture_pascolo.update(_immagine_pascolo)
+
+
+## Piene visibili (todo voce 9, 26/11/2026; proposta di Claude): quando arriva una piena l'acqua
+## torbida sale piano sulle terre basse (shader del terreno, `livello_piena`), resta un poco e si
+## ritira. Tempi veri, non del gioco: si vede anche a velocità alta. Di stagione arriva a 0,55
+## (le terre più basse), disastrosa a 1.
+const SALITA_PIENA := 3.0
+const SOSTA_PIENA := 5.0
+const DISCESA_PIENA := 7.0
+var _piena_vista := {}
+var _t_piena := -1.0
+var _picco_piena := 0.0
+
+
+func _anima_piena(delta: float) -> void:
+	if not sim.ultima_piena.is_empty() and sim.ultima_piena != _piena_vista:
+		_piena_vista = sim.ultima_piena.duplicate()
+		if sim.anno - int(_piena_vista["anno"]) <= 1:
+			_t_piena = 0.0
+			_picco_piena = 1.0 if _piena_vista["disastrosa"] else 0.55
+	if _t_piena < 0.0:
+		return
+	_t_piena += delta
+	var f := 0.0
+	if _t_piena < SALITA_PIENA:
+		f = smoothstep(0.0, 1.0, _t_piena / SALITA_PIENA)
+	elif _t_piena < SALITA_PIENA + SOSTA_PIENA:
+		f = 1.0
+	elif _t_piena < SALITA_PIENA + SOSTA_PIENA + DISCESA_PIENA:
+		f = 1.0 - smoothstep(0.0, 1.0, (_t_piena - SALITA_PIENA - SOSTA_PIENA) / DISCESA_PIENA)
+	else:
+		_t_piena = -1.0
+	terreno.materiale.set_shader_parameter("livello_piena", f * _picco_piena)
+
+
+## Livello della piena che si vede ora (per le verifiche).
+func livello_piena() -> float:
+	return float(terreno.materiale.get_shader_parameter("livello_piena"))
 
 
 ## Campo stanco visibile (proposta di Claude confermata da Fede il 26/11/2026): un punto della
@@ -644,7 +686,7 @@ const PASSO_SENTIERO := 4.0
 
 ## Ricalcola i nastri quando cambiano i sentieri; restituisce vero se sono cambiati.
 func _aggiorna_nastri() -> bool:
-	var firma := "%d|%d|%d" % [sim.sentieri.hash(), sim.tratti_sentiero.size(), sim.centro.x]
+	var firma := "%d|%d|%d|%d" % [sim.sentieri.hash(), sim.tratti_sentiero.size(), sim.centro.x, sim.strade.size()]
 	if firma == _firma_sentieri:
 		return false
 	_firma_sentieri = firma
@@ -653,7 +695,14 @@ func _aggiorna_nastri() -> bool:
 		presenti[i] = true
 	var celle_ora := {}
 	var pezzi: Array = []  # liste di punti (Vector2) consecutivi da disegnare
+	var pezzi_strada: Array = []
+	var passerelle: Array = []  # [inizio, fine] (metri) dei tratti di strada su tronchi
 	for t in sim.tratti_sentiero:
+		var strada := sim.strade.has(SimVillaggio.chiave_tratto(t))
+		var lista := pezzi_strada if strada else pezzi
+		var umido_da := Vector2(INF, INF)
+		var sull_acqua := false
+		var ultimo_buono := Vector2(INF, INF)
 		var a := sim.mondo_di_px(t[0])
 		var b := sim.mondo_di_px(t[1])
 		var passi := maxi(1, ceili(a.distance_to(b) / PASSO_SENTIERO))
@@ -675,20 +724,100 @@ func _aggiorna_nastri() -> bool:
 				for ox in [-1, 0, 1]:
 					if presenti.has(sim.px(pxq + Vector2i(ox, oy))):
 						su_sentiero = true
-			var buono := su_sentiero and uso.alberi.distanza_acqua(q.x, q.y) > 1.0
+			var acqua := uso.alberi.distanza_acqua(q.x, q.y) <= 1.0
+			# Una strada attraversa torrenti e terreni fradici su una passerella di tronchi.
+			var umido := strada and su_sentiero and (acqua or sim.dati.valore_fine(sim.dati.palude_fine, q.x, q.y) > SOGLIA_FRADICIO * 255.0)
+			if strada and su_sentiero:
+				if umido and umido_da.x == INF:
+					umido_da = ultimo_buono if ultimo_buono.x != INF else q
+					sull_acqua = false
+				if umido and acqua:
+					sull_acqua = true
+				elif not umido and umido_da.x != INF:
+					passerelle.append([umido_da, q, sull_acqua])
+					umido_da = Vector2(INF, INF)
+			var buono := su_sentiero and not acqua and not umido
 			if buono:
 				pezzo.append(q)
+				ultimo_buono = q
 				celle_ora[uso.cella(q.x, q.y)] = true
-			elif pezzo.size() > 1:
-				pezzi.append(pezzo)
-				pezzo = []
 			else:
+				if not su_sentiero:
+					umido_da = Vector2(INF, INF)
+					ultimo_buono = Vector2(INF, INF)
+				if pezzo.size() > 1:
+					lista.append(pezzo)
 				pezzo = []
 		if pezzo.size() > 1:
-			pezzi.append(pezzo)
+			lista.append(pezzo)
 	_celle_nastro = celle_ora
 	_disegna_nastri(pezzi)
+	_disegna_strade(pezzi_strada)
+	_disegna_passerelle(passerelle)
 	return true
+
+
+## Strade (voce 5, 26/11/2026): lo stesso sentiero allargato a 5 m e consumato in terra compatta.
+const LARGHEZZA_STRADA := 5.0
+const SOGLIA_FRADICIO := 0.6  # palude_fine sopra cui la strada passa su tronchi
+const LUNGO_PASSERELLA := 6.0
+
+func _disegna_strade(pezzi: Array) -> void:
+	if _nastri_strada:
+		_nastri_strada.queue_free()
+		_nastri_strada = null
+	if pezzi.is_empty():
+		return
+	_nastri_strada = MeshInstance3D.new()
+	_nastri_strada.name = "Strade"
+	_nastri_strada.mesh = _mesh_nastro(pezzi, LARGHEZZA_STRADA, 0.4)
+	_nastri_strada.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var m := ShaderMaterial.new()
+	m.shader = load("res://shader/sentiero.gdshader")
+	m.set_shader_parameter("macchie", load("res://asset/texture/macchie.png"))
+	m.set_shader_parameter("evidenzia", 1.0 if _evidenzia else 0.0)
+	m.set_shader_parameter("strada", 1.0)
+	_nastri_strada.material_override = m
+	add_child(_nastri_strada)
+
+
+## Passerelle di tronchi dove una strada passa sull'acqua o sul fradicio: pezzi da 6 m in fila.
+func _disegna_passerelle(tratti: Array) -> void:
+	if _passerelle:
+		_passerelle.queue_free()
+		_passerelle = null
+	if tratti.is_empty():
+		return
+	_passerelle = Node3D.new()
+	_passerelle.name = "Passerelle"
+	add_child(_passerelle)
+	if _scene.get("passerella") == null:
+		return
+	for tr in tratti:
+		var a: Vector2 = tr[0]
+		var b: Vector2 = tr[1]
+		var lungo := maxf(a.distance_to(b), LUNGO_PASSERELLA * 0.8)
+		var dir := (b - a).normalized() if a.distance_to(b) > 0.1 else Vector2(0, 1)
+		var c := (a + b) * 0.5
+		a = c - dir * lungo * 0.5
+		b = c + dir * lungo * 0.5
+		var pezzi := maxi(1, roundi(lungo / LUNGO_PASSERELLA))
+		var scala := lungo / (pezzi * LUNGO_PASSERELLA)
+		# Sopra l'acqua la passerella resta all'altezza delle due rive; sul fradicio segue il terreno.
+		var sull_acqua: bool = tr[2]
+		var quota := maxf(terreno.quota_mondo(a.x, a.y), terreno.quota_mondo(b.x, b.y)) if sull_acqua else -INF
+		for k in pezzi:
+			var p := a.lerp(b, (k + 0.5) / pezzi)
+			var nodo: Node3D = _scene["passerella"].instantiate()
+			Asset.prepara(nodo)
+			var z := Vector3(dir.x, 0, dir.y)
+			nodo.transform = Transform3D(Basis(Vector3.UP.cross(z).normalized(), Vector3.UP, z).scaled_local(Vector3(1, 1, scala)), Vector3(p.x, maxf(quota - 0.1, terreno.quota_mondo(p.x, p.y) - 0.05), p.y))
+			_passerelle.add_child(nodo)
+
+
+## Quante passerelle di tronchi ci sono (per le verifiche).
+func numero_passerelle() -> int:
+	return _passerelle.get_child_count() if _passerelle else 0
 
 
 func _disegna_nastri(pezzi: Array) -> void:
@@ -801,6 +930,8 @@ func evidenzia_sentieri(si: bool) -> void:
 	_evidenzia = si
 	if _nastri:
 		(_nastri.material_override as ShaderMaterial).set_shader_parameter("evidenzia", 1.0 if si else 0.0)
+	if _nastri_strada:
+		(_nastri_strada.material_override as ShaderMaterial).set_shader_parameter("evidenzia", 1.0 if si else 0.0)
 
 
 ## Il modello di una casa (lo stesso calcolo di _sincronizza_case), per la scheda della famiglia.

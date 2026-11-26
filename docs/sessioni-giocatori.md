@@ -212,6 +212,17 @@ Per sito, scorrerie a partita: Sbocco del fiume 1,67, Pianura aperta 1,17, Terra
 
 **Registro degli avvisi** (5 partite, livello 5): nessuna scorreria (il giocatore automatico del registro non stende il pascolo, quindi la ricchezza resta bassa); 4,2 pause vere e 16 riquadri di tutorial a partita, come prima.
 
+## Con le strade (26/11/2026, notte)
+**Giocatori "umani"** (72 partite): tracciano sentieri verso legnaie, casali, luogo sacro e campi più lontani (chi conosce il genere quasi sempre, chi legge e chi impara a volte, il casual di rado; `AiutiGiocatori.traccia_sentieri_lavoro`).
+| Profilo | Mediana abitanti | Carestie | Pause vere | Sentieri (km) | Strade a fine partita |
+|---|---|---|---|---|---|
+| impara sbagliando | 744 (prima 649) | 2,9 (2,1) | 4,4 | 4,1 | 9,6 |
+| legge | 799 (717) | 4,2 (3,9) | 4,1 | 4,7 | 10,8 |
+| conosce il genere | 853 (792) | 4,2 (3,4) | 4,7 | 5,5 | 14,7 |
+| casual | 136 (142) | 2,6 (1,4) | 3,3 | 0,6 | 0,7 |
+
+**Cosa si vede:** chi traccia sentieri verso i posti di lavoro lontani cresce di più (campi serviti, poi le strade), e le strade nascono quasi in ogni partita avviata dopo la tappa dei 250; il casual, che di sentieri ne traccia pochi, quasi mai. Le pause non cambiano: le strade arrivano come notifica grigia. Le carestie salgono un poco con i villaggi più grandi. **Registro degli avvisi** (5 partite, livello 5): 3,6 pause vere e 17 riquadri di tutorial a partita (in più la scheda "Strade"); la prima strada è una riga di cronaca, le altre notifiche grigie. Una partita da 500 anni con le strade richiedeva 33 s invece di 18: il lento era il controllo dei campi serviti (49 punti per campo ogni anno); ora la fascia attorno a sentieri e strade si calcola solo quando cambiano.
+
 ## Con la legna rifatta e le correzioni della prova di Fede (26/11/2026, sera tardi)
 **Giocatori "umani"** (72 partite): chi legge e chi impara sbagliando costruiscono un'altra legnaia quando il pannello della Legna dice che il bosco vicino non basta o che gli alberi sono lontani.
 | Profilo | Mediana abitanti | Carestie | Pause vere | Scorrerie | Legnaie a fine partita | Partite senza granaio |

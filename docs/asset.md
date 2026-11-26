@@ -151,6 +151,7 @@ Script `strumenti/blender/villaggio.py` → `gioco/asset/villaggio/`, nello stil
 | roccia_1, _2, _3 | da 1,0 a 2,4 | 80 | |
 | torre_avvistamento | 7,0 × 4,2 × 7,2 | 1055 | scorrerie, 26/11/2026 (proposta di Claude): quattro pali con controventi, piano di assi a 4,5 m con parapetto di graticcio, tettuccio di paglia a una falda, scala a pioli, pira per il fuoco di segnalazione e frasche verdi; scala e pira guardano verso il villaggio |
 | cantiere_torre_avvistamento | 6,3 × 5,7 × 6,0 | 330 | pali e un lato di controventi, telaio del piano, scala, assi e pali a terra |
+| passerella | 5,6 × 6,0 × 1,0 | 242 | strade, 26/11/2026 (proposta di Claude approvata da Fede): tronchi di traverso su due correnti, paletti ai lati; pezzo da 6 m che il gioco mette in fila e allunga su torrenti e terreni fradici |
 
 Dal 26/11/2026 `villaggio.py` accetta i nomi dei modelli da esportare (`… gioco/asset/villaggio torre_avvistamento,cantiere_torre_avvistamento`): così gli altri file non si riscrivono.
 

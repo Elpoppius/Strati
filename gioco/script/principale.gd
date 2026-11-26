@@ -337,6 +337,13 @@ func _unhandled_input(ev: InputEvent) -> void:
 				# Finestra Debug del registro tecnico (decisione di Fede del 26/11/2026).
 				if registro:
 					registro.apri_finestra(not registro.finestra_aperta())
+			KEY_F5:
+				# Salvataggio (todo voce 9): F5 salva, F8 apre l'elenco delle partite salvate.
+				if partita:
+					partita.salva_partita()
+			KEY_F8:
+				if partita:
+					partita.mostra_caricamento()
 			KEY_F9:
 				# Segnalibro: "qui c'è qualcosa", con ora, camera e foto dello schermo.
 				if registro:

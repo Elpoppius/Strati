@@ -180,6 +180,7 @@ func _nuova_figura(mestiere: String) -> Dictionary:
 	_nuovo_luogo(f)
 	# Al primo anno chi lavora è già al lavoro, chi sta a casa è tra le case.
 	f["pos"] = f["meta"]
+	f["tappe"] = []
 	f["stato"] = "lavora" if f["mestiere"] != "casa" else "fermo"
 	return f
 
@@ -346,8 +347,15 @@ func _nuovo_luogo(f: Dictionary) -> void:
 				meta = (f["casa"] as Vector2) + Vector2.from_angle(_caso.randf() * TAU) * 2.0
 			else:
 				meta = _punto_casa()
-	f["meta"] = meta
+	_imposta_meta(f, meta)
 	f["guarda"] = guarda
+
+
+## La meta di una figura; chi va lontano segue sentieri e strade (voce 5, 26/11/2026): le tappe
+## sono i punti della rete da toccare prima della meta.
+func _imposta_meta(f: Dictionary, meta: Vector2) -> void:
+	f["meta"] = meta
+	f["tappe"] = sim.percorso_rete(f["pos"], meta)
 
 
 func _aggiorna_conti() -> void:
@@ -432,7 +440,19 @@ func _passo(f: Dictionary, dt: float) -> void:
 	var meta: Vector2 = f["meta"]
 	var stato: String = f["stato"]
 	var voluta := 0.0
-	if stato == "va":
+	var tappe: Array = f.get("tappe", [])
+	if stato == "va" and not tappe.is_empty():
+		# Lungo la rete: si punta alla prossima tappa senza rallentare.
+		if pos.distance_to(tappe[0]) < 3.0:
+			tappe.pop_front()
+		if not tappe.is_empty():
+			meta = tappe[0]
+	if stato == "va" and not tappe.is_empty():
+		var dir_t := (meta - pos).normalized()
+		_gira_verso(f, rad_to_deg(atan2(-dir_t.x, -dir_t.y)), dt)
+		var diff_t := wrapf(rad_to_deg(atan2(-dir_t.x, -dir_t.y)) - float(f["verso"]), -180.0, 180.0)
+		voluta = VELOCITA * clampf(cos(deg_to_rad(diff_t)), 0.3, 1.0)
+	elif stato == "va":
 		var dist := pos.distance_to(meta)
 		if dist < 0.3:
 			var a_casa: bool = f["mestiere"] == "casa" or meta.distance_to(f["casa"]) < 3.0
@@ -455,7 +475,7 @@ func _passo(f: Dictionary, dt: float) -> void:
 		if float(f["tempo"]) <= 0.0:
 			# Ogni tanto chi lavora torna a casa; poi riparte.
 			if f["mestiere"] != "casa" and stato == "lavora" and _caso.randf() < 0.1:
-				f["meta"] = f["casa"]
+				_imposta_meta(f, f["casa"])
 				f["guarda"] = Vector2.INF
 			else:
 				_nuovo_luogo(f)

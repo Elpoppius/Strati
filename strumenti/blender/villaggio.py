@@ -743,6 +743,37 @@ def cantiere_torre(nome, seme):
     return base.unisci(nome, parti)
 
 
+def passerella(nome, seme):
+    """Passerella di tronchi per le strade (voce 5, 26/11/2026; proposta di Claude approvata da Fede):
+    dove una strada attraversa un torrente o un tratto umido si posano tronchi di traverso, uno
+    accanto all'altro, su due correnti lunghi; qualche paletto ai lati li tiene fermi. Un pezzo è lungo
+    6 m (asse y di Blender, z del gioco) e largo 5 m: il gioco lo allunga per coprire un guado."""
+    m = materiali()
+    rnd = random.Random(seme)
+    parti = []
+    lungo, largo = 6.0, 5.0
+    for x in (-1.5, 1.5):
+        parti.append(base.cilindro_tra("corrente", (x, -lungo / 2, 0.06), (x, lungo / 2, 0.06), 0.11, 0.1, m["corteccia"], lati=6))
+    k = 0
+    y = -lungo / 2 + 0.13
+    while y < lungo / 2 - 0.1:
+        r = rnd.uniform(0.1, 0.14)
+        sx = rnd.uniform(-0.25, 0.25)
+        a = (-largo / 2 + sx, y + rnd.uniform(-0.03, 0.03), 0.18 + r * 0.6)
+        b = (largo / 2 + sx + rnd.uniform(-0.2, 0.2), y + rnd.uniform(-0.05, 0.05), 0.18 + r * 0.6 + rnd.uniform(-0.03, 0.03))
+        parti.append(base.cilindro_tra("tronco", a, b, r, r * 0.9, m["corteccia"], lati=6, uv_tile=2.0))
+        y += r * 2.0 + 0.01
+        k += 1
+    for sx in (-1, 1):
+        for y in (-2.2, 0.1, 2.3):
+            parti.append(palo_appuntito_dritto(sx * (largo / 2 + 0.15), y + rnd.uniform(-0.2, 0.2), 0.75, 0.06, m["corteccia"]))
+    return base.unisci(nome, parti)
+
+
+def palo_appuntito_dritto(x, y, alto, raggio, mat):
+    return base.cilindro_tra("paletto", (x, y, -0.25), (x, y, alto), raggio, raggio * 0.7, mat, lati=5)
+
+
 def roccia(nome, seme, dim):
     m = materiali()
     return base.unisci(nome, [sasso("roccia", dim, (0, 0, 0), m["pietra"], seme)])
@@ -773,6 +804,7 @@ ASSET = [
     ("stabbio", lambda n: stabbio(n, 39)),
     ("torre_avvistamento", lambda n: torre_avvistamento(n, 41)),
     ("cantiere_torre_avvistamento", lambda n: cantiere_torre(n, 42)),
+    ("passerella", lambda n: passerella(n, 43)),
     ("roccia_1", lambda n: roccia(n, 28, (1.6, 1.2, 0.9))),
     ("roccia_2", lambda n: roccia(n, 29, (2.4, 1.8, 1.3))),
     ("roccia_3", lambda n: roccia(n, 30, (0.9, 0.8, 0.6))),

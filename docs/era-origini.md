@@ -103,7 +103,7 @@ Più risorse, più crescita; la pianificazione dei cicli e l'uso delle risorse r
 - **Ciclo del rischio:** più ricchezza (animali, scorte) attira più scorrerie; disperdersi nei casali espone di più.
 - **Pascolo [Deciso, 25/11/2026 sera]:** zona a pennello come la zona agricola; prati, radure, margini del bosco e campi stanchi dentro la zona (maggese spontaneo, e il campo stanco si deve vedere sulla mappa); un solo numero di capi con un misto di specie visibile (la crescita dei capi va gestita); scorta viva che si macella da sola nelle annate cattive; gli animali seguono la politica del raccolto. Inoltre: concime ai campi vicini, scorta viva per le annate cattive, radure che restano aperte, erosione se troppo sui pendii, ricchezza delle famiglie (e disuguaglianza), vie degli animali come traffico sui sentieri.
 - **Luogo sacro e bosco sacro:** la riserva diventa il bosco sacro; tagliarlo offende il sacerdote. **Fatti il 25/11/2026 sera** (regole e numeri in `prototipo0-godot.md`).
-- **Sentieri e strade:** il traffico (campi, pascoli, legna, luogo sacro) fa dei sentieri più battuti le prime strade, che restano come assi.
+- **Sentieri e strade:** il traffico (campi, pascoli, legna, luogo sacro) fa dei sentieri più battuti le prime strade, che restano come assi. **Fatto il 26/11/2026 sera** (numeri in `prototipo0-godot.md`): sono il primo campo di accesso (campi, case lungo la via, casali e legnaie collegati).
 
 ### Eventi: nascono dallo stato della partita
 **[Deciso, 25/11/2026]**

@@ -53,6 +53,11 @@ func _process(_d: float) -> bool:
 					sim.costruisci_granaio(c + Vector2(70, -30))
 				if k == 20:
 					sim.traccia_sentiero(sim.centro + Vector2i(-18, -14))
+				# Strade (voce 5): sentieri verso i posti di lavoro lontani, come un giocatore attento.
+				if args.size() > 4 and args[4].begins_with("strade"):
+					var cs := RandomNumberGenerator.new()
+					cs.seed = k + 9
+					AiutiGiocatori.traccia_sentieri_lavoro(sim, cs, 1.0)
 			while sim.in_attesa():
 				sim.scegli(sim.decisioni[0]["id"], sim.decisioni[0]["opzioni"][0]["id"])
 			sim.passo()
@@ -98,6 +103,23 @@ func _process(_d: float) -> bool:
 			if not elenco.is_empty():
 				c = elenco[0]["punto"]
 				su_edificio = true
+		# Strade: la vista su una passerella di tronchi se c'è (strade:passerella), altrimenti sul
+		# punto di strada più lontano dal centro entro 400 m.
+		if args.size() > 4 and args[4].begins_with("strade"):
+			print("   sentieri %d px, strade %d, punti di strada %d, passerelle %d, case %d" % [sim.sentieri.size(), sim.strade.size(), sim.pixel_strada.size(), p.vista.numero_passerelle(), sim.case.size()])
+			var mig := -1.0
+			for i in sim.pixel_strada:
+				var w := sim.mondo_di_px(sim.px_di(i))
+				var d := w.distance_to(c)
+				if d < 400.0 and d > mig:
+					mig = d
+					c = w
+			if args[4] == "strade:centro":
+				c = sim.mondo_di_px(sim.centro)
+			if args[4] == "strade:passerella" and p.vista.numero_passerelle() > 0:
+				var n3: Node3D = p.vista._passerelle.get_child(0)
+				c = Vector2(n3.position.x, n3.position.z)
+			su_edificio = true
 		if su_edificio:
 			_s.cam.vai_a(c.x, c.y, float(args[1]) if args.size() > 1 else 600.0)
 		else:
@@ -134,6 +156,21 @@ func _process(_d: float) -> bool:
 			p.vista.sincronizza()
 			p.aggiorna_hud()
 			_s.hud.apri_menu("ammodernamento")
+		elif args.size() > 4 and args[4].begins_with("piena"):
+			# Acqua che sale con le piene (voce 9): "piena" di stagione, "piena:disastrosa"; la foto si
+			# prende quando l'acqua è al massimo.
+			sim.ultima_piena = {"anno": sim.anno, "disastrosa": args[4] == "piena:disastrosa"}
+			for k in 6:
+				p.vista._anima_piena(1.0)
+			p.vista._t_piena = -1.0  # ferma l'acqua al massimo fino alla foto
+			print("   livello della piena %.2f" % p.vista.livello_piena())
+		elif args.size() > 4 and args[4] == "carica":
+			# Elenco delle partite salvate (voce 9): due salvataggi di prova, poi F8.
+			Salvataggio.cartella_voluta = "user://foto_salvataggi"
+			Salvataggio.salva(p, "prova-1")
+			Salvataggio.salva(p, "automatico-prova", true)
+			_s.hud.apri_menu("partita_menu")
+			p.mostra_caricamento()
 		elif args.size() > 4 and args[4] == "politiche":
 			_s.hud.apri_politiche(true)
 		elif args.size() > 4 and args[4].begins_with("focus"):
@@ -172,7 +209,7 @@ func _process(_d: float) -> bool:
 		elif args.size() > 4 and args[4] == "legnaia":
 			_s.hud.seleziona_comando("legnaia")
 			_s.aggiorna_zone_taglio()
-		elif su_edificio and args[4] == "cantiere":
+		elif su_edificio and (args[4] == "cantiere" or args[4].begins_with("strade")):
 			pass
 		elif su_edificio:
 			_s.hud.seleziona_comando(args[4])

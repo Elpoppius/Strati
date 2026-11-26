@@ -91,6 +91,10 @@ uniform float mostra_bosco_sacro = 0.0;
 uniform sampler2D pascolo_mappa : filter_linear, repeat_disable;
 // Campi stanchi (26/11/2026): R = stanchezza (0–1), G = maggese, un punto della mappa per campo.
 uniform sampler2D stanchezza_campi : filter_linear, repeat_disable;
+// Piena in corso (todo voce 9, 26/11/2026): da 0 (niente) a 1 (piena disastrosa). L'acqua torbida
+// sale sulla terra dove il rischio di piena (canale G dei tematici) supera 1 - 0,9 × livello: una
+// piena di stagione (circa 0,55) copre le terre più basse, una disastrosa quasi tutta la piana.
+uniform float livello_piena = 0.0;
 uniform float mostra_pascolo = 0.0;
 
 // Tecnica di ogni campo (UsoSuolo.tecniche, un byte per cella da 10 m, senza filtro): 0 zappa
@@ -591,6 +595,12 @@ void fragment() {
 	float in_acqua = 1.0 - smoothstep(-bordo, bordo, d_acqua);
 	// Le pozze delle paludi sono acqua bassa e ferma.
 	in_acqua = max(in_acqua, pozze);
+	float allagato = 0.0;
+	float sopra_piena = 0.0;
+	if (livello_piena > 0.001) {
+		sopra_piena = t.g - (1.0 - livello_piena * 0.9) + (texture(macchie, pos_mondo.xz / 53.0).r - 0.5) * 0.14;
+		allagato = smoothstep(0.0, 0.05, sopra_piena) * (1.0 - in_acqua);
+	}
 	// Riva: terra bagnata e scura per qualche metro, poi un velo più chiaro di sabbia e limo.
 	float bagnato = (1.0 - smoothstep(0.0, 3.0 + bordo, d_acqua)) * (1.0 - in_acqua);
 	float limo = (1.0 - smoothstep(2.0, 7.0 + bordo, d_acqua)) * (1.0 - in_acqua) * (1.0 - bagnato);
@@ -666,13 +676,18 @@ void fragment() {
 		acqua = mix(acqua, pow(mix(vec3(0.72, 0.74, 0.76), vec3(0.16, 0.43, 0.71), pesce), vec3(2.2)), 0.85);
 	}
 	col = mix(col, acqua, in_acqua);
+	// Acqua della piena: torbida e bruna, più scura dove è più fonda, con le stesse increspature.
+	vec3 torbida = mix(vec3(0.3, 0.26, 0.18), vec3(0.19, 0.18, 0.13), smoothstep(0.05, 0.35, sopra_piena));
+	torbida = mix(torbida, cielo, 0.06 + 0.08 * liscio) * (0.94 + 0.12 * smoothstep(-0.4, 0.4, onde));
+	col = mix(col, torbida * mix(1.0, rilievo_acqua, forza_rilievo), allagato * 0.92);
+	float lucido = max(in_acqua, allagato * 0.85);
 	// Luce: l'acqua è liscia e riflette, il terreno no. Le increspature inclinano la normale.
 	vec3 n_acqua = normalize(vec3((o1 - o4) * 0.25, 1.0, (o2 - 0.5) * 0.25));
-	NORMAL = normalize(mix((VIEW_MATRIX * vec4(n_terra, 0.0)).xyz, (VIEW_MATRIX * vec4(n_acqua, 0.0)).xyz, in_acqua));
-	SPECULAR = 0.5 * in_acqua;
+	NORMAL = normalize(mix((VIEW_MATRIX * vec4(n_terra, 0.0)).xyz, (VIEW_MATRIX * vec4(n_acqua, 0.0)).xyz, lucido));
+	SPECULAR = 0.5 * lucido;
 	// Il cielo riflesso è già nel colore: l'acqua resta poco illuminata dal sole (come una
 	// superficie scura e lucida) e un poco luminosa di suo, così non diventa nera in ombra.
 	EMISSION = acqua * 0.15 * in_acqua;
-	ROUGHNESS = mix(1.0, 0.12, in_acqua);
+	ROUGHNESS = mix(1.0, 0.12, lucido);
 	ALBEDO = col;
 }

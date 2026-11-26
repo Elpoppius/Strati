@@ -83,7 +83,7 @@ func avvia(s: Node, seme_voluto: int = -1) -> void:
 	])
 	hud.aggiungi_menu("vie", "Vie", "Come ci si muove.", [
 		{"id": "sentiero", "icona": "sentiero", "testo": "Tracciare un sentiero", "breve": "Sentiero", "tasto": "V",
-		 "descrizione": "Un clic dove comincia, un clic dove finisce, poi si continua da lì; Esc chiude. I campi serviti da un sentiero collegato al villaggio rendono di più."},
+		 "descrizione": "Un clic dove comincia, un clic dove finisce, poi si continua da lì; Esc chiude. I campi serviti da un sentiero collegato al villaggio rendono di più; i sentieri più battuti diventano strade."},
 	])
 	hud.aggiungi_menu("edifici", "Edifici", "Costruzioni comuni. Le case nascono da sole.", [
 		{"id": "granaio", "icona": "granaio", "testo": "Granaio (15 di legna)", "breve": "Granaio", "tasto": "H",
@@ -119,6 +119,11 @@ func avvia(s: Node, seme_voluto: int = -1) -> void:
 		 "descrizione": "Toglie nel cerchio alberi, case, campi, sentieri e granaio. Non agisce su fiumi e paludi."},
 	], "strumenti", true)
 	# Le politiche non sono costruzioni (decisione di Fede): un pannello a parte, aperto da qui.
+	# Salvataggio (todo voce 9, 26/11/2026; tasti F5 e F8 proposti da Claude).
+	hud.aggiungi_menu("partita_menu", "Partita", "Salvare e riprendere la partita.", [
+		{"id": "salva", "icona": "salva", "testo": "Salva la partita", "breve": "Salva", "tasto": "F5", "strumento": false},
+		{"id": "carica", "icona": "carica", "testo": "Riprendi una partita salvata", "breve": "Carica", "tasto": "F8", "strumento": false},
+	], "strumenti")
 	hud.aggiungi_menu("politiche_menu", "Politiche", "Le regole del villaggio.", [
 		{"id": "politiche", "icona": "politiche", "testo": "Politiche del villaggio", "breve": "Politiche", "tasto": "P", "strumento": false},
 	], "gestione")
@@ -219,6 +224,10 @@ func _azione(id: String) -> void:
 				else "Ammodernamento agricolo sospeso: i campi vecchi restano come sono e rendono meno.")
 		"v0", "v1", "v2", "v3":
 			imposta_velocita(int(id.substr(1)))
+		"salva":
+			salva_partita()
+		"carica":
+			mostra_caricamento()
 	aggiorna_hud()
 
 
@@ -252,6 +261,7 @@ func _process(delta: float) -> void:
 		if passi > 0:
 			vista.sincronizza()
 			aggiorna_hud()
+			_salvataggio_automatico()
 	# Gli alberi tagliati spariscono uno alla volta durante l'anno, alla velocità del tempo.
 	if velocita > 0 and not _coda_tagli.is_empty():
 		_svuota_coda_tagli(ceili(_coda_tagli.size() * minf(1.0, delta * VELOCITA[velocita] * 1.2)))
@@ -1197,7 +1207,31 @@ func leggi_per_strumento(punto: Vector3) -> void:
 							vicino_acqua = true
 			voci.append(["Acqua", "guado vicino" if vicino_acqua else "asciutto", 1.0 if vicino_acqua else 0.0, false])
 			voci.append(piena_voce)
+			var traffico := voce_traffico(Vector2(punto.x, punto.z))
+			if not traffico.is_empty():
+				voci.push_front(traffico)
 	hud.imposta_lettura_strumento(voci)
+
+
+## Il traffico del tratto di sentiero sotto il puntatore (voce 5, 26/11/2026): quante persone ci
+## passano l'anno e fra quanto diventerà strada. Vuoto se non c'è un tratto vicino.
+func voce_traffico(w: Vector2) -> Array:
+	var t := sim.tratto_vicino(w, 30.0)
+	if t.is_empty():
+		return []
+	if sim.strade.has(SimVillaggio.chiave_tratto(t)):
+		return ["Strada", "dall'anno %s" % SimVillaggio.anno_testo(int(sim.strade[SimVillaggio.chiave_tratto(t)])), 1.0, false]
+	var tr := sim.traffico_tratto(t)
+	var persone := roundi(float(tr[0]))
+	var testo := "%d persone l'anno" % persone
+	var quota := clampf(float(tr[0]) / SimVillaggio.SOGLIA_STRADA, 0.0, 1.0)
+	if not sim.sbloccato("strade"):
+		testo += " · strade più avanti"
+	elif float(tr[0]) >= SimVillaggio.SOGLIA_STRADA:
+		testo += " · strada tra %d anni" % maxi(1, SimVillaggio.ANNI_STRADA - int(tr[1]))
+	else:
+		testo += " · ne servono %d" % roundi(SimVillaggio.SOGLIA_STRADA)
+	return ["Traffico", testo, quota, false]
 
 
 ## Dove andrebbe un capanno o una posta con il puntatore qui (l'ultimo calcolo si ricorda: lo
@@ -1326,6 +1360,133 @@ func _svuota_coda_tagli(quante: int) -> void:
 	_coda_tagli = _coda_tagli.slice(ora.size())
 	uso.abbatti_ceduo(ora)
 	uso.blocca_ricrescita(ora, true)
+
+
+# ---------- salvataggio (todo voce 9, 26/11/2026) ----------
+
+## Salvataggi automatici (proposta di Claude): a ogni tappa nuova e ogni ANNI_AUTOMATICO anni; solo nel
+## gioco vero, non nelle verifiche e nelle foto. Se ne tengono gli ultimi Salvataggio.AUTOMATICI.
+const ANNI_AUTOMATICO := 50
+var _tappa_salvata := 0
+var _anno_salvato := -999999
+
+func _salvataggio_automatico() -> void:
+	if not Registro.per_questo_avvio() or not sim.fondato:
+		return
+	if _anno_salvato == -999999:
+		_anno_salvato = sim.anno
+		_tappa_salvata = sim.tappa
+		return
+	if sim.tappa != _tappa_salvata or sim.anno - _anno_salvato >= ANNI_AUTOMATICO:
+		_tappa_salvata = sim.tappa
+		_anno_salvato = sim.anno
+		Salvataggio.salva(self, "", true)
+
+
+## Salva subito (F5 o Strumenti › Partita › Salva).
+func salva_partita() -> void:
+	var hud: Hud = scena.hud
+	if not sim.fondato:
+		hud.imposta_messaggio("Non c'è ancora niente da salvare: prima si fonda il villaggio.")
+		return
+	var percorso := Salvataggio.salva(self)
+	if percorso == "":
+		hud.imposta_messaggio("Salvataggio non riuscito: la cartella %s non si può scrivere." % ProjectSettings.globalize_path(Salvataggio.cartella()))
+	else:
+		hud.notifica("Partita salvata: %s, %s." % [nome_luogo(), SimVillaggio.anno_testo(sim.anno)])
+
+
+## Elenco delle partite salvate (F8): le più recenti, con luogo, anno e abitanti.
+const MASSIMO_ELENCO := 8
+
+func mostra_caricamento() -> void:
+	var hud: Hud = scena.hud
+	var el := Salvataggio.elenco()
+	var opzioni: Array = []
+	var percorsi := {}
+	for t in el.slice(0, MASSIMO_ELENCO):
+		var id := "s%d" % opzioni.size()
+		percorsi[id] = t["percorso"]
+		var testo := "%s · %s · %d abitanti" % [String(t.get("sito", "")) if String(t.get("sito", "")) != "" else "Senza villaggio", SimVillaggio.anno_testo(int(t.get("anno", 0))), int(t.get("abitanti", 0))]
+		var nota := "%s%s · salvata il %s" % ["Automatico · " if t.get("automatico", false) else "", String(t.get("tappa", "")), String(t.get("data", "")).replace("T", " ")]
+		var m := Salvataggio.motivo_carica(self, t)
+		if m != "":
+			nota += " · " + m
+		opzioni.append({"id": id, "testo": testo, "nota": nota})
+	opzioni.append({"id": "annulla", "testo": "Torna alla partita", "nota": ""})
+	var testo_corpo := "Scegli la partita da riprendere. Quella in corso, se non l'hai salvata, si perde." if not el.is_empty() \
+		else "Non ci sono partite salvate in %s." % ProjectSettings.globalize_path(Salvataggio.cartella())
+	var velocita_prima := velocita
+	imposta_velocita(0)
+	hud.mostra_scelta("Partita", "Riprendi una partita", testo_corpo, opzioni, func(id: String) -> void:
+		if id == "annulla" or not percorsi.has(id):
+			imposta_velocita(velocita_prima)
+			return
+		var m := Salvataggio.carica(self, percorsi[id])
+		if m != "":
+			hud.imposta_messaggio(m)
+			imposta_velocita(velocita_prima)
+		else:
+			hud.notifica("Partita ripresa: %s, %s." % [nome_luogo(), SimVillaggio.anno_testo(sim.anno)])
+			var c := sim.mondo_di_px(sim.centro)
+			scena.cam.vai_a(c.x, c.y))
+
+
+## Prima di salvare: gli alberi tagliati che aspettano di sparire dalla mappa si tolgono subito.
+func prepara_salvataggio() -> void:
+	_svuota_coda_tagli(_coda_tagli.size())
+
+
+## Ciò che la partita tiene fra un anno e l'altro (il resto si rifà dalla simulazione).
+func stato_salvato() -> Dictionary:
+	return {"seme": seme, "zona_bloccata": _zona_bloccata, "celle_zona_bloccate": _celle_zona_bloccate}
+
+
+## Dopo il caricamento: stato della partita, interfaccia richiusa, vista ridisegnata, in pausa.
+func ripristina(d: Dictionary) -> void:
+	seme = int(d.get("seme", seme))
+	_tappa_salvata = sim.tappa
+	_anno_salvato = sim.anno
+	_zona_bloccata = d.get("zona_bloccata", {})
+	_celle_zona_bloccate = d.get("celle_zona_bloccate", {})
+	_coda_tagli = []
+	famiglia = NESSUNA_CASA
+	legnaia_aperta = -1
+	_nomi_famiglie = {}
+	_chiave_nomi = ""
+	inizio_sentiero = Vector2i(-1, -1)
+	var hud: Hud = scena.hud
+	hud.seleziona_comando("")
+	hud.chiudi_focus()
+	# La vista si rifà da capo: case, edifici, sentieri, animali e figure dalla simulazione caricata.
+	var vecchia := vista
+	vista = VistaVillaggio.new()
+	vista.name = "Villaggio"
+	vista.prepara(sim, scena.uso, scena.terreno)
+	vista.cam = scena.cam
+	vecchia.name = "VillaggioVecchio"
+	vecchia.queue_free()
+	scena.add_child(vista)
+	vista.sincronizza()
+	imposta_velocita(0)
+	aggiorna_modalita()
+	aggiorna_hud()
+
+
+## Il nome del luogo del villaggio: il sito della mappa più vicino al centro (per l'elenco dei
+## salvataggi).
+func nome_luogo() -> String:
+	if not sim.fondato:
+		return ""
+	var c := sim.mondo_di_px(sim.centro)
+	var nome := ""
+	var dm := 1500.0
+	for s in sim.dati.siti:
+		var w := sim.dati.mondo_da_pixel(Vector2(s["px"]))
+		if w.distance_to(c) < dm:
+			dm = w.distance_to(c)
+			nome = String(s.get("nome", ""))
+	return nome if nome != "" else "Villaggio"
 
 
 # ---------- scheda della famiglia (decisione di Fede del 26/11/2026) ----------

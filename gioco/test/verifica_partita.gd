@@ -377,6 +377,44 @@ func _verifica_prova_del_26(p: Partita, sim: SimVillaggio, h: Hud) -> void:
 	h.chiudi_scelta()
 
 
+## Strade (voce 5, 26/11/2026): una strada si vede larga, con i tronchi sui guadi; con lo strumento
+## Sentiero la lettura dice il traffico; le figure che vanno lontano seguono la rete.
+func _verifica_strade(p: Partita, sim: SimVillaggio, h: Hud) -> void:
+	var c := sim.centro
+	# Un sentiero verso il primo torrente che si trova (per vedere la passerella), o verso est.
+	var fine := Vector2i(-1, -1)
+	for r in range(6, 26):
+		for k in 16:
+			var q := c + Vector2i(roundi(cos(k * TAU / 16) * r), roundi(sin(k * TAU / 16) * r))
+			if fine.x < 0 and q.x > 0 and q.y > 0 and q.x < sim.n and q.y < sim.n and sim.dati.tipo[sim.px(q)] == MappaDati.TORRENTE:
+				fine = q + (q - c).sign() * 3
+	if fine.x < 0 or sim.motivo_sentiero(c, fine) != "":
+		fine = c + Vector2i(14, 0)
+	var m := sim.traccia_sentiero_da(c, fine)
+	controlla(m == "", "un sentiero per la prova delle strade (%s)" % m)
+	if m != "":
+		return
+	var t: Array = sim.tratti_sentiero[-1]
+	sim.traffico[sim.px(fine)] = 50.0
+	h.seleziona_comando("sentiero")
+	var w := sim.mondo_di_px(fine)
+	var voce := p.voce_traffico(w)
+	controlla(not voce.is_empty() and voce[0] == "Traffico" and String(voce[1]).contains("persone"), "con Sentiero la lettura dice quanta gente passa (%s)" % [voce])
+	sim.strade[SimVillaggio.chiave_tratto(t)] = sim.anno
+	sim.pixel_strada[sim.px(fine)] = true
+	p.vista.sincronizza()
+	controlla(p.vista.get_node_or_null("Strade") != null, "la strada si disegna larga, in terra compatta")
+	voce = p.voce_traffico(w)
+	controlla(not voce.is_empty() and voce[0] == "Strada", "sopra una strada la lettura lo dice")
+	print("   passerelle di tronchi: %d" % p.vista.numero_passerelle())
+	h.seleziona_comando("")
+	# Le figure seguono la rete: chi va in fondo alla strada ha delle tappe.
+	var lontano := sim.mondo_di_px(fine)
+	var f := {"pos": sim.mondo_di_px(c) + Vector2(5, 5)}
+	p.vista.persone._imposta_meta(f, lontano + Vector2(10, 10))
+	controlla((f["tappe"] as Array).size() >= 2 or sim.mondo_di_px(c).distance_to(lontano) < 150.0, "chi va lontano segue sentieri e strade (%d tappe)" % (f["tappe"] as Array).size())
+
+
 func _destro(premuto: bool, pos: Vector2) -> InputEventMouseButton:
 	var ev := InputEventMouseButton.new()
 	ev.button_index = MOUSE_BUTTON_RIGHT
@@ -757,6 +795,7 @@ func _process(_d: float) -> bool:
 	controlla(h.focus_aperto() == "", "Esc chiude il pannello di focus")
 	_verifica_specchietti(p, sim, h)
 	_verifica_prova_del_26(p, sim, h)
+	_verifica_strade(p, sim, h)
 	# Tappe: il granaio è chiuso finché non si raggiunge la sua tappa.
 	controlla(sim.sbloccato("granaio") or p.scena.hud.find_children("*", "Button", true, false).size() > 0, "il granaio segue le tappe")
 	print("Verifica completata: " + ("nessun errore" if _errori == 0 else "%d errori" % _errori))

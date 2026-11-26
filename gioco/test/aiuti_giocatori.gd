@@ -175,3 +175,31 @@ static func stendi_pascolo(sim: SimVillaggio, caso: RandomNumberGenerator, quali
 ## Vero se le legnaie raccolgono meno della metà di ciò che servirebbe.
 static func legna_scarsa(sim: SimVillaggio) -> bool:
 	return sim.offerta_legna < sim.consumo_legna * 1.2
+
+
+## Sentieri verso i luoghi di lavoro lontani (voce 5, 26/11/2026): dalla rete (o dal centro) fino a
+## legnaie, casali, luogo sacro e campi più lontani. qualita: quanti ne traccia (da 0 a 1).
+static func traccia_sentieri_lavoro(sim: SimVillaggio, caso: RandomNumberGenerator, qualita: float) -> int:
+	var mete: Array[Vector2] = []
+	for l in sim.legnaie:
+		mete.append(l["punto"])
+	for c in sim.casali:
+		mete.append(sim.centro_lotto(c))
+	if sim.luogo_sacro.x >= 0:
+		mete.append(sim.luogo_sacro)
+	if not sim.campi.is_empty():
+		var lontano: int = sim.campi[0]
+		for i in sim.campi:
+			if sim.mondo_di_px(sim.px_di(i)).distance_to(sim.mondo_di_px(sim.centro)) > sim.mondo_di_px(sim.px_di(lontano)).distance_to(sim.mondo_di_px(sim.centro)):
+				lontano = i
+		mete.append(sim.mondo_di_px(sim.px_di(lontano)))
+	var fatti := 0
+	for w in mete:
+		if w.distance_to(sim.mondo_di_px(sim.centro)) < 200.0 or caso.randf() > qualita:
+			continue
+		if sim.nodo_vicino(w, 120.0) >= 0:
+			continue
+		if sim.traccia_sentiero(sim.px_da_mondo(w.x, w.y)) == "":
+			fatti += 1
+	return fatti
+

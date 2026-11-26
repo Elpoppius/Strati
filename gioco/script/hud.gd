@@ -120,7 +120,7 @@ var _tempo: HBoxContainer
 var _nome_strumento: Label
 ## Blocchi dei comandi nella fascia in basso (decisione di Fede del 24/11/2026): Costruzione,
 ## Gestione, Strumenti, tutti con le schede, così il layout è pronto per le voci future.
-## id -> {"schede": HBoxContainer, "pagine": Control, "descrizione": Label, "colonne": int}
+## id -> {"schede": HBoxContainer (HFlowContainer negli Strumenti), "pagine": Control, "descrizione": Label, "colonne": int}
 var _blocchi := {}
 var _fascia: Control
 const BLOCCHI := [["costruzione", "Costruzione", 4], ["gestione", "Gestione", 2], ["strumenti", "Strumenti", 2]]
@@ -454,8 +454,11 @@ func _crea_blocco(fascia: Control, id: String, titolo: String, colonne: int) -> 
 	t.add_theme_font_size_override("font_size", 11)
 	t.add_theme_color_override("font_color", GRIGIO)
 	col.add_child(t)
-	var schede := HBoxContainer.new()
-	schede.add_theme_constant_override("separation", 2)
+	# Negli Strumenti le schede vanno a capo se non ci stanno (26/11/2026: con la scheda Partita il
+	# blocco si allargava e copriva le notifiche); negli altri blocchi restano su una riga.
+	var schede: Container = HFlowContainer.new() if id == "strumenti" else HBoxContainer.new()
+	schede.add_theme_constant_override("h_separation" if id == "strumenti" else "separation", 2)
+	schede.add_theme_constant_override("v_separation", 2)
 	col.add_child(schede)
 	var larghezza := colonne * LATO_TASTO + (colonne - 1) * 4
 	var pagine := Control.new()

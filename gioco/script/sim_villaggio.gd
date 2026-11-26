@@ -118,6 +118,11 @@ const SOGLIA_SELVAGGINA := 0.4
 var _risorse := {"bosco": 0.0, "acqua": 0.0}
 var _anni_risorse := 0
 var _campi_serviti := {}
+var _campi_strada := {}
+var _fascia_strade := {}
+var _fascia_sentieri := {}
+var _firma_fascia_sentieri := 0
+var _firma_fascia := 0
 var _campi_al_bosco := {}
 var _firma_serviti := 0
 var _tecnica_campi := {}  # indice del pixel -> tecnica (assente = 0)
@@ -134,6 +139,25 @@ var sentieri: Array[int] = []
 ## Tratti di sentiero come segmenti dritti tra due pixel (per disegnarli lungo la linea vera,
 ## non a scalini): [Vector2i da, Vector2i a]. Un pixel di sentiero demolito toglie il pezzo.
 var tratti_sentiero: Array = []
+## Sentieri che diventano strade (voce 5 del todo; principi decisi in era-origini.md, numeri proposti
+## da Claude e approvati da Fede il 26/11/2026): ogni anno chi lavora va dal centro al suo posto di
+## lavoro lungo la rete dei sentieri; un tratto battuto da almeno SOGLIA_STRADA persone per ANNI_STRADA
+## anni di fila diventa strada (dalla tappa dei 250 abitanti) e resta, anche se il traffico cala.
+## Le strade sono il primo "campo di accesso": campi più vicini rendono di più, le case crescono anche
+## lungo le strade (il primo borgo lungo la via), casali e legnaie collegati ne guadagnano.
+const SOGLIA_STRADA := 40.0  # persone l'anno su un tratto
+const ANNI_STRADA := 20
+const BONUS_STRADA := 0.15  # campi entro DISTANZA_CAMPI_STRADA da una strada
+const DISTANZA_CAMPI_STRADA := 4  # pixel (160 m)
+const STRADA_ATTRAE_CASE := 500.0  # metri dal centro: fin dove le case nascono lungo le strade
+var traffico := {}  # pixel di sentiero -> persone l'anno
+var strade := {}  # tratto (Vector4i: a.x, a.y, b.x, b.y) -> anno in cui è diventato strada
+var anni_battuto := {}  # tratto -> anni di fila sopra la soglia
+var pixel_strada := {}  # pixel delle strade
+var gia_strada := false
+var _rete := {}  # pixel -> pixel vicini della rete
+var _firma_rete := -1
+var _padri := {}  # albero dei cammini dal centro: pixel -> pixel prima
 var case: Array[Vector2i] = []  # lotti da 20 m
 var rovine: Array[Vector2] = []  # punti nel mondo
 ## Lotti delle case demolite: per qualche anno non vi rinasce una casa (lotto -> anni rimasti).
@@ -169,6 +193,8 @@ var clima := 1.0
 var ultimo_raccolto := 0.0
 var ultimi_lavorati := 0
 var allagati := {}
+## L'ultima piena che ha toccato il villaggio: {"anno", "disastrosa"} (la vista fa salire l'acqua).
+var ultima_piena := {}
 
 # ---------- dinamiche della prima epoca (decisioni di Fede del 25/11/2026, docs/era-origini.md) ----------
 ## Abbondanza: un solo indicatore con tre parti (cibo che avanza, salute, spazio). Le nascite la
@@ -770,6 +796,11 @@ func fonda(p: Vector2i) -> void:
 	casali = []
 	case_casale = {}
 	anni_deficit = 0
+	traffico = {}
+	strade = {}
+	anni_battuto = {}
+	pixel_strada = {}
+	gia_strada = false
 	_contado_annunciato = CONTADO_MIN
 	stat["fondazioni"] += 1
 	var v := valuta_sito(p)
@@ -1471,6 +1502,259 @@ func costruisci_torre(punto: Vector2) -> String:
 	return ""
 
 
+# ---------- sentieri che diventano strade (voce 5, 26/11/2026) ----------
+
+static func chiave_tratto(t: Array) -> Vector4i:
+	var a: Vector2i = t[0]
+	var b: Vector2i = t[1]
+	return Vector4i(a.x, a.y, b.x, b.y)
+
+
+## La rete dei sentieri come grafo: pixel -> vicini (anche in diagonale), con il centro.
+func rete() -> Dictionary:
+	var firma := hash([sentieri.hash(), centro])
+	if firma == _firma_rete:
+		return _rete
+	_firma_rete = firma
+	_rete = {}
+	var nodi := {}
+	for i in sentieri:
+		nodi[i] = true
+	if fondato:
+		nodi[px(centro)] = true
+	for i in nodi:
+		var p := px_di(i)
+		var vicini: Array[int] = []
+		for oy in [-1, 0, 1]:
+			for ox in [-1, 0, 1]:
+				if ox == 0 and oy == 0:
+					continue
+				var q := p + Vector2i(ox, oy)
+				if q.x >= 0 and q.y >= 0 and q.x < n and q.y < n and nodi.has(px(q)):
+					vicini.append(px(q))
+		_rete[i] = vicini
+	# Cammini più brevi dal centro (in passi della rete).
+	_padri = {}
+	if fondato and _rete.has(px(centro)):
+		var coda: Array[int] = [px(centro)]
+		_padri[px(centro)] = -1
+		var testa := 0
+		while testa < coda.size():
+			var i: int = coda[testa]
+			testa += 1
+			for j in _rete[i]:
+				if not _padri.has(j):
+					_padri[j] = i
+					coda.append(j)
+	return _rete
+
+
+## Il punto della rete collegato al centro più vicino a `w` (metri), entro `entro`; -1 se nessuno.
+func nodo_vicino(w: Vector2, entro: float) -> int:
+	rete()
+	var migliore := -1
+	var dm := entro
+	for i in _padri:
+		var d := mondo_di_px(px_di(i)).distance_to(w)
+		if d < dm:
+			dm = d
+			migliore = i
+	return migliore
+
+
+## Cammino sulla rete tra due punti della rete (pixel, dal primo all'ultimo); vuoto se non collegati.
+func cammino_rete(da: int, a: int) -> Array[int]:
+	var r := rete()
+	if not r.has(da) or not r.has(a):
+		return []
+	var padri := {da: -1}
+	var coda: Array[int] = [da]
+	var testa := 0
+	while testa < coda.size():
+		var i: int = coda[testa]
+		testa += 1
+		if i == a:
+			break
+		for j in r[i]:
+			if not padri.has(j):
+				padri[j] = i
+				coda.append(j)
+	if not padri.has(a):
+		return []
+	var out: Array[int] = []
+	var k := a
+	while k != -1:
+		out.push_front(k)
+		k = padri[k]
+	return out
+
+
+## Per le figure: i punti (metri) da seguire lungo sentieri e strade per andare da `da` ad `a`; vuoto
+## se conviene andare dritti (vicini, rete lontana o giro troppo lungo).
+func percorso_rete(da: Vector2, a: Vector2) -> Array[Vector2]:
+	var out: Array[Vector2] = []
+	var diretto := da.distance_to(a)
+	if diretto < 150.0 or sentieri.is_empty():
+		return out
+	var n1 := nodo_vicino(da, 200.0)
+	var n2 := nodo_vicino(a, 200.0)
+	if n1 < 0 or n2 < 0 or n1 == n2:
+		return out
+	var c := cammino_rete(n1, n2)
+	if c.size() < 2:
+		return out
+	var lungo := da.distance_to(mondo_di_px(px_di(c[0]))) + mondo_di_px(px_di(c[-1])).distance_to(a) + (c.size() - 1) * dati.metri_per_px
+	if lungo > diretto * 1.5:
+		return out
+	for k in c.size():
+		if k == 0 or k == c.size() - 1 or k % 2 == 0:
+			out.append(mondo_di_px(px_di(c[k])))
+	return out
+
+
+## Vero se c'è una strada entro `entro` metri dal punto.
+func _vicino_a_strada(w: Vector2, entro: float) -> bool:
+	if pixel_strada.is_empty():
+		return false
+	var p := px_da_mondo(w.x, w.y)
+	var r := ceili(entro / dati.metri_per_px)
+	for dy in range(-r, r + 1):
+		for dx in range(-r, r + 1):
+			if pixel_strada.has(px(p + Vector2i(dx, dy))) and mondo_di_px(p + Vector2i(dx, dy)).distance_to(w) <= entro:
+				return true
+	return false
+
+
+## Chi va a lavorare lontano dal centro passa sulla rete: ogni anno si conta quante persone passano
+## su ogni pixel di sentiero; i tratti battuti abbastanza a lungo diventano strade.
+func _aggiorna_traffico() -> void:
+	traffico = {}
+	if not fondato or sentieri.is_empty():
+		_aggiorna_strade()
+		return
+	rete()
+	var c := mondo_di_px(centro)
+	# Mete raggruppate in riquadri di 160 m: posizione media e persone.
+	var gruppi := {}
+	var aggiungi := func(w: Vector2, persone: float) -> void:
+		if persone <= 0.0:
+			return
+		var k := Vector2i(floori(w.x / 160.0), floori(w.y / 160.0))
+		var g: Array = gruppi.get(k, [Vector2.ZERO, 0.0])
+		gruppi[k] = [g[0] + w * persone, float(g[1]) + persone]
+	if not campi.is_empty() and fonti["agricoltura"]:
+		var a_testa := pop * 0.45 / campi.size()
+		for i in campi:
+			aggiungi.call(mondo_di_px(px_di(i)), a_testa)
+	if capi >= 1.0 and not pascolo.is_empty():
+		var a_testa_p := capi / 15.0 / pascolo.size()
+		for i in pascolo:
+			aggiungi.call(mondo_di_px(px_di(i)), a_testa_p)
+	var attive := legnaie.filter(func(l: Dictionary) -> bool: return legnaia_attiva(l))
+	for l in attive:
+		aggiungi.call(l["punto"], ultima_legna / 3.0 / attive.size())
+	for e in poste + capanni:
+		if int(e["cantiere"]) <= 0:
+			aggiungi.call(e["punto"], 3.0)
+	if luogo_sacro_pronto():
+		aggiungi.call(luogo_sacro, pop * 0.1)
+	for k in casali.size():
+		var nel := case_casale.values().count(k)
+		aggiungi.call(centro_lotto(casali[k]), nel * ABITANTI_PER_CASA * 0.5)
+	for k in gruppi:
+		var g: Array = gruppi[k]
+		var w: Vector2 = g[0] / float(g[1])
+		if w.distance_to(c) < 150.0:
+			continue
+		var nodo := nodo_vicino(w, 250.0)
+		if nodo < 0:
+			continue
+		var i := nodo
+		while i != -1 and i != px(centro):
+			traffico[i] = float(traffico.get(i, 0.0)) + float(g[1])
+			i = _padri.get(i, -1)
+	_aggiorna_strade()
+
+
+func _aggiorna_strade() -> void:
+	var presenti := {}
+	for i in sentieri:
+		presenti[i] = true
+	pixel_strada = {}
+	var aperte := sbloccato("strade")
+	for t in tratti_sentiero:
+		var k := chiave_tratto(t)
+		var somma := 0.0
+		var conta := 0
+		var pixel: Array[int] = []
+		for q in punti_tratto(t[0], t[1]):
+			var i := px(q)
+			if presenti.has(i):
+				pixel.append(i)
+				somma += float(traffico.get(i, 0.0))
+				conta += 1
+		if conta == 0:
+			strade.erase(k)
+			anni_battuto.erase(k)
+			continue
+		var media := somma / conta
+		anni_battuto[k] = int(anni_battuto.get(k, 0)) + 1 if media >= SOGLIA_STRADA else 0
+		if aperte and not strade.has(k) and int(anni_battuto[k]) >= ANNI_STRADA:
+			strade[k] = anno
+			var m := mondo_di_px((Vector2(t[0]) + Vector2(t[1])) * 0.5)
+			if not gia_strada:
+				gia_strada = true
+				_scrivi("Il sentiero più battuto è diventato una strada: chi ci passa ogni giorno l'ha allargato e consumato. Le strade restano: i campi vicini rendono di più e le case cominciano a crescere lungo la via.", "buono")
+			else:
+				_scrivi("Un altro sentiero è diventato una strada.", "buono")
+			_notifica("Un sentiero è diventato una strada.", false, m)
+		if strade.has(k):
+			for i in pixel:
+				pixel_strada[i] = true
+
+
+## Dopo una demolizione: le strade restano solo dove resta il sentiero (una strada si toglie solo
+## demolendola).
+func _togli_strade_demolite() -> void:
+	var presenti := {}
+	for i in sentieri:
+		presenti[i] = true
+	for i in pixel_strada.keys():
+		if not presenti.has(i):
+			pixel_strada.erase(i)
+	for t in tratti_sentiero:
+		if not punti_tratto(t[0], t[1]).any(func(q: Vector2i) -> bool: return presenti.has(px(q))):
+			strade.erase(chiave_tratto(t))
+			anni_battuto.erase(chiave_tratto(t))
+
+
+## Traffico di un tratto (persone l'anno, media dei suoi pixel) e anni di fila sopra la soglia.
+func traffico_tratto(t: Array) -> Array:
+	var somma := 0.0
+	var conta := 0
+	for q in punti_tratto(t[0], t[1]):
+		if sentieri.has(px(q)):
+			somma += float(traffico.get(px(q), 0.0))
+			conta += 1
+	return [somma / maxf(conta, 1), int(anni_battuto.get(chiave_tratto(t), 0))]
+
+
+## Il tratto di sentiero più vicino a un punto (metri), entro `entro`; vuoto se nessuno.
+func tratto_vicino(w: Vector2, entro := 30.0) -> Array:
+	var migliore: Array = []
+	var dm := entro
+	for t in tratti_sentiero:
+		var a := mondo_di_px(t[0])
+		var b := mondo_di_px(t[1])
+		var ab := b - a
+		var f := clampf((w - a).dot(ab) / maxf(ab.length_squared(), 1.0), 0.0, 1.0)
+		var d := w.distance_to(a + ab * f)
+		if d < dm:
+			dm = d
+			migliore = t
+	return migliore
+
+
 ## Ettari di bosco sacro ancora in piedi.
 func ettari_bosco_sacro() -> float:
 	var n_px := 0
@@ -1717,7 +2001,9 @@ func capacita_legnaia(l: Dictionary) -> float:
 	var d := _bosco_vicino_legnaia(l)
 	if d < 0.0:
 		return 0.0
-	return CAPACITA_TAGLIO * clampf(1.0 - d / RAGGIO_LEGNAIA, 0.0, 1.0)
+	# Una legnaia su una strada porta i tronchi in fretta (accesso).
+	var strada := 1.1 if _vicino_a_strada(l["punto"], 80.0) else 1.0
+	return CAPACITA_TAGLIO * strada * clampf(1.0 - d / RAGGIO_LEGNAIA, 0.0, 1.0)
 
 
 ## Legna da ardere che offre il bosco attorno alle legnaie al lavoro (m³ l'anno): ogni pixel di bosco
@@ -2323,6 +2609,8 @@ func demolisci(punto: Vector2, raggio: float) -> Dictionary:
 	var n_sentieri := sentieri.size()
 	sentieri = sentieri.filter(func(i: int) -> bool: return not dentro.call(i))
 	esito["sentieri"] = n_sentieri - sentieri.size()
+	if esito["sentieri"] > 0:
+		_togli_strade_demolite()
 	var n_legnaie := legnaie.size()
 	for l in legnaie:
 		if (l["punto"] as Vector2).distance_to(punto) <= raggio:
@@ -2411,21 +2699,46 @@ func risorse_attorno(p: Vector2i) -> Dictionary:
 
 ## Campi serviti (sentiero collegato entro 120 m o centro entro 200 m) e campi al margine del bosco.
 func _aggiorna_campi_serviti() -> void:
-	var firma := hash([campi.hash(), sentieri.hash(), centro, _anni_risorse])
+	var firma := hash([campi.hash(), sentieri.hash(), centro, _anni_risorse, pixel_strada.size()])
 	if firma == _firma_serviti:
 		return
 	_firma_serviti = firma
 	_campi_serviti = {}
+	_campi_strada = {}
+	if not pixel_strada.is_empty():
+		# La fascia attorno alle strade si ricalcola solo quando cambiano le strade.
+		var firma_s := pixel_strada.hash()
+		if firma_s != _firma_fascia:
+			_firma_fascia = firma_s
+			_fascia_strade = {}
+			var r := DISTANZA_CAMPI_STRADA
+			for ip in pixel_strada:
+				var ps := px_di(ip)
+				for dy in range(-r, r + 1):
+					for dx in range(-r, r + 1):
+						var q := ps + Vector2i(dx, dy)
+						if dx * dx + dy * dy <= r * r and q.x >= 0 and q.y >= 0 and q.x < n and q.y < n:
+							_fascia_strade[px(q)] = true
+		for i in campi:
+			if _fascia_strade.has(i):
+				_campi_strada[i] = true
 	var collegati := sentieri_collegati()
+	# La fascia di 120 m attorno ai sentieri collegati si ricalcola solo quando cambiano i sentieri
+	# (prima si guardavano 49 punti per ogni campo ogni anno: troppo lento con mille campi).
+	var firma_c := hash([sentieri.hash(), centro])
+	if firma_c != _firma_fascia_sentieri:
+		_firma_fascia_sentieri = firma_c
+		_fascia_sentieri = {}
+		for ic in collegati:
+			var pc := px_di(ic)
+			for dy in range(-3, 4):
+				for dx in range(-3, 4):
+					if dx * dx + dy * dy <= 9:
+						_fascia_sentieri[px(pc + Vector2i(dx, dy))] = true
 	for i in campi:
 		var p := px_di(i)
-		if mondo_di_px(p).distance_to(mondo_di_px(centro)) <= 200.0:
+		if mondo_di_px(p).distance_to(mondo_di_px(centro)) <= 200.0 or _fascia_sentieri.has(i):
 			_campi_serviti[i] = true
-			continue
-		for dy in range(-3, 4):
-			for dx in range(-3, 4):
-				if dx * dx + dy * dy <= 9 and collegati.has(px(p + Vector2i(dx, dy))):
-					_campi_serviti[i] = true
 	_campi_al_bosco = {}
 	for i in campi:
 		var p := px_di(i)
@@ -2888,6 +3201,7 @@ func passo() -> void:
 	consumo_legna = consumo_focolari + case.size() * COSTO_CASA / float(ANNI_VITA_CASA)
 	_lavora_legnaie()
 	legna = clampf(legna + ultima_legna - consumo_legna, 0.0, massimo_legna())
+	_aggiorna_traffico()
 	# Cibo. Le annate magre fanno parte del ciclo normale: si vedono solo nelle scorte, senza avvisi
 	# (decisione di Fede del 25/11/2026). La carestia arriva quando le scorte finiscono.
 	var consumo := pop * (0.8 if razionamento > 0 else 1.0)
@@ -3138,7 +3452,7 @@ func _resa(i: int) -> float:
 	_aggiorna_campi_serviti()
 	# Sentiero: si va e si torna più in fretta. Bosco: la selvaggina rovina i campi al suo margine
 	# (meno, se la caccia la tiene bassa).
-	var vie := 1.0 + BONUS_SENTIERO if _campi_serviti.has(i) else 1.0
+	var vie := 1.0 + (BONUS_STRADA if _campi_strada.has(i) else (BONUS_SENTIERO if _campi_serviti.has(i) else 0.0))
 	var danni := 1.0 - 0.25 * selvaggina if _campi_al_bosco.has(i) else 1.0
 	var famiglie := 1.0 + 0.12 * efficacia_usanze() if politica("raccolto") == "famiglie" else 1.0
 	return RESA_CAMPO * fert(i) * fattore * famiglie * (BONUS_LIMO if limo.has(i) else 1.0) * fattore_stanchezza(i) * (BONUS_STOPPIE if concimati.has(i) else 1.0) \
@@ -3178,6 +3492,9 @@ func _piena(disastrosa: bool) -> void:
 			campi_persi += 1
 			allagati[f] = true
 			dove += mondo_di_px(px_di(f))
+	# Per la grafica: l'acqua che sale (VistaVillaggio._anima_piena).
+	if not colpiti.is_empty():
+		ultima_piena = {"anno": anno, "disastrosa": disastrosa}
 	var granaio_colpito := disastrosa and granaio.x >= 0 and colpiti.has(px(px_da_mondo(granaio.x, granaio.y)))
 	if granaio_colpito:
 		cibo *= 0.6
@@ -3294,14 +3611,34 @@ func _disponi_nucleo(servono: int, ci_sono: int, paga: bool) -> void:
 		occupati[c] = true
 	var granaio_l := lotto_da_mondo(granaio.x, granaio.y) if granaio.x >= 0 else Vector2i(-99999, -99999)
 	var sacro_l := lotto_da_mondo(luogo_sacro.x, luogo_sacro.y) if luogo_sacro.x >= 0 else Vector2i(-99999, -99999)
+	# Candidati: i lotti attorno al centro e, dalle strade, i lotti lungo le strade (il borgo
+	# lungo la via: chi abita sulla strada è vicino a tutto anche se è lontano dal focolare).
+	var candidati: Array[Vector2i] = []
+	for dy in range(-r, r + 1):
+		for dx in range(-r, r + 1):
+			candidati.append(lc + Vector2i(dx, dy))
+	var lungo_strada := {}
+	for ip in pixel_strada:
+		var wp := mondo_di_px(px_di(ip))
+		if wp.distance_to(mondo_di_px(centro)) > STRADA_ATTRAE_CASE:
+			continue
+		var lp := lotto_da_mondo(wp.x, wp.y)
+		for oy in range(-2, 3):
+			for ox in range(-2, 3):
+				var lq := lp + Vector2i(ox, oy)
+				if not lungo_strada.has(lq):
+					lungo_strada[lq] = true
+					if cheb(lq, lc) > r:
+						candidati.append(lq)
 	var tentativi := 0
 	while ci_sono < servono and tentativi < 200 and (not paga or legna >= COSTO_CASA):
 		tentativi += 1
 		var migliore := Vector2i(-1, -1)
 		var punteggio := -1e9
-		for dy in range(-r, r + 1):
-			for dx in range(-r, r + 1):
-				var l := lc + Vector2i(dx, dy)
+		for l in candidati:
+			if true:
+				var dx := l.x - lc.x
+				var dy := l.y - lc.y
 				if l == lc or cheb(l, granaio_l) <= 1 or cheb(l, sacro_l) <= 1 or macerie.has(l) or _vicino_a_legnaia(l):
 					continue
 				var w := centro_lotto(l)
@@ -3324,6 +3661,9 @@ func _disponi_nucleo(servono: int, ci_sono: int, paga: bool) -> void:
 				if vicina:
 					continue
 				var d := Vector2(dx, dy).length() * LOTTO / 40.0
+				# Lungo la strada la distanza pesa meno: si cammina in fretta.
+				if lungo_strada.has(l):
+					d = minf(d, 2.0 + d * 0.25)
 				var caso := float((l.x * 73856093 ^ l.y * 19349663) & 0xffff) / 65536.0
 				var sc := -d * (1.2 + 1.5 * memoria_scorrerie / 100.0) - piena(i) * paura * 8.0 + acqua_qualsiasi(i) - (1.0 if dati.tipo[i] == MappaDati.GESSI else 0.0) + caso * 0.25
 				# Il luogo sacro attira le case (decisione di Fede del 24/11/2026: il germe della piazza).
@@ -3430,6 +3770,9 @@ func umore_famiglie() -> Dictionary:
 			if not sentiero:
 				s -= 5.0
 				motivi.append("pesa: nessun sentiero verso il paese")
+			elif _vicino_a_strada(w, 120.0):
+				s += 3.0
+				motivi.append("aiuta: una strada verso il paese")
 		if w.distance_to(c) < 80.0:
 			s += 3.0
 			motivi.append("aiuta: vive vicino al focolare")
@@ -3600,6 +3943,10 @@ func _abbandona() -> void:
 	zona = {}
 	sentieri = []
 	tratti_sentiero = []
+	traffico = {}
+	strade = {}
+	anni_battuto = {}
+	pixel_strada = {}
 	granaio = Vector2(-1, -1)
 	pop = 0.0
 	cibo = 0.0

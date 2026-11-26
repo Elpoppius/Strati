@@ -134,6 +134,14 @@ const SCHEDE := {
 		"dettaglio": "In Edifici (U): una piattaforma su quattro pali, con la catasta per il fuoco di segnalazione. Va su un dosso o un colle, non lontano dal villaggio, e ne basta una. Servono 8 di legna e due anni di lavoro. Dalla torre i segni arrivano prima, e quando la scorreria arriva si perde meno.",
 		"avviso": "Torre di avvistamento (U): su un'altura, dà i segni prima e si perde meno.",
 	},
+	# Strade (voce 5, 26/11/2026): con la tappa dei 250 abitanti, insieme ai casali.
+	"strade": {
+		"titolo": "Strade",
+		"testo": "Un sentiero che tanta gente percorre ogni giorno, anno dopo anno, si allarga e diventa una strada. Le strade restano.",
+		"domanda": "Cosa cambia con una strada?",
+		"dettaglio": "Nessuno costruisce le strade: le fanno i piedi di chi va ai campi, al pascolo, alla legnaia, al luogo sacro, ai casali. Con lo strumento Sentiero (V), passando con il puntatore su un tratto, vedi quanta gente ci passa e fra quanto diventerà strada. I campi vicini a una strada rendono più di quelli lungo un sentiero, le case nuove cominciano a nascere anche lungo la via, e i casali e le legnaie collegati ne guadagnano. Dove la strada passa un torrente o un terreno fradicio, si posano tronchi di traverso. Una strada si toglie solo demolendola.",
+		"avviso": "Strade: i sentieri più battuti diventano strade, e le strade restano.",
+	},
 	"affollati": {
 		"titolo": "Villaggio affollato",
 		"testo": "Quando le case non bastano per tutte le famiglie, il villaggio deve scegliere: stringersi o lasciar partire qualcuno.",

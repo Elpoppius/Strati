@@ -32,12 +32,12 @@ func _initialize() -> void:
 	var file := args[0] if args.size() > 0 else "/tmp/umano.txt"
 	var semi := int(args[1]) if args.size() > 1 else 3
 	var d: MappaDati = load("res://mappe/pedecollinare/mappa.res")
-	_righe.append("profilo,sito,seme,pop_finale,pop_minima,carestie,carestie_gravi,abbandoni,scissioni,pause,tutorial,piene_grandi,granaio_anno,cosa_ha_imparato,legnaie,casali,nucleo,poste,capanni,luogo_sacro,bosco_sacro_ha,sacerdote,capi,pascolo_ha,segni,scorrerie,case_bruciate,torre,pericolo")
+	_righe.append("profilo,sito,seme,pop_finale,pop_minima,carestie,carestie_gravi,abbandoni,scissioni,pause,tutorial,piene_grandi,granaio_anno,cosa_ha_imparato,legnaie,casali,nucleo,poste,capanni,luogo_sacro,bosco_sacro_ha,sacerdote,capi,pascolo_ha,segni,scorrerie,case_bruciate,torre,pericolo,sentieri_km,strade")
 	for profilo in ["sbaglia", "legge", "genere", "casual"]:
 		for sito in d.siti:
 			for seme in range(1, semi + 1):
 				var r := _gioca(d, sito, profilo, seme * 31 + int(sito["n"]))
-				_righe.append("%s,%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%d,%d,%d,%d,%d,%d,%.1f,%d,%d,%.1f,%d,%d,%d,%d,%s" % [profilo, String(sito["nome"]).replace(",", " "), seme, r["pop"], r["minima"], r["carestie"], r["gravi"], r["abbandoni"], r["scissioni"], r["pause"], r["tutorial"], r["piene"], r["granaio"], r["imparato"], r["legnaie"], r["casali"], r["nucleo"], r["poste"], r["capanni"], r["sacro"], r["bosco_sacro"], r["sacerdote"], r["capi"], r["pascolo_ha"], r["segni"], r["scorrerie"], r["case_bruciate"], r["torre"], r["pericolo"]])
+				_righe.append("%s,%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%d,%d,%d,%d,%d,%d,%.1f,%d,%d,%.1f,%d,%d,%d,%d,%s,%.1f,%d" % [profilo, String(sito["nome"]).replace(",", " "), seme, r["pop"], r["minima"], r["carestie"], r["gravi"], r["abbandoni"], r["scissioni"], r["pause"], r["tutorial"], r["piene"], r["granaio"], r["imparato"], r["legnaie"], r["casali"], r["nucleo"], r["poste"], r["capanni"], r["sacro"], r["bosco_sacro"], r["sacerdote"], r["capi"], r["pascolo_ha"], r["segni"], r["scorrerie"], r["case_bruciate"], r["torre"], r["pericolo"], r["sentieri_km"], r["strade"]])
 	var f := FileAccess.open(file, FileAccess.WRITE)
 	f.store_string("\n".join(_righe) + "\n")
 	f.close()
@@ -216,6 +216,8 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 					if sim.costruisci_granaio(c0 + prova) == "":
 						granaio_anno = eta
 						break
+			# Sentieri verso i posti di lavoro lontani (chi conosce il genere sempre, gli altri meno).
+			AiutiGiocatori.traccia_sentieri_lavoro(sim, caso, 0.9 if genere else (0.15 if casual else 0.4))
 			# Il raccolto alle famiglie, appena si apre: si prova una volta, metà dei giocatori.
 			if not raccolto_provato and sim.sbloccato("raccolto"):
 				raccolto_provato = true
@@ -234,7 +236,8 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 		"poste": sim.poste.size(), "capanni": sim.capanni.size(),
 		"sacro": 1 if sim.luogo_sacro_pronto() else 0, "bosco_sacro": snappedf(sim.ettari_bosco_sacro(), 0.1), "sacerdote": roundi(sim.consenso["sacerdote"]) if sim.sacerdote_attivo else -1,
 		"capi": roundi(sim.capi), "pascolo_ha": snappedf(sim.pascolo.size() * SimVillaggio.AREA_PIXEL_HA, 0.1),
-		"segni": sim.stat["segni"], "scorrerie": sim.stat["scorrerie"], "case_bruciate": sim.stat["case_bruciate"], "torre": 1 if sim.torre_pronta() else 0, "pericolo": sim.politica("pericolo")}
+		"segni": sim.stat["segni"], "scorrerie": sim.stat["scorrerie"], "case_bruciate": sim.stat["case_bruciate"], "torre": 1 if sim.torre_pronta() else 0, "pericolo": sim.politica("pericolo"),
+		"sentieri_km": sim.sentieri.size() * sim.dati.metri_per_px / 1000.0, "strade": sim.strade.size()}
 
 
 ## Posta di caccia e capanno da pesca all'inizio (decisioni di Fede del 25/11/2026): chi conosce il

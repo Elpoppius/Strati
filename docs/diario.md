@@ -2,6 +2,42 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (notte) — strade (voce 5), salvataggio e piene visibili (voce 9)
+**Fatto**
+- **Sentieri che diventano strade** (voce 5; proposta di Claude approvata da Fede: "mi convincono le proposte"):
+  - Ogni anno chi lavora lontano va dal centro al suo posto lungo la rete dei sentieri. Il traffico viene da campi, pascolo, legnaie, poste e capanni, luogo sacro e casali.
+  - Un tratto con almeno 40 persone l'anno per 20 anni di fila diventa strada, dalla tappa dei 250. La strada resta; si toglie solo con Demolisci.
+  - Aspetto: nastro di 5 m di terra compatta con i solchi dei carri; passerelle di tronchi (modello nuovo `passerella`) sui torrenti e sul fradicio.
+  - Effetti: campi vicini +15%; case nuove anche lungo la via; casale collegato +3 di umore; legnaia su una strada +10% di taglio.
+  - Le figure che vanno lontano camminano su sentieri e strade.
+  - Con Sentiero, la lettura del tratto dice "Traffico: N persone l'anno · strada tra K anni". C'è la scheda di tutorial "Strade".
+  - Foto: `docs/immagini/strade-26-11.jpg`, `passerella-26-11.jpg`.
+- **Più veloce:** la fascia dei campi serviti da sentieri e strade si ricalcola solo quando cambiano. Prima una partita con le strade richiedeva 33 s invece di 18.
+- **Salvataggio** (voce 9; Fede: "passa subito al punto successivo", proposte di Claude inviate e segnate come tali):
+  - F5 salva; F8 apre l'elenco delle partite salvate. Gli stessi comandi stanno in Strumenti › Partita; le schede degli Strumenti vanno a capo.
+  - Salvataggi automatici a ogni tappa e ogni 50 anni, ultimi 3.
+  - File in `D:\Godot\Strati\Salvataggi`.
+  - Si salvano tutta la simulazione (anche il caso), l'uso del suolo e le zone bloccate. Caricando si torna esattamente allo stato salvato, e rigiocando si arriva allo stesso punto (`test/verifica_salvataggio.gd`, l'undicesima verifica).
+- **Acqua che sale con le piene:** l'acqua torbida copre le terre basse in 3 s, resta 5 s e si ritira in 7 s. Una piena di stagione copre i bordi dei corsi, una disastrosa quasi tutta la piana. Foto: `docs/immagini/piena-*-26-11.jpg`.
+- **Prove:** tutte le 11 verifiche superate.
+  - Giocatori "umani": mediane 744, 799, 853 e 136 abitanti; pause invariate.
+  - Registro degli avvisi: 3,6 pause vere a partita.
+  - Tutto in `sessioni-giocatori.md`.
+
+**Decisioni**
+- Fede: proposte della voce 5 approvate. Domande annotate nel todo, poi si passa subito al punto successivo (voce 9).
+- Proposte di Claude in attesa (todo, "Da decidere con Fede"):
+  - passerelle sui torrenti larghi (sembrano ponti);
+  - case lungo le strade poco evidenti;
+  - sentieri battuti spontaneamente;
+  - numeri e aspetto delle strade;
+  - cartella, tasti e automatici del salvataggio;
+  - colore e tempi della piena.
+
+**Prossimo passo**
+- Voce 9: varianti dei modelli delle case; poi le prove sui PC di Fede con il Registro.
+- Poi voce 6 (evento soglia e passo elastico) e voce 10 (menù delle impostazioni).
+
 ## 26/11/2026 (sera tardi) — prova di Fede, registro letto, legna rifatta e correzioni (voce C)
 **Fatto**
 - **Prima lettura del registro tecnico**, dalla cartella del PC di Fede (`sessione-2026-11-26-184529`, GTX 1050, 1600×900):

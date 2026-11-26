@@ -31,6 +31,10 @@ const PROVE := [
 	"Edifici delle risorse alla misura delle case",
 	"Specchietti: Conseguenze e Rapporti di forza (R)",
 	"Scorrerie: segni, scelta, torre (Prova: Scorreria)",
+	"Strade: traffico con Sentiero, strade, passerelle",
+	"Figure che camminano lungo sentieri e strade",
+	"Salvare (F5) e riprendere (F8) una partita",
+	"Piena: l'acqua sale e si ritira",
 ]
 
 var cartella := ""

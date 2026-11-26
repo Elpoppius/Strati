@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="miter">
+<!-- Salva: la partita scende negli strati -->
+<polyline points="16,3 16,15"/>
+<polyline points="11,10 16,15 21,10"/>
+<line x1="4" y1="20" x2="28" y2="20"/>
+<line x1="4" y1="25" x2="28" y2="25"/>
+<line x1="4" y1="30" x2="28" y2="30"/>
+</svg>

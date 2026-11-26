@@ -385,6 +385,80 @@ func _verifica_scorrerie(d: MappaDati) -> void:
 	controlla(media.call(impaurito) < media.call(calmo), "dopo una scorreria l'abitato si stringe (%d m contro %d m dal centro)" % [roundi(media.call(impaurito)), roundi(media.call(calmo))])
 
 
+## Sentieri che diventano strade (voce 5, decisioni di Fede del 26/11/2026).
+func _verifica_strade(d: MappaDati) -> void:
+	var s := SimVillaggio.new(d, 29)
+	var c := Vector2i(d.siti[0]["px"])
+	s.fonda(c)
+	s.decisioni.clear()
+	var cm := s.mondo_di_px(c)
+	# Un sentiero di 800 m verso est e una legnaia in fondo (o i campi in fondo).
+	var fine := c
+	for k in range(20, 0, -1):
+		var q := c + Vector2i(k, 0)
+		if s.motivo_sentiero(c, q) == "":
+			fine = q
+			break
+	controlla(fine != c and s.traccia_sentiero_da(c, fine) == "", "un sentiero dal centro verso est (%d m)" % roundi(s.mondo_di_px(fine).distance_to(cm)))
+	var lontani: Array[Vector2i] = []
+	for dy in range(-2, 3):
+		for dx in range(-2, 3):
+			lontani.append(fine + Vector2i(dx, dy))
+	# Campi lontani messi a mano (oltre il contado di un villaggio appena fondato).
+	for q in lontani:
+		s.campi.append(s.px(q))
+	s.pop = 200.0
+	s._aggiorna_traffico()
+	var t: Array = s.tratti_sentiero[0]
+	var tr: Array = s.traffico_tratto(t)
+	controlla(float(tr[0]) > 0.0, "chi lavora lontano passa sul sentiero (%d persone l'anno)" % roundi(float(tr[0])))
+	controlla(s.strade.is_empty(), "prima della tappa dei 250 abitanti nessuna strada")
+	s.tappa = SimVillaggio.tappa_di("strade")
+	s.decisioni.clear()
+	s.anni_battuto.clear()
+	var anni := 0
+	while s.strade.is_empty() and anni < 40:
+		s.pop = 300.0
+		s._aggiorna_traffico()
+		anni += 1
+	controlla(not s.strade.is_empty() and anni == SimVillaggio.ANNI_STRADA, "un tratto battuto per %d anni diventa strada (%d)" % [SimVillaggio.ANNI_STRADA, anni])
+	controlla(s.avvisi.any(func(a: Dictionary) -> bool: return String(a["testo"]).contains("strada")), "una notifica dice che un sentiero è diventato strada")
+	controlla(not s.pixel_strada.is_empty(), "la strada ha i suoi punti sulla mappa")
+	# Resta, anche se il traffico cala.
+	s.pop = 5.0
+	s.campi.clear()
+	for k in 5:
+		s._aggiorna_traffico()
+	controlla(not s.strade.is_empty(), "la strada resta anche se il traffico cala")
+	for q in lontani:
+		s.campi.append(s.px(q))
+	# Accesso: i campi vicini alla strada rendono di più.
+	var vicino: int = s.campi[0]
+	s._firma_serviti = -1
+	s._aggiorna_campi_serviti()
+	controlla(s._campi_strada.has(vicino), "i campi vicini alla strada sono serviti dalla strada")
+	# Le case crescono anche lungo la strada.
+	var u := SimVillaggio.new(d, 29)
+	u.fonda(c)
+	u.traccia_sentiero_da(c, fine)
+	u.strade[SimVillaggio.chiave_tratto(u.tratti_sentiero[0])] = u.anno
+	u.tappa = SimVillaggio.tappa_di("strade")
+	u._aggiorna_strade()
+	u.pop = 300.0
+	u.legna = 2000.0
+	u.disponi_case(false)
+	var lontane := u.case.filter(func(l: Vector2i) -> bool: return u.centro_lotto(l).distance_to(cm) > 250.0)
+	controlla(not lontane.is_empty(), "le case crescono anche lungo la strada (%d oltre 250 m)" % lontane.size())
+	# Le figure seguono la rete.
+	var giro := u.percorso_rete(cm + Vector2(0, 20), u.mondo_di_px(fine) + Vector2(0, 30))
+	controlla(giro.size() >= 2, "chi va lontano cammina lungo il sentiero (%d tappe)" % giro.size())
+	controlla(u.percorso_rete(cm, cm + Vector2(60, 0)).is_empty(), "chi va vicino va dritto")
+	# Una strada si toglie solo demolendola.
+	var m := u.mondo_di_px(fine)
+	u.demolisci(m, 60.0)
+	controlla(not u.pixel_strada.has(u.px(fine)) and not u.pixel_strada.is_empty(), "demolendo si toglie il pezzo di strada")
+
+
 func _gioca(sim: SimVillaggio, sito: Vector2i, scelta_presagi := "") -> Dictionary:
 	_caso_giocatore.seed = 12345
 	sim.fonda(sito)
@@ -634,6 +708,7 @@ func _initialize() -> void:
 	_verifica_sacro(d)
 	_verifica_pascolo(d)
 	_verifica_scorrerie(d)
+	_verifica_strade(d)
 	# Partite intere.
 	var sopravvissuti := 0
 	for s in d.siti:
