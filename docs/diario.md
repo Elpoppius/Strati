@@ -2,6 +2,15 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (pomeriggio)
+**Decisioni** (Fede)
+- Animali e brucatura approvati ("ora ci siamo"); l'ultima verifica nella prova in gioco.
+- Il maiale sembra un po' un facocero: secondario, da rivedere più avanti (segnato nel todo, voce 2). Per ora bene così.
+
+**Prossimo passo**
+- Fede: prova in gioco di animali, brucatura, tutorial e fotogrammi al secondo.
+- Claude: voci 4 (scorrerie) e 5 (strade), con riepilogo prima.
+
 ## 26/11/2026 (primo pomeriggio)
 **Fatto**
 - **La "proboscide" era un errore dello shader** (Fede: "il bue ha ancora la proboscide"): l'esportazione glTF capovolge la v delle UV, e il peso delle parti (scritto nella seconda UV) arrivava rovesciato. Così la testa si piegava dal muso invece che dalla nuca (il muso restava fermo e la testa si stirava) e le zampe si muovevano dall'anca invece che dallo zoccolo. Corretto in `animali_comune.gdshaderinc` (`w = 1 − UV2.y`). Ora pecora, capra, maiale e bue brucano con la testa giù vicino alle zampe davanti.
