@@ -36,7 +36,9 @@ void vertex() {
 	float bruca = clamp(c.z, 0.0, 1.0);
 	float seme = c.w * 37.0;
 	int parte = int(UV2.x + 0.5);
-	float w = UV2.y;
+	// L'esportazione glTF capovolge la v delle UV (v → 1 − v): il peso si raddrizza qui. Prima del
+	// 26/11/2026 mancava, e la testa si piegava dal muso (sembrava una proboscide) e le zampe dall'anca.
+	float w = 1.0 - UV2.y;
 	vec3 v = VERTEX;
 	vec3 n = NORMAL;
 

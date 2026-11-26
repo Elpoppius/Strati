@@ -598,8 +598,8 @@ def colora(ob, col, angoli_vert):
 
 def postura_bruca(sp):
     """Brucare (26/11/2026, dopo il bue grigio che sembrava avere la proboscide): il collo si piega
-    dall'attaccatura sulle spalle (`perno`, al massimo di 50° circa) e la testa dalla nuca (`giunto`) finché scende quasi verticale (75° sotto
-    l'orizzonte) e il muso arriva all'erba, a 8 cm da terra. Si cerca il piegamento del collo che
+    dall'attaccatura sulle spalle (`perno`, al massimo di 66° circa) e la testa dalla nuca (`giunto`) finché scende quasi verticale (85° sotto
+    l'orizzonte, il muso vicino alle zampe davanti: da chino il bue sembrava avere la proboscide) e il muso arriva all'erba, a 8 cm da terra. Si cerca il piegamento del collo che
     basta; se non basta, il resto lo fa un piccolo abbassamento (`abbassa_bruca`). Per il maiale la
     testa è già bassa: grufola appena (sp.bruca piccolo). Restituisce i dati per lo shader, nelle
     coordinate di Godot (x, z di Blender in alto, -y di Blender)."""
@@ -618,9 +618,9 @@ def postura_bruca(sp):
     else:
         mt = punta - giunto
         fi0 = math.atan2(mt[2], mt[1])
-        totale = fi0 + math.radians(75.0)
+        totale = fi0 + math.radians(85.0)
         a1 = 0.0
-        for k in range(0, 86):  # il collo al massimo a 50° circa: oltre sembra spezzato
+        for k in range(0, 116):  # il collo al massimo a 66° circa: il muso resta vicino alle zampe davanti
             a1 = k / 100.0
             j = giu(giunto, perno, a1)
             m = giu(giu(punta, perno, a1), j, totale - a1)

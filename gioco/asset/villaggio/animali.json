@@ -11,9 +11,9 @@
    -0.5
   ],
   "peso_testa": 0.5103626943005181,
-  "angolo_collo": 0.85,
-  "angolo_testa": 0.11022593541184034,
-  "abbassa_bruca": 0.3005975013915833,
+  "angolo_collo": 1.15,
+  "angolo_testa": -0.015241139388726621,
+  "abbassa_bruca": 0.20768622144324056,
   "passo": 0.6,
   "spalla": 0.52
  },
@@ -29,9 +29,9 @@
    -0.42
   ],
   "peso_testa": 0.5818540433925048,
-  "angolo_collo": 0.85,
-  "angolo_testa": 0.09501798248610338,
-  "abbassa_bruca": 0.4158489279024984,
+  "angolo_collo": 1.15,
+  "angolo_testa": -0.030449092314463577,
+  "abbassa_bruca": 0.30561662688672153,
   "passo": 0.65,
   "spalla": 0.62
  },
@@ -65,9 +65,9 @@
    -1.03
   ],
   "peso_testa": 0.415897047691143,
-  "angolo_collo": 0.85,
-  "angolo_testa": -0.06014917525077601,
-  "abbassa_bruca": 0.17513198419006548,
+  "angolo_collo": 1.15,
+  "angolo_testa": -0.18561625005134297,
+  "abbassa_bruca": 0.07040297530891133,
   "passo": 1.1,
   "spalla": 0.95
  }

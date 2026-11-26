@@ -2,6 +2,15 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (primo pomeriggio)
+**Fatto**
+- **La "proboscide" era un errore dello shader** (Fede: "il bue ha ancora la proboscide"): l'esportazione glTF capovolge la v delle UV, e il peso delle parti (scritto nella seconda UV) arrivava rovesciato. Così la testa si piegava dal muso invece che dalla nuca (il muso restava fermo e la testa si stirava) e le zampe si muovevano dall'anca invece che dallo zoccolo. Corretto in `animali_comune.gdshaderinc` (`w = 1 − UV2.y`). Ora pecora, capra, maiale e bue brucano con la testa giù vicino alle zampe davanti.
+- Brucatura ritarata: collo piegato fino a 66° circa, testa a 85° sotto l'orizzonte. Foto `docs/immagini/bue-26-11.jpg` e `animali-pelo-26-11.jpg` rifatte. Verifiche degli asset e della partita superate.
+
+**Prossimo passo**
+- Fede: riguardare animali e brucatura nel gioco; provare i tutorial.
+- Claude: voci 4 e 5, con riepilogo prima.
+
 ## 26/11/2026 (mezzogiorno)
 **Fatto**
 - **Tutorial alle tappe** (decisione di Fede): nuovo `script/tutorial.gd` con sedici schede (fondare; zona agricola, campo, sentiero, legnaia, capanno, posta, fonti di cibo dopo la fondazione; granaio e raccolto a 60; luogo sacro e pascolo a 100; stranieri, villaggio affollato e bosco sacro a 150; casali a 250). Decisioni di tipo "tutorial" in `SimVillaggio` (`tutorial()`, `salta_tutorial()`, `tutorial_attivi`), riquadro `Hud.mostra_tutorial`: testa con la tappa e la pagina, titolo, due o tre righe, "Cosa fa…?" che apre la spiegazione, "Salta i tutorial" e Avanti/Continua. Saltati, diventano notifiche grigie per il resto della partita. Le foto di controllo partono senza tutorial. Foto `docs/immagini/tutorial-26-11.jpg`; nuovo `test/foto_tutorial.gd`.
