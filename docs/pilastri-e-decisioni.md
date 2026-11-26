@@ -35,7 +35,7 @@ Gestionale urbanistico-politico. Il giocatore governa una città europea verosim
 - **Produzione:** Fede + Claude, budget zero. Godot 4.7.2 (renderer Compatibilità), Blender 5.3, asset creati da script o con licenza CC0 (stile verosimile: vedi `asset.md`), Git/GitHub.
 
 ## Epoche
-*L'Era delle Origini (Villaggio e Abitato protourbano) è definita in dettaglio in `era-origini.md`.*
+*L'Era delle Origini (Villaggio e Abitato protourbano) è definita in dettaglio in `era-origini.md`. I sistemi che attraversano tutte le epoche (identità e regime, proprietà, vita delle costruzioni, conservazione e demolizione, sottosuolo) stanno in `epoche-future.md`; gli edifici previsti per ogni epoca in `edifici-per-epoca.md`.*
 
 Struttura simmetrica: **6 Ere × 2 epoche** (fino al 25/11/2026 si chiamavano macro-ere: decisione di Fede). Il passaggio di Era sblocca nuovi sistemi; il passaggio di epoca cambia la sensibilità dominante. Le epoche prendono il nome dal tipo di città che producono, non da un popolo.
 

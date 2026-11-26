@@ -137,6 +137,14 @@ A ogni sblocco il gioco si ferma: avviso a schermo con titolo, due o tre righe (
   - Decisioni sugli edifici delle risorse: capanno solo sulla riva con aggancio automatico, nessuna distanza minima tra capanni né tra legnaie (tolta dal codice quella di 150 m tra legnaie), pesce locale per tratto di riva.
   - Sera tardi: **capanno da pesca e posta di caccia** nel gioco (simulazione, strumenti, modelli, lettura, prove).
 
+## Epoche future, sulla carta (in parallelo, 26/11/2026)
+Solo documenti, senza toccare codice o modelli (richiesta di Fede).
+- [x] Sistemi che attraversano le epoche, identità e regime, proprietà, vita delle costruzioni, dinamica calda, sottosuolo: `epoche-future.md` (approvato da Fede il 26/11/2026).
+- [~] Lista di edifici e modelli per epoca: `edifici-per-epoca.md` (proposta di Claude, da rivedere con Fede).
+- [ ] Età industriale sulla carta, con la profondità di `era-origini.md`.
+- [ ] Antichità sulla carta.
+- [ ] Da raffinare: salute e scarti, bilancio della città. Da ragionare: stratificazione in altezza.
+
 ## Per l'abitato protourbano (dopo il villaggio)
 - Recinto o palizzata, con terrapieno e fossato: la regolazione dello spazio della seconda epoca (decisioni di Fede del 24 e 25/11/2026).
 - Gruppi capi, lignaggi, sacerdote; famiglie eminenti e comuni che nascono dalla disuguaglianza creata dal giocatore, con attenzione agli equilibri di potere (`era-origini.md` § 6).

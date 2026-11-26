@@ -2,6 +2,19 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (tarda mattina) — epoche future sulla carta
+**Fatto** (solo documenti, nessun codice né modello; richiesta di Fede: definire in parallelo dinamiche, strutture ed edifici delle prossime epoche)
+- Nuovo `docs/epoche-future.md`: metodo (un'epoca alla volta sapendo dove si va, progettare all'indietro da Haussmann); nove sistemi che attraversano le epoche (Vie e Trasporti separati); identità della città con quattro assi, regime, vocazione, deriva, rivoluzioni dalla tensione e peso latente, pannello dell'identità; regime fondiario a quattro leve e cinque modelli; gruppi sociali e politica; vita delle costruzioni (struttura separata dalla funzione, tipi di struttura, cambio d'uso spontaneo, vincoli e zone, abbandono e rovina, varianti dei modelli derivate in automatico); dinamica calda (bilancia pressione–valore, rarità, otto esiti, pausa per l'ultimo esemplare); sottosuolo e tracciato (tre modi di restare, leggibilità, forza del tracciato, cinque risposte alle scoperte); costruzione a rischio.
+- Nuovo `docs/edifici-per-epoca.md`: lista completa di edifici e modelli per epoca, con il genere (fatto a mano, generatore, rete, pezzo, shader), ciò che esiste già e una stima del conto.
+- Rimandi in `pilastri-e-decisioni.md`, `todo.md`, `CLAUDE.md`.
+
+**Decisioni** (Fede)
+- Tutto `epoche-future.md` approvato ("tutto approvato"), con le sue aggiunte: identità organica dalle politiche, opzioni che si spengono secondo il regime, rivoluzioni; regime e vocazione in testa al pannello, niente muri di testo; Vie e Trasporti separati; il ciclo delle fabbriche non è inevitabile; Restaurare e Rifunzionalizzare tra gli esiti; pausa "stai per demolire l'ultimo esemplare" con bonus e malus; vincoli e zone; nessuna domanda sugli edifici comuni; tracciato manipolabile (rettifili); ogni struttura abbandonata non protetta diventa strato, che si percepisce e poi resta nella memoria; recupero in loco (Sala Borsa); peso latente che cresce con la repressione; attenzione al numero dei modelli. Da raffinare: salute e scarti, bilancio. Da ragionare: stratificazione in altezza.
+- `edifici-per-epoca.md` è una proposta di Claude, da confermare.
+
+**Prossimo passo**
+- Fede: rivedere `edifici-per-epoca.md` (cosa togliere, cosa aggiungere, le quattro voci nuove del villaggio: aia, fornace, sepolture, passerella).
+- Claude: in parallelo al villaggio (todo, voci 2, 4, 5), quando Fede lo chiede, l'Età industriale sulla carta, poi l'Antichità.
 ## 26/11/2026 (tarda mattinata)
 **Fatto**
 - **Maiale rimodellato** (Fede: "sembra un tapiro"): corpo più corto (1,15 m) e alto davanti, spalle robuste e prosciutti pieni, testa a cuneo con guance e mascella, grugno a disco tagliato netto (nuovo volume `Disco` in `animali.py`), orecchie grandi e dritte, zampe corte, coda con il ciuffo, cresta di setole. Foto `docs/immagini/maiale-26-11.jpg`; `animali-pelo-26-11.jpg` rifatta. `test/foto_animali.gd` ha un modo per una specie sola da vicino (quarto argomento: il nome della specie). Verifiche degli asset e della partita superate.
