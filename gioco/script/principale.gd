@@ -48,13 +48,23 @@ var _segni_dighe: Array[Label3D] = []
 var _stato_alberi := ""
 var _inizio_calcolo_alberi := -1
 var _salvataggio_alberi := -1
+## Registro tecnico (voce B del todo): solo nel gioco vero, non nelle verifiche e nelle foto.
+var registro: Registro
 
 
 func _ready() -> void:
+	if Registro.per_questo_avvio():
+		registro = Registro.new()
+		registro.name = "Registro"
+		add_child(registro)
+		registro.avvia(self)
+	var t_mappa := Time.get_ticks_msec()
 	dati = load(PERCORSO_MAPPA) as MappaDati
 	if dati == null:
 		push_error("Mappa non trovata: " + PERCORSO_MAPPA)
 		return
+	_registra("caricamento", "mappa %s in %d ms" % [dati.nome, Time.get_ticks_msec() - t_mappa])
+	var t_scena := Time.get_ticks_msec()
 	_crea_ambiente()
 	terreno = Terreno.new()
 	terreno.name = "Terreno"
@@ -87,6 +97,7 @@ func _ready() -> void:
 	var t0 := Time.get_ticks_msec()
 	if alberi.carica_cache():
 		_stato_alberi = "alberi dalla cache in %d ms" % (Time.get_ticks_msec() - t0)
+		_registra("caricamento", _stato_alberi)
 	else:
 		_inizio_calcolo_alberi = t0
 		_stato_alberi = "calcolo degli alberi in corso"
@@ -97,6 +108,13 @@ func _ready() -> void:
 	add_child(partita)
 	partita.avvia(self)
 	imposta_modo(0)
+	_registra("caricamento", "scena pronta in %d ms" % (Time.get_ticks_msec() - t_scena))
+	_registra("partita", "mappa %s · seme %d" % [dati.nome, partita.seme])
+
+
+func _registra(tipo: String, testo: String) -> void:
+	if registro:
+		registro.evento(tipo, testo)
 
 
 func _crea_ambiente() -> void:
@@ -219,6 +237,7 @@ func _process(delta: float) -> void:
 		_stato_alberi = "alberi calcolati in %.1f s" % ((Time.get_ticks_msec() - _inizio_calcolo_alberi) / 1000.0)
 		_inizio_calcolo_alberi = -1
 		_salvataggio_alberi = WorkerThreadPool.add_task(alberi.salva_cache, false, "Cache degli alberi")
+		_registra("caricamento", _stato_alberi)
 	_tempo_prestazioni += delta
 	if hud and _tempo_prestazioni > 0.5:
 		_tempo_prestazioni = 0.0
@@ -312,6 +331,14 @@ func _unhandled_input(ev: InputEvent) -> void:
 				annulla()
 			KEY_Y:
 				_azione("anni")
+			KEY_F3:
+				# Finestra Debug del registro tecnico (decisione di Fede del 26/11/2026).
+				if registro:
+					registro.apri_finestra(not registro.finestra_aperta())
+			KEY_F9:
+				# Segnalibro: "qui c'è qualcosa", con ora, camera e foto dello schermo.
+				if registro:
+					registro.segnalibro()
 			KEY_SPACE:
 				partita.pausa_o_riprendi()
 			KEY_EQUAL, KEY_KP_ADD:

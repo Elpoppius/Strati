@@ -106,7 +106,12 @@ Sono una prima serie (proposta di Claude), da confermare con Fede.
 | fps, alberi (livello), cache | in alto a destra | prestazioni, per le prove sui PC |
 
 ## Tasti
-1–8 mappe · G griglia · I isoipse · F fondare · Z zona agricola · C campo · N pascolo · B bosco sacro · V sentiero · H granaio · L legnaia · K capanno da pesca · T posta di caccia · O luogo sacro · Spazio pausa o riprendi · + e − velocità del tempo · X demolisci · P politiche · R rapporti di forza · Y +10 anni · [ e ] raggio dello strumento · Esc o clic destro chiude il pannello di focus o le politiche, chiude la catena dei sentieri o toglie lo strumento · Q E ruota · rotella zoom · tasto destro trascinato, tasto centrale o WASD sposta · Home torna al sito.
+1–8 mappe · G griglia · I isoipse · F fondare · Z zona agricola · C campo · N pascolo · B bosco sacro · V sentiero · H granaio · L legnaia · K capanno da pesca · T posta di caccia · O luogo sacro · Spazio pausa o riprendi · + e − velocità del tempo · X demolisci · P politiche · R rapporti di forza · Y +10 anni · [ e ] raggio dello strumento · Esc o clic destro chiude il pannello di focus o le politiche, chiude la catena dei sentieri o toglie lo strumento · Q E ruota · rotella zoom · tasto destro trascinato, tasto centrale o WASD sposta · Home torna al sito · F3 finestra Debug · F9 segnalibro nel registro tecnico.
+
+## Registro tecnico e finestra Debug (decisioni di Fede del 26/11/2026)
+- Non fa parte dell'interfaccia del giocatore: serve alle prove. **F3** apre e chiude una piccola finestra in alto a destra, sotto la striscia dell'anno, nello stile dell'HUD: in testa "DEBUG · F3 chiude · F9 segnalibro", i numeri dal vivo (fotogrammi al secondo e minimo, fotogramma più lento, chiamate di disegno, memoria, alberi, animali e figure, zoom, anno), dove si salva il registro, e le **prove da verificare** come interruttori con il quadratino (vuoto □, pieno ■). Ogni spunta finisce nel registro con l'ora. Le caselle non prendono lo Spazio, che resta alla pausa.
+- **F9** scrive un segnalibro nel registro (ora, posizione e zoom della camera) e salva accanto una foto dello schermo; il messaggio in basso lo conferma.
+- Il registro: `script/registro.gd`, descritto in `CLAUDE.md` e nella voce B di `todo.md`. Foto di controllo: `test/foto_registro.gd`.
 
 ## Specchietti in gioco (decisione di Fede del 26/11/2026)
 Poche parole e barre; il perché esteso al passaggio del puntatore. Il gioco non si ferma.

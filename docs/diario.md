@@ -2,6 +2,21 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (sera, ripresa) — registro tecnico in gioco (voce B)
+**Fatto**
+- **Registro tecnico** (`gioco/script/registro.gd`, classe `Registro`): il gioco scrive da solo un file di testo per sessione in `D:\Godot\Strati\Registro`, con ripiego su `user://registro/` dichiarato nella prima riga. Si tengono le ultime 10 sessioni. In testa ci sono commit, Godot, sistema, scheda video e driver, renderer e risoluzione. Ogni 10 s una riga di numeri: fotogrammi al secondo medi e minimo, fotogramma più lento, disegni, memoria, zoom, anno, alberi, animali, figure. In mezzo gli eventi: caricamenti, fotogrammi sopra 100 ms con cosa stava succedendo, errori e avvisi di Godot, spunte, segnalibri. Parte solo nel gioco vero, non nelle verifiche e nelle foto. La cartella `Registro/` è nel `.gitignore`.
+- **F3, finestra Debug** in alto a destra, nello stile dell'HUD: numeri dal vivo e le otto prove aperte come interruttori a quadratino; ogni spunta va nel registro con l'ora. **F9, segnalibro:** ora, camera e foto dello schermo accanto al registro. Foto `docs/immagini/registro-debug-26-11.jpg`, script `test/foto_registro.gd`.
+- `Partita.seme` ricorda il seme della partita, per poterla rifare.
+- Nuova verifica `test/verifica_registro.gd`, la decima (l'elenco in `CLAUDE.md`). Corretto un controllo instabile di `verifica_partita.gd`, il prestigio delle famiglie: chiedeva che almeno metà delle case avesse il prestigio e falliva in circa una partita su tre, a seconda del seme, anche senza le modifiche di oggi. Ora controlla che ce l'abbiano tutte le case nate prima dell'ultimo anno. Tutte le 10 verifiche superate. Le dinamiche non cambiano, quindi niente partite "umane".
+- Documenti: `CLAUDE.md` (base del gioco, verifiche), `hud.md` (tasti F3 e F9, finestra Debug), `todo.md` (voce B fatta).
+
+**Decisioni** (Fede)
+- Registro scritto ora con il riepilogo così com'era ("Scrivi il registro ora"). La lettura dal PC si fa quando Fede è al PC e lo segnala (oggi era da app, con il PC spento).
+
+**Prossimo passo**
+- Fede, al PC: Pull, avviare il gioco (la cartella si crea da sola), giocare con F3 aperta quando serve, F9 dove c'è qualcosa; poi dire a Claude che è al PC.
+- Claude: allora chiedere l'accesso a `D:\Godot\Strati\Registro` con l'app desktop e leggere il registro. Intanto voce 4, scorrerie (prima il riepilogo).
+
 ## 26/11/2026 (chiusura della giornata) — todo riordinato, registro tecnico sulla carta
 **Fatto**
 - Todo aggiornato: ordine delle voci (B, 4, 5, 9, 6, 10, prova fisica), prove aperte di Fede, proposte di Claude in attesa di uno sguardo, voce 7 chiusa.

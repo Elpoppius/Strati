@@ -13,6 +13,8 @@ var sim: SimVillaggio
 var vista: VistaVillaggio
 var scena: Node  # la scena principale (hud, uso, camera, dati)
 var velocita := 0
+## Seme della simulazione (scritto nel registro tecnico, per rifare la stessa partita).
+var seme := 0
 ## Sentieri come in Cities: Skylines (decisione di Fede): inizio libero, oppure dal punto più vicino
 ## della rete se è acceso "Collega alla rete".
 var inizio_sentiero := Vector2i(-1, -1)
@@ -31,9 +33,10 @@ var _attesa_conseguenze := 0.0
 var _chiave_conseguenze := []
 
 
-func avvia(s: Node, seme: int = -1) -> void:
+func avvia(s: Node, seme_voluto: int = -1) -> void:
 	scena = s
-	sim = SimVillaggio.new(s.dati, seme if seme >= 0 else int(Time.get_unix_time_from_system()) % 100000)
+	seme = seme_voluto if seme_voluto >= 0 else int(Time.get_unix_time_from_system()) % 100000
+	sim = SimVillaggio.new(s.dati, seme)
 	var uso: UsoSuolo = s.uso
 	var dati: MappaDati = s.dati
 	# La caccia conta solo il bosco ancora in piedi (tagli e campi lo tolgono).

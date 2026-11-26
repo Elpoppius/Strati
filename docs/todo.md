@@ -6,16 +6,16 @@ Legenda: `[x]` fatto · `[~]` in parte · `[ ]` da fare · **(?)** serve una dec
 
 ## Come si lavora (vale per ogni voce)
 1. **Prima di toccare il codice:** riepilogo a Fede di cosa si farà e attesa del suo ok (è una sua regola). Le proposte non confermate si segnano come tali.
-2. **Dopo:** tutte le 9 verifiche (`CLAUDE.md`, "Comandi utili"); poi, se la voce tocca le dinamiche, le prove con i **giocatori "umani"** (`test/giocatore_umano.gd`, quattro profili: è la base dei test, decisione di Fede del 25/11/2026) e il **registro degli avvisi** (`test/registro_avvisi.gd`) per il ritmo. I giocatori automatici devono imparare a usare ogni strumento nuovo: i gesti comuni stanno in `test/aiuti_giocatori.gd`.
+2. **Dopo:** tutte le 10 verifiche (`CLAUDE.md`, "Comandi utili"); poi, se la voce tocca le dinamiche, le prove con i **giocatori "umani"** (`test/giocatore_umano.gd`, quattro profili: è la base dei test, decisione di Fede del 25/11/2026) e il **registro degli avvisi** (`test/registro_avvisi.gd`) per il ritmo. I giocatori automatici devono imparare a usare ogni strumento nuovo: i gesti comuni stanno in `test/aiuti_giocatori.gd`.
 3. **Traguardi** da rispettare (`era-origini.md`, § 9): circa 2–3 pause a partita (si ferma solo per le scelte), poche notifiche, carestie rare e leggibili, nessun abbandono al livello medio, nucleo 100–300 abitanti, territorio fino a 600–800 per chi gioca molto bene.
 4. **Alla fine:** voce in cima al diario, todo aggiornato, commit e push.
 
 ## A che punto siamo (26/11/2026, fine sessione)
-**Ordine (proposto da Claude e accolto da Fede il 26/11/2026 sera):** B (registro tecnico in gioco, richiesta di Fede; rimandato a dopo, da riprendere quando lo dice Fede) → 4 (scorrerie) → 5 (strade, con le figure sui sentieri) → 9 (base tecnica, con il salvataggio) → 6 (evento soglia e passo elastico: chiude l'epoca, va per ultima) → 10 (menù delle impostazioni) → prova fisica di Fede. In parallelo, sulla carta: l'Età industriale.
+**Ordine (proposto da Claude e accolto da Fede il 26/11/2026 sera):** B (registro tecnico in gioco: **fatto** il 26/11/2026 sera, resta la prima lettura dal PC di Fede) → 4 (scorrerie) → 5 (strade, con le figure sui sentieri) → 9 (base tecnica, con il salvataggio) → 6 (evento soglia e passo elastico: chiude l'epoca, va per ultima) → 10 (menù delle impostazioni) → prova fisica di Fede. In parallelo, sulla carta: l'Età industriale.
 
 **Divisione del lavoro (Fede, 26/11/2026):** Fede nelle prove si sofferma sulla **direzione artistica**; le questioni tecniche (fotogrammi al secondo, tempi, errori) le raccoglie il registro tecnico della voce B, che Claude legge.
 
-Fatte: le basi della prima epoca e le voci 0 (cantieri visibili), 1 (capanno e posta), 2 (pascolo e animali), 2b (tutorial alle tappe), 3 (luogo sacro, sacerdote, bosco sacro), 7 (popolazione visibile, con viso e spalle rifiniti, scheda della famiglia, umore e prestigio delle famiglie), 8 (mappe tematiche), A (specchietti in gioco). Forme di governo delle epoche 2–4 decise. Restano B, 4, 5, 6, 9, 10 e le prove di Fede.
+Fatte: le basi della prima epoca e le voci 0 (cantieri visibili), 1 (capanno e posta), 2 (pascolo e animali), 2b (tutorial alle tappe), 3 (luogo sacro, sacerdote, bosco sacro), 7 (popolazione visibile, con viso e spalle rifiniti, scheda della famiglia, umore e prestigio delle famiglie), 8 (mappe tematiche), A (specchietti in gioco), B (registro tecnico, 26/11/2026 sera). Forme di governo delle epoche 2–4 decise. Restano 4, 5, 6, 9, 10, la prima lettura del registro e le prove di Fede.
 
 **Stime riviste** (richiesta di Fede del 25/11/2026). Tempi veri del 25/11, dall'ok di Fede al push, presi dai commit:
 
@@ -43,17 +43,14 @@ In tutto **7–10 ore di lavoro di Claude**, cioè 2–3 giornate, più le confe
 
 ## Per chi riprende: il lavoro in ordine
 
-### B. [ ] Registro tecnico in gioco (richiesta di Fede del 26/11/2026; rimandato: "lo teniamo per dopo")
-**Richiesta di Fede:** un registro interno che il gioco salva da solo mentre lui gioca, con le questioni tecniche, così nelle prove lui guarda la direzione artistica e Claude legge il registro.
-**Proposta di Claude (da confermare prima del codice):**
-- **Cartella (Fede, 26/11/2026): `D:\Godot\Strati\Registro`**; un file per sessione di gioco, testo semplice; si tengono gli ultimi 10. Se su un PC il disco D: non c'è o non si può scrivere, il gioco ripiega su `user://registro/` e lo dice nella prima riga.
-- **Accesso alla cartella (Fede):** quando c'è da leggere il registro, Claude chiede l'accesso alla cartella `D:\Godot\Strati\Registro` del PC di Fede con l'app desktop collegata (`device_request_folder_access`), invece di farsi allegare i file.
-- **Finestra Debug in gioco (Fede):** una piccola finestra che si apre e si chiude con un tasto (proposta: F3), con i numeri dal vivo (fotogrammi al secondo, memoria, figure e animali disegnati) e l'elenco delle **prove da verificare** (le prove aperte di questo todo); Fede spunta ciò che ha visto e ogni spunta finisce nel registro con l'ora.
-- **In testa:** PC e scheda video (nome, driver, versione delle API), sistema, risoluzione, versione di Godot e del gioco (commit), mappa e seme.
-- **Ogni 10 secondi, una riga:** fotogrammi al secondo (media e minimo), fotogramma più lento, chiamate di disegno, memoria, zoom, anno e velocità, quanti alberi, animali e figure si disegnano.
-- **Eventi:** fotogrammi sopra i 100 ms con cosa stava succedendo (cambio di zoom, rotazione, anno che passa, strumento), tempi di caricamento (alberi, cache, mappa), errori e avvisi di Godot (anche con il file di log di Godot acceso nelle impostazioni del progetto).
-- **Segnalibro:** un tasto (F9) scrive "segnalibro" nel registro con l'ora e la posizione della camera e salva una foto dello schermo, per segnare "qui c'è qualcosa" senza fermarsi a scrivere.
-- Verifica: una nuova verifica controlla che il registro si scriva, che le righe abbiano i campi giusti e che le spunte della finestra Debug finiscano nel registro. Stima: 40–60 minuti con la finestra Debug.
+### B. [x] Registro tecnico in gioco (richiesta di Fede del 26/11/2026; fatto il 26/11/2026 sera)
+**Fatto** (riepilogo di Claude approvato da Fede: "Scrivi il registro ora"): `script/registro.gd`, descritto in `CLAUDE.md` ("Base del gioco") e in `hud.md`; verifica `test/verifica_registro.gd` (la decima), foto `test/foto_registro.gd`.
+- **Cartella (Fede): `D:\Godot\Strati\Registro`**, creata dal gioco al primo avvio; un file per sessione (`sessione-AAAA-MM-GG-hhmmss.txt`), si tengono gli ultimi 10 con le foto dei loro segnalibri. Se il disco D: non c'è o non si può scrivere, `user://registro/` e la prima riga lo dice. La cartella `Registro/` è nel `.gitignore` (sui PC di Fede sta dentro il repository).
+- **In testa:** commit del gioco (letto da `.git`), versione di Godot, sistema, processore e memoria, scheda video con driver e API, renderer, finestra e schermo, sincronia verticale; poi l'evento PARTITA con mappa e seme.
+- **Ogni 10 secondi, una riga:** ora, fotogrammi al secondo medi e minimo, fotogramma più lento, chiamate di disegno, memoria, memoria video, zoom, anno e velocità, alberi, animali e figure disegnati.
+- **Eventi:** CARICAMENTO (mappa, alberi dalla cache o calcolati, scena pronta), LENTO (fotogrammi sopra 100 ms con il contesto: zoom, rotazione, anno che passa, strumento, finestra di scelta, alberi in calcolo; al massimo 5 per riga, gli altri contati), ERRORE e AVVISO (da Godot, con file e riga), SPUNTA e SPUNTA TOLTA, DEBUG (finestra aperta o chiusa), SEGNALIBRO, FINE.
+- **F3, finestra Debug:** numeri dal vivo e prove da verificare (`Registro.PROVE`, da aggiornare quando cambiano le prove aperte qui sotto). **F9, segnalibro:** ora, camera e foto dello schermo.
+- **Resta:** la prima prova di Fede al PC e la prima lettura: Claude chiede l'accesso alla cartella `D:\Godot\Strati\Registro` con l'app desktop collegata (`device_request_folder_access`) quando Fede dice che è al PC (Fede, 26/11/2026: "appena ti segnalo che sono da PC lo riprendiamo").
 
 ### A. [x] Specchietti in gioco: "Conseguenze" e "Rapporti di forza" — PRIORITÀ 1
 **Fatto il 26/11/2026 pomeriggio** (descrizione in `hud.md` e `prototipo0-godot.md`; foto `docs/immagini/conseguenze-26-11.jpg` e `rapporti-di-forza-26-11.jpg`). Resta la prova di Fede nel gioco. Sotto, il disegno di partenza.
@@ -160,7 +157,7 @@ Si muove verso    terra alle famiglie · più aperta
 Un menù delle impostazioni del gioco, con dentro anche l'opzione dei tutorial (accesi o spenti per le partite nuove). Da progettare con Fede: cosa contiene oltre ai tutorial (per esempio velocità di partenza, qualità grafica, lingua), dove si apre (tasto, voce dell'HUD), dove si salva sul PC.
 
 ## Da decidere con Fede
-- **Prove di Fede, aperte (26/11/2026):** l'ok definitivo sulle animazioni delle persone; la scheda della famiglia (le figure illuminate si vedono abbastanza? altrimenti un segno sopra le teste); fotogrammi al secondo con 400 animali e 150 figure (li raccoglie il registro della voce B).
+- **Prove di Fede, aperte (26/11/2026):** l'ok definitivo sulle animazioni delle persone; la scheda della famiglia (le figure illuminate si vedono abbastanza? altrimenti un segno sopra le teste); fotogrammi al secondo con 400 animali e 150 figure (li raccoglie il registro della voce B). Sono le caselle della finestra Debug (F3).
 - **Proposte di Claude in attesa di uno sguardo (26/11/2026):** i dodici nomi comuni delle famiglie, l'ordine dei desideri ("Vorrebbe"), la cornice bianca della casa; i numeri dell'umore delle famiglie (−12 piena ricordata, −8 zona delle piene, −6 legna lontana, −5 campi stanchi e casale senza sentiero, +3 focolare e luogo sacro); i numeri della popolazione visibile (150 figure, 1/2/5 persone per figura, visibili sotto i 450 m).
 - **Menù delle impostazioni (voce 10):** cosa contiene oltre ai tutorial.
 - **Secondario, direzione artistica:** il maiale che sembra un facocero.

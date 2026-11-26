@@ -9,3 +9,5 @@ Thumbs.db
 # Python
 __pycache__/
 *.pyc
+# Registro tecnico del gioco (sui PC di Fede sta in D:\Godot\Strati\Registro)
+Registro/

@@ -236,8 +236,13 @@ func _verifica_famiglia(p: Partita, sim: SimVillaggio) -> void:
 		diversi_umori[roundi(float(umori[l][0]))] = true
 	var media := somma / maxf(1.0, umori.size())
 	controlla(umori.size() == sim.case.size() and absf(media - float(sim.consenso["famiglie"])) < 1.0, "ogni famiglia ha il suo umore, e la media è il consenso delle famiglie (%.1f contro %.1f, %d valori diversi)" % [media, sim.consenso["famiglie"], diversi_umori.size()])
-	# Le case nate dopo l'ultimo anno non hanno ancora prestigio (vale 0).
-	controlla(sim.prestigio_case.size() >= sim.case.size() / 2 and sim.prestigio_case.values().max() > sim.prestigio_case.values().min(), "il prestigio delle famiglie si registra, nascosto, e non è uguale per tutte (%d case su %d, da %.1f a %.1f)" % [sim.prestigio_case.size(), sim.case.size(), sim.prestigio_case.values().min(), sim.prestigio_case.values().max()])
+	# Le case nate nell'ultimo anno non hanno ancora prestigio (vale 0): il prestigio si aggiorna a metà
+	# del passo, e le case nate dopo (o arrivate con gli stranieri) aspettano l'anno dopo. Prima il
+	# controllo chiedeva che almeno metà delle case l'avesse, e falliva quando nell'ultimo anno ne
+	# erano nate molte (circa una partita su tre, a seconda del seme).
+	var vecchie := sim.case.filter(func(l: Vector2i) -> bool: return int(sim.nascita_case.get(l, sim.anno)) < sim.anno - 1)
+	var senza := vecchie.filter(func(l: Vector2i) -> bool: return not sim.prestigio_case.has(l))
+	controlla(sim.prestigio_case.size() >= 2 and senza.is_empty() and sim.prestigio_case.values().max() > sim.prestigio_case.values().min(), "il prestigio delle famiglie si registra, nascosto, e non è uguale per tutte (%d case su %d, %d nate prima dell'ultimo anno e tutte col prestigio, da %.1f a %.1f)" % [sim.prestigio_case.size(), sim.case.size(), vecchie.size(), sim.prestigio_case.values().min(), sim.prestigio_case.values().max()])
 	# Clic su una persona: si apre la sua famiglia, e lei si illumina. La vista va sul villaggio.
 	var ci := sim.mondo_di_px(sim.centro)
 	_s.cam.vai_a(ci.x, ci.y)
