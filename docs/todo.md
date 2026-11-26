@@ -144,7 +144,7 @@ Un menù delle impostazioni del gioco, con dentro anche l'opzione dei tutorial (
 ## Epoche future, sulla carta (in parallelo, 26/11/2026)
 Solo documenti, senza toccare codice o modelli (richiesta di Fede).
 - [x] Sistemi che attraversano le epoche, identità e regime, proprietà, vita delle costruzioni, dinamica calda, sottosuolo: `epoche-future.md` (approvato da Fede il 26/11/2026).
-- [~] Lista di edifici e modelli per epoca: `edifici-per-epoca.md` (proposta di Claude, da rivedere con Fede).
+- [~] Catalogo degli edifici per categoria di gioco, con scopo, epoche e cosa muove: `edifici-per-epoca.md` (proposta di Claude, da rivedere con Fede; la realizzazione dei modelli si decide dopo).
 - [ ] Età industriale sulla carta, con la profondità di `era-origini.md`.
 - [ ] Antichità sulla carta.
 - [ ] Da raffinare: salute e scarti, bilancio della città. Da ragionare: stratificazione in altezza.

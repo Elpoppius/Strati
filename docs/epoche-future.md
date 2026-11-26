@@ -124,7 +124,7 @@ I modelli sono combinazioni delle leve, e **cambiano il verbo del giocatore**. N
 
 Tutto si legge su una mappa dello stato degli edifici.
 
-- **Modelli: uno per struttura, varianti derivate in automatico** (Fede ha ricordato che per ogni struttura ci sono già più modelli). Come gli scheletri dei cantieri nascono dal modello finito:
+- **Modelli: uno per struttura, varianti derivate in automatico** (Fede ha ricordato che per ogni struttura ci sono già più modelli; soluzione con lo shader confermata da Fede il 26/11/2026). Come gli scheletri dei cantieri nascono dal modello finito:
 
 | Variante | Come si ottiene |
 |---|---|
