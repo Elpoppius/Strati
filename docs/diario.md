@@ -13,9 +13,10 @@ Voci più recenti in cima.
 
 **Decisioni** (Fede)
 - Riepilogo della voce 4 approvato ("perfetto tutto"): scorrerie dalla tappa dei 100 abitanti, più rare prima del 4300 a.C.; torre di avvistamento subito; politica "Ai segni di pericolo" con tre opzioni.
+- Niente torre dove non c'è un'altura (Pianura aperta, Dosso nelle paludi): va bene così.
 
 **Prossimo passo**
-- Fede: guardare il modello della torre e rispondere alle due domande nel todo (torre in pianura? pause in più). Al PC: Pull, prova in gioco e registro.
+- Fede: prova in gioco al PC (Pull, F3 e F9 per il registro); dire se la mezza pausa in più per i segni va bene.
 - Claude: voce 5, sentieri che diventano strade (prima il riepilogo).
 
 ## 26/11/2026 (sera, ripresa) — registro tecnico in gioco (voce B)
