@@ -44,7 +44,7 @@ Struttura simmetrica: **6 Ere × 2 epoche** (fino al 25/11/2026 si chiamavano ma
 | Era | Epoca | Periodo indicativo | Si apre con | Chi governa | Sensibilità dominante |
 |---|---|---|---|---|---|
 | Origini | Villaggio | Neolitico | Agricoltura, primi insediamenti stabili | Anziani, capi famiglia | Sopravvivenza, sacro naturale |
-| | Abitato protourbano | Età del Bronzo e del Ferro | Metalli, scambi a lunga distanza | Capi guerrieri, aristocrazie | Difesa, lignaggio |
+| | Abitato protourbano | Età del Bronzo e del Ferro | Metalli, scambi a lunga distanza | Capi guerrieri, aristocrazie | Difesa, clan |
 | Antichità | Città-stato | VIII–I sec. a.C. circa | Scrittura, contatti mediterranei | Magistrature civiche | Ordine civico e sacro, cittadinanza |
 | | Città imperiale | I sec. a.C. – V sec. d.C. | Integrazione in un impero | Amministrazione municipale, notabili | Monumentalità, ordine, utilità pubblica |
 | Medioevo | Città in contrazione | V–X sec. | Crisi dell'impero, invasioni, epidemie | Vescovo, signore locale | Sicurezza, sacralità |

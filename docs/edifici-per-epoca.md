@@ -41,7 +41,7 @@
 | Edificio | Epoche | Perché lo scelgo (o cosa rivela) | Muove |
 |---|---|---|---|
 | Capanna tonda, casa lunga *(spontaneo)* | 1 | la casa delle famiglie: cresce solo se c'è legna, ed è lo "spazio" dell'Abbondanza | famiglie, Abbondanza |
-| Capanna su impalcato *(spontaneo)* | 2 | le case fitte dentro il recinto: il primo dentro e fuori; il suolo sale con i rifacimenti | lignaggi, famiglie comuni |
+| Capanna su impalcato *(spontaneo)* | 2 | le case fitte dentro il recinto: il primo dentro e fuori; il suolo sale con i rifacimenti | clan, famiglie comuni |
 | Casa a corte *(spontaneo)* | 3–4 | la prima casa in muratura, allineata al reticolo: il lotto diventa regolare | cittadini |
 | Insula *(spontaneo)* | 4 | densità alta in affitto: primi inquilini, incendi e crolli, febbri | plebe, proprietari, salute |
 | Casa di legno tra le rovine *(spontaneo)* | 5 | la città che si restringe e riusa: costa poco, brucia facile | famiglie, rischio incendio |
@@ -60,8 +60,8 @@
 
 | Edificio | Epoche | Perché esiste nel gioco | Muove |
 |---|---|---|---|
-| Casa del capo *(spontaneo)* | 2 | segna il lignaggio dominante: più è grande, più il potere va ai pochi (asse "chi decide") | capi, lignaggi |
-| Tumulo del capo | 2 | prestigio dei morti, che unisce sacro e lignaggio; resta nel paesaggio per millenni | capi, sacerdote, memoria |
+| Casa del capo *(spontaneo)* | 2 | segna il clan dominante: più è grande, più il potere va ai pochi (asse "chi decide") | capi, clan |
+| Tumulo del capo | 2 | prestigio dei morti, che unisce sacro e clan; resta nel paesaggio per millenni | capi, sacerdote, memoria |
 | Domus signorile *(spontaneo)* | 3–4 | la ricchezza visibile in città: la disuguaglianza si legge sulla mappa | famiglie eminenti |
 | Villa rustica *(spontaneo)* | 4 | la grande proprietà in campagna: rendita fuori città; nel crollo diventa castello, pieve o rovina sotto i campi | proprietari, contadini |
 | Villa fortificata *(spontaneo)* | 5–7 | sicurezza privata nel contado: il signore protegge chi lavora la sua terra | signori, contadini |
@@ -78,7 +78,7 @@
 | Capanno da pesca | 1–6 | pesce dal fiume; è il germe dell'approdo | Cibo |
 | Posta di caccia | 1–3 | selvaggina dal bosco; sparisce quando il bosco diventa riserva | Cibo |
 | Stabbio | 1–6 | gli animali: scorta viva, concime, ricchezza che attira le scorrerie | famiglie, Animali |
-| Recinto grande del bestiame | 2 | la ricchezza dei lignaggi in capi: prestigio, ma attira le razzie | lignaggi, sicurezza |
+| Recinto grande del bestiame | 2 | la ricchezza dei clan in capi: prestigio, ma attira le razzie | clan, sicurezza |
 | Riserva di caccia del signore | 5–7 | bosco chiuso ai contadini: prestigio e selvaggina per pochi, meno cibo per molti | signori, contadini |
 | Casa colonica con fienile *(spontaneo)* | 4–10 | chi lavora la terra abita sul fondo: presidia il contado, paga la rendita al proprietario (mezzadria) | contadini, proprietari |
 | Corte agricola con barchessa *(spontaneo)* | 7–9 | la grande azienda agricola: più resa e più rendita, meno contadini | proprietari, braccianti |
@@ -111,7 +111,7 @@
 ## 5. Scambio e denaro
 | Edificio | Epoche | Perché lo scelgo | Muove |
 |---|---|---|---|
-| Area di scambio al guado | 2 | apre allo scambio: metallo e beni di prestigio, ma con lo scambio arrivano malattie e razzie | asse apertura, lignaggi |
+| Area di scambio al guado | 2 | apre allo scambio: metallo e beni di prestigio, ma con lo scambio arrivano malattie e razzie | asse apertura, clan |
 | Mercato con banchi | 3–11 | lo scambio dentro la città: prezzi, ricchezza dei mercanti, vita della piazza | mercanti, famiglie |
 | Mercato chiuso (macellum, mercato coperto) | 4, 9 | lo scambio controllato e igienico | salute, mercanti |
 | Osteria, locanda | 3–9 | chi viaggia si ferma e spende: lo scambio lascia ricchezza, arrivano gli stranieri | mercanti, stranieri |
@@ -198,7 +198,7 @@
 |---|---|---|---|
 | Luogo sacro | 1 | dà voce al sacerdote, rende i presagi più chiari, attira le case | sacerdote, presagi |
 | Bosco sacro (zona) | 1–3 | la riserva: il primo vincolo del gioco | sacerdote, bosco |
-| Sepolture, necropoli | 1–4 | i morti fuori dalle case: memoria dei lignaggi, strato nel sottosuolo | lignaggi, memoria |
+| Sepolture, necropoli | 1–4 | i morti fuori dalle case: memoria dei clan, strato nel sottosuolo | clan, memoria |
 | Santuario con deposito votivo | 2 | ricchezza offerta agli dei in cambio del favore dei sacerdoti; richiama le genti vicine | sacerdote, apertura |
 | Tempio | 3–4 | il culto civico: la legittimità del governo viene dal sacro | magistrati, sacerdoti |
 | Cattedrale | 5–7 | il potere del vescovo; la città le cresce attorno; un cantiere che dura secoli | vescovo, legittimità |

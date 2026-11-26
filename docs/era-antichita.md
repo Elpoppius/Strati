@@ -30,7 +30,7 @@
 | Sensibilità dominante | [Deciso, dai pilastri] ordine civico e sacro, cittadinanza |
 | Sensibilità emergenti | [Proposta] espansione e lusso (preparano l'impero) |
 | Chi governa | [Deciso, dai pilastri] magistrature civiche; forme in fondo a questa sezione |
-| Gruppi | [Deciso, 26/11/2026] cittadini e non cittadini; [Proposta] maggiorenti, sacerdoti |
+| Gruppi | [Deciso, 26/11/2026] cittadini e non cittadini; [Proposta] grandi famiglie, sacerdoti |
 | Regolazione dello spazio | [Deciso, `regolazione-dello-spazio.md`] fondazione pianificata: reticolo, lotti assegnati, confine sacro, spazi pubblici riservati |
 | Risorse | [Deciso, 26/11/2026] tributi e prima moneta |
 | Crisi che la chiude | evento soglia 3, "L'impero arriva" |
@@ -47,7 +47,7 @@
 
 ### Meccaniche
 **[Proposta]**
-- **La cittadinanza** è la leva nuova. Chi è cittadino decide (vota, conta nel consenso) e può avere terra nei lotti assegnati; chi non lo è lavora e paga, ma non decide. Allargarla sposta l'asse "chi decide" verso molti e alza l'apertura, ma scontenta i maggiorenti; restringerla fa il contrario e accumula peso latente tra i non cittadini. È il dilemma dell'evento soglia 2 che continua per tutta l'epoca.
+- **La cittadinanza** è la leva nuova. Chi è cittadino decide (vota, conta nel consenso) e può avere terra nei lotti assegnati; chi non lo è lavora e paga, ma non decide. Allargarla sposta l'asse "chi decide" verso molti e alza l'apertura, ma scontenta le grandi famiglie; restringerla fa il contrario e accumula peso latente tra i non cittadini. È il dilemma dell'evento soglia 2 che continua per tutta l'epoca.
 - **Il reticolo e la città vecchia.** Il reticolo nasce dove la città si rifonda. Il tessuto del protourbano resta: si può tracciare il reticolo accanto (una città doppia, che più avanti si salda) o ridisegnare sopra il vecchio (costa espropri e memoria, ma ordina tutto). È la prima forma mite della dinamica calda; quella vera arriva nell'epoca 4.
 - **Il primo bilancio.** Entrate: tributi sulla terra e sul mercato. Spese: tempio, mura, piazza, porto. Nessun debito ancora.
 - **Le colonie.** Quando la città è piena, una parte dei cittadini parte per fondare una colonia: prende il posto di "Emigrare" del villaggio. Alleggerisce la pressione e porta legami di scambio, ma la città perde braccia e consenso di chi resta.
@@ -55,14 +55,14 @@
 - **Guerre con le città vicine** (astratte, come il mondo esterno): attirate dalla ricchezza e dai confini contesi; difendono mura e coesione.
 
 ### Forme di governo
-**[Proposta, 26/11/2026]** Nomi che descrivono chi decide, mai etichette politiche. Nascono dalla forma dell'epoca 2 e dalla scelta sulla cittadinanza dell'evento soglia 2.
+**[Deciso, 26/11/2026]** (Fede; "maggiorenti" è desueto, quindi Consiglio delle grandi famiglie) Nomi che descrivono chi decide, mai etichette politiche. Nascono dalla forma dell'epoca 2 e dalla scelta sulla cittadinanza dell'evento soglia 2.
 | Forma | Da dove nasce | Chi decide | Cosa permette | Rischio |
 |---|---|---|---|---|
-| **Assemblea dei cittadini** | Comunità, cittadinanza larga | i cittadini riuniti, magistrati eletti per un anno | opere condivise, consenso largo | decisioni lente, maggiorenti scontenti |
-| **Consiglio dei maggiorenti** | Consiglio dei lignaggi, cittadinanza stretta | poche famiglie | scelte rapide, scambi, grandi famiglie che pagano le opere | non cittadini scontenti, peso latente |
-| **Capo sacro della città** | Casa dominante con sacerdoti forti | una persona a vita, scelta tra i maggiorenti e legata alla legge sacra | grandi opere sacre, stabilità | legata ai presagi: un capo "sfavorito dagli dei" perde legittimità |
+| **Assemblea dei cittadini** | Comunità, cittadinanza larga | i cittadini riuniti, magistrati eletti per un anno | opere condivise, consenso largo | decisioni lente, grandi famiglie scontente |
+| **Consiglio delle grandi famiglie** | Consiglio dei clan, cittadinanza stretta | poche famiglie | scelte rapide, scambi, le famiglie che pagano le opere | non cittadini scontenti, peso latente |
+| **Capo sacro della città** | Casa dominante con sacerdoti forti | una persona a vita, scelta tra le grandi famiglie e legata alla legge sacra | grandi opere sacre, stabilità | legata ai presagi: un capo "sfavorito dagli dei" perde legittimità |
 
-**Signore della città** non è una forma di partenza: è l'esito di una crisi. Quando la tensione tra maggiorenti e popolo è alta, qualcuno prende il potere con l'appoggio del popolo contro i maggiorenti. Permette di fare in fretta e contro i pochi, ma la legittimità è fragile e la tensione resta.
+**Signore della città** non è una forma di partenza: è l'esito di una crisi. Quando la tensione tra grandi famiglie e popolo è alta, qualcuno prende il potere con l'appoggio del popolo contro le grandi famiglie. Permette di fare in fretta e contro i pochi, ma la legittimità è fragile e la tensione resta.
 
 ### Eventi e presagi
 **[Deciso, dai pilastri]**
@@ -116,7 +116,7 @@
 - **La via consolare** ha la massima forza del tracciato: la crescita le si allinea, i borghi nascono lungo di essa.
 
 ### Forme di governo
-**[Proposta, 26/11/2026]** Dipendono dall'esito dell'evento soglia 3.
+**[Deciso, 26/11/2026]** Dipendono dall'esito dell'evento soglia 3.
 | Forma | Da dove nasce | Chi decide | Cosa permette | Rischio |
 |---|---|---|---|---|
 | **Città alleata** | alleanza presto | magistrati propri, con le leggi della città | autonomia ampia, tributi bassi | poche grandi opere dall'impero |

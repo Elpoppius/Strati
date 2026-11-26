@@ -163,13 +163,13 @@ Mappe tematiche da aggiungere [ok di Fede, 25/11/2026]: boschi e selvaggina, abi
 - **Dilemma [Deciso, dai pilastri]:** aprirsi alle vie di passaggio o restare isolati. **[Deciso, 25/11/2026]** Aprirsi dà metallo, ricchezza e crescita, ma più razzie, più malattie e più potere a pochi; restare isolati è più sicuro, ma senza metallo il villaggio resta indietro. La scelta lascia un tratto nella cultura della città (più mercantile o più chiusa e agricola).
 - **Transizione [Deciso, 25/11/2026]:** riepilogo del villaggio; cambiano sensibilità, governo e gruppi; arrivano l'aratro (i campi nuovi rendono di più, l'ammodernamento agricolo si accende), il metallo, il recinto.
 - **[Deciso, 26/11/2026] Il primo governo con un nome** nasce qui, dall'identità costruita nel villaggio: è la prima volta che il giocatore vede che le sue politiche hanno formato la città. Si apre il pannello dell'identità (`epoche-future.md` § 2).
-- **[Proposta, 26/11/2026] Le forme di governo dell'epoca 2** (Fede: monarchia e tirannide sono premature). Nomi che descrivono chi decide, mai etichette politiche:
+- **[Deciso, 26/11/2026] Le forme di governo dell'epoca 2** (Fede: monarchia e tirannide sono premature; "lignaggi" è desueto, quindi Consiglio dei clan). Nomi che descrivono chi decide, mai etichette politiche:
 
 | Forma | Quando nasce | Chi decide | Cosa permette | Rischio |
 |---|---|---|---|---|
 | **Comunità** | raccolto in comune, poca disuguaglianza, anziani contenti | le famiglie riunite | lavori comuni rapidi (recinto, fossato), consenso largo | lentezza nelle scelte, poca difesa |
-| **Consiglio dei lignaggi** | via di mezzo: alcune famiglie più forti | i capi dei lignaggi insieme | concessioni di lotti, alleanze | i lignaggi si contendono il potere |
-| **Casa dominante** | raccolto e animali alle famiglie, disuguaglianza alta | un lignaggio sopra gli altri | prestigio, scambi, opere in fretta | i comuni scontenti, peso latente |
+| **Consiglio dei clan** | via di mezzo: alcune famiglie più forti | i capi dei clan insieme | concessioni di lotti, alleanze | i clan si contendono il potere |
+| **Casa dominante** | raccolto e animali alle famiglie, disuguaglianza alta | un clan sopra gli altri | prestigio, scambi, opere in fretta | i comuni scontenti, peso latente |
 
   **Capo di guerra** non è una forma di partenza ma uno **stato d'emergenza**: con le razzie la comunità o il consiglio affidano il comando a un capo; se la guerra dura, il comando resta e la forma scivola verso la casa dominante. È il germe dei signori delle epoche dopo.
 - **Resta:** tutto ciò che c'è. I sentieri più usati diventano gli assi, il luogo sacro resta come centro, i campi a zappa restano finché non si ammodernano.
@@ -179,11 +179,11 @@ Mappe tematiche da aggiungere [ok di Fede, 25/11/2026]: boschi e selvaggina, abi
 
 | Voce | Contenuto |
 |---|---|
-| Sensibilità dominante | difesa, lignaggio |
+| Sensibilità dominante | difesa, clan |
 | Sensibilità emergenti | scambio, ordine (preparano la città-stato) |
 | Chi governa | capi guerrieri, aristocrazie |
-| Gruppi di consenso | **[Deciso, 25/11/2026]** capi, lignaggi, sacerdote |
-| Regolazione dello spazio | **[Deciso, 25/11/2026]** il **recinto** entra qui come regolazione dello spazio: terrapieno e fossato, un dentro e un fuori. Gli insediamenti cominciano a darsi delle regole. **[Deciso, 26/11/2026]** Le **prime zone**: si dipinge l'abitato dentro o fuori dal recinto, con una sola densità; si riempie dove c'è domanda. La **prima concessione**: il giocatore concede i lotti ai lignaggi (casa del capo, tumulo), il modo concreto di governare gli equilibri di potere |
+| Gruppi di consenso | **[Deciso, 25/11/2026]** capi, clan, sacerdote |
+| Regolazione dello spazio | **[Deciso, 25/11/2026]** il **recinto** entra qui come regolazione dello spazio: terrapieno e fossato, un dentro e un fuori. Gli insediamenti cominciano a darsi delle regole. **[Deciso, 26/11/2026]** Le **prime zone**: si dipinge l'abitato dentro o fuori dal recinto, con una sola densità; si riempie dove c'è domanda. La **prima concessione**: il giocatore concede i lotti ai clan (casa del capo, tumulo), il modo concreto di governare gli equilibri di potere |
 | Strumenti di espansione | recinto o palizzata, alleanze o razzie |
 | Risorse | cibo, legna, braccia, animali, **metallo** (solo con lo scambio), beni di prestigio |
 | Tecniche | aratro in croce; ammodernamento agricolo attivo |
@@ -197,7 +197,7 @@ Mappe tematiche da aggiungere [ok di Fede, 25/11/2026]: boschi e selvaggina, abi
 **Lo schema nell'epoca 2 [Deciso, 26/11/2026]**
 - **Campi:** si aggiungono la **sicurezza** (scorrerie, recinto) e il **prestigio** dei lotti vicini alla casa del capo.
 - **Identità:** compare il pannello, con il primo governo (§ 5).
-- **Gruppi:** capi, lignaggi, sacerdote; famiglie eminenti e comuni. **Bilancio:** beni di prestigio, ancora niente moneta.
+- **Gruppi:** capi, clan, sacerdote; famiglie eminenti e comuni. **Bilancio:** beni di prestigio, ancora niente moneta.
 - **Catene:** scambio → metallo → fabbro → aratro e armi. **Complessi:** casa del capo + santuario + porta. **Conflitti:** eminenti contro comuni.
 - **Dinamica calda:** i villaggi abbandonati diventano rovine. **Sottosuolo:** il suolo sale con i rifacimenti delle case sugli impalcati; il crollo lascia un abitato sepolto.
 - **Vie e trasporti:** ponte, approdo.

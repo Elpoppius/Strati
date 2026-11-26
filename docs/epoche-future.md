@@ -14,7 +14,7 @@ Le epoche non aggiungono sistemi a caso: cambiano la forma degli stessi. È coer
 
 | # | Sistema | Come si trasforma (indicativo) |
 |---|---|---|
-| 1 | **Suolo e proprietà** | regime fondiario fatto di leve (§ 3): terra comune del villaggio → terre dei lignaggi → terra pubblica e lotti assegnati → feudi, enfiteusi, beni della Chiesa, beni comuni (in Emilia le partecipanze agrarie) → proprietà borghese → nel Novecento il bivio tra i modelli → finanza immobiliare |
+| 1 | **Suolo e proprietà** | regime fondiario fatto di leve (§ 3): terra comune del villaggio → terre dei clan → terra pubblica e lotti assegnati → feudi, enfiteusi, beni della Chiesa, beni comuni (in Emilia le partecipanze agrarie) → proprietà borghese → nel Novecento il bivio tra i modelli → finanza immobiliare |
 | 2 | **Acqua** | sorgenti e fiume → pozzi e cisterne → acquedotto e fontane → canali, chiuse e mulini → pozzi neri → fogna e acquedotto moderni → depurazione e fiumi riaperti. L'archetipo pedecollinare si presta ai canali (riferimento: chiusa di Casalecchio, canale di Reno, porto del Navile); la mappa ha già i siti per le dighe e l'energia dell'acqua |
 | 3 | **Vie** (l'infrastruttura fisica, che resta come strato) | sentiero → strada → via lastricata e reticolo → vicoli e portici → rettifilo → boulevard → tangenziale → zone pedonali. Comprende ponti, canali navigabili, binari |
 | 4 | **Trasporti** (i servizi che usano le vie) | barche sul canale, carri, diligenze, tram, treni, autobus, metropolitana, bici condivise. Ognuno ha un gestore (privato, comunale, dello Stato), che si lega al regime (§ 2–3). La ferrovia sta nei due sistemi: i binari sono Vie, i treni Trasporti, la stazione è il nodo. Anche i binari del tram tolti restano nello strato |
@@ -72,7 +72,7 @@ Un regime fatto di quattro leve; ogni epoca ha un regime di partenza, e si spost
 
 | Leva | Domanda | Esempi |
 |---|---|---|
-| Chi possiede | di chi è la terra | comunità, lignaggi, Chiesa e signore, privati, cooperative, Stato, fondi |
+| Chi possiede | di chi è la terra | comunità, clan, Chiesa e signore, privati, cooperative, Stato, fondi |
 | Come passa di mano | come cambia proprietario | assegnazione, eredità, compravendita, esproprio, collettivizzazione |
 | Chi incassa la rendita | chi guadagna quando un luogo vale di più | il proprietario, la città (tasse, oneri), lo Stato, nessuno |
 | Sicurezza di chi abita | quanto è facile mandare via chi ci vive | affitto libero, affitto calmierato, casa pubblica, proprietà |
@@ -88,7 +88,7 @@ I modelli sono combinazioni delle leve, e **cambiano il verbo del giocatore**. N
 | Cooperativo, beni comuni | cooperative, comunità | dà terra e regole ai gruppi | stabilità, radicamento | lentezza, chiusura verso chi arriva |
 
 ## 4. Gruppi sociali e politica
-- **Tre livelli:** **gruppi sociali** (chi sono le persone, dove abitano, cosa vogliono: eminenti e comuni, cittadini e stranieri, popolo e famiglie, borghesi e operai, residenti, pendolari e turisti) → **organizzazioni** (come si fanno sentire: lignaggi, fazioni, corporazioni, Chiesa, partiti, sindacati, comitati, investitori) → **regime** (chi conta e quanto).
+- **Tre livelli:** **gruppi sociali** (chi sono le persone, dove abitano, cosa vogliono: eminenti e comuni, cittadini e stranieri, popolo e famiglie, borghesi e operai, residenti, pendolari e turisti) → **organizzazioni** (come si fanno sentire: clan, fazioni, corporazioni, Chiesa, partiti, sindacati, comitati, investitori) → **regime** (chi conta e quanto).
 - Il regime decide anche quali organizzazioni contano: in uno Stato socialista la Chiesa non ha peso politico (ma resta come peso latente, § 2).
 - **I gruppi abitano luoghi**, quindi ogni scelta urbanistica è politica dove la fai: uno sventramento sposta un gruppo, e con lui i suoi voti e il suo consenso, che finiscono in periferia (Fede: "eccellente"). Senza questo, Haussmann e la gentrificazione non si possono giocare.
 - Regime politico e regime fondiario sono i due assi della **costituzione della città**; cambiano agli eventi soglia, con un dilemma, e nelle crisi.

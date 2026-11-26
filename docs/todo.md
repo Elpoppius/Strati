@@ -10,8 +10,8 @@ Legenda: `[x]` fatto · `[~]` in parte · `[ ]` da fare · **(?)** serve una dec
 3. **Traguardi** da rispettare (`era-origini.md`, § 9): circa 2–3 pause a partita (si ferma solo per le scelte), poche notifiche, carestie rare e leggibili, nessun abbandono al livello medio, nucleo 100–300 abitanti, territorio fino a 600–800 per chi gioca molto bene.
 4. **Alla fine:** voce in cima al diario, todo aggiornato, commit e push.
 
-## A che punto siamo (26/11/2026, mattina tardi)
-**Ordine (Fede, 26/11/2026 pomeriggio):** le voci A (specchietti in gioco) e 7 (popolazione visibile) sono fatte, in attesa della prova di Fede; ora le altre voci aperte (4, 5, 6, 9, 10).
+## A che punto siamo (26/11/2026, sera)
+**Ordine (Fede, 26/11/2026 pomeriggio):** le voci A (specchietti in gioco) e 7 (popolazione visibile, con viso e spalle rifiniti) sono fatte, in attesa della prova di Fede; ora le altre voci aperte (4, 5, 6, 9, 10). Forme di governo delle epoche 2–4 decise.
 
 Fatte e collaudate le basi della prima epoca e le voci 0 (cantieri visibili), 1 (capanno e posta), 2 (pascolo e animali: restano la prova di Fede dei fotogrammi al secondo e due domande), 3 (luogo sacro, sacerdote, bosco sacro) e 8 (mappe tematiche). Restano le voci 4, 5, 6, 7, 9 e 10 (menù delle impostazioni). Fatta anche la 2b (tutorial alle tappe).
 
@@ -89,8 +89,6 @@ Si muove verso    terra alle famiglie · più aperta
   - rotazione del modello `atan2(-v.x, -v.y)`, con `v` la direzione verso l'acqua o il bosco; togliere gli alberi attorno in un cerchio un po' largo (un pioppo della riva nascondeva il capanno).
 - **Note sui modelli:** dopo l'importazione, nei `.import` delle texture tenere `detect_3d/compress_to=0`; `villaggio.py` riesporta tutti i modelli e `fossa_silo.glb` cambia senza motivo: rimetterlo com'era con `git checkout`. Le falde dei tetti si creano nell'origine, si inclinano e poi si spostano. A ogni modello nuovo, mostrare la foto a Fede (la direzione artistica è sua).
 - **Prove:** verifiche nuove in `test/verifica_villaggio.gd` (senza edificio un terzo, con l'edificio pieno, vicinanza); i giocatori automatici costruiscono gli edifici (aggiungere a `aiuti_giocatori.gd` e ai profili: chi conosce il genere subito e nel punto giusto, il casual dove capita); poi giocatori "umani" e registro. Attenzione: togliere due terzi di caccia e pesca a chi non costruisce cambia la crescita dei primi decenni.
-
-**Da fare all'inizio della prossima sessione:** rifare `test/giocatore_umano.gd` dopo il sacerdote contrariato senza luogo sacro (25/11/2026 notte, partite interrotte per il limite di utilizzo; registro e verifiche del villaggio superati) e aggiornare `sessioni-giocatori.md`.
 
 ### 2. [x] Pascolo e animali (con il bestiame visibile)
 **26/11/2026, mattina tardi** (richieste di Fede): animali rifatti una terza volta, con corpo unico, pelo e carte di pelo sui riferimenti di Age of Empires IV, tre manti per specie e due livelli di dettaglio (`asset.md`); animazioni (passo, brucare, orecchie, coda) e movimento da un punto all'altro (accelerazione, curve, passo lungo, gregge in fila sciolta); **campo stanco visibile** fatto (proposta confermata). Confermate anche le proposte del tasto N, dei greggi uno per stabbio e della riga "si macellano" al massimo ogni 5 anni. **Resta per Fede:** provare i fotogrammi al secondo con 400 animali vicini. Decise da Fede (26/11/2026): il sacerdote chiede il luogo sacro quando se ne sblocca la costruzione (dentro il tutorial della tappa, voce 2b); i greggi restano come sono. Maiale rimodellato il 26/11 (sembrava un tapiro). Fede (26/11/2026, dopo la correzione della brucatura): "ora ci siamo"; l'ultima verifica la fa nella prova in gioco. **Secondario, da rivedere più avanti:** il maiale sembra un po' un facocero (meno testa a cuneo esagerata, criniera più bassa, corpo meno sbilanciato sul davanti).
@@ -180,10 +178,10 @@ Solo documenti, senza toccare codice o modelli (richiesta di Fede).
 - [ ] Età industriale sulla carta, con la profondità di `era-origini.md`.
 - [x] Prime due Ere riviste con lo schema (26/11/2026, ok di Fede): `era-origini.md` (§ 4 "Lo schema nel villaggio", § 5 primo governo, § 6 zone e concessione) e nuovo `era-antichita.md`.
 - [x] Specchietto riassuntivo: `specchietto.md`.
-- [ ] Nomi delle forme di governo (epoche 2–4): proposta di Claude, da confermare con Fede.
+- [x] Nomi delle forme di governo (epoche 2–4): **decisi** da Fede il 26/11/2026, con Consiglio dei clan (al posto di "lignaggi") e Consiglio delle grandi famiglie (al posto di "maggiorenti"), termini cambiati in tutti i documenti.
 - [ ] Da raffinare: salute e scarti, bilancio della città. Da ragionare: stratificazione in altezza.
 
 ## Per l'abitato protourbano (dopo il villaggio)
 - Recinto o palizzata, con terrapieno e fossato: la regolazione dello spazio della seconda epoca (decisioni di Fede del 24 e 25/11/2026).
-- Gruppi capi, lignaggi, sacerdote; famiglie eminenti e comuni che nascono dalla disuguaglianza creata dal giocatore, con attenzione agli equilibri di potere (`era-origini.md` § 6).
+- Gruppi capi, clan, sacerdote; famiglie eminenti e comuni che nascono dalla disuguaglianza creata dal giocatore, con attenzione agli equilibri di potere (`era-origini.md` § 6).
 - Decisi e scartati: prologo nomade **bocciato** (25/11/2026); inizio al 6000 a.C. (i primi quattro secoli per mettere le pedine).

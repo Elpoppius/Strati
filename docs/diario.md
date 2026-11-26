@@ -2,6 +2,17 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (sera) — forme di governo decise
+**Fatto**
+- Forme di governo delle epoche 2–4 segnate come decise in `era-origini.md` § 5, `era-antichita.md` e `specchietto.md`. "Lignaggi" diventa **clan** e "maggiorenti" diventa **grandi famiglie** in tutti i documenti (forme di governo, gruppi, edifici, proprietà, sensibilità dell'epoca 2).
+
+**Decisioni** (Fede)
+- Forme di governo: tutto bene. "Maggiorenti" e "lignaggi" sono desueti: scelti **Consiglio dei clan** e **Consiglio delle grandi famiglie** (le preferite di Claude); il resto si cambia di conseguenza. I gruppi "grandi famiglie" e "sacerdoti" dell'epoca 3 restano proposte.
+
+**Prossimo passo**
+- Fede: la prova in gioco di persone, animazioni e specchietti.
+- Claude: le voci aperte del todo, nell'ordine che sceglie Fede.
+
 ## 26/11/2026 (sera, più tardi) — persone: viso e spalle
 **Fatto**
 - **Viso** (`strumenti/blender/persone.py`, funzione `viso`): orbite scavate con gli occhi scuri dentro (nuovo volume `Scava` e nuova classe "occhi" nello shader), naso con il dorso e le ali, bocca incisa e labbra, zigomi, mascella e mento (più delicati nelle donne), sopracciglia; barba con le basette; la calotta dei capelli non copre più la fronte.
