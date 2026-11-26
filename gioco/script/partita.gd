@@ -25,6 +25,10 @@ var togli_pascolo := false
 var _pennellata := 0
 var _ultima_velocita := 1
 var _accumulo := 0.0
+## Lo specchietto "Cosa sto facendo" si ricalcola qualche volta al secondo, solo se è cambiato
+## qualcosa (strumento, punto, anno, opzioni).
+var _attesa_conseguenze := 0.0
+var _chiave_conseguenze := []
 
 
 func avvia(s: Node, seme: int = -1) -> void:
@@ -238,6 +242,10 @@ func _process(delta: float) -> void:
 	while not sim.avvisi.is_empty():
 		var a: Dictionary = sim.avvisi.pop_front()
 		hud.notifica(a["testo"], a["pericolo"], a["punto"])
+	_attesa_conseguenze -= delta
+	if _attesa_conseguenze <= 0.0:
+		_attesa_conseguenze = 0.2
+		aggiorna_conseguenze()
 	if sim.in_attesa() and not hud.modale_aperta():
 		_accumulo = 0.0
 		var d: Dictionary = sim.decisioni[0]
@@ -795,14 +803,8 @@ func dati_focus(nome: String) -> Dictionary:
 			d["mappa"] = 1
 			d["testo_mappa"] = "Mostra l'acqua"
 		"Consenso":
-			var c: Dictionary = sim.consenso
-			d["valore"] = str(roundi(sim.legittimita))
-			d["allarme"] = sim.legittimita < 30.0
-			d["descrizione"] = "Ogni gruppo vuole qualcosa: gli anziani il cibo e le usanze, le famiglie il raccolto e le case%s." % (", il sacerdote i presagi e il luogo sacro" if sim.sacerdote_attivo else "")
-			d["parti"] = [["Anziani: le usanze", c["anziani"] / 100.0, str(roundi(c["anziani"]))],
-				["Famiglie: il lavoro", c["famiglie"] / 100.0, str(roundi(c["famiglie"]))]]
-			if sim.sacerdote_attivo:
-				d["parti"].append(["Sacerdote: i presagi", c["sacerdote"] / 100.0, str(roundi(c["sacerdote"]))])
+			# Specchietto dei rapporti di forza (decisione di Fede del 26/11/2026).
+			d.merge(rapporti_di_forza(), true)
 			d["serie"] = serie_di.call("legittimita", 1.0)
 		"Legna":
 			d["valore"] = str(floori(sim.legna))
@@ -821,6 +823,226 @@ func dati_focus(nome: String) -> Dictionary:
 				["Erba libera", sim.erba, "%d%%" % roundi(sim.erba * 100.0)]]
 			d["serie"] = serie_di.call("capi", 1.0)
 	return d
+
+
+## Specchietto dei rapporti di forza (decisione di Fede del 26/11/2026): chi conta e di che umore è.
+## Nel villaggio governano gli anziani, senza un nome di governo (quello arriva all'evento soglia 1).
+const GRUPPI := {
+	"anziani": {"nome": "Anziani", "parole": ["contenti", "tranquilli", "inquieti", "scontenti"], "vuole": "Gli anziani vogliono cibo da parte e il rispetto delle usanze."},
+	"famiglie": {"nome": "Famiglie", "parole": ["contente", "tranquille", "inquiete", "scontente"], "vuole": "Le famiglie vogliono il raccolto, case per tutti e i loro animali."},
+	"sacerdote": {"nome": "Sacerdote", "parole": ["contento", "tranquillo", "inquieto", "scontento"], "vuole": "Il sacerdote vuole il luogo sacro, un bosco sacro grande e i presagi ascoltati."},
+}
+## Come si dice a parole dove spinge ogni asse dell'identità: [verso −1, verso +1].
+const PAROLE_IDENTITA := {
+	"terra": ["terra in comune", "terra alle famiglie"],
+	"apertura": ["più chiusa", "più aperta"],
+	"decide": ["decidono in pochi", "decidono in molti"],
+	"governo": ["ognuno per sé", "regole comuni"],
+}
+
+
+func rapporti_di_forza() -> Dictionary:
+	var pesi := sim.pesi_consenso()
+	var gruppi: Array = []
+	for g in ["anziani", "famiglie", "sacerdote"]:
+		if pesi[g] <= 0.0:
+			continue
+		var c: float = sim.consenso[g]
+		var parole: Array = GRUPPI[g]["parole"]
+		var a := sim.andamento_consenso(g)
+		gruppi.append({"nome": GRUPPI[g]["nome"], "peso": pesi[g] / 0.5, "umore": c,
+			"parola": parole[0 if c >= 70.0 else (1 if c >= 55.0 else (2 if c >= 40.0 else 3))],
+			"freccia": "▲" if a > 3.0 else ("▼" if a < -3.0 else ""), "vuole": GRUPPI[g]["vuole"]})
+	# Il perché di ogni gruppo al passaggio del puntatore: ciò che vuole e le cause di oggi.
+	var cause := sim.cause_di("Consenso")
+	for r in gruppi:
+		var chiave := String(r["nome"]).to_lower()
+		var sue: Array[String] = []
+		for c in cause:
+			if String(c).to_lower().contains(chiave) or (chiave == "famiglie" and String(c).to_lower().contains("famiglia")):
+				sue.append("· " + String(c))
+		r["vuole"] = String(r["vuole"]) + ("\n" + "\n".join(sue) if not sue.is_empty() else "")
+	var te := sim.tensione()
+	return {"valore": str(roundi(sim.legittimita)), "allarme": sim.legittimita < 30.0,
+		"descrizione": "Governano gli anziani.", "gruppi": gruppi,
+		"tensione": [te, "bassa" if te < 0.34 else ("media" if te < 0.67 else "alta")], "verso": verso_identita()}
+
+
+## Dove spingono le usanze di oggi, a parole (al massimo due assi, i più netti).
+func verso_identita() -> String:
+	var assi: Array = []
+	for k in sim.identita_verso:
+		if absf(float(sim.identita_verso[k])) > 0.15:
+			assi.append(k)
+	assi.sort_custom(func(a: String, b: String) -> bool: return absf(float(sim.identita_verso[a])) > absf(float(sim.identita_verso[b])))
+	var parole: Array[String] = []
+	for k in assi.slice(0, 2):
+		parole.append(PAROLE_IDENTITA[k][1 if float(sim.identita_verso[k]) > 0.0 else 0])
+	return " · ".join(parole) if not parole.is_empty() else "nessuna direzione netta"
+
+
+## Apre o chiude lo specchietto dei rapporti di forza (tasto R).
+func apri_rapporti() -> void:
+	var hud: Hud = scena.hud
+	if hud.focus_aperto() == "Consenso":
+		hud.chiudi_focus()
+	elif sim.fondato:
+		hud.mostra_focus(dati_focus("Consenso"))
+
+
+## Specchietto "Cosa sto facendo" (decisione di Fede del 26/11/2026): per lo strumento scelto e il
+## punto sotto il puntatore, chi ci guadagna, chi ci perde, cosa cambia sulla terra, quanto costa e
+## cosa resta. Le stime vengono dalle stesse regole della simulazione; una riga per voce.
+func aggiorna_conseguenze() -> void:
+	var hud: Hud = scena.hud
+	var cmd := hud.comando()
+	var punto = scena.get("punto_corrente")
+	if punto == null or not sim.fondato or sim.finito or cmd == "" or cmd == "fonda":
+		_chiave_conseguenze = []
+		hud.imposta_conseguenze({})
+		return
+	var q: Vector3 = punto
+	var raggio := raggio_strumento(cmd, float(scena.get("raggio_pennello")))
+	var chiave := [cmd, Vector2i(roundi(q.x / 10.0), roundi(q.z / 10.0)), raggio, sim.anno, togli_zona, togli_pascolo,
+		hud.focus_aperto(), hud.politiche_aperte(), hud.modale_aperta(), roundi(sim.legna)]
+	if chiave == _chiave_conseguenze:
+		return
+	_chiave_conseguenze = chiave
+	hud.imposta_conseguenze(conseguenze(cmd, Vector2(q.x, q.z), raggio))
+
+
+func _ettari_testo(ha: float) -> String:
+	return "%s ha" % String.num(ha, 1).replace(".", ",")
+
+
+func conseguenze(cmd: String, punto: Vector2, raggio: float) -> Dictionary:
+	var p := sim.px_da_mondo(punto.x, punto.y)
+	var i := sim.px(p)
+	var bosco := sim.bosco_presente.call(i) as bool
+	var fl := sim.piena(i)
+	var ha := PI * raggio * raggio / 10000.0
+	var nessuno := "nessuno"
+	var poca_legna := func(costo: float) -> bool: return sim.legna - costo < SimVillaggio.COSTO_CASA * 3.0
+	match cmd:
+		"zona", "campi":
+			var nome := "Zona agricola" if cmd == "zona" else "Campo"
+			if cmd == "zona" and togli_zona:
+				return {"titolo": "Togli zona agricola · " + _ettari_testo(ha), "guadagna": nessuno, "perde": nessuno,
+					"territorio": "la terra torna prato; i campi restano", "costo": "nessuno", "resta": "i campi già dissodati"}
+			if not sim.edificabile(i):
+				return {"titolo": nome, "guadagna": nessuno, "perde": nessuno, "territorio": "acqua o palude: qui non si coltiva"}
+			var terra := "si taglia il bosco: legna, meno selvaggina" if bosco else ("nuovi campi quando servono" if cmd == "zona" else "campi nuovi subito")
+			if fl > 0.25:
+				terra += " · il fiume può allagarli"
+			return {"titolo": "%s · %s" % [nome, _ettari_testo(ha)], "guadagna": "Famiglie ▲ · Anziani ▲  (più raccolto)", "perde": nessuno,
+				"territorio": terra, "costo": "gratis; dissodare chiede braccia" if cmd == "zona" else "braccia, subito",
+				"resta": "campi che, lasciati, tornano bosco"}
+		"pascolo":
+			if togli_pascolo:
+				return {"titolo": "Togli pascolo · " + _ettari_testo(ha), "guadagna": nessuno, "perde": nessuno,
+					"territorio": "il bosco potrà ricrescere; gli animali restano", "costo": "nessuno", "resta": "radure ancora aperte"}
+			var alle_famiglie := sim.politica("raccolto") == "famiglie"
+			var terra_pa := "il bosco qui non ricresce" if bosco else "erba per gli animali"
+			if sim._pendio(i):
+				terra_pa += " · pendio: troppi animali erodono"
+			return {"titolo": "Pascolo · " + _ettari_testo(ha),
+				"guadagna": "Famiglie ▲▲  (animali loro: più disuguaglianza)" if alle_famiglie else "Famiglie ▲  (animali, scorta per gli anni cattivi)",
+				"perde": nessuno, "territorio": terra_pa, "costo": "gratis", "resta": "radure aperte, terra concimata"}
+		"sentiero":
+			return {"titolo": "Sentiero", "guadagna": "Famiglie ▲  (i campi lungo la via rendono di più)", "perde": nessuno,
+				"territorio": "una via battuta nel contado", "costo": "braccia", "resta": "i più battuti diventeranno strade"}
+		"granaio":
+			var c := SimVillaggio.COSTO_GRANAIO
+			return {"titolo": "Granaio", "guadagna": "Anziani ▲  (le scorte non si guastano)",
+				"perde": "Famiglie ▼  (meno legna per le case)" if poca_legna.call(c) else nessuno,
+				"territorio": "vicino al centro, dove arriva il raccolto" if fl <= 0.25 else "attento: qui il fiume può arrivare",
+				"costo": "%d di legna · %d anni di lavoro%s" % [roundi(c), SimVillaggio.ANNI_CANTIERE_GRANAIO, "" if sim.legna >= c else " (ne hai %d)" % floori(sim.legna)],
+				"resta": "il primo edificio comune"}
+		"legnaia":
+			var k := sim.legnaia_vicina(punto)
+			if k >= 0:
+				if bool(sim.legnaie[k]["riposo"]):
+					return {"titolo": "Rimetti al lavoro la legnaia", "guadagna": "Famiglie ▲  (di nuovo legna)", "perde": nessuno,
+						"territorio": "si torna a tagliare il bosco attorno", "costo": "braccia", "resta": "la radura si riapre"}
+				return {"titolo": "Lascia ricrescere il bosco", "guadagna": nessuno, "perde": "Famiglie ▼  (meno legna)",
+					"territorio": "il bosco ricaccia dalle ceppaie", "costo": "nessuno", "resta": "un ceduo, di nuovo utile tra decenni"}
+			return {"titolo": "Legnaia", "guadagna": "Famiglie ▲  (legna per case e focolari)", "perde": nessuno,
+				"territorio": "il bosco arretra: meno selvaggina, piene più rapide", "costo": "braccia · %d anni di lavoro" % SimVillaggio.ANNI_CANTIERE_LEGNAIA,
+				"resta": "una radura, poi un ceduo"}
+		"capanno", "posta":
+			var caccia := cmd == "posta"
+			var elenco: Array = sim.poste if caccia else sim.capanni
+			var raggio_r := SimVillaggio.RAGGIO_POSTA if caccia else SimVillaggio.RAGGIO_CAPANNO
+			var vicini := 0
+			for e in elenco:
+				if (e["punto"] as Vector2).distance_to(punto) < raggio_r:
+					vicini += 1
+			var perde_r := nessuno
+			if vicini > 0:
+				perde_r = ("%d %s ▼  (stessa selvaggina)" % [vicini, "posta vicina" if vicini == 1 else "poste vicine"]) if caccia else ("%d %s ▼  (stesso pesce)" % [vicini, "capanno vicino" if vicini == 1 else "capanni vicini"])
+			return {"titolo": "Posta di caccia" if caccia else "Capanno da pesca",
+				"guadagna": "Famiglie ▲  (più selvaggina)" if caccia else "Famiglie ▲  (più pesce)", "perde": perde_r,
+				"territorio": "la selvaggina di questo bosco" if caccia else "il pesce di questo tratto di fiume",
+				"costo": "braccia · %d anni di lavoro" % SimVillaggio.ANNI_CANTIERE_RISORSE,
+				"resta": "un posto di caccia al margine del bosco" if caccia else "il primo approdo sul fiume"}
+		"luogo_sacro":
+			var c_s := SimVillaggio.COSTO_LUOGO_SACRO
+			return {"titolo": "Luogo sacro", "guadagna": "Sacerdote ▲▲  (lo chiede)",
+				"perde": "Famiglie ▼  (meno legna per le case)" if poca_legna.call(c_s) else nessuno,
+				"territorio": "le case gli crescono attorno",
+				"costo": "%d di legna · %d anni di lavoro%s" % [roundi(c_s), SimVillaggio.ANNI_CANTIERE_LUOGO_SACRO, "" if sim.legna >= c_s else " (ne hai %d)" % floori(sim.legna)],
+				"resta": "il centro sacro: poi tempio e piazza"}
+		"bosco_sacro":
+			if not bosco:
+				return {"titolo": "Bosco sacro", "guadagna": nessuno, "perde": nessuno, "territorio": "qui non c'è bosco da proteggere"}
+			var vicino_legnaie := false
+			for l in sim.legnaie:
+				if (l["punto"] as Vector2).distance_to(punto) < SimVillaggio.RAGGIO_LEGNAIA:
+					vicino_legnaie = true
+			var pieno := sim.ettari_bosco_sacro() >= SimVillaggio.ETTARI_BOSCO_SACRO
+			return {"titolo": "Bosco sacro · " + _ettari_testo(ha), "guadagna": "Sacerdote ▲" if pieno else "Sacerdote ▲▲  (lo vuole grande)",
+				"perde": "Famiglie ▼  (legna più lontana)" if vicino_legnaie else nessuno,
+				"territorio": "bosco protetto · legnaie più lontane", "costo": "nessuno", "resta": "nessuno potrà tagliarlo"}
+		"demolisci":
+			return _conseguenze_demolizione(punto, raggio)
+	return {}
+
+
+func _conseguenze_demolizione(punto: Vector2, raggio: float) -> Dictionary:
+	var n_case := 0
+	for c in sim.case:
+		if sim.centro_lotto(c).distance_to(punto) <= raggio:
+			n_case += 1
+	var n_campi := 0
+	for i in sim.campi:
+		if sim.mondo_di_px(sim.px_di(i)).distance_to(punto) <= raggio:
+			n_campi += 1
+	var n_sacri := 0
+	for i in sim.bosco_sacro:
+		if sim.mondo_di_px(sim.px_di(i)).distance_to(punto) <= raggio and sim.bosco_in_piedi(i):
+			n_sacri += 1
+	var luogo := sim.luogo_sacro.x >= 0 and sim.luogo_sacro.distance_to(punto) <= raggio
+	var granaio := sim.granaio.x >= 0 and sim.granaio.distance_to(punto) <= raggio
+	var perde: Array[String] = []
+	var cose: Array[String] = []
+	if n_case > 0 or n_campi > 0:
+		perde.append("Famiglie %s" % ("▼▼" if n_case > 0 else "▼"))
+	if n_case > 0:
+		cose.append("%d %s" % [n_case, "casa" if n_case == 1 else "case"])
+	if n_campi > 0:
+		cose.append("%d %s" % [n_campi, "campo" if n_campi == 1 else "campi"])
+	if luogo or n_sacri > 0:
+		perde.append("Sacerdote %s" % ("▼▼▼" if luogo else "▼▼"))
+		cose.append("il luogo sacro" if luogo else "bosco sacro")
+	if granaio:
+		perde.append("Anziani ▼")
+		cose.append("il granaio")
+	if cose.is_empty():
+		return {"titolo": "Demolisci", "guadagna": "nessuno", "perde": "nessuno", "territorio": "alberi e sentieri nel cerchio, se ci sono",
+			"costo": "irreversibile", "irreversibile": true, "resta": "terra libera: il bosco può ricrescere"}
+	return {"titolo": "Demolisci", "guadagna": "nessuno", "perde": " · ".join(perde),
+		"territorio": "si toglie: " + ", ".join(cose), "costo": "irreversibile", "irreversibile": true,
+		"resta": ("macerie: niente case per %d anni" % SimVillaggio.ANNI_MACERIE) if n_case > 0 else "terra libera: il bosco può ricrescere"}
 
 
 ## Lettura del terreno per gli strumenti della partita (decisione di Fede del 25/11/2026): le voci

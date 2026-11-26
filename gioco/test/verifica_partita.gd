@@ -64,16 +64,21 @@ func _verifica_animali(p: Partita, sim: SimVillaggio) -> void:
 	var brucano := 0
 	var numeri_ok := true
 	var a0: Dictionary = vv._animali[0]
+	# Si conta chi ha brucato e chi ha camminato in tutti i due minuti, non in un istante solo: la
+	# partita della verifica parte ogni volta con un seme diverso (26/11/2026).
+	var ha_brucato := {}
 	for _k in 1200:
 		vv._muovi_animali(0.1)
-		for a in vv._animali:
+		for j in vv._animali.size():
+			var a: Dictionary = vv._animali[j]
 			var v := float(a["vel"])
 			vel_max = maxf(vel_max, v)
 			if is_nan(v) or is_nan((a["pos"] as Vector2).x) or is_nan(float(a["fase"])):
 				numeri_ok = false
+			if float(a["bruca"]) > 0.9:
+				ha_brucato[j] = true
+	brucano = ha_brucato.size()
 	for a in vv._animali:
-		if float(a["bruca"]) > 0.9:
-			brucano += 1
 		if float(a["fase"]) != 0.0:
 			camminano += 1
 	controlla(numeri_ok and vel_max <= VistaVillaggio.VELOCITA_LUNGA + 0.001 and vel_max > 0.2, "gli animali camminano senza scatti (velocità massima %.2f m/s)" % vel_max)
@@ -100,6 +105,62 @@ func _verifica_animali(p: Partita, sim: SimVillaggio) -> void:
 	ritardi.sort()
 	var in_fila: bool = ritardi.size() < 2 or ritardi[-1] - ritardi[0] > 0.5 * (ritardi.size() - 1)
 	controlla(in_fila, "il gregge si sposta in fila sciolta (%d animali, partenze in %.1f s)" % [ritardi.size(), ritardi[-1] - ritardi[0] if not ritardi.is_empty() else 0.0])
+
+
+## Specchietti in gioco (decisione di Fede del 26/11/2026): "Cosa sto facendo" per ogni strumento
+## del villaggio, con poche parole, e "Rapporti di forza" dal pannello del Consenso o con il tasto R.
+func _verifica_specchietti(p: Partita, sim: SimVillaggio, h: Hud) -> void:
+	var c := sim.mondo_di_px(sim.centro)
+	var corte := true
+	var complete := true
+	var senza_numeri_strani := true
+	for cmd in Partita.STRUMENTI:
+		if cmd == "fonda":
+			continue
+		var d := p.conseguenze(cmd, c + Vector2(60, 40), p.raggio_strumento(cmd, 40.0))
+		if d.is_empty() or not d.has("guadagna") or not d.has("perde"):
+			complete = false
+			print("   manca: ", cmd)
+			continue
+		for v in Hud.VOCI_CONSEGUENZE:
+			var testo := String(d.get(v[0], ""))
+			if testo.length() > Hud.MASSIMO_RIGA_CONSEGUENZE:
+				corte = false
+				print("   troppo lunga (%s, %s): %s" % [cmd, v[0], testo])
+			if testo.contains("%"):
+				senza_numeri_strani = false
+	controlla(complete, "ogni strumento del villaggio dice chi ci guadagna e chi ci perde")
+	controlla(corte, "nello specchietto una riga per voce, al massimo %d caratteri" % Hud.MASSIMO_RIGA_CONSEGUENZE)
+	controlla(senza_numeri_strani, "niente percentuali nello specchietto")
+	var dem := p.conseguenze("demolisci", sim.centro_lotto(sim.case[0]), 30.0) if not sim.case.is_empty() else {}
+	controlla(String(dem.get("perde", "")).contains("Famiglie") and bool(dem.get("irreversibile", false)), "demolire le case: perdono le famiglie, ed è irreversibile (%s)" % dem.get("perde", ""))
+	_s.punto_corrente = Vector3(c.x + 60, 0, c.y + 40)
+	h.seleziona_comando("legnaia")
+	p._chiave_conseguenze = []
+	p.aggiorna_conseguenze()
+	controlla(not h.conseguenze().is_empty() and h._pannello_conseguenze.visible, "scelto uno strumento, compare lo specchietto Cosa sto facendo")
+	p.apri_rapporti()
+	controlla(h.focus_aperto() == "Consenso" and not h._pannello_conseguenze.visible, "il tasto R apre i rapporti di forza; lo specchietto dello strumento si fa da parte")
+	var testi := ""
+	for l in h._colonna_focus.find_children("*", "Label", true, false):
+		testi += (l as Label).text + "\n"
+	controlla(testi.contains("RAPPORTI DI FORZA") and testi.contains("Anziani") and testi.contains("TENSIONE") and testi.contains("SI MUOVE VERSO"), "i rapporti di forza dicono peso e umore dei gruppi, tensione e verso dove si va")
+	var r := p.rapporti_di_forza()
+	controlla((r["gruppi"] as Array).size() == (3 if sim.sacerdote_attivo else 2) and float(r["tensione"][0]) >= 0.0 and float(r["tensione"][0]) <= 1.0, "un gruppo per riga, il sacerdote solo quando ha voce")
+	p.apri_rapporti()
+	controlla(h.focus_aperto() == "", "di nuovo R e lo specchietto si chiude")
+	h.seleziona_comando("")
+	p.aggiorna_conseguenze()
+	controlla(h.conseguenze().is_empty(), "senza strumento lo specchietto sparisce")
+	controlla(Tutorial.ha("rapporti"), "c'è la scheda del tutorial per i rapporti di forza")
+	# Gli assi dell'identità seguono le politiche, senza toccare le regole.
+	var prima: float = sim.identita["terra"]
+	var pol: String = sim.politica("raccolto")
+	sim.politiche["raccolto"] = "famiglie"
+	for k in 30:
+		sim._aggiorna_identita()
+	controlla(sim.identita["terra"] > prima and p.verso_identita().contains("terra alle famiglie"), "con il raccolto alle famiglie la città si muove verso la terra alle famiglie (%s)" % p.verso_identita())
+	sim.politiche["raccolto"] = pol
 
 
 ## Campo stanco visibile (proposta confermata da Fede il 26/11/2026): la stanchezza e il maggese
@@ -498,6 +559,7 @@ func _process(_d: float) -> bool:
 		controlla(h.focus_aperto() == nome and p.dati_focus(nome).has("valore"), "pannello di focus per %s" % nome)
 	_s.annulla()
 	controlla(h.focus_aperto() == "", "Esc chiude il pannello di focus")
+	_verifica_specchietti(p, sim, h)
 	# Tappe: il granaio è chiuso finché non si raggiunge la sua tappa.
 	controlla(sim.sbloccato("granaio") or p.scena.hud.find_children("*", "Button", true, false).size() > 0, "il granaio segue le tappe")
 	print("Verifica completata: " + ("nessun errore" if _errori == 0 else "%d errori" % _errori))

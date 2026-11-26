@@ -300,6 +300,10 @@ func _unhandled_input(ev: InputEvent) -> void:
 				_aggiorna_pennello()
 			KEY_P:
 				hud.apri_politiche(not hud.politiche_aperte())
+			KEY_R:
+				# Specchietto dei rapporti di forza (decisione di Fede del 26/11/2026).
+				if partita:
+					partita.apri_rapporti()
 			KEY_ESCAPE:
 				annulla()
 			KEY_Y:

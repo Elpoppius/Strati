@@ -139,6 +139,16 @@ var _voci_strumento: Array = []
 var _pannello_focus: PanelContainer
 var _colonna_focus: VBoxContainer
 var _focus := ""
+## Specchietto "Cosa sto facendo" (decisione di Fede del 26/11/2026): sopra la scheda dello
+## strumento, prima del clic, chi ci guadagna, chi ci perde, cosa cambia sulla terra, il costo e
+## cosa resta. Poche parole: una riga per voce, il resto al passaggio del puntatore.
+var _pannello_conseguenze: PanelContainer
+var _titolo_conseguenze: Label
+var _righe_conseguenze := {}  # voce -> Label del valore
+var _dati_conseguenze := {}
+const VOCI_CONSEGUENZE := [["guadagna", "Chi guadagna"], ["perde", "Chi perde"], ["territorio", "Sul territorio"], ["costo", "Costo"], ["resta", "Resta"]]
+## Larghezza massima di una riga dello specchietto (in caratteri): niente muri di testo.
+const MASSIMO_RIGA_CONSEGUENZE := 52
 ## Indicatori che aprono un pannello di focus con un clic.
 const INDICATORI_CON_FOCUS := ["Popolazione", "Cibo", "Salute", "Abbondanza", "Consenso", "Legna", "Animali"]
 var _colonna_politiche: VBoxContainer
@@ -1213,6 +1223,8 @@ func politica(id: String) -> String:
 func apri_politiche(aperto: bool) -> void:
 	if aperto:
 		chiudi_focus()
+		if _pannello_conseguenze:
+			_pannello_conseguenze.visible = false
 	# Appena sopra la fascia in basso, qualunque sia la sua altezza.
 	var sotto := maxf(_fascia.size.y, ALTEZZA_FASCIA) + 2
 	_pannello_politiche.offset_bottom = -sotto
@@ -1593,6 +1605,8 @@ func mostra_focus(dati: Dictionary) -> void:
 	if politiche_aperte():
 		apri_politiche(false)
 	_focus = String(dati.get("titolo", ""))
+	if _pannello_conseguenze:
+		_pannello_conseguenze.visible = false
 	_riempi_focus(dati)
 	_posiziona_focus()
 	_pannello_focus.visible = true
@@ -1647,7 +1661,7 @@ func _riempi_focus(dati: Dictionary) -> void:
 	var testa := HBoxContainer.new()
 	_colonna_focus.add_child(testa)
 	var k := Label.new()
-	k.text = "FOCUS"
+	k.text = "RAPPORTI DI FORZA" if dati.has("gruppi") else "FOCUS"
 	k.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	k.add_theme_font_override("font", _carattere(true, 1.6))
 	k.add_theme_font_size_override("font_size", 11)
@@ -1675,7 +1689,9 @@ func _riempi_focus(dati: Dictionary) -> void:
 	riga_titolo.add_child(v)
 	if String(dati.get("descrizione", "")) != "":
 		_colonna_focus.add_child(_testo_focus(String(dati["descrizione"]), GRIGIO, 12))
-	var parti: Array = dati.get("parti", [])
+	if dati.has("gruppi"):
+		_riempi_rapporti(dati)
+	var parti: Array = dati.get("parti", []) if not dati.has("gruppi") else []
 	if not parti.is_empty():
 		_colonna_focus.add_child(_titoletto_focus("DI COSA È FATTO"))
 		for p in parti:
@@ -1704,11 +1720,13 @@ func _riempi_focus(dati: Dictionary) -> void:
 			barra.size = Vector2(364.0 * quota, 4)
 			fondo.add_child(barra)
 	var cause: Array = dati.get("cause", [])
-	_colonna_focus.add_child(_titoletto_focus("PERCHÉ"))
-	if cause.is_empty():
-		_colonna_focus.add_child(_testo_focus("Niente di particolare: va tutto come al solito.", BIANCO, 12))
-	for c in cause:
-		_colonna_focus.add_child(_testo_focus("· " + String(c), BIANCO, 12))
+	# Nei rapporti di forza il perché sta al passaggio sopra ogni gruppo (Fede: niente muri di testo).
+	if not dati.has("gruppi"):
+		_colonna_focus.add_child(_titoletto_focus("PERCHÉ"))
+		if cause.is_empty():
+			_colonna_focus.add_child(_testo_focus("Niente di particolare: va tutto come al solito.", BIANCO, 12))
+		for c in cause:
+			_colonna_focus.add_child(_testo_focus("· " + String(c), BIANCO, 12))
 	var serie: Array = dati.get("serie", [])
 	if serie.size() >= 2:
 		_colonna_focus.add_child(_titoletto_focus("ULTIMI %d ANNI" % serie.size()))
@@ -1726,6 +1744,158 @@ func _riempi_focus(dati: Dictionary) -> void:
 		b.add_theme_font_size_override("font_size", 12)
 		b.pressed.connect(func() -> void: mappa_richiesta.emit(mappa))
 		_colonna_focus.add_child(b)
+
+
+## Specchietto dei rapporti di forza (decisione di Fede del 26/11/2026): per ogni gruppo il peso
+## (quanto conta con il governo di oggi) e l'umore (il suo consenso), con la parola e la freccia;
+## poi la tensione e verso dove si muove la città. dati["gruppi"]: [{nome, peso 0–1, umore 0–100,
+## parola, freccia, vuole}]; dati["tensione"]: [0–1, parola]; dati["verso"]: testo.
+func _riempi_rapporti(dati: Dictionary) -> void:
+	var intestazione := HBoxContainer.new()
+	_colonna_focus.add_child(intestazione)
+	for c in [["GRUPPO", 92], ["PESO", 64], ["UMORE", 124], ["", 84]]:
+		var l := _titoletto_focus(c[0])
+		l.custom_minimum_size.x = c[1]
+		intestazione.add_child(l)
+	for g in dati["gruppi"]:
+		var riga := HBoxContainer.new()
+		riga.mouse_filter = Control.MOUSE_FILTER_PASS
+		riga.tooltip_text = String(g.get("vuole", ""))
+		_colonna_focus.add_child(riga)
+		var n := Label.new()
+		n.text = String(g["nome"])
+		n.custom_minimum_size.x = 92
+		n.mouse_filter = Control.MOUSE_FILTER_PASS
+		n.add_theme_font_override("font", _carattere(true))
+		n.add_theme_font_size_override("font_size", 13)
+		riga.add_child(n)
+		riga.add_child(_barra_rapporti(float(g["peso"]), 56, false))
+		var umore := float(g["umore"]) / 100.0
+		riga.add_child(_barra_rapporti(umore, 116, umore < 0.4))
+		var p := Label.new()
+		p.text = String(g["parola"]) + ("  " + String(g["freccia"]) if String(g.get("freccia", "")) != "" else "")
+		p.custom_minimum_size.x = 84
+		p.mouse_filter = Control.MOUSE_FILTER_PASS
+		p.add_theme_font_size_override("font_size", 12)
+		p.add_theme_color_override("font_color", PERICOLO if umore < 0.4 else BIANCO)
+		riga.add_child(p)
+	var tens: Array = dati.get("tensione", [])
+	if not tens.is_empty():
+		var rt := HBoxContainer.new()
+		_colonna_focus.add_child(rt)
+		var lt := _titoletto_focus("TENSIONE")
+		lt.custom_minimum_size.x = 112
+		lt.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		rt.add_child(lt)
+		rt.add_child(_barra_rapporti(float(tens[0]), 160, float(tens[0]) > 0.66))
+		var pt := Label.new()
+		pt.text = String(tens[1])
+		pt.add_theme_font_size_override("font_size", 12)
+		pt.add_theme_color_override("font_color", PERICOLO if float(tens[0]) > 0.66 else BIANCO)
+		rt.add_child(pt)
+	if String(dati.get("verso", "")) != "":
+		var rv := HBoxContainer.new()
+		_colonna_focus.add_child(rv)
+		var lv := _titoletto_focus("SI MUOVE VERSO")
+		lv.custom_minimum_size.x = 112
+		lv.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		rv.add_child(lv)
+		var tv := Label.new()
+		tv.text = String(dati["verso"])
+		tv.clip_text = true
+		tv.custom_minimum_size.x = 252
+		tv.add_theme_font_size_override("font_size", 12)
+		rv.add_child(tv)
+
+
+## Barra sottile dello specchietto: fondo grigio, pieno bianco (rosso se è un allarme).
+func _barra_rapporti(quota: float, larghezza: float, allarme: bool) -> Control:
+	var box := CenterContainer.new()
+	box.custom_minimum_size = Vector2(larghezza + 8, 16)
+	box.mouse_filter = Control.MOUSE_FILTER_PASS
+	var fondo := ColorRect.new()
+	fondo.color = RIGA
+	fondo.custom_minimum_size = Vector2(larghezza, 4)
+	fondo.mouse_filter = Control.MOUSE_FILTER_PASS
+	box.add_child(fondo)
+	var pieno := ColorRect.new()
+	pieno.color = PERICOLO if allarme else BIANCO
+	pieno.size = Vector2(larghezza * clampf(quota, 0.0, 1.0), 4)
+	pieno.mouse_filter = Control.MOUSE_FILTER_PASS
+	fondo.add_child(pieno)
+	return box
+
+
+## Specchietto "Cosa sto facendo": d = {titolo, guadagna, perde, territorio, costo, resta,
+## irreversibile}. Vuoto: lo specchietto sparisce. Si nasconde da solo se sono aperti il focus o le
+## politiche, che occupano lo stesso spazio.
+func imposta_conseguenze(d: Dictionary) -> void:
+	_dati_conseguenze = d
+	if _pannello_conseguenze == null:
+		if d.is_empty():
+			return
+		_crea_conseguenze()
+	if d.is_empty():
+		_pannello_conseguenze.visible = false
+		return
+	_titolo_conseguenze.text = "COSA STO FACENDO · " + String(d.get("titolo", "")).to_upper()
+	for v in VOCI_CONSEGUENZE:
+		var l: Label = _righe_conseguenze[v[0]]
+		var testo := String(d.get(v[0], ""))
+		(l.get_parent() as Control).visible = testo != ""
+		l.text = testo
+		l.tooltip_text = testo
+		l.add_theme_color_override("font_color", PERICOLO if v[0] == "costo" and d.get("irreversibile", false) else BIANCO)
+	_pannello_conseguenze.visible = focus_aperto() == "" and not politiche_aperte() and not modale_aperta()
+	_posiziona_conseguenze()
+
+
+func conseguenze() -> Dictionary:
+	return _dati_conseguenze if _pannello_conseguenze != null and _pannello_conseguenze.visible else {}
+
+
+func _crea_conseguenze() -> void:
+	_pannello_conseguenze = PanelContainer.new()
+	_pannello_conseguenze.anchor_top = 1.0
+	_pannello_conseguenze.anchor_bottom = 1.0
+	_pannello_conseguenze.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_pannello_conseguenze.custom_minimum_size.x = 330
+	_pannello_conseguenze.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_pannello_conseguenze.visible = false
+	_radice.add_child(_pannello_conseguenze)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 3)
+	_pannello_conseguenze.add_child(col)
+	_titolo_conseguenze = _titoletto_focus("COSA STO FACENDO")
+	_titolo_conseguenze.clip_text = true
+	_titolo_conseguenze.custom_minimum_size.x = 298
+	col.add_child(_titolo_conseguenze)
+	for v in VOCI_CONSEGUENZE:
+		var riga := HBoxContainer.new()
+		riga.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		col.add_child(riga)
+		var n := Label.new()
+		n.text = v[1]
+		n.custom_minimum_size.x = 92
+		n.add_theme_font_size_override("font_size", 11)
+		n.add_theme_color_override("font_color", GRIGIO)
+		riga.add_child(n)
+		var l := Label.new()
+		l.clip_text = true
+		l.custom_minimum_size.x = 206
+		l.mouse_filter = Control.MOUSE_FILTER_PASS
+		l.add_theme_font_size_override("font_size", 12)
+		riga.add_child(l)
+		_righe_conseguenze[v[0]] = l
+
+
+## Appena sopra la scheda dello strumento, qualunque sia l'altezza della fascia.
+func _posiziona_conseguenze() -> void:
+	var sotto := maxf(_fascia.size.y, ALTEZZA_FASCIA) + 2
+	_pannello_conseguenze.offset_left = _pannello_descrizione.position.x
+	_pannello_conseguenze.offset_right = _pannello_descrizione.position.x + 330
+	_pannello_conseguenze.offset_bottom = -sotto
+	_pannello_conseguenze.offset_top = -sotto - _pannello_conseguenze.get_combined_minimum_size().y
 
 
 func _titoletto_focus(testo: String) -> Label:

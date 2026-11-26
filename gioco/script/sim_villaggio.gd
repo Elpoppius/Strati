@@ -284,6 +284,19 @@ var scorta_pesce := {}
 ## luogo sacro; fino ad allora i presagi li leggono gli anziani.
 var consenso := {"anziani": 60.0, "famiglie": 60.0, "sacerdote": 60.0}
 var sacerdote_attivo := false
+## Consenso di ogni gruppo negli ultimi anni (per la freccia dello specchietto dei rapporti di forza).
+var storia_consenso := {"anziani": [], "famiglie": [], "sacerdote": []}
+## Identità della città (decisione di Fede del 26/11/2026, `docs/epoche-future.md` § 2): quattro
+## assi nascosti, da −1 a 1, mossi piano dalle politiche. Nel villaggio non cambiano nessuna regola:
+## li legge lo specchietto dei rapporti di forza ("Si muove verso") e, all'evento soglia 1, servono a
+## dare il nome al primo governo. terra: in comune (−1) o alle famiglie (+1); apertura: chiusa (−1) o
+## aperta (+1); decide: pochi (−1) o molti (+1); governo: lascia fare (−1) o regola insieme (+1).
+## identita_verso: dove le politiche di oggi spingono ciascun asse. Numeri: proposta di Claude.
+var identita := {"terra": 0.0, "apertura": 0.0, "decide": 0.0, "governo": 0.0}
+var identita_verso := {"terra": 0.0, "apertura": 0.0, "decide": 0.0, "governo": 0.0}
+## Quanto in fretta l'identità segue le politiche: plastica all'inizio (circa 70 anni per fare metà
+## della strada); nelle epoche dopo diventerà più lenta.
+const PLASTICITA_IDENTITA := 0.01
 ## Luogo sacro (decisioni di Fede del 24–25/11/2026): cerchio di pali attorno a una pietra; si apre
 ## a 100 abitanti, costa legna e braccia con un cantiere, attira le case (germe della piazza). Il
 ## sacerdote diventa il terzo gruppo di consenso con la tappa dei 100 abitanti ed è contrariato finché
@@ -2080,7 +2093,12 @@ func _aggiorna_tappa() -> void:
 			_scrivi("Il sacerdote chiede un luogo sacro: finché non sarà eretto, è contrariato.")
 		_notifica("Nuova tappa: %s (%d abitanti). Si aprono %s." % [t["nome"], t["abitanti"], elenco], false, mondo_di_px(centro))
 		# Tutorial della tappa (Fede, 26/11/2026): il gioco si ferma e spiega le novità.
-		tutorial(t["apre"], "%s (%d abitanti)" % [t["nome"], t["abitanti"]])
+		# Alla tappa dei 60 abitanti anche lo specchietto dei rapporti di forza (Fede, 26/11/2026):
+		# da qui le famiglie cominciano a contare.
+		var schede: Array = t["apre"].duplicate()
+		if "raccolto" in t["apre"]:
+			schede.append("rapporti")
+		tutorial(schede, "%s (%d abitanti)" % [t["nome"], t["abitanti"]])
 
 
 func politica(id: String) -> String:
@@ -2485,6 +2503,11 @@ func passo() -> void:
 		arr.append(get(k))
 		if arr.size() > 200:
 			arr.pop_front()
+	for g in storia_consenso:
+		var arr_g: Array = storia_consenso[g]
+		arr_g.append(consenso[g])
+		if arr_g.size() > 30:
+			arr_g.pop_front()
 	anno += 1
 	if anno >= ANNO_FINE:
 		_fine()
@@ -2548,10 +2571,52 @@ func _aggiorna_consenso() -> void:
 		bonus[g] *= 0.6
 		if absf(bonus[g]) < 0.2:
 			bonus[g] = 0.0
-	var pesi := {"anziani": 0.4, "famiglie": 0.4, "sacerdote": 0.2} if sacerdote_attivo else {"anziani": 0.5, "famiglie": 0.5, "sacerdote": 0.0}
+	var pesi := pesi_consenso()
 	legittimita = 0.0
 	for g in pesi:
 		legittimita += pesi[g] * consenso[g]
+	_aggiorna_identita()
+
+
+## Quanto conta ogni gruppo con il governo di oggi (nel villaggio: gli anziani; il sacerdote dal
+## luogo sacro).
+func pesi_consenso() -> Dictionary:
+	return {"anziani": 0.4, "famiglie": 0.4, "sacerdote": 0.2} if sacerdote_attivo else {"anziani": 0.5, "famiglie": 0.5, "sacerdote": 0.0}
+
+
+## Gli assi dell'identità seguono piano le politiche (non toccano nessuna regola del villaggio).
+func _aggiorna_identita() -> void:
+	var comune := politica("raccolto") == "comune"
+	var apertura: float = {"aperta": 0.6, "caso": 0.1, "chiusa": -0.6}.get(politica("stranieri"), 0.0)
+	identita_verso = {
+		"terra": clampf((-0.5 if comune else 0.5) + 0.5 * disuguaglianza, -1.0, 1.0),
+		"apertura": clampf(apertura + clampf(stranieri_accolti / 200.0, 0.0, 0.3), -1.0, 1.0),
+		"decide": clampf((0.3 if comune else -0.1) - 0.8 * disuguaglianza, -1.0, 1.0),
+		"governo": clampf((0.3 if comune else -0.3) + (0.2 if granaio_pronto() else 0.0), -1.0, 1.0),
+	}
+	for k in identita:
+		identita[k] = clampf(identita[k] + (float(identita_verso[k]) - identita[k]) * PLASTICITA_IDENTITA, -1.0, 1.0)
+
+
+## Tensione tra i gruppi (0–1): quanto sono lontani tra loro i gruppi che contano e quanto è basso
+## il consenso. Nel villaggio si legge soltanto; nelle epoche dopo prepara le crisi.
+func tensione() -> float:
+	var pesi := pesi_consenso()
+	var lo := 100.0
+	var hi := 0.0
+	for g in pesi:
+		if pesi[g] > 0.0:
+			lo = minf(lo, consenso[g])
+			hi = maxf(hi, consenso[g])
+	return clampf(0.5 * (hi - lo) / 50.0 + 0.5 * maxf(0.0, 55.0 - legittimita) / 40.0, 0.0, 1.0)
+
+
+## Come è cambiato il consenso di un gruppo negli ultimi dieci anni.
+func andamento_consenso(gruppo: String) -> float:
+	var s: Array = storia_consenso[gruppo]
+	if s.size() < 2:
+		return 0.0
+	return float(consenso[gruppo]) - float(s[maxi(0, s.size() - 10)])
 
 
 ## Ci sono campi o case dove una piena può arrivare (per dare il segno solo se serve).

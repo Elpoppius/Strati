@@ -2,6 +2,21 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (pomeriggio) — specchietti in gioco (voce A)
+**Fatto**
+- **Cosa sto facendo:** sopra la scheda dello strumento, per ogni strumento del villaggio e per il punto sotto il puntatore: Chi guadagna, Chi perde (gruppi con ▲ ▼ e il motivo), Sul territorio, Costo (rosso se irreversibile), Resta. Le stime vengono dalle regole della simulazione (per esempio Demolisci sulle case: "Famiglie ▼▼", "macerie: niente case per 20 anni"). Si fa da parte quando si aprono focus o politiche.
+- **Rapporti di forza:** il pannello del Consenso, anche con il tasto R: peso e umore di ogni gruppo con parola e freccia, tensione, "si muove verso"; il perché di ogni gruppo al passaggio del puntatore (tolto il muro di cause che c'era prima).
+- **Assi dell'identità nascosti** nella simulazione, mossi dalle politiche; pesi dei gruppi, tensione, andamento. Nessuna regola del villaggio cambia, quindi niente partite "umane".
+- Scheda di tutorial "Chi conta nel villaggio" alla tappa dei 60 abitanti.
+- 12 verifiche nuove in `verifica_partita.gd` (anche: righe al massimo di 52 caratteri, niente percentuali). Reso stabile il controllo degli animali che brucano: contava un solo istante e falliva circa una volta su due, perché la partita della verifica parte ogni volta con un seme diverso. Tutte le 9 verifiche superate. Foto `docs/immagini/cosa-sto-facendo-26-11.jpg`, `rapporti-di-forza-26-11.jpg`.
+
+**Decisioni** (Fede)
+- Riepilogo della voce A approvato ("perfetto"): tasto R, scheda di tutorial alla tappa dei 60.
+
+**Prossimo passo**
+- Fede: provare gli specchietti nel gioco; dire se i nomi delle forme di governo vanno bene.
+- Claude: voce 7, popolazione visibile, con animazioni e grande cura del dettaglio; prima il riepilogo.
+
 ## 26/11/2026 (pomeriggio, ordine del lavoro)
 **Decisioni** (Fede)
 - Ordine: voce A (specchietti in gioco), poi la 7 (popolazione visibile) con le **animazioni** e grande cura del **livello di dettaglio**; poi le altre.
