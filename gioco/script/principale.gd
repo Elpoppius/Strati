@@ -199,6 +199,8 @@ func _crea_interfaccia() -> void:
 	# è uno strumento: è una qualità nascosta dei loro materiali (chiarimento di Fede, vedi UsoSuolo).
 	hud.aggiungi_menu("prova", "Prova", "Solo per le prove.", [
 		{"id": "anni", "icona": "anni", "testo": "Avanti di 10 anni (solo per prova: fa ricrescere il bosco anche senza villaggio)", "breve": "+10 anni", "tasto": "Y", "strumento": false},
+		# Scorreria di prova (Fede, 26/11/2026: le scorrerie non si erano potute provare).
+		{"id": "prova_scorreria", "icona": "torre", "testo": "Segni di scorreria (solo per prova)", "breve": "Scorreria", "tasto": "", "strumento": false},
 	], "strumenti")
 	hud.comando_scelto.connect(func(_id: String) -> void:
 		_aggiorna_pennello()
@@ -380,6 +382,10 @@ func applica_strumento() -> void:
 
 
 func _azione(id: String) -> void:
+	if id == "prova_scorreria" and partita:
+		hud.imposta_messaggio(partita.sim.prova_scorreria())
+		partita.aggiorna_hud()
+		return
 	if id == "anni" and uso:
 		uso.avanza_anni(10)
 		hud.imposta_messaggio("Sono passati 10 anni.")
@@ -468,14 +474,38 @@ func aggiorna_lettura(pos_schermo: Vector2) -> void:
 		lotto_corrente = Vector2i(-1, -1)
 		terreno.materiale.set_shader_parameter("lotto_evidenziato", Vector2(-1, -1))
 		hud.imposta_lettura("Fuori dalla mappa.")
+		Cursori.imposta(Cursori.FRECCIA if hud.comando() == "" else Cursori.STRUMENTO)
 		return
 	var p: Vector3 = punto_corrente
 	lotto_corrente = Vector2i(floori(p.x / LATO_LOTTO), floori(p.z / LATO_LOTTO))
 	terreno.materiale.set_shader_parameter("lotto_evidenziato", Vector2(lotto_corrente))
+	_aggiorna_puntatore(pos_schermo, p)
 	hud.imposta_lettura(testo_lettura(p.x, p.z))
 	if partita and partita.sim:
 		partita.leggi_sito(p)
 	_aggiorna_pennello()
+
+
+## Puntatore (Fede, 26/11/2026): con uno strumento il lotto è bianco tenue, rosso solo dove lo
+## strumento non può costruire; senza strumenti, una cornice sulla casa o sull'edificio che si può
+## scegliere e il cursore a mano.
+func _aggiorna_puntatore(pos_schermo: Vector2, p: Vector3) -> void:
+	var cmd := hud.comando()
+	var sel := Vector2(-99999, -99999)
+	var scegli := false
+	if cmd == "":
+		terreno.materiale.set_shader_parameter("colore_lotto", Vector4(1, 1, 1, 0))
+		if partita and partita.sim and partita.sim.fondato:
+			var cosa := partita.selezionabile(pos_schermo, Vector2(p.x, p.z), lotto_corrente)
+			if not cosa.is_empty():
+				scegli = true
+				sel = Vector2(cosa["lotto"])
+	else:
+		var motivo := partita.motivo_strumento(cmd, Vector2(p.x, p.z)) if partita else ""
+		var rosso := cmd == "demolisci" or motivo != ""
+		terreno.materiale.set_shader_parameter("colore_lotto", Vector4(0.71, 0.26, 0.18, 0.55) if rosso else Vector4(1, 1, 1, 0.18))
+	terreno.materiale.set_shader_parameter("lotto_selezione", sel)
+	Cursori.imposta(Cursori.SCEGLI if scegli else (Cursori.FRECCIA if cmd == "" else Cursori.STRUMENTO))
 
 
 func testo_lettura(x: float, z: float) -> String:
@@ -538,4 +568,7 @@ func aggiorna_zone_taglio() -> void:
 	while zone.size() < 8:
 		zone.append(Vector4(0, 0, -1, 0))
 	terreno.materiale.set_shader_parameter("zone_taglio", zone)
-	terreno.materiale.set_shader_parameter("forza_zone", 1.0 if hud.comando() in ["legnaia", "demolisci"] or modo == 5 else 0.45)
+	# Il cerchio della zona di taglio si vede solo quando serve (Fede, 26/11/2026): con Legnaia e
+	# Demolisci, nella mappa della caccia e pesca e con la scheda di una legnaia aperta.
+	var scheda := partita != null and partita.legnaia_aperta >= 0 and hud.focus_aperto() == partita._titolo_legnaia
+	terreno.materiale.set_shader_parameter("forza_zone", 1.0 if hud.comando() in ["legnaia", "demolisci"] or modo == 5 or scheda else 0.0)

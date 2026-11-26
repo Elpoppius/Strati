@@ -21,18 +21,16 @@ const SOGLIA_LENTO_MS := 100.0
 ## riempire il registro di righe uguali (le altre si contano e basta).
 const LENTI_PER_INTERVALLO := 5
 
-## Prove aperte del todo (26/11/2026) da spuntare nella finestra Debug. Quando una prova si chiude
+## Prove aperte del todo (26/11/2026 sera) da spuntare nella finestra Debug. Quando una prova si chiude
 ## o se ne apre una nuova, si cambia questo elenco.
 const PROVE := [
-	"Persone: aspetto da vicino (viso, spalle, vesti)",
-	"Persone: animazioni (camminare, lavori, parlare)",
-	"Scheda della famiglia: clic su persona e casa",
-	"Scheda della famiglia: le figure illuminate si vedono",
-	"Animali: il maiale",
-	"Fluidità con 400 animali e 150 figure vicini",
+	"Legna: alberi tagliati uno alla volta dalla legnaia",
+	"Scheda della legnaia (al lavoro, a riposo)",
+	"Cursori, cornice di selezione, puntatore rosso",
+	"HUD fermo; strumenti che compaiono con la tappa",
+	"Edifici delle risorse alla misura delle case",
 	"Specchietti: Conseguenze e Rapporti di forza (R)",
-	"Tutorial alle tappe",
-	"Scorrerie: segni, scelta, torre di avvistamento",
+	"Scorrerie: segni, scelta, torre (Prova: Scorreria)",
 ]
 
 var cartella := ""

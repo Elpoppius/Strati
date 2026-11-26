@@ -55,6 +55,11 @@ uniform float forza_rilievo = 0.6;
 uniform float lato_lotto = 20.0;
 uniform float alfa_griglia = 0.0;
 uniform vec2 lotto_evidenziato = vec2(-1.0, -1.0);
+// Colore del lotto sotto il puntatore (Fede, 26/11/2026): bianco tenue, rosso solo dove lo strumento
+// scelto non può costruire; alfa 0 senza strumenti (lì c'è il cursore di selezione).
+uniform vec4 colore_lotto = vec4(1.0, 1.0, 1.0, 0.18);
+// Cursore di selezione: cornice sul lotto della casa o dell'edificio sotto il puntatore.
+uniform vec2 lotto_selezione = vec2(-99999.0, -99999.0);
 // La casa della famiglia aperta nella scheda (26/11/2026): un riquadro chiaro attorno al lotto.
 uniform vec2 lotto_famiglia = vec2(-99999.0, -99999.0);
 // Strumento dell'HUD: cerchio (x, z, raggio; raggio negativo = spento) e suo colore.
@@ -495,7 +500,7 @@ void fragment() {
 	}
 	// Lotto sotto il puntatore.
 	if (lotto_evidenziato.x >= 0.0 && floor(pos_mondo.xz / lato_lotto) == lotto_evidenziato) {
-		col = mix(col, pow(vec3(0.71, 0.26, 0.18), vec3(2.2)), 0.55);
+		col = mix(col, pow(colore_lotto.rgb, vec3(2.2)), colore_lotto.a);
 	}
 	{
 		vec2 q = pos_mondo.xz / lato_lotto - lotto_famiglia;
@@ -507,6 +512,15 @@ void fragment() {
 			if (max(e.x, e.y) < 0.0) {
 				col = mix(col, vec3(1.0), 0.12);
 			}
+		}
+	}
+	{
+		vec2 q = pos_mondo.xz / lato_lotto - lotto_selezione;
+		if (q.x > -0.25 && q.y > -0.25 && q.x < 1.25 && q.y < 1.25) {
+			vec2 e = abs(q - 0.5) - 0.5;
+			float fw = max(fwidth(q.x), 1e-4);
+			float bordo = 1.0 - smoothstep(fw * 1.0, fw * 2.5, abs(max(e.x, e.y)));
+			col = mix(col, vec3(1.0), bordo * 0.6);
 		}
 	}
 	if (mostra_zona > 0.5) {

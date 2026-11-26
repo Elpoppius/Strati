@@ -156,3 +156,9 @@ Dal 26/11/2026 `villaggio.py` accetta i nomi dei modelli da esportare (`… gioc
 
 Foto di controllo: `gioco/test/foto_villaggio.gd` compone a mano un villaggio sul terrazzo centrale (palizzata, case, luogo sacro, recinto, campi e terra battuta con l'uso del suolo). Immagine: `docs/immagini/villaggio-24-11.jpg`. È solo una prova degli asset: nel gioco il villaggio crescerà da sé (abitato spontaneo, decisione di Fede del 24/11).
 
+## Cursori (26/11/2026 sera, richiesta di Fede)
+Tre SVG da 32 × 32 px in `gioco/asset/cursori/`, fatti da noi: `freccia.svg` (punta in 3, 2), `scegli.svg` (la freccia con un quadratino, quando sotto il puntatore c'è qualcosa da scegliere), `strumento.svg` (mirino squadrato, punta al centro). Bianco #f4f4f0 con il bordo #1b1b1b, come l'HUD. Si impostano con `Cursori.imposta()`.
+
+## Grandezza degli edifici delle risorse (26/11/2026 sera)
+Fede: capanno, legnaia e gli altri vanno ingranditi alla misura delle case. I modelli restano quelli di `villaggio.py`; nel gioco si disegnano 1,8 volte più grandi legnaia, capanno da pesca e posta di caccia (e i loro cantieri), 1,4 il granaio (`VistaVillaggio.SCALA_EDIFICI`).
+

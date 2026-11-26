@@ -309,6 +309,74 @@ func _verifica_campo_stanco(p: Partita, sim: SimVillaggio) -> void:
 		p.vista.sincronizza()
 
 
+## Correzioni dalla prova di Fede del 26/11/2026 sera (todo, voce C).
+func _verifica_prova_del_26(p: Partita, sim: SimVillaggio, h: Hud) -> void:
+	# Le cose che una tappa non ha aperto non si vedono: compaiono.
+	for id in ["granaio", "luogo_sacro", "pascolo", "bosco_sacro", "torre"]:
+		controlla((h._righe_comandi[id] as Control).visible == sim.sbloccato(id), "%s si vede solo quando la sua tappa lo apre" % id)
+	controlla((h._politiche["pericolo"]["colonna"] as Control).visible == sim.sbloccato("pericolo"), "la politica sul pericolo compare con i primi segni")
+	# Scheda della legnaia: un clic la apre, con al lavoro e a riposo.
+	if not sim.legnaie.is_empty():
+		var l: Dictionary = sim.legnaie[0]
+		var pl: Vector2 = l["punto"]
+		_s.punto_corrente = Vector3(pl.x, 0, pl.y)
+		h.seleziona_comando("")
+		p.clic_sulla_mappa(Vector2(-1000, -1000), sim.lotto_da_mondo(pl.x, pl.y))
+		controlla(p.legnaia_aperta == 0 and h.focus_aperto() == "Legnaia 1", "un clic sulla legnaia apre la sua scheda")
+		h.scelta_focus.emit("riposo")
+		controlla(bool(sim.legnaie[0]["riposo"]) and h.focus_aperto() == "Legnaia 1", "nella scheda la legnaia si mette a riposo")
+		h.scelta_focus.emit("lavoro")
+		controlla(not bool(sim.legnaie[0]["riposo"]), "e si rimette al lavoro")
+		_s.annulla()
+		controlla(h.focus_aperto() == "", "Esc chiude la scheda della legnaia")
+		# Il cerchio della zona di taglio si vede solo con gli strumenti che lo riguardano.
+		_s.imposta_modo(0)
+		h.seleziona_comando("campi")
+		_s.aggiorna_zone_taglio()
+		controlla(float(_s.terreno.materiale.get_shader_parameter("forza_zone")) == 0.0, "con altri strumenti il cerchio della legnaia non si vede")
+		h.seleziona_comando("legnaia")
+		_s.aggiorna_zone_taglio()
+		controlla(float(_s.terreno.materiale.get_shader_parameter("forza_zone")) == 1.0, "con Legnaia il cerchio si vede")
+		h.seleziona_comando("")
+		_s.aggiorna_zone_taglio()
+		# Selezione: sopra la legnaia il cursore di selezione e la cornice.
+		controlla(not p.selezionabile(Vector2(-1000, -1000), pl, sim.lotto_da_mondo(pl.x, pl.y)).is_empty(), "sopra la legnaia c'è qualcosa da scegliere")
+	if not sim.case.is_empty():
+		var lc: Vector2i = sim.case[0]
+		controlla(p.selezionabile(Vector2(-1000, -1000), sim.centro_lotto(lc), lc).get("lotto", Vector2i(-1, -1)) == lc, "sopra una casa c'è qualcosa da scegliere (la famiglia)")
+	# Puntatore: rosso solo dove lo strumento non può costruire.
+	var c := sim.mondo_di_px(sim.centro)
+	controlla(p.motivo_strumento("granaio", c + Vector2(4000, 0)) != "" and p.motivo_strumento("sentiero", c) == "", "il puntatore è rosso solo dove lo strumento non può costruire")
+	h.seleziona_comando("")
+	var lontano := c + Vector2(2500, 2500)
+	_s._aggiorna_puntatore(Vector2(-1000, -1000), Vector3(lontano.x, 0, lontano.y))
+	controlla(Cursori.attuale() == Cursori.FRECCIA, "senza strumenti il cursore è la freccia")
+	if not sim.case.is_empty():
+		var w := sim.centro_lotto(sim.case[0])
+		_s.lotto_corrente = sim.case[0]
+		_s._aggiorna_puntatore(Vector2(-1000, -1000), Vector3(w.x, 0, w.y))
+		controlla(Cursori.attuale() == Cursori.SCEGLI and Vector2i(_s.terreno.materiale.get_shader_parameter("lotto_selezione")) == sim.case[0], "sopra una casa il cursore di selezione e la cornice")
+	h.seleziona_comando("campi")
+	_s._aggiorna_puntatore(Vector2(-1000, -1000), Vector3(lontano.x, 0, lontano.y))
+	controlla(Cursori.attuale() == Cursori.STRUMENTO, "con uno strumento il cursore è il mirino")
+	h.seleziona_comando("")
+	# Gli alberi tagliati spariscono dalla mappa uno alla volta, non tutti insieme.
+	var prima := p._coda_tagli.size()
+	controlla(prima >= 0, "coda dei tagli pronta (%d celle in attesa)" % prima)
+	# Edifici delle risorse alla misura delle case.
+	var grandi := false
+	for e in p.vista._edifici.values():
+		if (e["nodo"] as Node3D).scale.x > 1.5:
+			grandi = true
+	controlla(grandi or sim.legnaie.is_empty(), "legnaia, capanno e posta sono ingranditi alla misura delle case")
+	# Scorreria di prova (menù Prova).
+	var testo := sim.prova_scorreria()
+	controlla(sim.in_allerta() and testo.contains("prova"), "il tasto di prova fa arrivare i segni di una scorreria")
+	while sim.in_attesa():
+		sim.scegli(sim.decisioni[0]["id"], sim.decisioni[0]["opzioni"][0]["id"])
+	h.chiudi_scelta()
+
+
 func _destro(premuto: bool, pos: Vector2) -> InputEventMouseButton:
 	var ev := InputEventMouseButton.new()
 	ev.button_index = MOUSE_BUTTON_RIGHT
@@ -688,6 +756,7 @@ func _process(_d: float) -> bool:
 	_s.annulla()
 	controlla(h.focus_aperto() == "", "Esc chiude il pannello di focus")
 	_verifica_specchietti(p, sim, h)
+	_verifica_prova_del_26(p, sim, h)
 	# Tappe: il granaio è chiuso finché non si raggiunge la sua tappa.
 	controlla(sim.sbloccato("granaio") or p.scena.hud.find_children("*", "Button", true, false).size() > 0, "il granaio segue le tappe")
 	print("Verifica completata: " + ("nessun errore" if _errori == 0 else "%d errori" % _errori))

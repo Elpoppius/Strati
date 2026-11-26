@@ -31,6 +31,12 @@ func prepara(s: SimVillaggio, u: UsoSuolo, t: Terreno) -> void:
 	sim = s
 	uso = u
 	terreno = t
+	# Gli edifici e i loro cantieri si caricano subito: la prima volta che si sceglie uno strumento
+	# il gioco non si ferma un attimo (registro del 26/11/2026: 130–150 ms).
+	for k in CANTIERI:
+		for nome in [k, CANTIERI[k]]:
+			if not _scene.has(nome):
+				_scene[nome] = load(CARTELLA + nome + ".glb")
 	# Zona agricola: un byte per punto della mappa, letto dallo shader del terreno (si vede mentre
 	# si destina la terra).
 	_immagine_zona = Image.create(sim.n, sim.n, false, Image.FORMAT_L8)
@@ -835,6 +841,9 @@ func _sincronizza_case() -> void:
 ## cerchio largo per il capanno (i pioppi della riva lo nascondevano).
 ## Cantieri (decisione di Fede del 25/11/2026 sera): finché un edificio si costruisce si vede il suo
 ## scheletro, con sopra una barra discreta che avanza anno dopo anno; poi il modello finito.
+## Edifici delle risorse alla misura delle case (Fede, 26/11/2026: vanno ingranditi): fattore di
+## grandezza del modello e del suo cantiere (proposta di Claude approvata).
+const SCALA_EDIFICI := {"legnaia": 1.8, "capanno_pesca": 1.8, "posta_caccia": 1.8, "granaio_su_pali": 1.4}
 const CANTIERI := {"granaio_su_pali": "cantiere_granaio", "legnaia": "cantiere_legnaia",
 	"capanno_pesca": "cantiere_capanno_pesca", "posta_caccia": "cantiere_posta_caccia", "luogo_sacro": "cantiere_luogo_sacro",
 	"torre_avvistamento": "cantiere_torre_avvistamento"}
@@ -879,14 +888,16 @@ func _sincronizza_edifici() -> void:
 		var in_cantiere := int(v[4]) > 0
 		var modello: String = CANTIERI[v[0]] if in_cantiere else v[0]
 		if not _edifici.has(p):
-			_edifici[p] = {"nodo": null, "modello": "", "raggio": v[2], "barra": null}
-			uso.costruisci(uso.celle_nel_cerchio(p.x, p.y, v[2]), v[3])
+			var r_e := float(v[2]) * float(SCALA_EDIFICI.get(v[0], 1.0))
+			_edifici[p] = {"nodo": null, "modello": "", "raggio": r_e, "barra": null}
+			uso.costruisci(uso.celle_nel_cerchio(p.x, p.y, r_e), v[3])
 		var e: Dictionary = _edifici[p]
 		if e["modello"] != modello:
 			if e["nodo"] != null:
 				(e["nodo"] as Node3D).queue_free()
 			var nodo := _istanza(modello)
 			_posa(nodo, p, v[1])
+			nodo.scale = Vector3.ONE * float(SCALA_EDIFICI.get(v[0], 1.0))
 			e["nodo"] = nodo
 			e["modello"] = modello
 		if in_cantiere:

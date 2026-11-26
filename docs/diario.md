@@ -2,6 +2,42 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (sera tardi) — prova di Fede, registro letto, legna rifatta e correzioni (voce C)
+**Fatto**
+- **Prima lettura del registro tecnico**, dalla cartella del PC di Fede (`sessione-2026-11-26-184529`, GTX 1050, 1600×900):
+  - quasi sempre 60 fps, minimo 33 a 40 m con 149 figure;
+  - scena pronta in 6,5 s, nessun errore;
+  - scatti di 130–150 ms alla prima scelta di uno strumento.
+  Le annotazioni di Fede e la diagnosi stanno nel todo, voce C.
+- **Legna rifatta** sul concetto di Fede:
+  - ogni albero ha un valore (quercia 2 m³, pioppo 1,5, carpino 1, arbusto 0,2, con la grandezza);
+  - la legnaia parte dagli alberi attorno e li abbatte uno alla volta, poi passa ai successivi; la zona tagliata non ricresce finché è di passaggio;
+  - la legna da ardere si raccoglie senza abbattere (3 m³ per ettaro l'anno; i focolari ne bruciano 0,5 a testa);
+  - i tronchi servono a rifare le case (20 m³, durano 30 anni) e a costruire: granaio 15, luogo sacro 10, torre 8, capanno e posta 5, la legnaia gratis;
+  - la catasta è piccola, due anni di consumo più 60;
+  - gli alberi spariscono dalla mappa uno alla volta durante l'anno.
+  Nelle partite automatiche il fronte del taglio avanza di qualche decina di metri ogni decennio, invece di spazzare tutto entro 600 m.
+- **Interfaccia:**
+  - il cerchio della legnaia si vede solo con Legnaia, Demolisci, la mappa 6 o la scheda aperta;
+  - la scheda della legnaia ha i tasti Al lavoro e A riposo;
+  - strumenti e politiche compaiono con la loro tappa (niente più "si apre a…");
+  - i tasti stanno tra parentesi nei testi;
+  - il lotto sotto il puntatore è bianco, rosso solo dove lo strumento non può costruire;
+  - la striscia dell'anno ha la larghezza fissa e le righe della fascia sono fisse;
+  - cursori veri: freccia, selezione con il quadratino, mirino; cornice di selezione su case, persone e legnaie.
+- **Gioco:** gli stranieri arrivano dalla tappa dei 150. Legnaia, capanno e posta si disegnano 1,8 volte più grandi, il granaio 1,4. Nel menù Prova c'è il tasto "Segni di scorreria". I modelli si caricano all'avvio.
+- Prove: verifiche nuove in `verifica_villaggio.gd` (alberi, taglio progressivo, fronte, zona di passaggio, catasta) e in `verifica_partita.gd` (cose che compaiono, scheda della legnaia, cerchio, selezione, cursori, puntatore, edifici, scorreria di prova); tutte le 10 verifiche superate. Partite "umane" e registro degli avvisi in `sessioni-giocatori.md`. Prove della finestra Debug aggiornate.
+
+**Decisioni** (Fede)
+- Il concetto della legna: un albero ha un suo valore, verosimile col periodo. Si parte dai 3–4 alberi attorno alla legnaia e poi si passa ai successivi. Il primo non ricresce finché la zona è di passaggio. La velocità di taglio è quella di Age of Empires.
+- "Il resto va bene": cerchio, scheda della legnaia, cose che compaiono, tasti tra parentesi, puntatore, HUD fermo, cursore di selezione, stranieri dalla loro tappa, edifici più grandi (1,8 e 1,4), scorreria di prova. In più "un cursore vero e proprio per il puntatore".
+- La divisione della legna (da ardere senza abbattere, tronchi abbattendo) e i suoi numeri: Claude li ha presi come approvati con il resto, mentre Fede era lontano; sono da confermare alla prova.
+
+**Prossimo passo**
+- Fede: Pull e prova al PC, con le caselle della finestra Debug (F3) e i segnalibri (F9). Poi dire a Claude di leggere il registro.
+- Claude: voce 5, sentieri che diventano strade (prima il riepilogo).
+- Nota per la prova: a un anno al secondo un villaggio di 200 abitanti taglia una decina di celle di alberi l'anno; si vedono sparire una alla volta, ma sono comunque una decina al secondo.
+
 ## 26/11/2026 (sera) — scorrerie e torre di avvistamento (voce 4)
 **Fatto**
 - **Scorrerie** nella simulazione (`sim_villaggio.gd`, generatore a parte `rng_scorrerie`). Partono dalla tappa dei 100 abitanti e sono più rare prima del 4300 a.C. Il rischio è ricchezza visibile × esposizione × (1 − difesa): la ricchezza sono animali e scorte; l'esposizione sono casali, pascoli oltre 300 m e margini del contado vuoti; la difesa sono il sito e l'abitato raccolto. Prima arrivano i segni (fuochi, tracce, fuggiaschi), con la direzione e un punto sulla mappa, e la scorreria arriva 1–2 anni dopo. Si perdono animali e scorte e a volte bruciano 1–2 case ai margini, che lasciano macerie e rovine. Gli anziani perdono consenso, l'umore delle famiglie vicine cala per 15 anni e la memoria della paura stringe l'abitato: le case nuove nascono più vicine e possono toccarsi in diagonale.

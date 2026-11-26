@@ -125,7 +125,7 @@ func _verifica_sacro(d: MappaDati) -> void:
 	for k in 16:
 		if not fatto and s.costruisci_luogo_sacro(cm + Vector2.from_angle(TAU * k / 16.0) * 300.0) == "":
 			fatto = true
-	controlla(fatto and s.cantiere_luogo_sacro == SimVillaggio.ANNI_CANTIERE_LUOGO_SACRO and is_equal_approx(s.legna, 30.0), "il luogo sacro costa 20 di legna e tre anni di cantiere")
+	controlla(fatto and s.cantiere_luogo_sacro == SimVillaggio.ANNI_CANTIERE_LUOGO_SACRO and is_equal_approx(s.legna, 40.0), "il luogo sacro costa 10 di legna e tre anni di cantiere")
 	controlla(not s.luogo_sacro_pronto() and s.obiettivo_sacerdote() < 40.0 and s.motivo_luogo_sacro(cm + Vector2(-80, 0)) != "", "uno solo, e il sacerdote resta contrariato finché si costruisce")
 	for k in SimVillaggio.ANNI_CANTIERE_LUOGO_SACRO:
 		s.decisioni.clear()
@@ -352,7 +352,7 @@ func _verifica_scorrerie(d: MappaDati) -> void:
 	controlla(alto.x >= 0, "attorno al sito 1 c'è un'altura per la torre")
 	controlla(basso.x >= 0, "in pianura la torre non si può fare: «%s»" % (u.motivo_torre(basso) if basso.x >= 0 else ""))
 	controlla(u.motivo_torre(cm + Vector2(1500, 0)) != "", "la torre va vicino al villaggio")
-	controlla(u.costruisci_torre(alto) == "" and u.cantiere_torre == SimVillaggio.ANNI_CANTIERE_TORRE and is_equal_approx(u.legna, 25.0), "la torre costa 15 di legna e due anni di cantiere")
+	controlla(u.costruisci_torre(alto) == "" and u.cantiere_torre == SimVillaggio.ANNI_CANTIERE_TORRE and is_equal_approx(u.legna, 32.0), "la torre costa 8 di legna e due anni di cantiere")
 	controlla(u.motivo_torre(alto + Vector2(40, 0)).contains("c'è già"), "una torre sola")
 	u.cantiere_torre = 0
 	u.pop = 110.0
@@ -501,8 +501,10 @@ func _initialize() -> void:
 	controlla(t.motivo_granaio(t.mondo_di_px(c) + Vector2(60, 0)) != "", "senza legna il granaio non si costruisce")
 	t.legna = 45.0
 	controlla(t.motivo_granaio(t.mondo_di_px(c) + Vector2(60, 0)) == "" and t.motivo_granaio(t.mondo_di_px(c) + Vector2(900, 0)) != "", "il granaio va vicino al centro (con %d di legna si può)" % roundi(t.legna))
-	# Legnaia (decisione di Fede del 25/11/2026): senza legnaia non si raccoglie legna; i boscaioli
-	# abbattono gli alberi più vicini e la raccolta rallenta man mano che la radura si allarga.
+	# Legnaia (decisione di Fede del 25/11/2026; legna rifatta il 26/11/2026 sera): senza legnaia non si
+	# raccoglie legna; la legna da ardere si raccoglie senza abbattere; i tronchi vengono dagli alberi
+	# abbattuti uno alla volta, dal più vicino, e il fronte del taglio avanza piano.
+	controlla(is_equal_approx(SimVillaggio.valore_albero(0, 1.15), 2.0) and SimVillaggio.valore_albero(7, 1.15) < 0.5 and SimVillaggio.valore_albero(9, 1.15) == 0.0, "ogni albero ha il suo valore: quercia media 2 m³, arbusto poco, canne niente")
 	var tl := SimVillaggio.new(d, 3)
 	tl.fonda(Vector2i(d.siti[2]["px"]))
 	tl.decisioni.clear()
@@ -510,15 +512,20 @@ func _initialize() -> void:
 	controlla(tl.legnaie.is_empty() and tl.ultima_legna == 0.0, "senza legnaia non si raccoglie legna")
 	var cg := RandomNumberGenerator.new()
 	cg.seed = 5
-	controlla(AiutiGiocatori.costruisci_legnaia(tl, cg, 1.0) and tl.legnaie.size() == 1, "si costruisce una legnaia vicino al bosco")
+	var legna_prima := tl.legna
+	tl.legna = 0.0
+	controlla(AiutiGiocatori.costruisci_legnaia(tl, cg, 1.0) and tl.legnaie.size() == 1, "si costruisce una legnaia vicino al bosco, anche senza legna (solo braccia)")
+	tl.legna = legna_prima
 	var l0: Dictionary = tl.legnaie[0]
+	controlla((l0["celle"] as Array).size() > 100 and float(l0["celle"][0][0]) <= float(l0["celle"][-1][0]), "la legnaia conosce gli alberi attorno, dal più vicino (%d celle)" % (l0["celle"] as Array).size())
 	controlla(tl.capacita_legnaia(l0) == 0.0, "la legnaia in costruzione non raccoglie")
 	for k in 3:
 		tl.decisioni.clear()
 		tl.passo()
 	var cap0 := tl.capacita_legnaia(l0)
-	controlla(cap0 > 0.0 and tl.ultima_legna > 0.0, "finita la legnaia, si raccoglie legna (%.1f l'anno, fino a %.1f)" % [tl.ultima_legna, cap0])
-	var abbattuti := tl.tagliati.size()
+	controlla(cap0 > 0.0 and tl.raccolta_legna > 0.0 and tl.offerta_raccolta > 0.0, "finita la legnaia, si raccoglie legna da ardere (%.1f l'anno su %.1f) e si possono tagliare tronchi (fino a %.1f)" % [tl.raccolta_legna, tl.offerta_raccolta, cap0])
+	var tagli_max := 0
+	var primo_taglio := -1.0
 	for k in 40:
 		tl.decisioni.clear()
 		tl.legna = 0.0
@@ -526,25 +533,34 @@ func _initialize() -> void:
 		# morirebbe di fame, e qui si prova solo la legnaia.
 		tl.cibo = maxf(tl.cibo, tl.pop)
 		tl.passo()
-	controlla(tl.tagliati.size() > abbattuti and tl.capacita_legnaia(l0) < cap0, "il taglio allarga la radura e la raccolta rallenta (%.1f → %.1f l'anno)" % [cap0, tl.capacita_legnaia(l0)])
-	var uno: int = -1
-	for i in tl.tagliati:
-		if tl.dati.tipo[i] != MappaDati.PALUDE:
-			uno = i
-			break
-	controlla(not tl.bosco_in_piedi(uno) or tl.anno - int(tl.tagliati.get(uno, tl.anno)) >= SimVillaggio.ANNI_RICRESCITA, "un pixel abbattuto non è bosco finché non ricresce")
-	# Zona di taglio (decisione di Fede del 25/11/2026): finché la legnaia lavora non ricresce nulla;
-	# a riposo il bosco ricaccia dalle ceppaie (ceduo) in ANNI_RICRESCITA anni.
-	controlla(tl.legnaia_attiva(l0) and tl.zona_attiva.has(uno), "la zona di taglio della legnaia al lavoro resta tagliata (%s)" % tl.stato_legnaia(l0))
+		tagli_max = maxi(tagli_max, tl.tagli_anno.size())
+		if primo_taglio < 0.0 and not tl.celle_tagliate.is_empty():
+			primo_taglio = float(l0["raggio"])
+		tl.tagli_anno.clear()
+	controlla(tl.tronchi_legna <= SimVillaggio.CAPACITA_TAGLIO + 5.0 and tagli_max <= 40, "il taglio è progressivo: al massimo %d celle di alberi l'anno (tronchi %.1f)" % [tagli_max, tl.tronchi_legna])
+	controlla(primo_taglio >= 0.0 and primo_taglio < 60.0, "si comincia dagli alberi attorno alla legnaia (primo taglio a %d m)" % roundi(primo_taglio))
+	controlla(not tl.celle_tagliate.is_empty() and tl.capacita_legnaia(l0) < cap0 and float(l0["raggio"]) < 400.0, "il fronte avanza piano e i tronchi calano (%.1f → %.1f l'anno, fronte a %d m)" % [cap0, tl.capacita_legnaia(l0), roundi(float(l0["raggio"]))])
+	var vicine_in_piedi := 0
+	for voce in l0["celle"]:
+		if float(voce[0]) < float(l0["raggio"]) * 0.5 and tl.cella_in_piedi(voce[1]):
+			vicine_in_piedi += 1
+	controlla(vicine_in_piedi == 0, "dietro il fronte non restano alberi da tagliare (gli abbattuti non ricrescono)")
+	var una: Vector2i = (l0["fatte"] as Dictionary).keys()[0]
+	# Zona di taglio: finché la legnaia lavora è un luogo di passaggio e non ricresce nulla (Fede,
+	# 26/11/2026); a riposo il bosco ricaccia dalle ceppaie in ANNI_RICRESCITA anni.
+	controlla(tl.legnaia_attiva(l0) and tl.celle_zona_attiva.has(una), "la zona di taglio della legnaia al lavoro resta aperta (%s)" % tl.stato_legnaia(l0))
 	tl.anno += SimVillaggio.ANNI_RICRESCITA + 5
-	controlla(not tl.bosco_in_piedi(uno), "finché la zona è attiva il bosco non ricresce")
+	l0["ultimo"] = tl.anno
+	controlla(not tl.cella_in_piedi(una), "finché la zona è di passaggio il bosco non ricresce")
 	tl.metti_a_riposo(0, true)
-	controlla(not tl.legnaia_attiva(l0) and not tl.zona_attiva.has(uno) and tl.capacita_legnaia(l0) == 0.0, "lasciar ricrescere: la legnaia si ferma e la zona va a riposo")
-	controlla(not tl.bosco_in_piedi(uno), "appena messa a riposo la zona è ancora tagliata")
+	controlla(not tl.legnaia_attiva(l0) and not tl.celle_zona_attiva.has(una) and tl.capacita_legnaia(l0) == 0.0, "lasciar ricrescere: la legnaia si ferma e la zona va a riposo")
+	controlla(not tl.cella_in_piedi(una), "appena messa a riposo la zona è ancora tagliata")
 	tl.anno += SimVillaggio.ANNI_RICRESCITA
-	controlla(tl.bosco_in_piedi(uno), "dopo %d anni a riposo il bosco abbattuto ricresce (ceduo)" % SimVillaggio.ANNI_RICRESCITA)
+	controlla(tl.cella_in_piedi(una), "dopo %d anni a riposo il bosco abbattuto ricresce" % SimVillaggio.ANNI_RICRESCITA)
 	tl.metti_a_riposo(0, false)
 	controlla(tl.legnaia_attiva(l0), "la legnaia torna al lavoro")
+	# La catasta è piccola: due anni di consumo più il legname per costruire.
+	controlla(tl.massimo_legna() < 2.5 * tl.consumo_legna + SimVillaggio.RISERVA_LEGNAME + SimVillaggio.COSTO_CASA + 1.0, "la catasta tiene due anni di consumo più il legname per costruire (%d)" % roundi(tl.massimo_legna()))
 	# Campi che si stancano (decisione di Fede del 25/11/2026).
 	if not tl.campi.is_empty():
 		var cs: int = tl.campi[0]

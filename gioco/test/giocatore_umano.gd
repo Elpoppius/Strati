@@ -159,7 +159,7 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 					elif c.contains("gli anziani lo vedono male") and sim.politica("raccolto") == "famiglie":
 						sim.imposta_politica("raccolto", "comune")
 						imparato["usanze"] = true
-					elif (c.contains("Senza legnaia") or c.contains("il bosco è finito") or c.contains("vanno lontano")) and sim.legnaie.size() < 4:
+					elif (c.contains("Senza legnaia") or c.contains("il bosco è finito") or c.contains("vanno lontano") or c.contains("legnaia nuova") or c.contains("legnaia più vicina") or c.contains("non ci sono più alberi")) and sim.legnaie.size() < 4:
 						AiutiGiocatori.costruisci_legnaia(sim, caso, 0.7)
 						imparato["legnaia"] = true
 					elif c.contains("finché non si erige il luogo sacro"):

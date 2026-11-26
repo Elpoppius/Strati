@@ -212,3 +212,14 @@ Per sito, scorrerie a partita: Sbocco del fiume 1,67, Pianura aperta 1,17, Terra
 
 **Registro degli avvisi** (5 partite, livello 5): nessuna scorreria (il giocatore automatico del registro non stende il pascolo, quindi la ricchezza resta bassa); 4,2 pause vere e 16 riquadri di tutorial a partita, come prima.
 
+## Con la legna rifatta e le correzioni della prova di Fede (26/11/2026, sera tardi)
+**Giocatori "umani"** (72 partite): chi legge e chi impara sbagliando costruiscono un'altra legnaia quando il pannello della Legna dice che il bosco vicino non basta o che gli alberi sono lontani.
+| Profilo | Mediana abitanti | Carestie | Pause vere | Scorrerie | Legnaie a fine partita | Partite senza granaio |
+|---|---|---|---|---|---|---|
+| impara sbagliando | 649 (prima 599) | 2,1 (2,8) | 4,2 | 0,78 | 3,6 | 6 su 18 |
+| legge | 717 (561) | 3,9 (3,0) | 4,3 | 1,11 | 3,8 | 2 su 18 |
+| conosce il genere | 792 (778) | 3,4 (2,2) | 4,7 | 1,17 | 3,9 | 0 su 18 |
+| casual | 142 (116) | 1,4 (2,2) | 3,3 | 0,39 | 1,0 | 13 su 18 |
+
+**Cosa si vede:** con la legna nuova i villaggi crescono come prima o un po' di più; oltre i 300 abitanti la legna diventa il limite (il bosco attorno alle legnaie non basta per i focolari e i campi se ne mangiano una parte), e chi apre altre legnaie verso il bosco va avanti. Una prima prova con la legnaia a 5 di legna bloccava i villaggi rimasti senza legna (mediane 112, 92, 780, 92): la legnaia è tornata gratis. Le carestie salgono un poco per chi legge (villaggi più grandi). Gli stranieri arrivano solo dalla tappa dei 150: nel registro degli avvisi le pause scendono da 4,2 a 3,4 a partita.
+

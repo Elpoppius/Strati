@@ -96,6 +96,8 @@ signal interruttore_scelto(politica: String, voce: String, acceso: bool)
 signal indicatore_scelto(nome: String)
 ## Dal pannello di focus: mostrare la mappa tematica indicata.
 signal mappa_richiesta(modo: int)
+## Una scelta nella scheda di un edificio nel pannello di focus (per esempio la legnaia: al lavoro o a riposo).
+signal scelta_focus(id: String)
 var _opzioni: HBoxContainer
 var _opzioni_di := {}  # strumento -> [Button]
 var _colonna_mappe: Control
@@ -197,6 +199,9 @@ func _striscia_alta(radice: Control) -> void:
 	riga.add_theme_constant_override("separation", 14)
 	p.add_child(riga)
 	_anno = Label.new()
+	# Larghezza fissa (Fede, 26/11/2026: l'HUD balla): anno e tappa cambiano, i tasti del tempo no.
+	_anno.custom_minimum_size.x = 330
+	_anno.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_anno.add_theme_font_override("font", _carattere(true, 0.0, true))
 	_anno.add_theme_font_size_override("font_size", 18)
 	_anno.text = "—"
@@ -295,6 +300,8 @@ func _fascia_bassa(radice: Control, nomi_mappe: Array) -> void:
 	_messaggio.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_messaggio.custom_minimum_size.x = 298
 	_messaggio.add_theme_font_size_override("font_size", 13)
+	_messaggio.max_lines_visible = 4
+	_messaggio.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	cs.add_child(_messaggio)
 	# Opzioni dello strumento scelto (come in Cities: Skylines), per esempio Collega alla rete per
 	# il Sentiero. Compaiono solo con il loro strumento.
@@ -349,6 +356,11 @@ func _fascia_bassa(radice: Control, nomi_mappe: Array) -> void:
 	_lettura.size_flags_vertical = Control.SIZE_EXPAND | Control.SIZE_SHRINK_END
 	_lettura.add_theme_font_size_override("font_size", 12)
 	_lettura.add_theme_color_override("font_color", GRIGIO)
+	# Righe fisse (Fede, 26/11/2026: l'HUD balla): il testo che cambia sotto il puntatore non deve
+	# cambiare l'altezza della fascia.
+	_lettura.max_lines_visible = 2
+	_lettura.custom_minimum_size.y = 32
+	_lettura.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_lettura.text = "Passa sul terreno per leggere il lotto."
 	cs.add_child(_lettura)
 	# Blocchi dei comandi (decisione di Fede): Costruzione (Insediamento, Territorio, Vie,
@@ -1184,6 +1196,8 @@ func abilita_politica(id: String, attiva: bool, stato := "") -> void:
 	var l: Label = voce["stato"]
 	l.text = stato
 	l.visible = stato != ""
+	# Una politica non ancora aperta non si vede: compare con la sua tappa (Fede, 26/11/2026).
+	(voce["colonna"] as Control).visible = attiva
 
 
 func politica_attiva(id: String) -> bool:
@@ -1661,7 +1675,7 @@ func _riempi_focus(dati: Dictionary) -> void:
 	var testa := HBoxContainer.new()
 	_colonna_focus.add_child(testa)
 	var k := Label.new()
-	k.text = "RAPPORTI DI FORZA" if dati.has("gruppi") else ("FAMIGLIA" if dati.has("famiglia") else "FOCUS")
+	k.text = String(dati["scheda"]) if dati.has("scheda") else ("RAPPORTI DI FORZA" if dati.has("gruppi") else ("FAMIGLIA" if dati.has("famiglia") else "FOCUS"))
 	k.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	k.add_theme_font_override("font", _carattere(true, 1.6))
 	k.add_theme_font_size_override("font_size", 11)
@@ -1693,7 +1707,11 @@ func _riempi_focus(dati: Dictionary) -> void:
 		_riempi_rapporti(dati)
 	if dati.has("famiglia"):
 		_riempi_famiglia(dati)
-	var parti: Array = dati.get("parti", []) if not dati.has("gruppi") and not dati.has("famiglia") else []
+	if dati.has("righe"):
+		_riempi_righe(dati["righe"])
+	if dati.has("scelte"):
+		_riempi_scelte(dati["scelte"])
+	var parti: Array = dati.get("parti", []) if not dati.has("gruppi") and not dati.has("famiglia") and not dati.has("righe") else []
 	if not parti.is_empty():
 		_colonna_focus.add_child(_titoletto_focus("DI COSA È FATTO"))
 		for p in parti:
@@ -1845,6 +1863,51 @@ func _riempi_famiglia(dati: Dictionary) -> void:
 		l.mouse_filter = Control.MOUSE_FILTER_PASS
 		l.add_theme_font_size_override("font_size", 12)
 		riga.add_child(l)
+
+
+## Righe della scheda di un edificio: etichetta a sinistra, valore, il perché al passaggio.
+func _riempi_righe(righe: Array) -> void:
+	for r in righe:
+		var riga := HBoxContainer.new()
+		riga.mouse_filter = Control.MOUSE_FILTER_PASS
+		riga.tooltip_text = String(r[2]) if r.size() > 2 else ""
+		_colonna_focus.add_child(riga)
+		var e := _titoletto_focus(String(r[0]).to_upper())
+		e.custom_minimum_size.x = 96
+		e.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		e.mouse_filter = Control.MOUSE_FILTER_PASS
+		riga.add_child(e)
+		var l := Label.new()
+		l.text = String(r[1])
+		l.clip_text = true
+		l.custom_minimum_size.x = 268
+		l.mouse_filter = Control.MOUSE_FILTER_PASS
+		l.add_theme_font_size_override("font_size", 12)
+		riga.add_child(l)
+
+
+## Scelte della scheda di un edificio: tasti come le opzioni delle politiche (quella in vigore è
+## invertita). scelte: [{id, testo, attiva}].
+func _riempi_scelte(scelte: Array) -> void:
+	var riga := HBoxContainer.new()
+	riga.add_theme_constant_override("separation", 6)
+	_colonna_focus.add_child(riga)
+	for v in scelte:
+		var b := Button.new()
+		b.text = String(v["testo"])
+		b.toggle_mode = true
+		b.button_pressed = bool(v.get("attiva", false))
+		b.focus_mode = Control.FOCUS_NONE
+		b.add_theme_font_size_override("font_size", 12)
+		var st := StyleBoxFlat.new()
+		st.bg_color = Color(0, 0, 0, 0)
+		st.set_border_width_all(1)
+		st.border_color = RIGA
+		st.set_content_margin_all(6)
+		b.add_theme_stylebox_override("normal", st)
+		var id := String(v["id"])
+		b.pressed.connect(func() -> void: scelta_focus.emit(id))
+		riga.add_child(b)
 
 
 ## Barra sottile dello specchietto: fondo grigio, pieno bianco (rosso se è un allarme).

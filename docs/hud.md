@@ -108,6 +108,15 @@ Sono una prima serie (proposta di Claude), da confermare con Fede.
 ## Tasti
 1–8 mappe · G griglia · I isoipse · F fondare · Z zona agricola · C campo · N pascolo · B bosco sacro · V sentiero · H granaio · L legnaia · K capanno da pesca · T posta di caccia · O luogo sacro · U torre di avvistamento · Spazio pausa o riprendi · + e − velocità del tempo · X demolisci · P politiche · R rapporti di forza · Y +10 anni · [ e ] raggio dello strumento · Esc o clic destro chiude il pannello di focus o le politiche, chiude la catena dei sentieri o toglie lo strumento · Q E ruota · rotella zoom · tasto destro trascinato, tasto centrale o WASD sposta · Home torna al sito · F3 finestra Debug · F9 segnalibro nel registro tecnico.
 
+## Puntatore, cursori e cose che compaiono (Fede, 26/11/2026 sera)
+- **Cursori** (`script/cursori.gd`, disegni in `gioco/asset/cursori/`): bianchi a tratto pieno con il bordo scuro, come l'HUD. La freccia; la freccia con un quadratino quando sotto il puntatore c'è qualcosa da scegliere; il mirino quando è scelto uno strumento.
+- **Cursore di selezione:** senza strumenti, una cornice bianca sottile sul lotto della casa (anche passando su una persona) o della legnaia sotto il puntatore; un clic apre la scheda (della famiglia o della legnaia).
+- **Lotto sotto il puntatore:** con uno strumento è bianco tenue; rosso solo dove quello strumento non può costruire (`Partita.motivo_strumento`), e sempre con Demolisci. Senza strumenti non si colora (c'è la cornice).
+- **Le cose compaiono:** strumenti e politiche che una tappa non ha ancora aperto non si vedono (prima si vedevano spenti, con "si apre a…"); quando la tappa arriva compaiono, e la notifica dice "Compaiono…".
+- **Tasti solo tra parentesi** nei testi del gioco, per esempio "In Edifici (L)", "Politiche (P)".
+- **HUD fermo:** la striscia dell'anno ha una larghezza fissa (anno e tappa cambiano, i tasti del tempo restano dove sono); la lettura sotto il puntatore tiene al massimo due righe e il messaggio quattro, così la fascia non cambia altezza.
+- **Scheda di un edificio** nel pannello di focus (oggi la legnaia): righe come la scheda della famiglia e i tasti delle scelte (quella in vigore invertita), segnale `Hud.scelta_focus`.
+
 ## Registro tecnico e finestra Debug (decisioni di Fede del 26/11/2026)
 - Non fa parte dell'interfaccia del giocatore: serve alle prove. **F3** apre e chiude una piccola finestra in alto a destra, sotto la striscia dell'anno, nello stile dell'HUD: in testa "DEBUG · F3 chiude · F9 segnalibro", i numeri dal vivo (fotogrammi al secondo e minimo, fotogramma più lento, chiamate di disegno, memoria, alberi, animali e figure, zoom, anno), dove si salva il registro, e le **prove da verificare** come interruttori con il quadratino (vuoto □, pieno ■). Ogni spunta finisce nel registro con l'ora. Le caselle non prendono lo Spazio, che resta alla pausa.
 - **F9** scrive un segnalibro nel registro (ora, posizione e zoom della camera) e salva accanto una foto dello schermo; il messaggio in basso lo conferma.

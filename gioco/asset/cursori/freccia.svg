@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+<!-- Cursore di Strati: freccia bianca a tratto pieno con il bordo scuro, stile dell'HUD -->
+<path d="M3 2 L3 24 L8.6 18.8 L12.6 28 L16.8 26.2 L12.8 17.2 L20.6 17.2 Z" fill="#f4f4f0" stroke="#1b1b1b" stroke-width="1.8" stroke-linejoin="miter"/>
+</svg>
