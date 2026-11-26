@@ -16,6 +16,7 @@ Voci più recenti in cima.
 **Decisioni**
 - Fede (25/11 sera): capi confermati; opzione "Togli"; le due zone si parlano senza entrare in conflitto (stoppie e maggese).
 - Proposte di Claude da confermare: tasto N; animali in greggi, uno per stabbio; righe "si macellano" al massimo ogni 5 anni.
+- Fede: i primi animali erano "un po' abbozzati". Rifatti con una sagoma propria per specie: pecora a bioccoli bianchi con testa e zampe scure, capra slanciata con barba e corna all'indietro, maiale basso con grugno e criniera, bue con gobba, giogaia, corna a lira e ciuffo sulla coda; zampe in due pezzi con lo zoccolo (300–600 facce l'uno). Foto: `docs/immagini/animali-26-11.jpg`.
 
 **Prossimo passo**
 - Fede:

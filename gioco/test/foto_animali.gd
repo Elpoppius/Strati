@@ -35,9 +35,13 @@ func _process(_d: float) -> bool:
 		_posa("stabbio", c.x - 6.0, c.z - 4.0, 0.0)
 		var caso := RandomNumberGenerator.new()
 		caso.seed = 7
-		var elenco := ["pecora", "pecora", "pecora", "pecora", "capra", "capra", "capra", "maiale", "maiale", "bue"]
+		# In fila, di fianco, per confrontarli: pecora, capra, maiale, bue; dietro qualcuno sparso.
+		var fila := ["pecora", "capra", "maiale", "bue"]
+		for k in fila.size():
+			_posa("animale_" + fila[k], c.x - 3.0 + k * 2.6, c.z + 3.0 - k * 2.6, 135.0)
+		var elenco := ["pecora", "pecora", "capra", "maiale"]
 		for k in elenco.size():
-			_posa("animale_" + elenco[k], c.x + caso.randf_range(-4.0, 10.0), c.z + caso.randf_range(-2.0, 9.0), caso.randf_range(0.0, 360.0))
+			_posa("animale_" + elenco[k], c.x + caso.randf_range(2.0, 9.0), c.z + caso.randf_range(-8.0, -2.0), caso.randf_range(0.0, 360.0))
 		_s.griglia_attiva = false
 		var dim := float(args[1]) if args.size() > 1 else 24.0
 		cam.dimensione = dim
