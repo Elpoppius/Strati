@@ -797,6 +797,16 @@ func evidenzia_sentieri(si: bool) -> void:
 		(_nastri.material_override as ShaderMaterial).set_shader_parameter("evidenzia", 1.0 if si else 0.0)
 
 
+## Il modello di una casa (lo stesso calcolo di _sincronizza_case), per la scheda della famiglia.
+static func modello_casa(l: Vector2i) -> String:
+	var r := _caso(l, 1) * 100.0
+	for voce in CASE:
+		r -= voce[1]
+		if r < 0.0:
+			return voce[0]
+	return CASE[0][0]
+
+
 func _sincronizza_case() -> void:
 	var ora := {}
 	for l in sim.case:
@@ -804,13 +814,7 @@ func _sincronizza_case() -> void:
 	for l in sim.case:
 		if _case.has(l):
 			continue
-		var r := _caso(l, 1) * 100.0
-		var nome: String = CASE[0][0]
-		for voce in CASE:
-			r -= voce[1]
-			if r < 0.0:
-				nome = voce[0]
-				break
+		var nome := modello_casa(l)
 		var nodo := _istanza(nome)
 		var w := sim.centro_lotto(l)
 		_posa(nodo, w, roundf(_caso(l, 2) * 24.0) * 15.0)

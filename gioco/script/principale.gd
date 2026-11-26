@@ -265,6 +265,10 @@ func _unhandled_input(ev: InputEvent) -> void:
 				partita.inizia_pennellata()
 				_ultimo_pennello = punto_corrente if punto_corrente != null else Vector3.INF
 			applica_strumento()
+		elif mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed and partita:
+			# Senza strumenti: un clic su una persona o su una casa apre la scheda della famiglia.
+			aggiorna_lettura(mb.position)
+			partita.clic_sulla_mappa(mb.position, lotto_corrente)
 		elif mb.button_index == MOUSE_BUTTON_LEFT and not mb.pressed:
 			_pennellando = false
 	elif ev is InputEventMouseMotion:

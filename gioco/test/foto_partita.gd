@@ -1,7 +1,7 @@
 extends SceneTree
 ## Foto di controllo di una partita: fondazione sul sito 1, campi attorno, un secolo e mezzo di
 ## tempo con un giocatore automatico semplice, poi la foto.
-## Con persone:mestiere la camera va su una figura di quel mestiere (contadino, boscaiolo, pescatore, cacciatore, pastore, costruttore, sacro, casa), o persone:centro per il focolare.
+## Con famiglia, la scheda della famiglia di una casa vicino al focolare. Con persone:mestiere la camera va su una figura di quel mestiere (contadino, boscaiolo, pescatore, cacciatore, pastore, costruttore, sacro, casa), o persone:centro per il focolare.
 ## Uso: xvfb-run -a -s "-screen 0 1600x900x24" godot --path gioco --rendering-driver opengl3 --resolution 1600x900 -s res://test/foto_partita.gd -- uscita.png [dimensione_vista] [anni] [mappa] [strumento | politiche | tecniche | anteprima | fondazione | focus:Indicatore | capanno | posta | cantiere | pascolo]
 ## Con capanno o posta la vista va sul primo capanno da pesca o sulla prima posta di caccia, con lo
 ## strumento scelto e il puntatore sopra (lettura dell'edificio).
@@ -154,6 +154,21 @@ func _process(_d: float) -> bool:
 					var q: Vector2 = f["pos"]
 					_s.cam.vai_a(q.x, q.y, float(args[1]) if args.size() > 1 else 40.0)
 					break
+		elif args.size() > 4 and args[4] == "famiglia":
+			# Scheda della famiglia (26/11/2026): la casa del paese più vicina al focolare che ha
+			# membri visibili, con la scheda aperta.
+			var vp: VistaPersone = p.vista.persone
+			var scelta: Vector2i = sim.case[0]
+			var meglio := INF
+			for l in sim.case:
+				var d := sim.centro_lotto(l).distance_to(c)
+				if not sim.case_casale.has(l) and vp.membri(l).size() >= 2 and d < meglio:
+					meglio = d
+					scelta = l
+			var w := sim.centro_lotto(scelta)
+			_s.cam.vai_a(w.x, w.y, float(args[1]) if args.size() > 1 else 60.0)
+			_s.partita.apri_famiglia(scelta)
+			print("   famiglia: %s" % _s.partita.dati_famiglia(scelta))
 		elif args.size() > 4 and args[4] == "legnaia":
 			_s.hud.seleziona_comando("legnaia")
 			_s.aggiorna_zone_taglio()

@@ -1661,7 +1661,7 @@ func _riempi_focus(dati: Dictionary) -> void:
 	var testa := HBoxContainer.new()
 	_colonna_focus.add_child(testa)
 	var k := Label.new()
-	k.text = "RAPPORTI DI FORZA" if dati.has("gruppi") else "FOCUS"
+	k.text = "RAPPORTI DI FORZA" if dati.has("gruppi") else ("FAMIGLIA" if dati.has("famiglia") else "FOCUS")
 	k.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	k.add_theme_font_override("font", _carattere(true, 1.6))
 	k.add_theme_font_size_override("font_size", 11)
@@ -1691,7 +1691,9 @@ func _riempi_focus(dati: Dictionary) -> void:
 		_colonna_focus.add_child(_testo_focus(String(dati["descrizione"]), GRIGIO, 12))
 	if dati.has("gruppi"):
 		_riempi_rapporti(dati)
-	var parti: Array = dati.get("parti", []) if not dati.has("gruppi") else []
+	if dati.has("famiglia"):
+		_riempi_famiglia(dati)
+	var parti: Array = dati.get("parti", []) if not dati.has("gruppi") and not dati.has("famiglia") else []
 	if not parti.is_empty():
 		_colonna_focus.add_child(_titoletto_focus("DI COSA È FATTO"))
 		for p in parti:
@@ -1721,7 +1723,7 @@ func _riempi_focus(dati: Dictionary) -> void:
 			fondo.add_child(barra)
 	var cause: Array = dati.get("cause", [])
 	# Nei rapporti di forza il perché sta al passaggio sopra ogni gruppo (Fede: niente muri di testo).
-	if not dati.has("gruppi"):
+	if not dati.has("gruppi") and not dati.has("famiglia"):
 		_colonna_focus.add_child(_titoletto_focus("PERCHÉ"))
 		if cause.is_empty():
 			_colonna_focus.add_child(_testo_focus("Niente di particolare: va tutto come al solito.", BIANCO, 12))
@@ -1806,6 +1808,43 @@ func _riempi_rapporti(dati: Dictionary) -> void:
 		tv.custom_minimum_size.x = 252
 		tv.add_theme_font_size_override("font_size", 12)
 		rv.add_child(tv)
+
+
+## Scheda della famiglia (decisione di Fede del 26/11/2026): righe brevi [etichetta, testo, perché]
+## con il perché al passaggio del puntatore, poi l'umore con la barra. dati["famiglia"]: righe;
+## dati["umore"]: [consenso 0–100, parola].
+func _riempi_famiglia(dati: Dictionary) -> void:
+	var umore: Array = dati.get("umore", [])
+	var righe: Array = dati["famiglia"].duplicate()
+	if not umore.is_empty():
+		righe.insert(righe.size() - 1, ["Umore", "", "L'umore delle famiglie del villaggio."])
+	for r in righe:
+		var riga := HBoxContainer.new()
+		riga.mouse_filter = Control.MOUSE_FILTER_PASS
+		riga.tooltip_text = String(r[2])
+		_colonna_focus.add_child(riga)
+		var e := _titoletto_focus(String(r[0]).to_upper())
+		e.custom_minimum_size.x = 96
+		e.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		e.mouse_filter = Control.MOUSE_FILTER_PASS
+		riga.add_child(e)
+		if String(r[0]) == "Umore":
+			var q := float(umore[0]) / 100.0
+			riga.add_child(_barra_rapporti(q, 140, q < 0.4))
+			var p := Label.new()
+			p.text = String(umore[1])
+			p.mouse_filter = Control.MOUSE_FILTER_PASS
+			p.add_theme_font_size_override("font_size", 12)
+			p.add_theme_color_override("font_color", PERICOLO if q < 0.4 else BIANCO)
+			riga.add_child(p)
+			continue
+		var l := Label.new()
+		l.text = String(r[1])
+		l.clip_text = true
+		l.custom_minimum_size.x = 268
+		l.mouse_filter = Control.MOUSE_FILTER_PASS
+		l.add_theme_font_size_override("font_size", 12)
+		riga.add_child(l)
 
 
 ## Barra sottile dello specchietto: fondo grigio, pieno bianco (rosso se è un allarme).

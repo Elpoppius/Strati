@@ -2,6 +2,20 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (sera, tardi) — scheda della famiglia
+**Fatto**
+- **Scheda della famiglia** (resto della voce 7): un clic senza strumenti su una persona o su una casa apre nel pannello di focus "FAMIGLIA" il nome dal luogo, quante persone, casa e da quando (o "arrivati da fuori"), e le righe Lavoro, Ha, Umore e Vorrebbe, con il perché al passaggio del puntatore. La casa si incornicia sul terreno e i suoi membri si schiariscono; un clic altrove o Esc la chiudono. Descrizione in `prototipo0-godot.md` e `hud.md`, foto `docs/immagini/famiglia-26-11.jpg`.
+- Ogni figura abita in una casa vera, e le figure si dividono tra le case in parti uguali. La simulazione ricorda l'anno di nascita di ogni casa e le case delle famiglie accolte da fuori (solo memoria: le dinamiche non cambiano, quindi niente partite "umane").
+- Nuove verifiche in `verifica_partita.gd` (case vere, nomi senza doppioni, clic su persona e su casa, righe brevi con il perché, chiusura); modo `famiglia` in `foto_partita.gd`; una riga nel tutorial dei rapporti di forza. Tutte le 9 verifiche superate.
+
+**Decisioni** (Fede)
+- Riepilogo accolto; nome della famiglia dal luogo; clic su persone e case.
+- Proposte di Claude da guardare: i dodici nomi comuni (dell'aia, dell'orto, del noce…), i desideri e il loro ordine, la cornice bianca della casa.
+
+**Prossimo passo**
+- Fede: provare la scheda nel gioco, insieme a persone e specchietti.
+- Claude: voce 4, scorrerie (prima il riepilogo).
+
 ## 26/11/2026 (sera) — forme di governo decise
 **Fatto**
 - Forme di governo delle epoche 2–4 segnate come decise in `era-origini.md` § 5, `era-antichita.md` e `specchietto.md`. "Lignaggi" diventa **clan** e "maggiorenti" diventa **grandi famiglie** in tutti i documenti (forme di governo, gruppi, edifici, proprietà, sensibilità dell'epoca 2).

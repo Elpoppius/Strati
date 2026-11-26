@@ -242,6 +242,8 @@ func _process(delta: float) -> void:
 	while not sim.avvisi.is_empty():
 		var a: Dictionary = sim.avvisi.pop_front()
 		hud.notifica(a["testo"], a["pericolo"], a["punto"])
+	if famiglia != NESSUNA_CASA and hud.focus_aperto() != _titolo_famiglia:
+		_evidenzia_famiglia(NESSUNA_CASA)
 	_attesa_conseguenze -= delta
 	if _attesa_conseguenze <= 0.0:
 		_attesa_conseguenze = 0.2
@@ -619,7 +621,13 @@ func aggiorna_hud() -> void:
 	hud.imposta_interruttori("fonti", sim.fonti, "Il cibo viene da: %s." % ", ".join(accese))
 	scena.aggiorna_zone_taglio()
 	aggiorna_mappe_tematiche()
-	if hud.focus_aperto() != "":
+	if famiglia != NESSUNA_CASA:
+		if on:
+			_aggiorna_famiglia()
+		else:
+			hud.chiudi_focus()
+			_evidenzia_famiglia(NESSUNA_CASA)
+	elif hud.focus_aperto() != "":
 		if on:
 			hud.aggiorna_focus(dati_focus(hud.focus_aperto()))
 		else:
@@ -1232,3 +1240,291 @@ func _abbatti_tagli() -> void:
 	if not uscite.is_empty():
 		uso.blocca_ricrescita(uscite, false)
 	_zona_bloccata = bloccate
+
+
+# ---------- scheda della famiglia (decisione di Fede del 26/11/2026) ----------
+# Una casa è una famiglia. Un clic su una persona o su una casa apre la scheda nel pannello di
+# focus: dove abita e da quando, il lavoro dei suoi membri, cosa ha, l'umore delle famiglie e cosa
+# vorrebbe, che dipende da dove sta la casa. Legge solo dati che la simulazione ha già: non cambia
+# le dinamiche. Il nome viene dal luogo, come per le genti (Fede: "accordato").
+
+const NESSUNA_CASA := Vector2i(-99999, -99999)
+## Righe della scheda: al massimo questi caratteri (come le Conseguenze: niente muri di testo).
+const MASSIMO_RIGA_FAMIGLIA := 52
+const LAVORI_FAMIGLIA := {
+	"contadino": "zappa", "raccoglitrice": "raccoglie nei campi", "boscaiolo": "taglia legna",
+	"pescatore": "pesca", "cacciatore": "caccia nel bosco", "pastore": "porta il gregge",
+	"costruttore": "lavora al cantiere", "sacro": "al luogo sacro", "casa": "a casa",
+}
+## Nomi comuni delle famiglie, da ciò che c'è attorno a una casa del Neolitico (proposta di Claude).
+const NOMI_COMUNI := ["dell'aia", "dell'orto", "del noce", "del corniolo", "della siepe", "del sambuco",
+	"del masso", "del recinto", "del prugnolo", "della quercia grande", "del biancospino", "del melo selvatico"]
+var famiglia := NESSUNA_CASA
+var _titolo_famiglia := ""
+var _nomi_famiglie := {}
+var _chiave_nomi := ""
+
+
+## Clic sulla mappa senza strumenti: una persona (la più vicina sotto il puntatore) o una casa
+## aprono la scheda della famiglia; un clic altrove la chiude.
+func clic_sulla_mappa(pos_schermo: Vector2, lotto: Vector2i) -> void:
+	if not sim.fondato:
+		return
+	var l := NESSUNA_CASA
+	var f: Dictionary = vista.persone.figura_sotto(scena.cam.camera, pos_schermo)
+	if not f.is_empty() and sim.case.has(f["lotto"]):
+		l = f["lotto"]
+	elif sim.case.has(lotto):
+		l = lotto
+	if l == NESSUNA_CASA:
+		if famiglia != NESSUNA_CASA:
+			scena.hud.chiudi_focus()
+			_evidenzia_famiglia(NESSUNA_CASA)
+		return
+	apri_famiglia(l)
+
+
+func apri_famiglia(l: Vector2i) -> void:
+	var d := dati_famiglia(l)
+	_titolo_famiglia = String(d["titolo"])
+	scena.hud.mostra_focus(d)
+	_evidenzia_famiglia(l)
+
+
+func _evidenzia_famiglia(l: Vector2i) -> void:
+	famiglia = l
+	vista.persone.evidenziata = l
+	scena.terreno.materiale.set_shader_parameter("lotto_famiglia", Vector2(l))
+
+
+## Tiene la scheda aggiornata mentre il tempo scorre; la chiude se la casa non c'è più.
+func _aggiorna_famiglia() -> void:
+	var hud: Hud = scena.hud
+	if famiglia == NESSUNA_CASA:
+		return
+	if hud.focus_aperto() != _titolo_famiglia or not sim.case.has(famiglia):
+		if hud.focus_aperto() == _titolo_famiglia:
+			hud.chiudi_focus()
+		_evidenzia_famiglia(NESSUNA_CASA)
+		return
+	var d := dati_famiglia(famiglia)
+	if String(d["titolo"]) != _titolo_famiglia:
+		_titolo_famiglia = String(d["titolo"])
+		hud.mostra_focus(d)
+	else:
+		hud.aggiorna_focus(d)
+
+
+static func _direzione(v: Vector2) -> String:
+	if v.length() < 1.0:
+		return ""
+	# x verso est, z verso sud.
+	var k := wrapi(roundi(atan2(v.x, -v.y) / (PI / 4.0)), 0, 8)
+	return ["a nord", "a nord-est", "a est", "a sud-est", "a sud", "a sud-ovest", "a ovest", "a nord-ovest"][k]
+
+
+## Dove sta una casa: "nel paese" o "nel casale a nord".
+func _dove_casa(l: Vector2i) -> String:
+	if sim.case_casale.has(l):
+		var c: Vector2i = sim.casali[int(sim.case_casale[l])] if int(sim.case_casale[l]) < sim.casali.size() else l
+		return "nel casale " + _direzione(sim.centro_lotto(c) - sim.mondo_di_px(sim.centro))
+	return "nel paese"
+
+
+## L'acqua più vicina attorno al punto (entro tre pixel della mappa): il suo tipo, o -1.
+func _acqua_vicina(w: Vector2) -> int:
+	var p := sim.px_da_mondo(w.x, w.y)
+	var meglio := 1e9
+	var tipo := -1
+	for dy in range(-3, 4):
+		for dx in range(-3, 4):
+			var q := p + Vector2i(dx, dy)
+			if q.x < 0 or q.y < 0 or q.x >= sim.n or q.y >= sim.n:
+				continue
+			var t: int = sim.dati.tipo[sim.px(q)]
+			if t in [MappaDati.FIUME, MappaDati.TORRENTE, MappaDati.TORRENTE_EST, MappaDati.PALUDE]:
+				var d := Vector2(dx, dy).length()
+				if d < meglio:
+					meglio = d
+					tipo = t
+	return tipo
+
+
+## I nomi possibili di una famiglia, dal luogo della sua casa, dal più caratteristico.
+func _nomi_possibili(l: Vector2i) -> Array:
+	var w := sim.centro_lotto(l)
+	var c := sim.mondo_di_px(sim.centro)
+	var out: Array = []
+	if sim.luogo_sacro.x >= 0 and w.distance_to(sim.luogo_sacro) < 60.0:
+		out.append("della pietra")
+	if w.distance_to(c) < 45.0:
+		out.append("del focolare")
+	if sim.granaio.x >= 0 and w.distance_to(sim.granaio) < 50.0:
+		out.append("del granaio")
+	var riva := sim.dati.distanza_riva(w.x, w.y)
+	var acqua := _acqua_vicina(w)
+	if acqua == MappaDati.PALUDE:
+		out.append_array(["della palude", "delle canne"])
+	elif riva < 90.0 and acqua == MappaDati.FIUME:
+		out.append_array(["del fiume", "della riva", "del guado"])
+	elif riva < 90.0 and acqua >= 0:
+		out.append_array(["del torrente", "del guado", "della riva"])
+	var bosco := 0.0
+	for k in 8:
+		var q := w + Vector2.from_angle(k * TAU / 8.0) * 60.0
+		bosco = maxf(bosco, sim.dati.bosco_in(q.x, q.y))
+	if bosco > 0.45:
+		out.append_array(["dei pioppi", "dei salici"] if riva < 150.0 else ["del bosco", "delle querce"])
+	if sim.dati.quota(w.x, w.y) - sim.dati.quota(c.x, c.y) > 12.0:
+		out.append_array(["del colle", "del poggio"])
+	if sim.dati.tipo[sim.px(sim.px_da_mondo(w.x, w.y))] == MappaDati.GESSI:
+		out.append("dei gessi")
+	if sim.case_casale.has(l):
+		out.append("del casale " + _direzione(w - c))
+	var p := sim.px_da_mondo(w.x, w.y)
+	for s in sim.sentieri:
+		if Vector2(sim.px_di(s) - p).length() <= 1.0:
+			out.append("del sentiero")
+			break
+	# Nomi comuni da un campo di casa (un albero, l'aia, un masso), diversi da casa a casa.
+	var comuni: Array = NOMI_COMUNI.duplicate()
+	var k := int(VistaVillaggio._caso(l, 7) * comuni.size())
+	for j in comuni.size():
+		out.append(comuni[(k + j) % comuni.size()])
+	var dir := _direzione(w - c)
+	for j in comuni.size():
+		out.append(String(comuni[(k + j) % comuni.size()]) + " " + dir)
+	return out
+
+
+## Un nome per ogni casa, senza doppioni: le case più vecchie scelgono per prime.
+func nomi_famiglie() -> Dictionary:
+	var chiave := str(sim.case.size()) + ":" + str(sim.case.hash())
+	if chiave == _chiave_nomi:
+		return _nomi_famiglie
+	var ordine: Array = sim.case.duplicate()
+	ordine.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		var na := int(sim.nascita_case.get(a, sim.anno))
+		var nb := int(sim.nascita_case.get(b, sim.anno))
+		return na < nb if na != nb else (a.x < b.x if a.x != b.x else a.y < b.y))
+	var usati := {}
+	var nomi := {}
+	for l in ordine:
+		var possibili := _nomi_possibili(l)
+		var scelto := ""
+		for nome in possibili:
+			if not usati.has(nome):
+				scelto = nome
+				break
+		if scelto == "":
+			var base: String = possibili[0]
+			var dir := _direzione(sim.centro_lotto(l) - sim.mondo_di_px(sim.centro))
+			scelto = base + " " + dir if not base.contains(dir) else base
+			var k := 2
+			while usati.has(scelto):
+				scelto = "%s, %s" % [base, ["seconda", "terza", "quarta", "quinta"][mini(k - 2, 3)] if k <= 5 else str(k)]
+				k += 1
+		usati[scelto] = true
+		nomi[l] = scelto
+	_nomi_famiglie = nomi
+	_chiave_nomi = chiave
+	return nomi
+
+
+## Cosa vorrebbe la famiglia, dal luogo della casa e dallo stato del villaggio: [testo, perché].
+func _desiderio(l: Vector2i) -> Array:
+	var w := sim.centro_lotto(l)
+	var i := sim.px(sim.px_da_mondo(w.x, w.y))
+	if sim.piena(i) > 0.5:
+		return ["stare al riparo dalle piene", "La casa sta dove il fiume arriva nelle piene grandi."]
+	if sim.abbondanza < SimVillaggio.SOGLIA_CRESCITA:
+		return ["più cibo da parte", "Il villaggio ha poco da parte: si mangia, ma non avanza."]
+	var vicina := INF
+	for g in sim.legnaie:
+		if sim.legnaia_attiva(g):
+			vicina = minf(vicina, w.distance_to(g["punto"]))
+	if vicina == INF:
+		return ["una legnaia che lavori", "Nessuna legnaia lavora: la legna si raccoglie dove capita."]
+	if vicina > 500.0:
+		return ["legna più vicina", "La legnaia più vicina è a %d m dalla casa." % roundi(vicina)]
+	if sim.affollamento > 0.15:
+		return ["più spazio: si sta stretti", "Manca una casa per il %d%% delle famiglie." % roundi(sim.affollamento * 100.0)]
+	var vicini := 0
+	var stanchi := 0
+	for c in sim.campi:
+		if sim.mondo_di_px(sim.px_di(c)).distance_to(w) < 300.0:
+			vicini += 1
+			if sim.fattore_stanchezza(c) < 0.9:
+				stanchi += 1
+	if vicini > 0 and stanchi > vicini * 0.4:
+		return ["terra nuova da coltivare", "%d dei %d campi vicini alla casa sono stanchi." % [stanchi, vicini]]
+	if sim.case_casale.has(l):
+		var sentiero := false
+		var p := sim.px_da_mondo(w.x, w.y)
+		for s in sim.sentieri:
+			if Vector2(sim.px_di(s) - p).length() <= 3.0:
+				sentiero = true
+				break
+		if not sentiero:
+			return ["un sentiero verso il paese", "Dal casale al paese non c'è un sentiero."]
+	if sim.sacerdote_attivo and not sim.luogo_sacro_pronto():
+		return ["un luogo sacro", "Il sacerdote chiede un luogo sacro, e le famiglie lo ascoltano."]
+	return ["un buon raccolto", "Per ora non manca niente di importante."]
+
+
+func dati_famiglia(l: Vector2i) -> Dictionary:
+	var nome: String = nomi_famiglie().get(l, "del prato")
+	var w := sim.centro_lotto(l)
+	var modello := VistaVillaggio.modello_casa(l)
+	var dove := ("Casa lunga " if modello.begins_with("casa") else "Capanna tonda ") + _dove_casa(l)
+	var nata := int(sim.nascita_case.get(l, sim.anno))
+	var da := ("arrivati da fuori nel " + SimVillaggio.anno_testo(int(sim.case_straniere[l]))) if sim.case_straniere.has(l) else "dal " + SimVillaggio.anno_testo(nata)
+	var righe: Array = []
+	var descrizione := dove + " · " + da
+	if descrizione.length() > MASSIMO_RIGA_FAMIGLIA:
+		descrizione = dove
+		righe.append(["Origine", da, "Accolti dal villaggio: costruirono questa casa." if sim.case_straniere.has(l) else "L'anno in cui la famiglia ha costruito la casa."])
+	# Il lavoro: dai membri visibili della famiglia.
+	var membri: Array = vista.persone.membri(l)
+	var lavori: Array[String] = []
+	var campi_dir: Array[String] = []
+	for f in membri:
+		var cosa: String = LAVORI_FAMIGLIA.get(f["mestiere"], "a casa")
+		if f["mestiere"] == "contadino" and f["luogo"] != Vector2.INF:
+			var dir := _direzione((f["luogo"] as Vector2) - w)
+			if not campi_dir.has(dir):
+				campi_dir.append(dir)
+			continue
+		elif f["mestiere"] == "pescatore":
+			cosa = "pesca al fiume" if _acqua_vicina(f["luogo"]) == MappaDati.FIUME else "pesca al torrente"
+		if not lavori.has(cosa):
+			lavori.append(cosa)
+	if not campi_dir.is_empty():
+		lavori.push_front("zappa " + " e ".join(campi_dir.slice(0, 2)))
+	var lavoro := ""
+	for cosa in lavori:
+		var prova := cosa if lavoro == "" else lavoro + " · " + cosa
+		if prova.length() <= MASSIMO_RIGA_FAMIGLIA - 12:
+			lavoro = prova
+	if lavoro == "":
+		lavoro = "nei campi e attorno alle case"
+	var quanti := maxi(1, roundi(sim.pop / maxf(1.0, sim.case.size())))
+	var spiega_lavoro := "Si vedono %d membri della famiglia." % membri.size() if not membri.is_empty() else "Oggi nessuno della famiglia è in vista."
+	if vista.persone.quota > 1:
+		spiega_lavoro += " Ogni figura vale %d persone." % vista.persone.quota
+	righe.append(["Lavoro", lavoro, spiega_lavoro])
+	# Cosa ha: gli animali (se sono delle famiglie) e il raccolto.
+	var ha: Array[String] = []
+	var alle_famiglie := sim.politica("raccolto") == "famiglie"
+	if sim.sbloccato("pascolo") and sim.capi >= 1.0:
+		ha.append("%d capi" % maxi(1, roundi(sim.capi / maxf(1.0, sim.case.size()))) if alle_famiglie else "animali in comune")
+	ha.append("il suo raccolto" if alle_famiglie else "raccolto in comune")
+	righe.append(["Ha", " · ".join(ha), "Con il raccolto alle famiglie ognuna tiene il suo, e gli animali sono suoi." if alle_famiglie else "Il raccolto e gli animali sono di tutto il villaggio."])
+	var desiderio := _desiderio(l)
+	righe.append(["Vorrebbe", desiderio[0], desiderio[1]])
+	var c: float = sim.consenso["famiglie"]
+	var parole: Array = GRUPPI["famiglie"]["parole"]
+	var parola: String = parole[0 if c >= 70.0 else (1 if c >= 55.0 else (2 if c >= 40.0 else 3))]
+	return {"titolo": "Famiglia " + nome, "valore": "%d persone" % quanti if quanti != 1 else "1 persona",
+		"descrizione": descrizione, "famiglia": righe, "umore": [c, parola.trim_suffix("e") + "a" if parola.ends_with("e") else parola],
+		"punto": w}

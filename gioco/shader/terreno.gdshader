@@ -55,6 +55,8 @@ uniform float forza_rilievo = 0.6;
 uniform float lato_lotto = 20.0;
 uniform float alfa_griglia = 0.0;
 uniform vec2 lotto_evidenziato = vec2(-1.0, -1.0);
+// La casa della famiglia aperta nella scheda (26/11/2026): un riquadro chiaro attorno al lotto.
+uniform vec2 lotto_famiglia = vec2(-99999.0, -99999.0);
 // Strumento dell'HUD: cerchio (x, z, raggio; raggio negativo = spento) e suo colore.
 uniform vec3 pennello = vec3(0.0, 0.0, -1.0);
 uniform vec3 colore_pennello : source_color = vec3(1.0);
@@ -494,6 +496,18 @@ void fragment() {
 	// Lotto sotto il puntatore.
 	if (lotto_evidenziato.x >= 0.0 && floor(pos_mondo.xz / lato_lotto) == lotto_evidenziato) {
 		col = mix(col, pow(vec3(0.71, 0.26, 0.18), vec3(2.2)), 0.55);
+	}
+	{
+		vec2 q = pos_mondo.xz / lato_lotto - lotto_famiglia;
+		if (q.x > -0.25 && q.y > -0.25 && q.x < 1.25 && q.y < 1.25) {
+			vec2 e = abs(q - 0.5) - 0.5;  // 0 sul bordo del lotto
+			float fw = max(fwidth(q.x), 1e-4);
+			float bordo = 1.0 - smoothstep(fw * 1.5, fw * 3.5, abs(max(e.x, e.y)));
+			col = mix(col, vec3(1.0), bordo * 0.85);
+			if (max(e.x, e.y) < 0.0) {
+				col = mix(col, vec3(1.0), 0.12);
+			}
+		}
 	}
 	if (mostra_zona > 0.5) {
 		float z = texture(zona_agricola, UV).r;

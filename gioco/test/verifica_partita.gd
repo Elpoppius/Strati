@@ -212,6 +212,65 @@ func _verifica_persone(p: Partita, sim: SimVillaggio) -> void:
 	controlla(nascoste, "da lontano le persone non si disegnano")
 
 
+## Scheda della famiglia (decisione di Fede del 26/11/2026): ogni figura abita in una casa vera;
+## un clic su una persona o su una casa apre la scheda giusta, con righe brevi e nomi dal luogo.
+func _verifica_famiglia(p: Partita, sim: SimVillaggio) -> void:
+	var vp: VistaPersone = p.vista.persone
+	var tutte := true
+	for f in vp.figure():
+		if not sim.case.has(f["lotto"]):
+			tutte = false
+	controlla(tutte, "ogni figura abita in una casa vera")
+	var nomi := p.nomi_famiglie()
+	var diversi := {}
+	for l in nomi:
+		diversi[nomi[l]] = true
+	controlla(nomi.size() == sim.case.size() and diversi.size() == nomi.size(), "un nome per ogni casa, senza doppioni (%d case, per esempio \"%s\")" % [sim.case.size(), nomi.values()[0] if not nomi.is_empty() else ""])
+	controlla(not sim.nascita_case.is_empty() and sim.case.all(func(l: Vector2i) -> bool: return sim.nascita_case.has(l)), "ogni casa ricorda l'anno in cui è nata")
+	# Clic su una persona: si apre la sua famiglia, e lei si illumina. La vista va sul villaggio.
+	var ci := sim.mondo_di_px(sim.centro)
+	_s.cam.vai_a(ci.x, ci.y)
+	_s.cam.dimensione = 80.0
+	_s.cam.dimensione_obiettivo = 80.0
+	_s.cam.aggiorna()
+	vp._process(0.016)
+	var cam: Camera3D = _s.cam.camera
+	var f: Dictionary = {}
+	for g in vp.figure():
+		var q: Vector2 = g["pos"]
+		var a := cam.unproject_position(Vector3(q.x, _s.terreno.quota_mondo(q.x, q.y) + 0.85, q.y))
+		if _s.get_viewport().get_visible_rect().has_point(a) and not cam.is_position_behind(Vector3(q.x, 0, q.y)):
+			if vp.figura_sotto(cam, a) == g:
+				f = g
+				break
+	if f.is_empty():
+		controlla(false, "serve una persona sullo schermo per provare il clic")
+	else:
+		var q: Vector2 = f["pos"]
+		var a := cam.unproject_position(Vector3(q.x, _s.terreno.quota_mondo(q.x, q.y) + 0.85, q.y))
+		p.clic_sulla_mappa(a, Vector2i(-1, -1))
+		controlla(p.famiglia == f["lotto"] and _s.hud.focus_aperto().begins_with("Famiglia ") and vp.evidenziata == f["lotto"], "un clic su una persona apre la scheda della sua famiglia (%s)" % _s.hud.focus_aperto())
+	# Clic su una casa.
+	var l: Vector2i = sim.case[sim.case.size() / 2]
+	p.clic_sulla_mappa(Vector2(-1000, -1000), l)
+	var d := p.dati_famiglia(l)
+	controlla(p.famiglia == l and _s.hud.focus_aperto() == String(d["titolo"]), "un clic su una casa apre la sua famiglia")
+	var corte := String(d["descrizione"]).length() <= Partita.MASSIMO_RIGA_FAMIGLIA
+	var etichette: Array = []
+	for r in d["famiglia"]:
+		etichette.append(r[0])
+		if String(r[1]).length() > Partita.MASSIMO_RIGA_FAMIGLIA - 12 or String(r[2]) == "":
+			corte = false
+	controlla(corte and etichette.has("Lavoro") and etichette.has("Ha") and etichette.has("Vorrebbe") and (d["umore"] as Array).size() == 2, "la scheda ha righe brevi, ognuna con il suo perché: %s" % [d["famiglia"]])
+	var stampa := "%s · %s · %s" % [d["titolo"], d["valore"], d["descrizione"]]
+	for r in d["famiglia"]:
+		stampa += "\n      %s: %s" % [r[0], r[1]]
+	print("      " + stampa)
+	# Un clic sul prato chiude la scheda.
+	p.clic_sulla_mappa(Vector2(-1000, -1000), Vector2i(-5, -5))
+	controlla(p.famiglia == Partita.NESSUNA_CASA and _s.hud.focus_aperto() == "" and vp.evidenziata == VistaPersone.NESSUNA, "un clic altrove chiude la scheda")
+
+
 ## Campo stanco visibile (proposta confermata da Fede il 26/11/2026): la stanchezza e il maggese
 ## arrivano allo shader del terreno.
 func _verifica_campo_stanco(p: Partita, sim: SimVillaggio) -> void:
@@ -508,6 +567,7 @@ func _process(_d: float) -> bool:
 		_verifica_animali(p, sim)
 		_verifica_campo_stanco(p, sim)
 		_verifica_persone(p, sim)
+		_verifica_famiglia(p, sim)
 		p._azione("togli_pascolo")
 		p.inizia_pennellata()
 		_s.applica_strumento()

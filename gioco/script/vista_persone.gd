@@ -44,6 +44,10 @@ var _visibili := true
 var _complete := true
 ## Quante persone vale una figura (1, 2 o 5), per le verifiche e la scheda.
 var quota := 1
+## Scheda della famiglia (26/11/2026): ogni figura abita in una casa vera (il suo lotto); i membri
+## della famiglia aperta si illuminano (l'alfa del colore dell'istanza lo dice allo shader).
+const NESSUNA := Vector2i(-99999, -99999)
+var evidenziata := NESSUNA
 
 
 func prepara(s: SimVillaggio, t: Terreno, v: VistaVillaggio) -> void:
@@ -94,6 +98,14 @@ func sincronizza() -> void:
 			conti[m] = int(conti[m]) - 1
 			tenute.append(f)
 	_figure = tenute
+	# Chi ha perso la casa (piena, demolizione) va ad abitare in un'altra.
+	var ci_sono := {}
+	for l in sim.case:
+		ci_sono[l] = true
+	for f in _figure:
+		if not ci_sono.has(f["lotto"]):
+			_dai_casa(f)
+	_bilancia_case()
 	for m in conti:
 		for _k in int(conti[m]):
 			if _figure.size() < voluti:
@@ -159,15 +171,92 @@ func _nuova_figura(mestiere: String) -> Dictionary:
 	if mestiere == "raccoglitrice":
 		# Le raccoglitrici sono donne o uomini, ma nel modello si vede il cesto.
 		pass
-	var casa := _punto_casa()
-	var f := {"modello": k, "donna": donna, "mestiere": mestiere, "casa": casa, "pos": casa, "meta": casa,
+	var f := {"modello": k, "donna": donna, "mestiere": mestiere, "casa": Vector2.ZERO, "lotto": NESSUNA,
 		"verso": _caso.randf() * 360.0, "vel": 0.0, "fase": _caso.randf() * TAU, "stato": "fermo",
 		"tempo": _caso.randf_range(0.0, 6.0), "seme": _caso.randf(), "luogo": Vector2.INF, "guarda": Vector2.INF}
+	_dai_casa(f)
+	f["pos"] = f["casa"]
+	f["meta"] = f["casa"]
 	_nuovo_luogo(f)
 	# Al primo anno chi lavora è già al lavoro, chi sta a casa è tra le case.
 	f["pos"] = f["meta"]
 	f["stato"] = "lavora" if f["mestiere"] != "casa" else "fermo"
 	return f
+
+
+## Una casa per la figura: quella con meno figure, così ogni famiglia ha i suoi membri visibili.
+func _dai_casa(f: Dictionary) -> void:
+	if sim.case.is_empty():
+		f["lotto"] = NESSUNA
+		f["casa"] = sim.mondo_di_px(sim.centro) + Vector2.from_angle(_caso.randf() * TAU) * _caso.randf_range(4.0, 15.0)
+		return
+	var conta := {}
+	for g in _figure:
+		conta[g["lotto"]] = int(conta.get(g["lotto"], 0)) + 1
+	var scelta: Vector2i = sim.case[0]
+	var meno := 1 << 30
+	var inizio := _caso.randi() % sim.case.size()
+	for k in sim.case.size():
+		var l: Vector2i = sim.case[(inizio + k) % sim.case.size()]
+		var c := int(conta.get(l, 0))
+		if c < meno:
+			meno = c
+			scelta = l
+	f["lotto"] = scelta
+	f["casa"] = sim.centro_lotto(scelta) + Vector2.from_angle(_caso.randf() * TAU) * _caso.randf_range(5.0, 9.0)
+
+
+## Le case nuove prendono qualche figura da quelle che ne hanno di più: ogni famiglia ha i suoi
+## membri visibili (finché le figure bastano).
+func _bilancia_case() -> void:
+	if sim.case.is_empty() or _figure.is_empty():
+		return
+	for _giro in 400:
+		var conta := {}
+		for l in sim.case:
+			conta[l] = []
+		for f in _figure:
+			if conta.has(f["lotto"]):
+				(conta[f["lotto"]] as Array).append(f)
+		var piena: Vector2i = sim.case[0]
+		var vuota: Vector2i = sim.case[0]
+		for l in sim.case:
+			if (conta[l] as Array).size() > (conta[piena] as Array).size():
+				piena = l
+			if (conta[l] as Array).size() < (conta[vuota] as Array).size():
+				vuota = l
+		if (conta[piena] as Array).size() - (conta[vuota] as Array).size() <= 1:
+			return
+		var f: Dictionary = (conta[piena] as Array).back()
+		f["lotto"] = vuota
+		f["casa"] = sim.centro_lotto(vuota) + Vector2.from_angle(_caso.randf() * TAU) * _caso.randf_range(5.0, 9.0)
+
+
+## Le figure che abitano in una casa.
+func membri(l: Vector2i) -> Array:
+	return _figure.filter(func(f: Dictionary) -> bool: return f["lotto"] == l)
+
+
+## La figura più vicina al punto dello schermo, entro il suo ingombro; vuoto se non ce n'è.
+func figura_sotto(camera: Camera3D, pos_schermo: Vector2) -> Dictionary:
+	if not _visibili or camera == null:
+		return {}
+	var migliore := {}
+	var meglio := INF
+	for f in _figure:
+		var p: Vector2 = f["pos"]
+		var piedi := Vector3(p.x, terreno.quota_mondo(p.x, p.y), p.y)
+		if camera.is_position_behind(piedi):
+			continue
+		var a := camera.unproject_position(piedi)
+		var b := camera.unproject_position(piedi + Vector3.UP * 1.7)
+		var alto := maxf(a.distance_to(b), 6.0)
+		var centro := (a + b) * 0.5
+		var d := pos_schermo.distance_to(centro)
+		if d < maxf(alto * 0.6, 10.0) and d < meglio:
+			meglio = d
+			migliore = f
+	return migliore
 
 
 func _punto_casa() -> Vector2:
@@ -316,12 +405,13 @@ func _muovi(dt: float) -> void:
 		var anda := clampf(float(f["vel"]) / VELOCITA, 0.0, 1.9)
 		var lavoro := maxi(int(mes["lavoro"]), 0)
 		var dati := Color(float(f["fase"]), modo + anda * 0.5 if modo == 1 else float(modo), lavoro + (Asset.ATTREZZI.find(att) + 1) / 10.0 if att != "" else float(lavoro), float(f["seme"]))
+		var colore := Color(1, 1, 1, 0.5) if f["lotto"] == evidenziata else Color.WHITE
 		var chiave := "%d:%s" % [f["modello"], liv]
 		var i: int = indici.get(chiave, 0)
 		var mm := (_corpi[chiave] as MultiMeshInstance3D).multimesh
 		if i < mm.instance_count:
 			mm.set_instance_transform(i, t)
-			mm.set_instance_color(i, Color.WHITE)
+			mm.set_instance_color(i, colore)
 			mm.set_instance_custom_data(i, dati)
 		indici[chiave] = i + 1
 		if att != "":
@@ -330,7 +420,7 @@ func _muovi(dt: float) -> void:
 			var ma := (_attrezzi[ca] as MultiMeshInstance3D).multimesh
 			if j < ma.instance_count:
 				ma.set_instance_transform(j, t)
-				ma.set_instance_color(j, Color.WHITE)
+				ma.set_instance_color(j, colore)
 				ma.set_instance_custom_data(j, dati)
 			indici[ca] = j + 1
 

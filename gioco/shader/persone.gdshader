@@ -41,6 +41,8 @@ uniform vec4 posa = vec4(0.0); // per le foto di prova, si somma ai dati della M
 varying vec3 v_colore;
 varying vec3 v_grane; // quanto pesano la grana della lana (x), del pelo (y), del legno e del vimini (z)
 varying float v_pelle;
+// Membri della famiglia aperta nella scheda (alfa del colore dell'istanza sotto 0,75): più chiari.
+varying float v_evidenzia;
 
 // Colori lineari (proposta di Claude, da guardare con Fede): tinte naturali del Neolitico.
 const vec3 PELLE[4] = vec3[](vec3(0.40, 0.24, 0.16), vec3(0.33, 0.19, 0.12), vec3(0.27, 0.15, 0.09), vec3(0.46, 0.29, 0.20));
@@ -90,6 +92,7 @@ void vertex() {
 	v_colore = tinte[clamp(classe, 0, 9)];
 	v_grane = vec3(classe == 2 ? 1.0 : 0.0, (classe == 1 || classe == 3) ? 1.0 : 0.0, (classe == 6 || classe == 8) ? 1.0 : 0.0);
 	v_pelle = classe == 0 ? 1.0 : 0.0;
+	v_evidenzia = COLOR.a < 0.75 ? 1.0 : 0.0;
 
 	// Angoli degli arti. sp: spalla (avanti positivo), go: gomito in più; an: anca, gi: ginocchio
 	// (negativo = indietro); busto: piegato in avanti.
@@ -234,7 +237,8 @@ void fragment() {
 	float pelo = texture(grana_capelli, UV * 2.0).r / media_capelli;
 	float legno = texture(grana_veste, UV * 3.5).r / media_veste;
 	float grana = 1.0 + v_grane.x * (lana - 1.0) + v_grane.y * (pelo - 1.0) + v_grane.z * (legno - 1.0);
-	ALBEDO = v_colore * COLOR.r * mix(1.0, grana, 0.6);
+	ALBEDO = v_colore * COLOR.r * mix(1.0, grana, 0.6) * (1.0 + 0.5 * v_evidenzia);
+	EMISSION = vec3(0.3, 0.26, 0.18) * v_evidenzia;
 	ROUGHNESS = mix(0.92, 0.7, v_pelle);
 	SPECULAR = mix(0.2, 0.35, v_pelle);
 }

@@ -375,6 +375,13 @@ const CASALE_DISTANZA_MAX := 800.0
 const CASALE_SPAZIO := 200.0
 var casali: Array[Vector2i] = []  # lotto al centro di ogni casale
 var case_casale := {}  # lotto di una casa -> indice del casale
+## Scheda della famiglia (decisione di Fede del 26/11/2026: una casa è una famiglia). Solo memoria,
+## non cambia le dinamiche: l'anno in cui è nata ogni casa e, per le case delle famiglie accolte da
+## fuori, l'anno del loro arrivo.
+var nascita_case := {}  # lotto -> anno
+var case_straniere := {}  # lotto -> anno dell'arrivo
+var _case_stranieri_da_fare := 0
+var _anno_stranieri := 0
 var gia_piena_disastrosa := false
 ## Presagi: al massimo uno ogni secolo circa (proposta approvata da Fede il 25/11/2026).
 const ANNI_TRA_PRESAGI := 100
@@ -2167,6 +2174,8 @@ func _accogli(n_persone: int) -> void:
 	_cambia_consenso("famiglie", -1.5)
 	anni_sapere = 15
 	stranieri_accolti += n_persone
+	_case_stranieri_da_fare = ceili(n_persone / ABITANTI_PER_CASA)
+	_anno_stranieri = anno
 	if sbloccato("pascolo"):
 		capi += n_persone * CAPI_PER_STRANIERO
 	_scrivi("%d stranieri si fermano al villaggio e portano nuovi modi di coltivare." % n_persone, "buono")
@@ -2832,10 +2841,21 @@ func _disponi_nucleo(servono: int, ci_sono: int, paga: bool) -> void:
 		if migliore.x == -1 and migliore.y == -1:
 			break
 		case.append(migliore)
+		_segna_casa(migliore)
 		occupati[migliore] = true
 		ci_sono += 1
 		if paga:
 			legna -= COSTO_CASA
+
+
+## Memoria della scheda della famiglia: quando nasce una casa e se è di chi è arrivato da fuori.
+func _segna_casa(l: Vector2i) -> void:
+	nascita_case[l] = anno
+	if _case_stranieri_da_fare > 0 and anno - _anno_stranieri <= 10:
+		case_straniere[l] = _anno_stranieri
+		_case_stranieri_da_fare -= 1
+	else:
+		case_straniere.erase(l)
 
 
 func _vicino_a_legnaia(l: Vector2i) -> bool:
@@ -2878,6 +2898,7 @@ func _disponi_casali(servono: int, paga: bool) -> void:
 				case_casale[Vector2i(-100000 - k * 10 - t, 0)] = k
 			continue
 		case.append(lotto)
+		_segna_casa(lotto)
 		case_casale[lotto] = k
 		occupati[lotto] = true
 		ci_sono += 1
@@ -2970,6 +2991,8 @@ func _abbandona() -> void:
 	case = []
 	casali = []
 	case_casale = {}
+	nascita_case = {}
+	case_straniere = {}
 	legnaie = []
 	poste = []
 	capanni = []
