@@ -41,6 +41,26 @@ Le stime di prima erano da 2 a 8 volte troppo alte: erano pensate come ore di la
 
 In tutto **7–10 ore di lavoro di Claude**, cioè 2–3 giornate, più le conferme e le prove di Fede (che oggi sono la parte più lunga), poi la prova fisica e le correzioni.
 
+## Piano per il 27/11/2026 (deciso con Fede la sera del 26/11)
+**Fede decide** (nell'ordine):
+1. Menù delle impostazioni (voce 10): il contenuto proposto da Claude (Partita: tutorial, salvataggi automatici, velocità di partenza; Grafica: qualità a tre livelli, fotogrammi massimi, schermo intero, scala dell'interfaccia; Comandi in sola lettura; Registro acceso o spento; file `D:\Godot\Strati\impostazioni.cfg`; tasto F10 e voce in Strumenti › Partita). Qualità a tre livelli o voce per voce?
+2. Presagi a decenni: più rari (ogni 5–8 secoli) o notifiche grigie senza pausa?
+3. Soglie del primo governo (il Consiglio dei clan non esce mai).
+4. Strade: passerelle sui torrenti larghi; case lungo la via più evidenti?; sentieri battuti da soli dalle famiglie?
+5. Scorrerie: la mezza pausa in più a partita per la prima scelta sui segni.
+6. Direzione artistica: torre, passerella, varianti delle case, acqua della piena, maiale.
+7. Numeri e testi proposti da Claude: rischio e perdite delle scorrerie, strade, umore delle famiglie, popolazione visibile, nomi delle famiglie, tasti (U, F5, F8, F10).
+
+**Fede verifica** al PC: le 16 caselle della finestra Debug (F3), con il Registro acceso (Claude poi lo legge da `D:\Godot\Strati\Registro`).
+
+**Claude lavora:**
+1. Voce 10, menù delle impostazioni, appena Fede decide (poi prove, foto, verifiche).
+2. Le decisioni 2–5 di Fede, con le prove dei giocatori "umani" (anche lunghe) e il registro degli avvisi.
+3. Lettura del Registro dopo la prova di Fede e correzioni (come la voce C del 26/11).
+4. Ritocchi di direzione artistica che Fede chiede.
+5. In parallelo, sulla carta: l'Età industriale con la profondità di `era-origini.md`.
+6. Dopo: l'abitato protourbano (epoca 2), da progettare con Fede.
+
 ## Per chi riprende: il lavoro in ordine
 
 ### C. [x] Correzioni dalla prova di Fede (26/11/2026 sera) — fatte la sera stessa
