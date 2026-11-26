@@ -2,7 +2,7 @@
 
 Voci più recenti in cima.
 
-## 26/11/2026 (notte) — strade (voce 5), salvataggio e piene visibili (voce 9)
+## 26/11/2026 (notte) — strade (voce 5), salvataggio, piene visibili e varianti delle case (voce 9)
 **Fatto**
 - **Sentieri che diventano strade** (voce 5; proposta di Claude approvata da Fede: "mi convincono le proposte"):
   - Ogni anno chi lavora lontano va dal centro al suo posto lungo la rete dei sentieri. Il traffico viene da campi, pascolo, legnaie, poste e capanni, luogo sacro e casali.
@@ -18,6 +18,12 @@ Voci più recenti in cima.
   - Salvataggi automatici a ogni tappa e ogni 50 anni, ultimi 3.
   - File in `D:\Godot\Strati\Salvataggi`.
   - Si salvano tutta la simulazione (anche il caso), l'uso del suolo e le zone bloccate. Caricando si torna esattamente allo stato salvato, e rigiocando si arriva allo stesso punto (`test/verifica_salvataggio.gd`, l'undicesima verifica).
+- **Varianti delle case** (voce 9): una seconda versione per ogni tipo di casa, con gli annessi:
+  - cataste e orto recintato;
+  - tettoia staccata dal fianco;
+  - recintino per gli animali piccoli;
+  - telaio con una pelle tesa.
+  Metà dei lotti ha la variante. Foto: `docs/immagini/varianti-case-26-11.jpg`.
 - **Acqua che sale con le piene:** l'acqua torbida copre le terre basse in 3 s, resta 5 s e si ritira in 7 s. Una piena di stagione copre i bordi dei corsi, una disastrosa quasi tutta la piana. Foto: `docs/immagini/piena-*-26-11.jpg`.
 - **Prove:** tutte le 11 verifiche superate.
   - Giocatori "umani": mediane 744, 799, 853 e 136 abitanti; pause invariate.
@@ -32,10 +38,11 @@ Voci più recenti in cima.
   - sentieri battuti spontaneamente;
   - numeri e aspetto delle strade;
   - cartella, tasti e automatici del salvataggio;
-  - colore e tempi della piena.
+  - colore e tempi della piena;
+  - varianti delle case.
 
 **Prossimo passo**
-- Voce 9: varianti dei modelli delle case; poi le prove sui PC di Fede con il Registro.
+- Voce 9: restano solo le prove sui PC di Fede con il Registro (F3, nuove caselle per strade, salvataggio e piena).
 - Poi voce 6 (evento soglia e passo elastico) e voce 10 (menù delle impostazioni).
 
 ## 26/11/2026 (sera tardi) — prova di Fede, registro letto, legna rifatta e correzioni (voce C)

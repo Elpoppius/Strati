@@ -151,7 +151,14 @@ Script `strumenti/blender/villaggio.py` → `gioco/asset/villaggio/`, nello stil
 | roccia_1, _2, _3 | da 1,0 a 2,4 | 80 | |
 | torre_avvistamento | 7,0 × 4,2 × 7,2 | 1055 | scorrerie, 26/11/2026 (proposta di Claude): quattro pali con controventi, piano di assi a 4,5 m con parapetto di graticcio, tettuccio di paglia a una falda, scala a pioli, pira per il fuoco di segnalazione e frasche verdi; scala e pira guardano verso il villaggio |
 | cantiere_torre_avvistamento | 6,3 × 5,7 × 6,0 | 330 | pali e un lato di controventi, telaio del piano, scala, assi e pali a terra |
+| casa_lunga_piccola_b | 16,6 × 8,2 × 6,5 | 905 | variante (todo voce 9, 26/11/2026, proposta di Claude): catasta lungo il fianco, orto recintato di graticcio davanti alla porta |
+| casa_lunga_media_b | 17,9 × 10,4 × 7,2 | 1096 | variante: tettoia a una falda staccata dal fianco (ceppo, attrezzo, catasta), recintino per gli animali piccoli |
+| casa_lunga_grande_b | 24,6 × 13,1 × 7,9 | 1130 | variante: tettoia, catasta e orto dietro la casa |
+| capanna_tonda_b | 8,8 × 9,1 × 5,7 | 344 | variante: telaio con una pelle tesa a seccare, catasta |
+| capanna_tonda_piccola_b | 9,6 × 6,2 × 4,7 | 649 | variante: recintino di graticcio |
 | passerella | 5,6 × 6,0 × 1,0 | 242 | strade, 26/11/2026 (proposta di Claude approvata da Fede): tronchi di traverso su due correnti, paletti ai lati; pezzo da 6 m che il gioco mette in fila e allunga su torrenti e terreni fradici |
+
+Varianti delle case (26/11/2026): metà dei lotti ha la versione `_b` (`VistaVillaggio.QUOTA_VARIANTI`), con gli annessi fuori dalla gronda perché si vedano. Foto a confronto: `test/foto_cantieri.gd -- uscita 60 2 varianti` (`docs/immagini/varianti-case-26-11.jpg`).
 
 Dal 26/11/2026 `villaggio.py` accetta i nomi dei modelli da esportare (`… gioco/asset/villaggio torre_avvistamento,cantiere_torre_avvistamento`): così gli altri file non si riscrivono.
 

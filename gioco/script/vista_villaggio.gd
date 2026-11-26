@@ -8,6 +8,7 @@ extends Node3D
 
 const CARTELLA := "res://asset/villaggio/"
 ## Modelli delle case con il loro peso (abitato spontaneo: tipi misti).
+const QUOTA_VARIANTI := 0.5
 const CASE := [["casa_lunga_piccola", 35], ["casa_lunga_media", 30], ["capanna_tonda", 18], ["capanna_tonda_piccola", 12], ["casa_lunga_grande", 5]]
 const RAGGIO_CORTILE := 9.0
 
@@ -40,6 +41,10 @@ func prepara(s: SimVillaggio, u: UsoSuolo, t: Terreno) -> void:
 			if not _scene.has(nome):
 				_scene[nome] = load(CARTELLA + nome + ".glb")
 	_scene["passerella"] = load(CARTELLA + "passerella.glb")
+	for voce in CASE:
+		for nome in [voce[0], voce[0] + "_b"]:
+			if not _scene.has(nome):
+				_scene[nome] = load(CARTELLA + nome + ".glb")
 	# Zona agricola: un byte per punto della mappa, letto dallo shader del terreno (si vede mentre
 	# si destina la terra).
 	_immagine_zona = Image.create(sim.n, sim.n, false, Image.FORMAT_L8)
@@ -952,7 +957,9 @@ func _sincronizza_case() -> void:
 		if _case.has(l):
 			continue
 		var nome := modello_casa(l)
-		var nodo := _istanza(nome)
+		# Varianti (todo voce 9, 26/11/2026; proposta di Claude): metà delle case ha attorno ciò
+		# che la famiglia tiene fuori (cataste, orto, tettoia, recintino, telaio per le pelli).
+		var nodo := _istanza(nome + ("_b" if _caso(l, 3) < QUOTA_VARIANTI else ""))
 		var w := sim.centro_lotto(l)
 		_posa(nodo, w, roundf(_caso(l, 2) * 24.0) * 15.0)
 		_case[l] = nodo

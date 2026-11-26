@@ -125,6 +125,7 @@ Con il contado che cresce con gli abitanti e l'economia mista (24/11/2026) le po
   - Un file rovinato, di un'altra versione (`Salvataggio.VERSIONE`) o di un'altra mappa non si carica e il gioco dice perché; la partita in corso non si tocca. Prove: `test/verifica_salvataggio.gd`.
 - **Acqua che sale con le piene** (`VistaVillaggio._anima_piena`, `livello_piena` nello shader del terreno): quando una piena tocca il villaggio, l'acqua torbida e bruna sale in 3 s sulle terre basse (dove il rischio di piena supera 1 − 0,9 × livello), resta 5 s e si ritira in 7 s; tempi veri, si vede anche a velocità alta. Di stagione arriva a 0,55 (le terre più basse lungo i corsi), disastrosa a 1 (quasi tutta la piana). Foto: `test/foto_partita.gd -- uscita dimensione anni modo piena|piena:disastrosa`, `docs/immagini/piena-stagione-26-11.jpg`, `piena-disastrosa-26-11.jpg`.
 
+- **Varianti delle case** (26/11/2026 notte, proposta di Claude): ogni tipo di casa ha una seconda versione `_b` con ciò che la famiglia tiene fuori (cataste, orto, tettoia, recintino, telaio per le pelli); il lotto sceglie a caso, in modo fisso, metà e metà.
+
 ## Da fare
 - Prove di Fede e taratura.
-- Varianti dei modelli del villaggio.

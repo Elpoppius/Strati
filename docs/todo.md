@@ -11,7 +11,7 @@ Legenda: `[x]` fatto · `[~]` in parte · `[ ]` da fare · **(?)** serve una dec
 4. **Alla fine:** voce in cima al diario, todo aggiornato, commit e push.
 
 ## A che punto siamo (26/11/2026, fine sessione)
-**Ordine (proposto da Claude e accolto da Fede il 26/11/2026 sera):** B (registro tecnico in gioco: **fatto** il 26/11/2026 sera, resta la prima lettura dal PC di Fede) → 4 (scorrerie: **fatte** il 26/11/2026 sera) → 5 (strade, con le figure sui sentieri: **fatte** il 26/11/2026 sera) → 9 (base tecnica, con il salvataggio: salvataggio e piene visibili **fatti** il 26/11/2026 notte, restano le varianti delle case e le prove sui PC) → 6 (evento soglia e passo elastico: chiude l'epoca, va per ultima) → 10 (menù delle impostazioni) → prova fisica di Fede. In parallelo, sulla carta: l'Età industriale.
+**Ordine (proposto da Claude e accolto da Fede il 26/11/2026 sera):** B (registro tecnico in gioco: **fatto** il 26/11/2026 sera, resta la prima lettura dal PC di Fede) → 4 (scorrerie: **fatte** il 26/11/2026 sera) → 5 (strade, con le figure sui sentieri: **fatte** il 26/11/2026 sera) → 9 (base tecnica, con il salvataggio: salvataggio, piene visibili e varianti delle case **fatti** il 26/11/2026 notte, restano le prove sui PC) → 6 (evento soglia e passo elastico: chiude l'epoca, va per ultima) → 10 (menù delle impostazioni) → prova fisica di Fede. In parallelo, sulla carta: l'Età industriale.
 
 **Divisione del lavoro (Fede, 26/11/2026):** Fede nelle prove si sofferma sulla **direzione artistica**; le questioni tecniche (fotogrammi al secondo, tempi, errori) le raccoglie il registro tecnico della voce B, che Claude legge.
 
@@ -159,8 +159,8 @@ Si muove verso    terra alle famiglie · più aperta
 ### 9. [ ] Base tecnica
 - [x] Salvataggio della partita, con l'uso del suolo (26/11/2026 notte; regole in `prototipo0-godot.md`). Proposte di Claude in attesa dello sguardo di Fede: cartella `D:\Godot\Strati\Salvataggi`, F5 e F8, Strumenti › Partita, automatici a ogni tappa e ogni 50 anni (ultimi 3).
 - [x] Livelli dell'acqua che salgono con le piene, nella grafica (26/11/2026 notte; foto in `docs/immagini/piena-*-26-11.jpg`). Da guardare con Fede: colore dell'acqua torbida, tempi (3 s su, 5 fermi, 7 giù), quanto copre.
-- Varianti dei modelli del villaggio.
-- Prove sui PC di Fede: tempi degli alberi e fotogrammi al secondo.
+- [x] Varianti dei modelli del villaggio (26/11/2026 notte, proposta di Claude: una seconda versione per ogni tipo di casa, con cataste, orto, tettoia, recintino o telaio per le pelli; metà dei lotti; foto `docs/immagini/varianti-case-26-11.jpg`). Da guardare con Fede.
+- Prove sui PC di Fede: tempi degli alberi e fotogrammi al secondo (con il Registro, F3; anche il salvataggio).
 
 ### 10. [ ] Menù delle impostazioni (Fede, 26/11/2026)
 Un menù delle impostazioni del gioco, con dentro anche l'opzione dei tutorial (accesi o spenti per le partite nuove). Da progettare con Fede: cosa contiene oltre ai tutorial (per esempio velocità di partenza, qualità grafica, lingua), dove si apre (tasto, voce dell'HUD), dove si salva sul PC.

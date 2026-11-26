@@ -1,4 +1,6 @@
 extends SceneTree
+## Con "varianti" come quarto argomento: in alto le cinque case di base, sotto le loro varianti
+## (todo voce 9, 26/11/2026).
 ## Foto di controllo dei cantieri (decisione di Fede del 25/11/2026 sera): in alto i sei
 ## edifici finiti (granaio, legnaia, capanno da pesca, posta di caccia, luogo sacro, torre di avvistamento), sotto i loro scheletri in
 ## costruzione, su un prato sgombro accanto al sito iniziale.
@@ -33,10 +35,18 @@ func _process(_d: float) -> bool:
 		var c := cam.bersaglio
 		var u: UsoSuolo = _s.uso
 		u.costruisci(u.celle_nel_cerchio(c.x, c.z, 30.0), "capanna", false)
-		for k in EDIFICI.size():
-			var x := c.x + (k - 2.5) * 11.0
-			_posa(EDIFICI[k], x, c.z - 6.0)
-			_posa("cantiere_" + EDIFICI[k].replace("_su_pali", ""), x, c.z + 6.0)
+		if args.size() > 3 and args[3] == "varianti":
+			u.costruisci(u.celle_nel_cerchio(c.x, c.z, 70.0), "capanna", false)
+			var case := ["capanna_tonda_piccola", "capanna_tonda", "casa_lunga_piccola", "casa_lunga_media", "casa_lunga_grande"]
+			for k in case.size():
+				var x := c.x + (k - 2.0) * 22.0
+				_posa(case[k], x, c.z - 9.0)
+				_posa(case[k] + "_b", x, c.z + 9.0)
+		else:
+			for k in EDIFICI.size():
+				var x := c.x + (k - 2.5) * 11.0
+				_posa(EDIFICI[k], x, c.z - 6.0)
+				_posa("cantiere_" + EDIFICI[k].replace("_su_pali", ""), x, c.z + 6.0)
 		_s.griglia_attiva = false
 		var dim := float(args[1]) if args.size() > 1 else 30.0
 		cam.dimensione = dim

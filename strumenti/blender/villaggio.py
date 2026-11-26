@@ -774,6 +774,119 @@ def palo_appuntito_dritto(x, y, alto, raggio, mat):
     return base.cilindro_tra("paletto", (x, y, -0.25), (x, y, alto), raggio, raggio * 0.7, mat, lati=5)
 
 
+# ---------- varianti delle case (todo voce 9, 26/11/2026; proposta di Claude) ----------
+# Ogni tipo di casa ha una seconda versione con ciò che una famiglia tiene attorno: la stessa casa
+# (stesso seme e misure) più annessi a terra. Il gioco ne sceglie una per lotto. Asse lungo in x,
+# porta verso +x.
+
+def _catasta(parti, m, rnd, x, y, lungo=2.0, file=(4, 3, 2), lungo_y=False):
+    """Catasta di tronchi tagliati in file (lungo x, o lungo y)."""
+    r = 0.14
+    for fila, quanti in enumerate(file):
+        for k in range(quanti):
+            o = (k - (quanti - 1) / 2) * r * 2.05
+            z = r + fila * r * 1.75
+            d = rnd.uniform(-0.1, 0.1)
+            if lungo_y:
+                a, b = (x + o, y - lungo / 2 + d, z), (x + o, y + lungo / 2 + d, z)
+            else:
+                a, b = (x - lungo / 2 + d, y + o, z), (x + lungo / 2 + d, y + o, z)
+            parti.append(base.cilindro_tra("tronco", a, b, r * rnd.uniform(0.85, 1.05), r * rnd.uniform(0.85, 1.05), m["corteccia"], lati=7, uv_tile=1.0))
+
+
+def _orto(parti, m, rnd, x0, y0, x1, y1):
+    """Orto recintato di graticcio basso: pali agli angoli e lungo i lati, un varco verso la casa,
+    dentro le aiuole di terra smossa."""
+    angoli = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+    for k in range(4):
+        a, b = angoli[k], angoli[(k + 1) % 4]
+        lato = math.hypot(b[0] - a[0], b[1] - a[1])
+        n = max(1, int(lato / 1.2))
+        for j in range(n + 1):
+            t = j / n
+            px, py = a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t
+            parti.append(base.cilindro_tra("paletto", (px, py, -0.1), (px, py, 0.85 + rnd.uniform(-0.05, 0.05)), 0.045, 0.04, m["corteccia"], lati=5))
+        if k == 3:  # il lato verso la casa ha il varco
+            mezzo = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
+            _graticcio_dritto(parti, m, rnd, a, (mezzo[0], mezzo[1] + 0.5), 0.12, 4)
+            _graticcio_dritto(parti, m, rnd, (mezzo[0], mezzo[1] - 0.5), b, 0.12, 4)
+        else:
+            _graticcio_dritto(parti, m, rnd, a, b, 0.12, 4)
+    terra = base.materiale("terra_orto", "argilla", tinta=(0.42, 0.33, 0.24))
+    righe = max(1, int(abs(y1 - y0) / 0.9))
+    for k in range(righe):
+        y = min(y0, y1) + (k + 0.5) * abs(y1 - y0) / righe
+        aiuola = base.scatola("aiuola", (abs(x1 - x0) - 0.6, 0.5, 0.12), ((x0 + x1) / 2, y, 0.02), terra)
+        parti.append(aiuola)
+
+
+def _tettoia(parti, m, rnd, x, y, lungo, profondo, alta):
+    """Tettoia a una falda appoggiata al fianco della casa (y verso l'esterno): due pali, una trave
+    e la copertura di paglia; sotto, attrezzi e un ceppo."""
+    for dx in (-lungo / 2 + 0.2, lungo / 2 - 0.2):
+        parti.append(base.cilindro_tra("palo", (x + dx, y + profondo, -0.1), (x + dx, y + profondo, alta - 0.5), 0.08, 0.07, m["corteccia"], lati=6))
+    parti.append(base.cilindro_tra("trave", (x - lungo / 2, y + profondo, alta - 0.5), (x + lungo / 2, y + profondo, alta - 0.5), 0.07, 0.07, m["corteccia"], lati=6))
+    falda = base.scatola("falda", (lungo + 0.3, profondo + 0.5, 0.14), (0, 0, 0), m["paglia"], tagli=2)
+    pend = math.atan2(0.55, profondo)
+    falda.rotation_euler = (-pend, 0, 0)
+    falda.location = (x, y + profondo / 2, alta - 0.2)
+    parti.append(falda)
+    parti.append(base.cilindro_tra("ceppo", (x + 0.6, y + profondo * 0.5, 0.0), (x + 0.6, y + profondo * 0.5, 0.45), 0.22, 0.2, m["corteccia"], lati=8))
+    parti.append(base.cilindro_tra("manico", (x - 0.5, y + 0.3, 0.05), (x - 0.4, y + 0.25, 1.15), 0.025, 0.025, m["legno"], lati=4))
+    _catasta(parti, m, rnd, x - 0.3, y + profondo * 0.55, lungo=1.4, file=(3, 2))
+
+
+def _rastrelliera(parti, m, rnd, x, y):
+    """Telaio per seccare le pelli: due pali con una traversa, una pelle tesa."""
+    for dy in (-0.9, 0.9):
+        parti.append(base.cilindro_tra("palo", (x, y + dy, -0.1), (x, y + dy, 1.7), 0.06, 0.05, m["corteccia"], lati=5))
+    parti.append(base.cilindro_tra("traversa", (x, y - 1.0, 1.55), (x, y + 1.0, 1.55), 0.04, 0.04, m["legno"], lati=5))
+    pelle = base.materiale("pelle", "argilla", tinta=(0.55, 0.42, 0.3))
+    parti.append(base.scatola("pelle", (0.04, 1.3, 1.0), (x, y, 0.95), pelle))
+
+
+def _recintino(parti, m, rnd, cx, cy, raggio):
+    """Recintino tondo di graticcio per qualche animale piccolo, con l'apertura."""
+    n = 12
+    pali = []
+    for k in range(n - 1):
+        a = 2 * math.pi * (k + 0.5) / n
+        pali.append((cx + raggio * math.cos(a), cy + raggio * math.sin(a)))
+        parti.append(base.cilindro_tra("palo", (pali[-1][0], pali[-1][1], -0.1), (pali[-1][0], pali[-1][1], 1.0), 0.05, 0.045, m["corteccia"], lati=5))
+    for k in range(len(pali) - 1):
+        _graticcio_dritto(parti, m, rnd, pali[k], pali[k + 1], 0.12, 5)
+
+
+def casa_variante(nome, tipo, seme):
+    """La seconda versione di una casa: la casa di base più gli annessi del suo tipo."""
+    m = materiali()
+    rnd = random.Random(seme + 500)
+    misure = {"casa_lunga_piccola": (9.0, 5.0, 11), "casa_lunga_media": (12.0, 6.0, 1), "casa_lunga_grande": (18.0, 7.0, 13)}
+    parti = []
+    if tipo in misure:
+        lungo, largo, s = misure[tipo]
+        parti.append(base.casa_lunga(nome + "_base", lungo, largo, s))
+        if tipo == "casa_lunga_piccola":
+            _catasta(parti, m, rnd, -1.0, -largo / 2 - 1.7, lungo=2.4)
+            _orto(parti, m, rnd, lungo / 2 + 2.0, -2.6, lungo / 2 + 6.6, 2.4)
+        elif tipo == "casa_lunga_media":
+            _tettoia(parti, m, rnd, -1.5, largo / 2 + 1.4, 3.6, 1.8, 2.0)
+            _recintino(parti, m, rnd, -lungo / 2 - 3.2, -0.8, 1.8)
+        else:
+            _tettoia(parti, m, rnd, 3.0, largo / 2 + 1.5, 4.2, 2.0, 2.0)
+            _catasta(parti, m, rnd, -4.0, -largo / 2 - 1.8, lungo=3.0)
+            _orto(parti, m, rnd, -lungo / 2 - 5.6, -2.8, -lungo / 2 - 1.8, 2.8)
+    else:
+        raggio, s = {"capanna_tonda": (3.0, 2), "capanna_tonda_piccola": (2.3, 14)}[tipo]
+        parti.append(base.capanna_tonda(nome + "_base", raggio, s))
+        if tipo == "capanna_tonda":
+            _rastrelliera(parti, m, rnd, -raggio - 2.0, 0.6)
+            _catasta(parti, m, rnd, 0.3, raggio + 1.9, lungo=1.8, file=(3, 2))
+        else:
+            _recintino(parti, m, rnd, -raggio - 2.6, 0.0, 1.6)
+    return base.unisci(nome, parti)
+
+
 def roccia(nome, seme, dim):
     m = materiali()
     return base.unisci(nome, [sasso("roccia", dim, (0, 0, 0), m["pietra"], seme)])
@@ -805,6 +918,11 @@ ASSET = [
     ("torre_avvistamento", lambda n: torre_avvistamento(n, 41)),
     ("cantiere_torre_avvistamento", lambda n: cantiere_torre(n, 42)),
     ("passerella", lambda n: passerella(n, 43)),
+    ("casa_lunga_piccola_b", lambda n: casa_variante(n, "casa_lunga_piccola", 44)),
+    ("casa_lunga_media_b", lambda n: casa_variante(n, "casa_lunga_media", 45)),
+    ("casa_lunga_grande_b", lambda n: casa_variante(n, "casa_lunga_grande", 46)),
+    ("capanna_tonda_b", lambda n: casa_variante(n, "capanna_tonda", 47)),
+    ("capanna_tonda_piccola_b", lambda n: casa_variante(n, "capanna_tonda_piccola", 48)),
     ("roccia_1", lambda n: roccia(n, 28, (1.6, 1.2, 0.9))),
     ("roccia_2", lambda n: roccia(n, 29, (2.4, 1.8, 1.3))),
     ("roccia_3", lambda n: roccia(n, 30, (0.9, 0.8, 0.6))),
