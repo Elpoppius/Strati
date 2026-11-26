@@ -38,6 +38,14 @@ func avvia(s: Node, seme: int = -1) -> void:
 			return false
 		var w := sim.mondo_di_px(sim.px_di(i))
 		return uso.stato(w.x, w.y) == UsoSuolo.NATURALE
+	# Tutorial alle tappe (decisione di Fede del 26/11/2026): accesi in ogni partita nuova; la
+	# casella "Salta i tutorial" li spegne fino alla fine della partita.
+	# Le foto di controllo (test/foto_*.gd) partono senza tutorial, che coprirebbero la scena.
+	var ml := Engine.get_main_loop()
+	var script_avvio: String = (ml.get_script() as Script).resource_path if ml.get_script() != null else ""
+	if not script_avvio.contains("/test/foto"):
+		sim.tutorial_attivi = true
+		sim.tutorial(["fondare"], "Inizio della partita")
 	vista = VistaVillaggio.new()
 	vista.name = "Villaggio"
 	vista.prepara(sim, uso, s.terreno)
@@ -234,6 +242,9 @@ func _process(delta: float) -> void:
 		_accumulo = 0.0
 		var d: Dictionary = sim.decisioni[0]
 		var tipi := {"sorgenti": "Presagio", "cometa": "Presagio", "primo_cattivo": "Momento decisivo", "affollamento": "Momento decisivo", "stranieri": "Evento", "piena": "Evento", "abbandono": "Fallimento", "fine": "Fine del prototipo"}
+		if d["tipo"] == "tutorial":
+			hud.mostra_tutorial(d, _scelto.bind(d["id"], d["tipo"]))
+			return
 		var opzioni: Array = d["opzioni"]
 		if d["tipo"] == "fine":
 			opzioni = [{"id": "nuova", "testo": "Nuova partita", "nota": ""}] + opzioni

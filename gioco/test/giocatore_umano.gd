@@ -32,12 +32,12 @@ func _initialize() -> void:
 	var file := args[0] if args.size() > 0 else "/tmp/umano.txt"
 	var semi := int(args[1]) if args.size() > 1 else 3
 	var d: MappaDati = load("res://mappe/pedecollinare/mappa.res")
-	_righe.append("profilo,sito,seme,pop_finale,pop_minima,carestie,carestie_gravi,abbandoni,scissioni,pause,piene_grandi,granaio_anno,cosa_ha_imparato,legnaie,casali,nucleo,poste,capanni,luogo_sacro,bosco_sacro_ha,sacerdote,capi,pascolo_ha")
+	_righe.append("profilo,sito,seme,pop_finale,pop_minima,carestie,carestie_gravi,abbandoni,scissioni,pause,tutorial,piene_grandi,granaio_anno,cosa_ha_imparato,legnaie,casali,nucleo,poste,capanni,luogo_sacro,bosco_sacro_ha,sacerdote,capi,pascolo_ha")
 	for profilo in ["sbaglia", "legge", "genere", "casual"]:
 		for sito in d.siti:
 			for seme in range(1, semi + 1):
 				var r := _gioca(d, sito, profilo, seme * 31 + int(sito["n"]))
-				_righe.append("%s,%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%d,%d,%d,%d,%d,%d,%.1f,%d,%d,%.1f" % [profilo, String(sito["nome"]).replace(",", " "), seme, r["pop"], r["minima"], r["carestie"], r["gravi"], r["abbandoni"], r["scissioni"], r["pause"], r["piene"], r["granaio"], r["imparato"], r["legnaie"], r["casali"], r["nucleo"], r["poste"], r["capanni"], r["sacro"], r["bosco_sacro"], r["sacerdote"], r["capi"], r["pascolo_ha"]])
+				_righe.append("%s,%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%d,%d,%d,%d,%d,%d,%.1f,%d,%d,%.1f" % [profilo, String(sito["nome"]).replace(",", " "), seme, r["pop"], r["minima"], r["carestie"], r["gravi"], r["abbandoni"], r["scissioni"], r["pause"], r["tutorial"], r["piene"], r["granaio"], r["imparato"], r["legnaie"], r["casali"], r["nucleo"], r["poste"], r["capanni"], r["sacro"], r["bosco_sacro"], r["sacerdote"], r["capi"], r["pascolo_ha"]])
 	var f := FileAccess.open(file, FileAccess.WRITE)
 	f.store_string("\n".join(_righe) + "\n")
 	f.close()
@@ -53,6 +53,15 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 	var genere := profilo == "genere"
 	var casual := profilo == "casual"
 	var p_sito := Vector2i(sito["px"])
+	# Tutorial alle tappe (decisione di Fede del 26/11/2026): accesi come nella partita; le loro
+	# pause si contano a parte. Chi legge e chi impara sbagliando li leggono; chi conosce il genere
+	# li salta al primo; il casual ne legge un paio e poi salta.
+	sim.tutorial_attivi = true
+	sim.tutorial(["fondare"], "Inizio della partita")
+	var tutorial := 0
+	while sim.tutorial_in_attesa():
+		tutorial += 1
+		sim.scegli(sim.decisioni[0]["id"], "salta" if genere else "continua")
 	sim.fonda(p_sito)
 	var anno0 := sim.anno
 	var imparato := {}
@@ -85,6 +94,10 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 	while not sim.finito:
 		while sim.in_attesa():
 			var dec: Dictionary = sim.decisioni[0]
+			if dec["tipo"] == "tutorial":
+				tutorial += 1
+				sim.scegli(dec["id"], "salta" if genere or (casual and tutorial >= 3) else "continua")
+				continue
 			if dec["tipo"] != "fine":
 				pause += 1
 			if dec["tipo"] == "piena" and not casual and caso.randf() < 0.5 + 0.4 * legge:
@@ -207,7 +220,7 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 		if sim.fondato:
 			minima = minf(minima, sim.pop)
 	return {"pop": roundi(sim.pop), "minima": roundi(minima), "carestie": sim.stat["carestie"], "gravi": gravi,
-		"abbandoni": sim.stat["abbandoni"], "scissioni": scissioni, "pause": pause, "piene": sim.stat["piene"],
+		"abbandoni": sim.stat["abbandoni"], "scissioni": scissioni, "pause": pause, "tutorial": tutorial, "piene": sim.stat["piene"],
 		"granaio": granaio_anno, "imparato": " ".join(imparato.keys()), "legnaie": sim.legnaie.size(), "casali": sim.casali.size(), "nucleo": roundi(sim.abitanti_nucleo()),
 		"poste": sim.poste.size(), "capanni": sim.capanni.size(),
 		"sacro": 1 if sim.luogo_sacro_pronto() else 0, "bosco_sacro": snappedf(sim.ettari_bosco_sacro(), 0.1), "sacerdote": roundi(sim.consenso["sacerdote"]) if sim.sacerdote_attivo else -1,

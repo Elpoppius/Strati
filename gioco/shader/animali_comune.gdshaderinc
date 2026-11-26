@@ -11,12 +11,14 @@
 uniform sampler2D grana : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
 uniform float media_grana = 0.5; // luminosità media (lineare) della grana: il manto resta quello dei vertici
 uniform float ruvidita = 0.92;
-uniform vec3 perno_collo = vec3(0.0, 0.66, -0.34);
-uniform float lunghezza_collo = 0.4;
+uniform vec3 perno_collo = vec3(0.0, 0.66, -0.34); // garrese: da qui si piega il collo
+uniform vec3 giunto_testa = vec3(0.0, 0.84, -0.5); // nuca: da qui si piega la testa
+uniform float peso_testa = 0.4; // peso (lungo collo e testa) della nuca
 uniform float passo = 0.6; // metri per ciclo completo del passo
 uniform float spalla = 0.52; // altezza della spalla (lunghezza delle zampe)
-uniform float angolo_bruca = 1.0; // radianti: quanto si piega la testa per brucare (poco per il maiale)
-uniform float abbassa_bruca = 0.0; // metri: quanto scende ancora il collo perché il muso tocchi l'erba
+uniform float angolo_collo = 0.6; // radianti: quanto si piega il collo per brucare
+uniform float angolo_testa = 0.8; // radianti: quanto si piega ancora la testa sulla nuca
+uniform float abbassa_bruca = 0.0; // metri: quanto scende ancora il muso, se il collo non basta
 uniform vec4 posa = vec4(0.0); // per le foto di prova, si somma ai dati della MultiMesh
 
 vec3 ruota_x(vec3 p, float a) {
@@ -60,20 +62,23 @@ void vertex() {
 		v.x += sin(TIME * 2.1 + seme) * spalla * (0.12 + 0.12 * min(anda, 1.0)) * w * w;
 	}
 
-	// Collo e testa: giù nell'erba per brucare (masticando), su e un poco ondeggiante camminando,
-	// e da fermi con la testa alta ogni tanto si guardano attorno.
+	// Collo e testa: per brucare il collo si piega dal garrese e la testa dalla nuca, finché il muso
+	// arriva all'erba con la testa quasi verticale (masticando); camminando la testa è alta e
+	// ondeggia appena; da fermi con la testa alta ogni tanto si guardano attorno.
 	if (parte == 1 || parte == 6) {
-		float piega = min(1.0, w * 1.6);
-		float giu = -bruca * angolo_bruca + sin(TIME * 5.0 + seme) * 0.035 * bruca;
 		float cenno = sin(2.0 * fase) * 0.05 * min(anda, 1.0);
+		float a1 = -bruca * angolo_collo + cenno * 0.5;
+		float a2 = -bruca * angolo_testa + sin(TIME * 5.0 + seme) * 0.05 * bruca + cenno * 0.5;
 		float guarda = sin(TIME * 0.31 + seme) * 0.45 * (1.0 - bruca) * max(0.0, 1.0 - anda * 2.0);
-		vec3 q = v - perno_collo;
-		q = ruota_x(q, (giu + cenno) * piega);
-		q = ruota_y(q, guarda * piega);
-		v = perno_collo + q;
-		// Il collo si allunga verso il basso fino all'erba (la testa scende intera).
-		v.y -= bruca * abbassa_bruca * smoothstep(0.0, 0.7, w);
-		n = ruota_y(ruota_x(n, (giu + cenno) * piega), guarda * piega);
+		float pc = clamp(w / max(peso_testa, 0.02), 0.0, 1.0);
+		float h = smoothstep(peso_testa - 0.06, peso_testa + 0.06, w);
+		vec3 q = perno_collo + ruota_x(v - perno_collo, a1 * pc);
+		vec3 j = perno_collo + ruota_x(giunto_testa - perno_collo, a1);
+		q = mix(q, j + ruota_x(q - j, a2), h);
+		q = perno_collo + ruota_y(q - perno_collo, guarda * min(1.0, w * 1.6));
+		q.y -= bruca * abbassa_bruca * smoothstep(0.0, 0.7, w);
+		v = q;
+		n = ruota_y(ruota_x(n, a1 * pc + a2 * h), guarda * min(1.0, w * 1.6));
 	}
 	VERTEX = v;
 	NORMAL = n;

@@ -1302,6 +1302,117 @@ func mostra_scelta(tipo: String, titolo: String, testo: String, opzioni: Array, 
 			box.add_child(nota)
 
 
+## Riquadro del tutorial (decisione di Fede del 26/11/2026): la novità in due o tre righe, un tasto
+## che apre la spiegazione completa, Continua e la casella "Salta i tutorial" (vale per il resto
+## della partita). `al_termine` riceve "continua" o "salta".
+func mostra_tutorial(d: Dictionary, al_termine: Callable) -> void:
+	chiudi_scelta()
+	var velo := ColorRect.new()
+	velo.color = Color(0, 0, 0, 0.35)
+	velo.set_anchors_preset(Control.PRESET_FULL_RECT)
+	velo.mouse_filter = Control.MOUSE_FILTER_STOP
+	_radice.add_child(velo)
+	_modale = velo
+	var centro := CenterContainer.new()
+	centro.set_anchors_preset(Control.PRESET_FULL_RECT)
+	velo.add_child(centro)
+	var p := PanelContainer.new()
+	p.name = "Tutorial"
+	p.custom_minimum_size.x = 560
+	centro.add_child(p)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 10)
+	p.add_child(col)
+	var k := Label.new()
+	var pagine := int(d.get("pagine", 1))
+	var testa := "Tutorial · " + String(d.get("tappa", ""))
+	if pagine > 1:
+		testa += " · %d di %d" % [int(d.get("pagina", 1)), pagine]
+	k.text = testa.to_upper()
+	k.add_theme_font_override("font", _carattere(true, 1.6))
+	k.add_theme_font_size_override("font_size", 11)
+	k.add_theme_color_override("font_color", GRIGIO)
+	col.add_child(k)
+	var t := Label.new()
+	t.text = d["titolo"]
+	t.add_theme_font_override("font", _carattere(true))
+	t.add_theme_font_size_override("font_size", 24)
+	col.add_child(t)
+	var riga := ColorRect.new()
+	riga.color = RIGA
+	riga.custom_minimum_size.y = 1
+	col.add_child(riga)
+	var corpo := Label.new()
+	corpo.text = d["testo"]
+	corpo.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	corpo.custom_minimum_size.x = 528
+	col.add_child(corpo)
+	# "Cosa fa…?": apre e chiude la spiegazione completa.
+	var domanda := Button.new()
+	domanda.name = "Domanda"
+	domanda.text = "%s  +" % d.get("domanda", "Cosa fa?")
+	domanda.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	domanda.focus_mode = Control.FOCUS_NONE
+	domanda.flat = true
+	domanda.add_theme_color_override("font_color", Color.WHITE)
+	col.add_child(domanda)
+	var dettaglio := Label.new()
+	dettaglio.name = "Dettaglio"
+	dettaglio.text = d.get("dettaglio", "")
+	dettaglio.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	dettaglio.custom_minimum_size.x = 528
+	dettaglio.add_theme_font_size_override("font_size", 13)
+	dettaglio.add_theme_color_override("font_color", GRIGIO.lerp(Color.WHITE, 0.5))
+	dettaglio.visible = false
+	col.add_child(dettaglio)
+	domanda.pressed.connect(func() -> void:
+		dettaglio.visible = not dettaglio.visible
+		domanda.text = "%s  %s" % [d.get("domanda", "Cosa fa?"), "−" if dettaglio.visible else "+"])
+	var riga2 := ColorRect.new()
+	riga2.color = RIGA
+	riga2.custom_minimum_size.y = 1
+	col.add_child(riga2)
+	var piede := HBoxContainer.new()
+	piede.add_theme_constant_override("separation", 12)
+	col.add_child(piede)
+	# Casella come gli interruttori delle opzioni: quadratino vuoto o pieno, bordo sottile.
+	var salta := Button.new()
+	salta.name = "Salta"
+	salta.toggle_mode = true
+	salta.text = "□  Salta i tutorial"
+	salta.focus_mode = Control.FOCUS_NONE
+	salta.add_theme_font_size_override("font_size", 12)
+	var st_s := StyleBoxFlat.new()
+	st_s.bg_color = Color(0, 0, 0, 0)
+	st_s.set_border_width_all(1)
+	st_s.border_color = RIGA
+	st_s.set_content_margin_all(8)
+	salta.add_theme_stylebox_override("normal", st_s)
+	salta.add_theme_stylebox_override("pressed", st_s)
+	salta.add_theme_stylebox_override("hover", st_s)
+	salta.toggled.connect(func(on: bool) -> void: salta.text = ("■  " if on else "□  ") + "Salta i tutorial")
+	salta.tooltip_text = "Per il resto di questa partita le novità arrivano come notifiche, senza fermare il gioco."
+	piede.add_child(salta)
+	var spazio := Control.new()
+	spazio.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	piede.add_child(spazio)
+	var continua := Button.new()
+	continua.name = "Continua"
+	continua.text = "Continua" if int(d.get("pagina", 1)) >= pagine else "Avanti"
+	continua.focus_mode = Control.FOCUS_NONE
+	continua.custom_minimum_size = Vector2(120, 34)
+	var st := StyleBoxFlat.new()
+	st.bg_color = Color.WHITE
+	st.set_content_margin_all(8)
+	continua.add_theme_stylebox_override("normal", st)
+	continua.add_theme_color_override("font_color", Color.BLACK)
+	piede.add_child(continua)
+	continua.pressed.connect(func() -> void:
+		var scelta := "salta" if salta.button_pressed else "continua"
+		chiudi_scelta()
+		al_termine.call(scelta))
+
+
 func chiudi_scelta() -> void:
 	if _modale:
 		_modale.queue_free()

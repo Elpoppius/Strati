@@ -93,12 +93,15 @@ static func materiale_animale(specie: String, carte: bool = false) -> ShaderMate
 		m.set_shader_parameter("media_ciocche", 0.475 if lana else 0.474)
 	if d.has("perno_collo"):
 		var p: Array = d["perno_collo"]
+		var g: Array = d["giunto_testa"]
 		m.set_shader_parameter("perno_collo", Vector3(p[0], p[1], p[2]))
-		m.set_shader_parameter("lunghezza_collo", float(d["lunghezza_collo"]))
+		m.set_shader_parameter("giunto_testa", Vector3(g[0], g[1], g[2]))
+		m.set_shader_parameter("peso_testa", float(d["peso_testa"]))
+		m.set_shader_parameter("angolo_collo", float(d["angolo_collo"]))
+		m.set_shader_parameter("angolo_testa", float(d["angolo_testa"]))
+		m.set_shader_parameter("abbassa_bruca", float(d["abbassa_bruca"]))
 		m.set_shader_parameter("passo", float(d["passo"]))
 		m.set_shader_parameter("spalla", float(d["spalla"]))
-		m.set_shader_parameter("angolo_bruca", float(d.get("angolo_bruca", 1.0)))
-		m.set_shader_parameter("abbassa_bruca", float(d.get("abbassa_bruca", 0.0)))
 	_materiali_animali[chiave] = m
 	return m
 

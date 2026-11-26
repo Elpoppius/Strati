@@ -21,6 +21,8 @@ Gestionale urbanistico-politico. Il giocatore governa una città europea verosim
 
 **Ritmo (decisione di Fede del 24/11/2026):** il ritmo del gioco non è incalzante ma meditativo, strategico. Fermano il gioco solo le scelte vere; ciò che non chiede un intervento (piene, carestie) arriva come notifica discreta, sulla mappa e negli indicatori.
 
+**Tutorial alle tappe (decisione di Fede del 26/11/2026):** oltre alle scelte vere, il gioco si ferma per spiegare ciò che si sblocca (la fondazione, una tappa, una costruzione, una regola): un riquadro con la novità in due o tre righe e la spiegazione completa a richiesta. Con "Salta i tutorial" (per il giocatore esperto) per il resto della partita le novità arrivano come notifica grigia. Nelle prove le pause dei tutorial si contano a parte da quelle del ritmo.
+
 ## Decisioni prese
 - **Visuale:** isometrico 3D con camera fissa ruotabile (scatti di 90°), con mappe tematiche.
 - **Gameplay di riferimento:** Cities: Skylines / SimCity; visuale vicina a Caesar III.

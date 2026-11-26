@@ -375,6 +375,10 @@ var stat := {"carestie": 0, "piene": 0, "siccita": 0, "fondazioni": 0, "presagi_
 var storia := {"pop": [], "cibo": [], "salute": [], "legittimita": [], "abbondanza": [], "legna": [], "capi": []}
 ## Cronaca: [{anno, testo, tipo ("", "buono", "allarme")}], la più recente in testa.
 var cronaca: Array = []
+## Tutorial alle tappe (decisione di Fede del 26/11/2026, vedi Tutorial): spenti nelle prove senza
+## partita; la partita li accende. Ogni scheda si mostra al massimo una volta per partita.
+var tutorial_attivi := false
+var _tutorial_visti := {}
 ## Decisioni che aspettano il giocatore: il tempo si ferma finché non sono risolte.
 ## Ognuna: {id, tipo, titolo, testo, opzioni: [{id, testo, nota}]}.
 var decisioni: Array = []
@@ -498,6 +502,48 @@ func _notifica(testo: String, pericolo := false, punto := Vector2(-1, -1)) -> vo
 func _decidi(tipo: String, titolo: String, testo: String, opzioni: Array) -> void:
 	decisioni.append({"id": _prossimo_id, "tipo": tipo, "titolo": titolo, "testo": testo, "opzioni": opzioni})
 	_prossimo_id += 1
+
+
+## Mostra le schede del tutorial di una novità (o di più novità insieme, come pagine dello stesso
+## riquadro). Con i tutorial saltati, una notifica grigia per scheda: il gioco non si ferma.
+## `tappa` è il nome che compare in testa al riquadro (per esempio "Villaggio (100 abitanti)").
+func tutorial(chiavi: Array, tappa: String) -> void:
+	var nuove: Array = []
+	for c in chiavi:
+		if Tutorial.ha(c) and not _tutorial_visti.has(c):
+			_tutorial_visti[c] = true
+			nuove.append(c)
+	for k in nuove.size():
+		var sc := Tutorial.scheda(nuove[k])
+		if not tutorial_attivi:
+			_notifica(sc["avviso"], false, mondo_di_px(centro) if fondato else Vector2(-1, -1))
+			continue
+		_decidi("tutorial", sc["titolo"], sc["testo"], [{"id": "continua", "testo": "Continua", "nota": ""}, {"id": "salta", "testo": "Salta i tutorial", "nota": ""}])
+		var d: Dictionary = decisioni[-1]
+		d["chiave"] = nuove[k]
+		d["domanda"] = sc["domanda"]
+		d["dettaglio"] = sc["dettaglio"]
+		d["tappa"] = tappa
+		d["pagina"] = k + 1
+		d["pagine"] = nuove.size()
+
+
+## "Salta i tutorial" (Fede, 26/11/2026): vale per tutti i riquadri della partita in corso. Quelli
+## già in coda diventano notifiche grigie.
+func salta_tutorial() -> void:
+	tutorial_attivi = false
+	var resto: Array = []
+	for d in decisioni:
+		if d["tipo"] == "tutorial":
+			_notifica(Tutorial.scheda(d["chiave"])["avviso"], false, mondo_di_px(centro) if fondato else Vector2(-1, -1))
+		else:
+			resto.append(d)
+	decisioni = resto
+
+
+## Quante decisioni in attesa sono tutorial (le prove le contano a parte dalle pause vere).
+func tutorial_in_attesa() -> bool:
+	return not decisioni.is_empty() and decisioni[0]["tipo"] == "tutorial"
 
 
 func in_attesa() -> bool:
@@ -630,6 +676,8 @@ func fonda(p: Vector2i) -> void:
 	var nome := (" presso il " + String(v["sito"]["nome"]).to_lower()) if v["sito"] != null else ""
 	_scrivi("Fondazione%s. Acqua %s, rischio di piena %s." % [nome, v["acqua"][0], v["piena"][0]], "buono")
 	disponi_case()
+	# Tutorial della fondazione (Fede, 26/11/2026): gli strumenti del villaggio appena nato.
+	tutorial(Tutorial.DOPO_FONDAZIONE, "Fondazione")
 
 
 ## Raggio del contado in metri: cresce con gli abitanti (decisione di Fede).
@@ -2024,12 +2072,15 @@ func _aggiorna_tappa() -> void:
 		# Elenco in italiano: "a, b e c".
 		var elenco := aperti[-1] if aperti.size() < 2 else ", ".join(aperti.slice(0, -1)) + " e " + aperti[-1]
 		_scrivi("Nuova tappa: %s. Si aprono %s." % [String(t["nome"]).to_lower(), elenco], "buono")
-		# Il sacerdote ha voce dalla tappa del luogo sacro, ed è contrariato finché non c'è.
+		# Il sacerdote ha voce dalla tappa del luogo sacro, ed è contrariato finché non c'è; lo
+		# chiede quando se ne sblocca la costruzione (Fede, 26/11/2026: nel tutorial della tappa).
 		if "luogo_sacro" in t["apre"] and not sacerdote_attivo:
 			sacerdote_attivo = true
 			consenso["sacerdote"] = 45.0
 			_scrivi("Il sacerdote chiede un luogo sacro: finché non sarà eretto, è contrariato.")
 		_notifica("Nuova tappa: %s (%d abitanti). Si aprono %s." % [t["nome"], t["abitanti"], elenco], false, mondo_di_px(centro))
+		# Tutorial della tappa (Fede, 26/11/2026): il gioco si ferma e spiega le novità.
+		tutorial(t["apre"], "%s (%d abitanti)" % [t["nome"], t["abitanti"]])
 
 
 func politica(id: String) -> String:
@@ -2116,6 +2167,9 @@ func scegli(id_decisione: int, opzione: String) -> void:
 
 func _applica_scelta(tipo: String, o: String) -> void:
 	match tipo:
+		"tutorial":
+			if o == "salta":
+				salta_tutorial()
 		"sorgenti":
 			presagio_vero["scelta"] = o
 			if o == "razionare":

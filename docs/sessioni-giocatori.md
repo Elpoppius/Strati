@@ -190,3 +190,11 @@ Le decisioni che ne sono venute (Fede, 25/11/2026) stanno in `pilastri-e-decisio
 - **La scorta viva funziona:** chi tiene una mandria grande passa da 2,7 a 1,6 carestie a partita.
 - **Mandrie piccole:** chi non stende il pascolo resta sui 12 capi attorno alle case; con 44 ettari si arriva a 50–70. La portata (2 capi per ettaro di prato) si può alzare se Fede vuole mandrie più grandi.
 - La mediana di chi legge (454 contro 599) oscilla molto da una prova all'altra: il massimo e il minimo restano gli stessi.
+
+## Con i tutorial alle tappe (26/11/2026, tarda mattinata)
+**Tutorial** (decisione di Fede del 26/11/2026), 72 partite: i giocatori "umani" accendono i tutorial come la partita e li contano a parte dalle pause. Chi impara sbagliando e chi legge li leggono tutti (15–16 riquadri a partita: fondazione, i sette strumenti di partenza, granaio e raccolto, luogo sacro e pascolo, stranieri, affollamento e bosco sacro, casali); chi conosce il genere li salta al primo; il casual ne legge un paio e poi salta.
+
+Le dinamiche non cambiano: mediane 616, 454, 742, 116 abitanti; carestie 2,7, 2,5, 1,6, 2,2 a partita; pause vere 3,7–3,9 a partita, come stamattina. **Registro** (5 partite, livello 5): 4,2 pause vere a partita e 15 riquadri di tutorial, tutti in cinque momenti (inizio, fondazione e le quattro tappe).
+
+- I tutorial si concentrano all'inizio: 8 riquadri prima che il tempo cominci a scorrere, poi 2–3 a ogni tappa.
+- I giocatori automatici non imparano ancora dai tutorial (chi legge erige il luogo sacro 7 volte su 18, come prima): si potrà far leggere loro il riquadro del luogo sacro come si fa con le cause dei pannelli.

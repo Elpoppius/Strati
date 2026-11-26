@@ -134,6 +134,11 @@ func _destro(premuto: bool, pos: Vector2) -> InputEventMouseButton:
 func _rispondi(h: Hud, testo := "") -> bool:
 	if not h.modale_aperta():
 		return false
+	# Riquadro del tutorial: si va avanti con Continua.
+	var avanti := h._modale.find_child("Continua", true, false) as Button
+	if avanti != null and testo == "":
+		avanti.emit_signal("pressed")
+		return true
 	for b in h._modale.find_children("*", "Button", true, false):
 		if (testo == "" and (b as Button).text != "Nuova partita") or (b as Button).text == testo:
 			(b as Button).emit_signal("pressed")
@@ -149,6 +154,17 @@ func _process(_d: float) -> bool:
 	var h: Hud = _s.hud
 	var sim := p.sim
 	controlla(p != null and h.comando() == "fonda", "la partita comincia con lo strumento Fondare")
+	# Tutorial (decisione di Fede del 26/11/2026): la partita comincia con il riquadro della
+	# fondazione e il tempo fermo; "Cosa fa…?" apre la spiegazione; Continua va avanti.
+	controlla(h.modale_aperta() and h._modale.find_child("Tutorial", true, false) != null and sim.tutorial_in_attesa(), "la partita comincia con il tutorial della fondazione, a tempo fermo")
+	var dom := h._modale.find_child("Domanda", true, false) as Button
+	var det := h._modale.find_child("Dettaglio", true, false) as Label
+	controlla(dom != null and det != null and not det.visible, "la spiegazione completa è chiusa all'inizio")
+	if dom != null:
+		dom.emit_signal("pressed")
+		controlla(det.visible and det.text.length() > 80, "\"%s\" apre la spiegazione" % dom.text.strip_edges())
+	(h._modale.find_child("Continua", true, false) as Button).emit_signal("pressed")
+	controlla(not sim.in_attesa() and sim.tutorial_attivi and not h.modale_aperta(), "Continua chiude il riquadro e i tutorial restano accesi")
 	# Modalità fondazione (Fede): la lettura del sito prende il posto della descrizione e dei menù.
 	p.aggiorna_modalita()
 	var sito0: Vector2 = _s.dati.mondo_da_pixel(_s.dati.siti[0]["px"])
@@ -161,6 +177,17 @@ func _process(_d: float) -> bool:
 	controlla(h.modale_aperta(), "fondare chiede conferma mostrando la valutazione del sito")
 	_rispondi(h, "Fonda qui")
 	controlla(sim.fondato and h.comando() == "zona", "fondato; si passa alla zona agricola")
+	# Tutorial della fondazione: gli strumenti nuovi, come pagine dello stesso riquadro.
+	var pagine := sim.decisioni.filter(func(d: Dictionary) -> bool: return d["tipo"] == "tutorial")
+	controlla(pagine.size() == Tutorial.DOPO_FONDAZIONE.size() and int(pagine[0]["pagine"]) == pagine.size(), "dopo la fondazione i tutorial degli strumenti (%d pagine)" % pagine.size())
+	p._process(0.0)
+	controlla(h.modale_aperta() and h._modale.find_child("Tutorial", true, false) != null, "il primo riquadro si apre: %s" % (pagine[0]["titolo"] if not pagine.is_empty() else ""))
+	(h._modale.find_child("Salta", true, false) as Button).button_pressed = true
+	var avvisi_prima := sim.avvisi.size()
+	(h._modale.find_child("Continua", true, false) as Button).emit_signal("pressed")
+	controlla(not sim.tutorial_attivi and not sim.in_attesa() and sim.avvisi.size() == avvisi_prima + pagine.size() - 1, "\"Salta i tutorial\": i riquadri rimasti diventano notifiche grigie (%d)" % (sim.avvisi.size() - avvisi_prima))
+	sim.tutorial(["granaio"], "prova")
+	controlla(not sim.in_attesa(), "saltati, per il resto della partita le novità non fermano il gioco")
 	controlla(not h.lettura_sito_visibile() and (h._blocchi["costruzione"]["pannello"] as Control).visible, "dopo la fondazione tornano descrizione e menù")
 	controlla(p.vista.numero_case() == sim.case.size() and sim.case.size() == 6, "le case della simulazione sono disegnate (%d)" % p.vista.numero_case())
 	controlla(_s.uso.stato(sito.x, sito.y) == UsoSuolo.COSTRUITO, "terra battuta al centro del villaggio")

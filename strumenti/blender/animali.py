@@ -122,6 +122,8 @@ class Specie:
         self.centri = {}  # parte -> (x, y) della zampa, per le UV cilindriche
         self.collo = None  # (base, punta del muso)
         self.coda = None  # (radice, punta)
+        self.perno = None  # punto attorno a cui si piega il collo (se manca, la base del collo)
+        self.giunto = None  # nuca: dove la testa si piega sul collo
 
     def add(self, v):
         self.volumi.append(v)
@@ -170,9 +172,11 @@ def pecora():
     s.zampa(5, 0.12, -0.33, 0.52, 0.29, 0.027, False)
     s.add(Cono((0, -0.5, 0.64), (0, -0.6, 0.42), 0.06, 0.04, "pelo", 7, k=0.04))
     s.collo = ((0, 0.34, 0.66), (0, 0.72, 0.76))
+    s.perno = (0, 0.28, 0.64)  # brucando il collo si piega dall'attaccatura
+    s.giunto = (0, 0.5, 0.84)  # e la testa dalla nuca
     s.coda = ((0, -0.5, 0.64), (0, -0.6, 0.42))
     s.passo = 0.6
-    s.bruca = 1.1
+    s.bruca = 1.3
     return s
 
 
@@ -196,9 +200,11 @@ def capra():
     s.zampa(5, 0.09, -0.27, 0.62, 0.32, 0.022, False)
     s.add(Cono((0, -0.4, 0.78), (0, -0.46, 0.9), 0.03, 0.012, "pelo", 7, k=0.02))
     s.collo = ((0, 0.27, 0.74), (0, 0.63, 0.89))
+    s.perno = (0, 0.2, 0.7)  # brucando il collo si piega dall'attaccatura
+    s.giunto = (0, 0.42, 0.97)  # e la testa dalla nuca
     s.coda = ((0, -0.4, 0.78), (0, -0.46, 0.9))
     s.passo = 0.65
-    s.bruca = 1.0
+    s.bruca = 1.3
     return s
 
 
@@ -230,6 +236,7 @@ def maiale():
     s.add(Cono((0, -0.43, 0.52), (0.03, -0.49, 0.38), 0.014, 0.008, "pelo", 7, k=0.012))
     s.add(Elli((0.03, -0.495, 0.36), (0.025, 0.025, 0.04), "scuro", 7, k=0.01))  # ciuffo
     s.collo = ((0, 0.28, 0.48), (0, 0.6, 0.35))
+    s.giunto = (0, 0.3, 0.48)  # quasi senza collo: si piega la testa
     s.coda = ((0, -0.43, 0.52), (0.03, -0.5, 0.34))
     s.passo = 0.42
     s.bruca = 0.35  # la testa è già bassa: grufola appena
@@ -237,6 +244,9 @@ def maiale():
 
 
 def bue():
+    """Bue (rifatto il 26/11/2026: il grigio chino sembrava una proboscide): corpo massiccio con la
+    gobba sulle spalle, giogaia, testa da bovino con la fronte larga, il muso largo e scuro, le
+    orecchie orizzontali e le corna a lira alte; pelo corto e liscio."""
     s = Specie()
     s.add(Elli((0, 0.0, 1.05), (0.36, 0.85, 0.4), "pelo", k=0.12))
     s.add(Elli((0, 0.45, 1.02), (0.36, 0.42, 0.44), "pelo", k=0.12))
@@ -244,23 +254,28 @@ def bue():
     s.add(Elli((0, 0.5, 1.32), (0.2, 0.3, 0.14), "pelo", k=0.1))  # gobba
     s.add(Elli((0, 0.0, 0.8), (0.27, 0.6, 0.16), "pancia", k=0.1))
     s.add(Elli((0, 0.86, 0.8), (0.07, 0.24, 0.24), "pelo", 1, k=0.08))  # giogaia
-    s.add(Cono((0, 0.7, 1.12), (0, 1.02, 1.08), 0.3, 0.2, "pelo", 1, k=0.1))
-    s.add(Cono((0, 1.05, 1.12), (0, 1.42, 0.86), 0.17, 0.11, "muso", 1, k=0.07))
-    s.add(Elli((0, 1.45, 0.84), (0.12, 0.08, 0.1), "naso", 1, k=0.04))
+    s.add(Cono((0, 0.7, 1.12), (0, 1.02, 1.1), 0.3, 0.21, "pelo", 1, k=0.1))
+    # Testa: fronte larga e piatta, faccia che si stringe poco, muso largo e scuro.
+    s.add(Elli((0, 1.1, 1.13), (0.19, 0.11, 0.13), "pelo", 1, k=0.06))  # fronte
+    s.add(Cono((0, 1.08, 1.08), (0, 1.36, 0.9), 0.16, 0.13, "muso", 1, k=0.06))
+    s.add(Elli((0, 1.4, 0.87), (0.14, 0.09, 0.1), "naso", 1, k=0.04))
     for sx in (-1, 1):
-        s.corno([(sx * 0.12, 1.03, 1.2), (sx * 0.3, 1.05, 1.24), (sx * 0.4, 1.08, 1.38), (sx * 0.36, 1.06, 1.52)], 0.045, 0.01)
-        s.add(Elli((sx * 0.15, 1.13, 1.07), (0.022, 0.022, 0.022), "occhio", 1, k=0.005))
-        s.add(Elli((sx * 0.23, 1.02, 1.1), (0.1, 0.035, 0.05), "muso", 6, k=0.02))
+        s.corno([(sx * 0.13, 1.08, 1.22), (sx * 0.3, 1.1, 1.3), (sx * 0.4, 1.13, 1.47), (sx * 0.33, 1.11, 1.63)], 0.05, 0.012)
+        s.add(Elli((sx * 0.17, 1.17, 1.08), (0.022, 0.022, 0.022), "occhio", 1, k=0.005))
+        s.add(Elli((sx * 0.24, 1.07, 1.12), (0.08, 0.03, 0.045), "muso", 6, k=0.02))  # orecchie orizzontali
     s.zampa(2, -0.22, 0.6, 0.95, 0.44, 0.052, True)
     s.zampa(3, 0.22, 0.6, 0.95, 0.44, 0.052, True)
     s.zampa(4, -0.22, -0.68, 0.95, 0.47, 0.052, False)
     s.zampa(5, 0.22, -0.68, 0.95, 0.47, 0.052, False)
     s.add(Cono((0, -0.93, 1.25), (0, -0.98, 0.5), 0.04, 0.022, "pelo", 7, k=0.04))
     s.add(Elli((0, -0.98, 0.44), (0.05, 0.05, 0.1), "scuro", 7, k=0.03))
-    s.collo = ((0, 0.68, 1.12), (0, 1.47, 0.84))
+    s.collo = ((0, 0.68, 1.12), (0, 1.45, 0.86))
+    # Brucando il collo si piega dalle spalle (perno al garrese), la testa scende quasi verticale.
+    s.perno = (0, 0.55, 1.05)
+    s.giunto = (0, 1.03, 1.1)
     s.coda = ((0, -0.93, 1.25), (0, -0.98, 0.36))
     s.passo = 1.1
-    s.bruca = 1.25
+    s.bruca = 1.2
     return s
 
 
@@ -288,8 +303,8 @@ MANTI = {
     ],
     "bue": [
         {"pelo": (0.19, 0.12, 0.07), "pancia": (0.27, 0.19, 0.12), "muso": (0.15, 0.095, 0.055), "naso": (0.05, 0.04, 0.035), "scuro": (0.06, 0.04, 0.03), "zampa": (0.15, 0.095, 0.06)},
-        {"pelo": (0.4, 0.38, 0.34), "pancia": (0.48, 0.46, 0.42), "muso": (0.16, 0.15, 0.135), "naso": (0.03, 0.028, 0.026), "scuro": (0.04, 0.035, 0.03), "zampa": (0.14, 0.13, 0.12),
-         "spalle": (0.2, 0.19, 0.17)},
+        {"pelo": (0.3, 0.285, 0.255), "pancia": (0.36, 0.345, 0.31), "muso": (0.21, 0.2, 0.18), "naso": (0.03, 0.028, 0.026), "scuro": (0.04, 0.035, 0.03), "zampa": (0.1, 0.095, 0.088),
+         "spalle": (0.13, 0.12, 0.11)},
         {"pelo": (0.09, 0.055, 0.035), "pancia": (0.13, 0.085, 0.055), "muso": (0.07, 0.045, 0.03), "naso": (0.03, 0.025, 0.02), "scuro": (0.03, 0.025, 0.02), "zampa": (0.05, 0.035, 0.025)},
     ],
 }
@@ -343,7 +358,7 @@ def colori(sp, specie, manto, p):
     corno = np.array([1.0 if v.tinta == "corno" else 0.0 for v in sp.volumi])
     sul_corno = ((pesi @ corno) / pesi.sum(axis=1))[:, None]
     if sul_corno.max() > 0:
-        alto = np.clip((p[:, 2:3] - p[:, 2].max() * 0.82) / (p[:, 2].max() * 0.18), 0, 1)
+        alto = np.clip((p[:, 2:3] - p[:, 2].max() * 0.93) / (p[:, 2].max() * 0.07), 0, 1)  # solo la punta
         col = col * (1 - sul_corno * alto * 0.85)
     col = col * (1 + 0.08 * rumore(p, 9.0, 3)[:, None] * sul_pelo)
     dominante = [sp.volumi[i].tinta for i in np.argmin(dist, axis=1)]
@@ -465,8 +480,11 @@ CIOCCHE = {
     "pecora": ((700, 70), 0.085, 0.075, 55.0, 1.2),
     "capra": ((700, 70), 0.075, 0.05, 18.0, 1.9),
     "maiale": ((520, 50), 0.045, 0.035, 20.0, 1.2),
-    "bue": ((1000, 90), 0.085, 0.065, 15.0, 1.6),
+    "bue": ((1200, 90), 0.035, 0.05, 8.0, 2.0),  # pelo corto e liscio, frangia solo sotto
 }
+
+
+LUCE_CARTE = {"bue": 0.8, "capra": 0.85, "maiale": 0.85}
 
 
 def carte_pelo(nome, sp, specie, ob, col_vert, info, leggero, mat, seme):
@@ -545,7 +563,9 @@ def carte_pelo(nome, sp, specie, ob, col_vert, info, leggero, mat, seme):
         kk = rnd.randrange(4)
         u0, u1 = kk / 4 + 0.015, (kk + 1) / 4 - 0.015
         vi = vs[0]
-        cc = col_fin[vi] * rnd.uniform(0.85, 1.08)
+        # Le punte chiare della texture fanno lana sui manti chiari: sulle carte del pelo corto il
+        # colore si tiene un po' più scuro.
+        cc = np.mean(col_fin[vs], axis=0) * rnd.uniform(0.88, 1.06) * LUCE_CARTE.get(specie, 1.0)
         for lo, uv in zip(f.loops, ((u0, 0.0), (u1, 0.0), (u1, 1.0), (u0, 1.0))):
             lo[uv_l].uv = uv
             lo[parti_l].uv = (float(parte[vi]), float(peso[vi]))
@@ -574,6 +594,45 @@ def colora(ob, col, angoli_vert):
         o = attr.data[li].color[0]
         c = col[vi]
         attr.data[li].color = (c[0] * o, c[1] * o, c[2] * o, 1.0)
+
+
+def postura_bruca(sp):
+    """Brucare (26/11/2026, dopo il bue grigio che sembrava avere la proboscide): il collo si piega
+    dall'attaccatura sulle spalle (`perno`, al massimo di 50° circa) e la testa dalla nuca (`giunto`) finché scende quasi verticale (75° sotto
+    l'orizzonte) e il muso arriva all'erba, a 8 cm da terra. Si cerca il piegamento del collo che
+    basta; se non basta, il resto lo fa un piccolo abbassamento (`abbassa_bruca`). Per il maiale la
+    testa è già bassa: grufola appena (sp.bruca piccolo). Restituisce i dati per lo shader, nelle
+    coordinate di Godot (x, z di Blender in alto, -y di Blender)."""
+    base, punta = np.array(sp.collo[0], float), np.array(sp.collo[1], float)
+    perno = np.array(sp.perno if sp.perno is not None else sp.collo[0], float)
+    giunto = np.array(sp.giunto if sp.giunto is not None else sp.collo[0], float)
+    asse = punta - base
+    peso_testa = float(np.clip((giunto - base) @ asse / (asse @ asse), 0.0, 1.0))
+
+    def giu(p, c, a):
+        d = p - c
+        return c + np.array([d[0], d[1] * math.cos(a) + d[2] * math.sin(a), d[2] * math.cos(a) - d[1] * math.sin(a)])
+
+    if sp.bruca < 0.6:
+        a1, a2 = sp.bruca * 0.4, sp.bruca * 0.6
+    else:
+        mt = punta - giunto
+        fi0 = math.atan2(mt[2], mt[1])
+        totale = fi0 + math.radians(75.0)
+        a1 = 0.0
+        for k in range(0, 86):  # il collo al massimo a 50° circa: oltre sembra spezzato
+            a1 = k / 100.0
+            j = giu(giunto, perno, a1)
+            m = giu(giu(punta, perno, a1), j, totale - a1)
+            if m[2] <= 0.08:
+                break
+        a2 = totale - a1
+    j = giu(giunto, perno, a1)
+    m = giu(giu(punta, perno, a1), j, a2)
+    abbassa = max(0.0, float(m[2]) - 0.08)
+    g = lambda p: [float(p[0]), float(p[2]), float(-p[1])]
+    return {"perno_collo": g(perno), "giunto_testa": g(giunto), "peso_testa": peso_testa,
+            "angolo_collo": a1, "angolo_testa": a2, "abbassa_bruca": abbassa}
 
 
 def esporta(ob, percorso):
@@ -615,15 +674,9 @@ def main():
                 d = ob.dimensions
                 print(f"{nome}: {d.x:.2f} x {d.y:.2f} x {d.z:.2f} m, {corpo} facce del corpo, {len(ob.data.polygons) - corpo} carte di pelo")
                 bpy.data.objects.remove(ob, do_unlink=True)
-        a, b = sp.collo
-        # Quanto deve scendere ancora il collo, dopo la rotazione della testa, perché il muso tocchi
-        # l'erba (a 8 cm da terra): lo shader abbassa testa e collo di questa misura brucando.
-        dy, dz = b[1] - a[1], b[2] - a[2]
-        punta_z = a[2] - dy * math.sin(sp.bruca) + dz * math.cos(sp.bruca)
-        abbassa = max(0.0, punta_z - 0.08)
-        # Coordinate di Godot: x, z di Blender in alto, -y di Blender.
-        dati[specie] = {"perno_collo": [a[0], a[2], -a[1]], "lunghezza_collo": float(np.linalg.norm(np.array(b) - np.array(a))),
-                        "passo": sp.passo, "spalla": max(sp.zampe.values()), "angolo_bruca": sp.bruca, "abbassa_bruca": abbassa}
+        dati[specie] = postura_bruca(sp)
+        dati[specie]["passo"] = sp.passo
+        dati[specie]["spalla"] = max(sp.zampe.values())
     with open(os.path.join(USCITA, "animali.json"), "w") as f:
         json.dump(dati, f, indent=1)
 

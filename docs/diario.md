@@ -2,6 +2,23 @@
 
 Voci più recenti in cima.
 
+## 26/11/2026 (mezzogiorno)
+**Fatto**
+- **Tutorial alle tappe** (decisione di Fede): nuovo `script/tutorial.gd` con sedici schede (fondare; zona agricola, campo, sentiero, legnaia, capanno, posta, fonti di cibo dopo la fondazione; granaio e raccolto a 60; luogo sacro e pascolo a 100; stranieri, villaggio affollato e bosco sacro a 150; casali a 250). Decisioni di tipo "tutorial" in `SimVillaggio` (`tutorial()`, `salta_tutorial()`, `tutorial_attivi`), riquadro `Hud.mostra_tutorial`: testa con la tappa e la pagina, titolo, due o tre righe, "Cosa fa…?" che apre la spiegazione, "Salta i tutorial" e Avanti/Continua. Saltati, diventano notifiche grigie per il resto della partita. Le foto di controllo partono senza tutorial. Foto `docs/immagini/tutorial-26-11.jpg`; nuovo `test/foto_tutorial.gd`.
+- **Testi nella voce del mondo** (Fede: "meno annunci falsi è tecnico"): tutte le schede riscritte senza percentuali né gergo; restano comandi e costi.
+- **Bue rifatto** (Fede: "l'animale grigio cosa sarebbe?"): pelo corto e liscio (carte da 3,5 cm, frangia solo sotto), testa da bovino (fronte larga, muso largo e scuro, orecchie orizzontali più piccole, corna a lira alte con la sola punta scura), manto grigio più scuro con spalle scure. Foto `docs/immagini/bue-26-11.jpg`.
+- **Brucare senza proboscide:** il collo si piega dall'attaccatura sulle spalle (al massimo 50° circa) e la testa dalla nuca, finché scende quasi verticale; il poco che manca all'erba lo fa un piccolo abbassamento. Angoli calcolati in `animali.py` (`postura_bruca`) e passati allo shader (`perno_collo`, `giunto_testa`, `peso_testa`, `angolo_collo`, `angolo_testa`).
+- Verifiche nuove in `verifica_partita.gd` (riquadro all'inizio, spiegazione, Continua, pagine della fondazione, Salta e notifiche); tutte le 9 superate. Giocatori "umani" e registro con i tutorial contati a parte: dinamiche identiche a stamattina (`sessioni-giocatori.md`).
+
+**Decisioni** (Fede)
+- "Salta i tutorial" vale per tutti i riquadri della partita in corso, non per le partite dopo; notifica grigia per i tutorial saltati.
+- Tutorial anche per la fondazione e la tappa dei 60; pause dei tutorial contate a parte nelle prove; **menù delle impostazioni** nel todo (voce 10), con dentro l'opzione dei tutorial.
+- Il tutorial parla con la voce del mondo del gioco, non dei meccanismi.
+
+**Prossimo passo**
+- Fede: provare i tutorial e rileggere i testi (`script/tutorial.gd`); guardare bue e brucatura; fotogrammi al secondo con gli animali.
+- Claude: voci 4 (scorrerie) e 5 (strade, con la scheda del tutorial), con riepilogo prima.
+
 ## 26/11/2026 (tarda mattina) — epoche future sulla carta
 **Fatto** (solo documenti, nessun codice né modello; richiesta di Fede: definire in parallelo dinamiche, strutture ed edifici delle prossime epoche)
 - Nuovo `docs/epoche-future.md`: metodo (un'epoca alla volta sapendo dove si va, progettare all'indietro da Haussmann); nove sistemi che attraversano le epoche (Vie e Trasporti separati); identità della città con quattro assi, regime, vocazione, deriva, rivoluzioni dalla tensione e peso latente, pannello dell'identità; regime fondiario a quattro leve e cinque modelli; gruppi sociali e politica; vita delle costruzioni (struttura separata dalla funzione, tipi di struttura, cambio d'uso spontaneo, vincoli e zone, abbandono e rovina, varianti dei modelli derivate in automatico); dinamica calda (bilancia pressione–valore, rarità, otto esiti, pausa per l'ultimo esemplare); sottosuolo e tracciato (tre modi di restare, leggibilità, forza del tracciato, cinque risposte alle scoperte); costruzione a rischio.

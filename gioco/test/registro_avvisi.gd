@@ -33,13 +33,16 @@ func _gioca(d: MappaDati, sito: Vector2i, k: int, seme: int, nome: String) -> Di
 	var sim := SimVillaggio.new(d, seme)
 	var caso := RandomNumberGenerator.new()
 	caso.seed = seme * 7919 + k
+	# Tutorial alle tappe (decisione di Fede del 26/11/2026): accesi come nella partita, contati a
+	# parte dalle pause vere. Dal livello 7 il giocatore li salta al primo riquadro.
+	sim.tutorial_attivi = true
 	sim.fonda(sito)
 	var anno0 := sim.anno
 	var attenzione: int = [50, 40, 30, 25, 20, 15, 10, 10, 5, 5][k - 1]
 	var copertura := 0.4 + 0.06 * k
 	var limite_piena := 0.25 if k >= 8 else (0.5 if k >= 6 else 2.0)
 	var p_giusta := (k - 1) / 9.0
-	var conti := {"pause": 0, "notifiche_rosse": 0, "notifiche_grigie": 0, "cronaca": 0, "cronaca_allarme": 0,
+	var conti := {"pause": 0, "tutorial": 0, "notifiche_rosse": 0, "notifiche_grigie": 0, "cronaca": 0, "cronaca_allarme": 0,
 		"piene_stagione": 0, "piene_disastrose": 0, "carestie": 0}
 	var perdita_piene := 0.0  # quota di campi allagati, sommata sulle piene di stagione
 	var ultimo: Variant = sim.cronaca[0] if not sim.cronaca.is_empty() else null
@@ -52,6 +55,11 @@ func _gioca(d: MappaDati, sito: Vector2i, k: int, seme: int, nome: String) -> Di
 	while not sim.finito:
 		while sim.in_attesa():
 			var dec: Dictionary = sim.decisioni[0]
+			if dec["tipo"] == "tutorial":
+				conti["tutorial"] += 1
+				_uscita.append("%5d  TUTORIAL  %s" % [sim.anno - anno0, dec["titolo"]])
+				sim.scegli(dec["id"], "salta" if k >= 7 else "continua")
+				continue
 			if dec["tipo"] != "fine":
 				conti["pause"] += 1
 				_uscita.append("%5d  PAUSA     %s" % [sim.anno - anno0, dec["titolo"]])

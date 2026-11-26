@@ -108,6 +108,9 @@ Sono una prima serie (proposta di Claude), da confermare con Fede.
 ## Tasti
 1–8 mappe · G griglia · I isoipse · F fondare · Z zona agricola · C campo · N pascolo · B bosco sacro · V sentiero · H granaio · L legnaia · K capanno da pesca · T posta di caccia · O luogo sacro · Spazio pausa o riprendi · + e − velocità del tempo · X demolisci · P politiche · Y +10 anni · [ e ] raggio dello strumento · Esc o clic destro chiude il pannello di focus o le politiche, chiude la catena dei sentieri o toglie lo strumento · Q E ruota · rotella zoom · tasto destro trascinato, tasto centrale o WASD sposta · Home torna al sito.
 
+## Tutorial (decisione di Fede del 26/11/2026)
+Riquadro al centro come le scelte, con il velo scuro e il tempo fermo (`Hud.mostra_tutorial`): in testa "TUTORIAL · tappa · pagina di pagine", il titolo, le due o tre righe; sotto, la domanda ("Cosa fa un luogo sacro?  +") che apre e chiude la spiegazione completa; in fondo la casella "Salta i tutorial" (quadratino come gli interruttori delle opzioni) e il tasto bianco Avanti, o Continua all'ultima pagina. I testi stanno in `script/tutorial.gd`. Foto di controllo: `test/foto_tutorial.gd -- uscita [aperta]`, immagine `docs/immagini/tutorial-26-11.jpg`.
+
 ## Partita (Prototipo 0 in Godot)
 - **Indicatori** (dal 25/11/2026): popolazione, abbondanza, consenso, cibo (scorta / consumo dell'anno), legna, densità, più le fonti di cibo. Rossi quando sono in pericolo. Un clic apre il pannello di focus.
 - **Comandi:** Fondare, Campi, Sentiero, Granaio; politiche a parte (divisione del raccolto, accoglienza degli stranieri).
