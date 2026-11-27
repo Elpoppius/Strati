@@ -58,7 +58,7 @@ func _verifica_fumo() -> void:
 		nodo.free()
 		var p: Vector3 = camini[nome]
 		var dentro := p.x >= box.position.x and p.x <= box.end.x and p.z >= box.position.z and p.z <= box.end.z
-		controlla(dentro and p.y > 1.0 and p.y <= box.end.y, "il fumo di %s nasce dal camino (%.1f, %.1f, %.1f)" % [nome, p.x, p.y, p.z])
+		controlla(dentro and p.y > 0.5 and p.y <= box.end.y, "il fumo di %s nasce dal camino o dal fuoco (%.1f, %.1f, %.1f)" % [nome, p.x, p.y, p.z])
 	var fumo := VistaFumo.new()
 	var nodo := Node3D.new()
 	nodo.position = Vector3(100, 5, 200)

@@ -133,7 +133,7 @@ def pareti(parti, m, lungo, largo, z0, alto, passo=1.6):
 
 
 # ---------- case ----------
-def casa(nome, lungo, largo, seme, capo=False):
+def casa(nome, lungo, largo, seme, capo=False, annessi=None):
     """Capanna rettangolare su impalcato (terramare, villanoviano). Con capo=True: più grande, con il
     portico di pali davanti alla porta sotto il tetto prolungato, e il cortile recintato."""
     m = materiali()
@@ -187,6 +187,8 @@ def casa(nome, lungo, largo, seme, capo=False):
                 villaggio._graticcio_dritto(parti, m, rnd, p, q, 0.15, 5)
         villaggio._catasta(parti, m, rnd, -1.0, y0 + 1.2, lungo=3.0)
         parti.append(villaggio.sasso("macina", (0.7, 0.5, 0.3), (x1 - 2.0, y1 - 1.5, 0), m["pietra"], seme + 7))
+    if annessi is not None:
+        annessi(parti, m, rnd, lungo, largo, ballatoio)
     return base.unisci(nome, parti)
 
 
@@ -524,6 +526,438 @@ def cantiere_officina_fabbro(nome, seme):
     return officina_fabbro(nome, seme, cantiere=True)
 
 
+# ---------- secondo lotto (27/11/2026) ----------
+# Decisione di Fede del 27/11/2026: con l'abitato le strade contano di più e le case si sviluppano
+# lungo la via. La casa su impalcato dà la testata con la porta e la scaletta (+x) sulla strada: le
+# varianti hanno davanti un banco o un telaio (le prime botteghe), dietro l'orto o le cataste, e sui
+# fianchi quasi niente, perché in fila le case sono vicine.
+
+
+def _banco_vasi(parti, m, rnd, x, y):
+    """Banco di tavole basso con vasi, ciotole e un cesto: la merce sulla via."""
+    for dx in (-0.6, 0.6):
+        for dy in (-0.25, 0.25):
+            parti.append(base.cilindro_tra("gamba", (x + dy, y + dx, 0), (x + dy, y + dx, 0.6), 0.04, 0.04, m["legno"], lati=5))
+    parti.append(base.scatola("banco", (0.7, 1.5, 0.07), (x, y, 0.63), m["legno"]))
+    for k in range(4):
+        vy = y - 0.55 + k * 0.37
+        r = rnd.uniform(0.11, 0.16)
+        parti.append(base.cilindro_tra("vaso", (x, vy, 0.66), (x, vy, 0.66 + r * 2.0), r, r * 0.6, m["argilla"], lati=9))
+    vimini = base.materiale("vimini", "paglia", tinta=(0.72, 0.58, 0.4))
+    parti.append(base.cilindro_tra("cesto", (x + 0.75, y + 0.3, 0), (x + 0.75, y + 0.3, 0.38), 0.24, 0.3, vimini, lati=9))
+    parti.append(base.cilindro_tra("dolio", (x + 0.8, y - 0.55, 0), (x + 0.8, y - 0.55, 0.75), 0.28, 0.2, m["argilla"], lati=10))
+
+
+def _telaio(parti, m, rnd, x, y, z0):
+    """Telaio verticale a pesi sul ballatoio: due ritti, il subbio, l'ordito e i pesi d'argilla."""
+    for dy in (-0.7, 0.7):
+        parti.append(base.cilindro_tra("ritto", (x, y + dy, z0), (x - 0.25, y + dy, z0 + 1.9), 0.05, 0.045, m["legno"], lati=5))
+    parti.append(base.cilindro_tra("subbio", (x - 0.22, y - 0.85, z0 + 1.78), (x - 0.22, y + 0.85, z0 + 1.78), 0.05, 0.05, m["legno"], lati=6))
+    tela = base.materiale("tela", "intonaco", tinta=(0.78, 0.4, 0.26))
+    parti.append(base.scatola("tela", (0.03, 1.3, 1.0), (x - 0.17, y, z0 + 1.25), tela))
+    for k in range(7):
+        py = y - 0.6 + k * 0.2
+        parti.append(base.cilindro_tra("peso", (x - 0.08, py, z0 + 0.35), (x - 0.08, py, z0 + 0.5), 0.06, 0.05, m["argilla"], lati=6))
+
+
+def annessi_piccola(parti, m, rnd, lungo, largo, ballatoio):
+    # Davanti, di fianco alla scaletta: il banco con i vasi. Dietro: l'orto.
+    xf = lungo / 2 + ballatoio
+    _banco_vasi(parti, m, rnd, xf + 1.0, -largo / 2 + 0.2)
+    villaggio._orto(parti, m, rnd, -lungo / 2 - 4.6, -largo / 2, -lungo / 2 - 0.8, largo / 2)
+
+
+def annessi_media(parti, m, rnd, lungo, largo, ballatoio):
+    # Davanti: il telaio sul ballatoio e un dolio ai piedi della scaletta. Dietro: cataste e fieno.
+    xf = lungo / 2 + ballatoio
+    _telaio(parti, m, rnd, xf - 0.35, largo / 2 - 1.0, ALTO_IMPALCATO + 0.05)
+    parti.append(base.cilindro_tra("dolio", (xf + 1.3, largo / 2 - 0.4, 0), (xf + 1.3, largo / 2 - 0.4, 0.8), 0.3, 0.22, m["argilla"], lati=10))
+    villaggio._catasta(parti, m, rnd, -lungo / 2 - 1.3, -largo / 4, lungo=1.8, file=(4, 3, 2), lungo_y=True)
+    bm = bmesh.new()
+    bmesh.ops.create_cone(bm, cap_ends=True, segments=12, radius1=1.1, radius2=0.15, depth=1.9)
+    bmesh.ops.translate(bm, vec=Vector((-lungo / 2 - 1.6, largo / 4 + 0.4, 0.95)), verts=bm.verts)
+    for v in bm.verts:
+        v.co.x += rnd.uniform(-0.06, 0.06)
+    bm.normal_update()
+    parti.append(base.da_bmesh("pagliaio", bm, m["paglia"], tile=1.0))
+    parti.append(base.cilindro_tra("stollo", (-lungo / 2 - 1.6, largo / 4 + 0.4, 0), (-lungo / 2 - 1.6, largo / 4 + 0.4, 2.3), 0.04, 0.035, m["legno"], lati=4))
+
+
+def _materiali_lotto2():
+    m = materiali_fabbro()
+    m["erba_tumulo"] = base.materiale("erba_tumulo", "erba", tinta=(0.56, 0.55, 0.4))
+    m["assi"] = base.materiale("assi", "legno", tinta=(0.86, 0.8, 0.72))
+    return m
+
+
+def _recinto_pali(parti, m, rnd, angoli, alto, varco_lato=None, varco=1.6, graticcio=True, passo=1.3):
+    """Recinto di pali sui lati di un poligono, con il graticcio fra i pali e un varco a metà di un lato."""
+    for k in range(len(angoli)):
+        a, b = angoli[k], angoli[(k + 1) % len(angoli)]
+        lato = math.hypot(b[0] - a[0], b[1] - a[1])
+        n = max(1, int(lato / passo))
+        punti = [(a[0] + (b[0] - a[0]) * j / n, a[1] + (b[1] - a[1]) * j / n) for j in range(n + 1)]
+        mezzo = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
+        def nel_varco(p):
+            return k == varco_lato and math.hypot(p[0] - mezzo[0], p[1] - mezzo[1]) < varco / 2
+        for p in punti:
+            if not nel_varco(p):
+                parti.append(base.cilindro_tra("palo", (p[0], p[1], -0.15), (p[0], p[1], alto + rnd.uniform(-0.05, 0.05)), 0.07, 0.06, m["corteccia"], lati=5))
+        if graticcio:
+            for j in range(n):
+                if nel_varco(punti[j]) or nel_varco(punti[j + 1]):
+                    continue
+                villaggio._graticcio_dritto(parti, m, rnd, punti[j], punti[j + 1], 0.12, max(3, int(alto / 0.2)))
+
+
+def santuario(nome, seme, cantiere=False):
+    """Santuario (proposta di Claude, epoca2-proposte § 3): recinto sacro quadrato di pali con il
+    graticcio, l'ingresso verso +x (la via); dentro un'edicola su un basamento di pietre, a due falde
+    con le corna, e davanti l'altare di pietre e argilla con il fuoco (il fumo nasce lì: proposta,
+    il santuario è un edificio comunitario). Pali votivi con le corna, vasi delle offerte, una fossa."""
+    m = _materiali_lotto2()
+    rnd = random.Random(seme)
+    parti = []
+    L = 5.0
+    if not cantiere:
+        _recinto_pali(parti, m, rnd, [(-L, -L), (L, -L), (L, L), (-L, L)], 1.5, varco_lato=1, varco=2.0)
+    else:
+        for p in ((-L, -L), (L, -L), (L, L), (-L, L)):
+            parti.append(base.cilindro_tra("palo", (p[0], p[1], -0.15), (p[0], p[1], 1.5), 0.07, 0.06, m["corteccia"], lati=5))
+    parti.append(_disco("battuto", (0, 0), L * 0.95, m["terra"], rnd, lati=20, irregolare=0.05, z=0.05))
+    # Basamento di pietre e edicola.
+    ex = -2.2
+    for k in range(14):
+        a = 2 * math.pi * k / 14
+        parti.append(villaggio.sasso("basamento", (0.5, 0.4, 0.35), (ex + 1.9 * math.cos(a), 1.5 * math.sin(a), 0), m["pietra"], seme + 10 + k))
+    parti.append(base.scatola("piano", (3.6, 2.8, 0.35), (ex, 0, 0.2), m["terra"]))
+    alto_parete = 1.5
+    if cantiere:
+        for dx in (-1.3, 1.3):
+            for dy in (-0.9, 0.9):
+                parti.append(base.cilindro_tra("palo", (ex + dx, dy, 0.3), (ex + dx, dy, 0.3 + alto_parete), 0.09, 0.08, m["corteccia"], lati=6))
+        villaggio.materiali_a_terra(parti, m, rnd, 1.5, -2.5, seme)
+        return base.unisci(nome, parti)
+    parti.append(base.scatola("pareti", (2.6, 1.8, alto_parete), (ex, 0, 0.37 + alto_parete / 2), m["intonaco"], tagli=3))
+    parti.append(base.scatola("porta", (0.12, 0.8, 1.2), (ex + 1.33, 0, 0.37 + 0.6), m["vano"]))
+    gronda = 0.37 + alto_parete - 0.05
+    colmo = gronda + 1.4
+    tetto = tetto_a_capanna("tetto", 2.6, 1.8, gronda, colmo, 0.5, 0.45, 0.3, m["paglia"], seme)
+    tetto.location.x += ex
+    bpy.context.view_layer.objects.active = tetto
+    bpy.ops.object.select_all(action="DESELECT")
+    tetto.select_set(True)
+    bpy.ops.object.transform_apply(location=True)
+    parti.append(tetto)
+    for x in (ex + 1.8, ex - 1.8):
+        corna(parti, m, x, colmo, 2.8, 0.7)
+    # Le corna del colmo di corna() vanno da -x a x: qui l'edicola non è centrata, si rifà il colmo.
+    parti[-1] = base.cilindro_tra("colmo", (ex - 1.8, 0, colmo + 0.08), (ex + 1.8, 0, colmo + 0.08), 0.07, 0.07, m["corteccia"], lati=6)
+    # Altare davanti all'edicola: pietre, piano d'argilla, il fuoco.
+    ax = 0.9
+    for k in range(9):
+        a = 2 * math.pi * k / 9
+        parti.append(villaggio.sasso("altare", (0.42, 0.36, 0.5), (ax + 0.75 * math.cos(a), 0.75 * math.sin(a), 0), m["pietra"], seme + 40 + k))
+    parti.append(base.cilindro_tra("piano_altare", (ax, 0, 0), (ax, 0, 0.62), 0.78, 0.7, m["argilla"], lati=12))
+    parti.append(_disco("fuoco", (ax, 0), 0.42, m["brace"], rnd, lati=10, irregolare=0.1, z=0.64))
+    for k in range(4):
+        a = rnd.uniform(0, 2 * math.pi)
+        parti.append(base.cilindro_tra("tizzone", (ax + 0.1 * math.cos(a), 0.1 * math.sin(a), 0.66), (ax + 0.45 * math.cos(a), 0.45 * math.sin(a), 0.7), 0.05, 0.04, m["fuliggine"], lati=5))
+    CAMINI[nome] = (ax, 0.0, 0.75)
+    # Pali votivi con le corna di bue, ai lati dell'ingresso; vasi delle offerte; la fossa.
+    for y in (-1.8, 1.8):
+        parti.append(base.cilindro_tra("palo_votivo", (L - 1.2, y, -0.1), (L - 1.2, y, 2.6), 0.1, 0.08, m["legno"], lati=6))
+        for s in (-1, 1):
+            parti.append(base.cilindro_tra("corno", (L - 1.2, y, 2.5), (L - 1.2, y + s * 0.4, 2.85), 0.06, 0.02, m["pietra_chiara"], lati=5))
+    for k in range(6):
+        a = rnd.uniform(0, 2 * math.pi)
+        d = rnd.uniform(1.2, 1.6)
+        r = rnd.uniform(0.1, 0.16)
+        parti.append(base.cilindro_tra("vaso_offerta", (ax + d * math.cos(a), d * math.sin(a), 0.05), (ax + d * math.cos(a), d * math.sin(a), 0.05 + r * 2), r, r * 0.65, m["argilla"], lati=8))
+    parti.append(_disco("fossa", (2.6, 2.8), 0.6, m["fuliggine"], rnd, lati=10, z=0.06))
+    return base.unisci(nome, parti)
+
+
+def tumulo(nome, seme):
+    """Tumulo (proposta di Claude): monte di terra coperto d'erba, largo 11 m e alto 2,4, con il
+    cerchio di pietre alla base e una stele di pietra in cima."""
+    m = _materiali_lotto2()
+    rnd = random.Random(seme)
+    parti = []
+    R, H = 5.5, 2.4
+    bm = bmesh.new()
+    bmesh.ops.create_uvsphere(bm, u_segments=24, v_segments=10, radius=1.0)
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.z < -0.01], context="VERTS")
+    for v in bm.verts:
+        k = 1.0 + rnd.uniform(-0.03, 0.03)
+        z = v.co.z
+        # Profilo schiacciato: più ripido ai piedi, tondo in cima.
+        v.co = Vector((v.co.x * R * k, v.co.y * R * k, (z ** 0.8) * H * (1.0 + rnd.uniform(-0.04, 0.04))))
+    bm.normal_update()
+    parti.append(base.da_bmesh("monte", bm, m["erba_tumulo"], tile=3.0))
+    n = 28
+    for k in range(n):
+        a = 2 * math.pi * k / n + rnd.uniform(-0.03, 0.03)
+        parti.append(villaggio.sasso("crepidine", (0.6, 0.45, 0.45), ((R + 0.15) * math.cos(a), (R + 0.15) * math.sin(a), 0), m["pietra"], seme + k))
+    s = base.scatola("stele", (0.22, 0.5, 1.3), (0, 0, H + 0.55), m["pietra_chiara"])
+    s.rotation_euler = (0.05, 0.04, 0.4)
+    parti.append(s)
+    return base.unisci(nome, parti)
+
+
+def granaio_comune(nome, seme, cantiere=False):
+    """Granaio comune (proposta di Claude): 6 × 4 m su pali alti 1,6 m con i dischi di pietra contro i
+    topi, pareti di assi, tetto a due falde di paglia con le corna; una scala a pioli mobile, i sacchi
+    e le giare all'ingresso (+x)."""
+    m = _materiali_lotto2()
+    rnd = random.Random(seme)
+    parti = []
+    lungo, largo, alto_pali = 6.0, 4.0, 1.6
+    for i in range(4):
+        x = -lungo / 2 + i * lungo / 3
+        for y in (-largo / 2, 0.0, largo / 2):
+            parti.append(base.cilindro_tra("pilastro", (x, y, -0.2), (x, y, alto_pali - 0.25), 0.15, 0.13, m["corteccia"], lati=7))
+            parti.append(base.cilindro_tra("disco", (x, y, alto_pali - 0.25), (x, y, alto_pali - 0.13), 0.38, 0.34, m["pietra"], lati=10))
+    if cantiere:
+        parti.append(base.scatola("tavolato", (lungo + 0.3, largo + 0.3, 0.12), (0, 0, alto_pali), m["legno"], tagli=2))
+        villaggio.materiali_a_terra(parti, m, rnd, 0.0, -largo / 2 - 2.0, seme)
+        return base.unisci(nome, parti)
+    parti.append(base.scatola("tavolato", (lungo + 0.3, largo + 0.3, 0.12), (0, 0, alto_pali), m["legno"], tagli=2))
+    z0, alto = alto_pali + 0.06, 1.8
+    parti.append(base.scatola("pareti", (lungo, largo, alto), (0, 0, z0 + alto / 2), m["assi"], tagli=3))
+    for x in (-lungo / 2, lungo / 2):
+        for y in (-largo / 2, largo / 2):
+            parti.append(base.cilindro_tra("palo", (x, y, z0), (x, y, z0 + alto), 0.11, 0.1, m["corteccia"], lati=6))
+    parti.append(base.scatola("porta", (0.12, 1.0, 1.3), (lungo / 2 + 0.03, 0, z0 + 0.65), m["vano"]))
+    gronda = z0 + alto - 0.05
+    colmo = gronda + largo * 0.6
+    parti.append(tetto_a_capanna("tetto", lungo, largo, gronda, colmo, 0.6, 0.6, 0.35, m["paglia"], seme))
+    corna(parti, m, lungo / 2 + 0.6, colmo, largo + 1.2, 0.7)
+    corna(parti, m, -(lungo / 2 + 0.6), colmo, largo + 1.2, 0.7)
+    # Scala a pioli appoggiata alla porta.
+    for dy in (-0.25, 0.25):
+        parti.append(base.cilindro_tra("staggio", (lungo / 2 + 1.1, dy, 0), (lungo / 2 + 0.1, dy, z0 + 0.1), 0.04, 0.04, m["legno"], lati=5))
+    for k in range(1, 5):
+        t = k / 5
+        x = lungo / 2 + 1.1 - t
+        parti.append(base.cilindro_tra("piolo", (x, -0.27, t * (z0 + 0.1)), (x, 0.27, t * (z0 + 0.1)), 0.025, 0.025, m["legno"], lati=4))
+    sacco = base.materiale("sacco", "intonaco", tinta=(0.82, 0.74, 0.6))
+    for k in range(4):
+        sx, sy = lungo / 2 + 1.6 + rnd.uniform(-0.2, 0.3), -1.4 + k * 0.45
+        parti.append(villaggio.sasso("sacco", (0.45, 0.4, 0.5), (sx, sy, 0), sacco, seme + 30 + k))
+    for k in range(2):
+        parti.append(base.cilindro_tra("giara", (lungo / 2 + 1.5, 1.3 + k * 0.6, 0), (lungo / 2 + 1.5, 1.3 + k * 0.6, 0.85), 0.3, 0.2, m["argilla"], lati=10))
+    return base.unisci(nome, parti)
+
+
+def pozzo(nome, seme, cantiere=False):
+    """Pozzo (proposta di Claude; alle terramare i pozzi erano foderati di tavole): vera quadrata di
+    tavole incastrate, il bilanciere con il contrappeso di pietra e il secchio, un selciato di
+    sassi attorno e un abbeveratoio scavato in un tronco."""
+    m = _materiali_lotto2()
+    rnd = random.Random(seme)
+    parti = []
+    parti.append(_disco("selciato", (0, 0), 2.4, m["pietra"], rnd, lati=16, irregolare=0.1, z=0.04))
+    for k in range(18):
+        a = rnd.uniform(0, 2 * math.pi)
+        d = rnd.uniform(1.2, 2.3)
+        parti.append(villaggio.sasso("ciottolo", (0.3, 0.26, 0.1), (d * math.cos(a), d * math.sin(a), 0), m["pietra"], seme + k))
+    lato, alto = 1.5, 0.0 if cantiere else 0.8
+    parti.append(base.scatola("acqua", (lato - 0.2, lato - 0.2, 0.02), (0, 0, 0.06), m["acqua_vasca"]))
+    righe = 2 if cantiere else 5
+    for r in range(righe):
+        z = 0.08 + r * 0.17
+        for s in (-1, 1):
+            parti.append(base.scatola("asse", (lato + 0.2, 0.12, 0.16), (0, s * lato / 2, z + 0.08), m["assi"]))
+            parti.append(base.scatola("asse", (0.12, lato + 0.2, 0.16), (s * lato / 2, 0, z + 0.08), m["assi"]))
+    if cantiere:
+        villaggio.materiali_a_terra(parti, m, rnd, 0.0, 2.8, seme, pali=3, lungo=2.4)
+        return base.unisci(nome, parti)
+    # Bilanciere: forcella piantata, stanga lunga, contrappeso, corda e secchio.
+    fx, fy = 0.0, 2.0
+    for dx in (-0.12, 0.12):
+        parti.append(base.cilindro_tra("forcella", (fx + dx, fy, -0.1), (fx + dx * 1.6, fy, 2.6), 0.1, 0.07, m["corteccia"], lati=6))
+    perno = Vector((fx, fy, 2.5))
+    testa = Vector((0.0, -0.1, 3.3))
+    coda = perno + (perno - testa) * 0.55
+    parti.append(base.cilindro_tra("stanga", tuple(testa), tuple(coda), 0.06, 0.08, m["legno"], lati=6))
+    parti.append(villaggio.sasso("contrappeso", (0.5, 0.45, 0.45), (coda.x, coda.y, coda.z - 0.4), m["pietra"], seme + 50, appoggiato=False))
+    parti.append(base.cilindro_tra("corda", (testa.x, testa.y, testa.z), (0.0, -0.1, 1.2), 0.012, 0.012, m["legno"], lati=4))
+    parti.append(base.cilindro_tra("secchio", (0.0, -0.1, 0.9), (0.0, -0.1, 1.2), 0.15, 0.18, m["legno"], lati=8))
+    tronco = base.cilindro_tra("abbeveratoio", (1.7, -0.9, 0.24), (1.7, 0.9, 0.24), 0.28, 0.28, m["corteccia"], lati=10)
+    for v in tronco.data.vertices:
+        v.co.z = min(v.co.z, 0.4)
+    parti.append(tronco)
+    parti.append(base.scatola("acqua_abbeveratoio", (0.36, 1.7, 0.02), (1.7, 0, 0.405), m["acqua_vasca"]))
+    return base.unisci(nome, parti)
+
+
+def recinto_bestiame(nome, seme):
+    """Recinto del bestiame (proposta di Claude): 16 × 10 m di pali e graticcio alto 1,3 m, il cancello
+    di traverse verso +x, una tettoia di paglia lungo il lato di fondo, l'abbeveratoio, il fieno e il
+    letame. Più grande e regolare dello stabbio del villaggio: sta fuori dal recinto dell'abitato."""
+    m = _materiali_lotto2()
+    rnd = random.Random(seme)
+    parti = []
+    X, Y = 8.0, 5.0
+    _recinto_pali(parti, m, rnd, [(-X, -Y), (X, -Y), (X, Y), (-X, Y)], 1.3, varco_lato=1, varco=2.6, passo=1.6)
+    # Cancello aperto: traverse su due ritti, girato verso l'esterno.
+    for k in range(3):
+        z = 0.35 + k * 0.4
+        parti.append(base.cilindro_tra("traversa", (X, -1.3, z), (X + 1.9, -1.9, z), 0.05, 0.05, m["legno"], lati=5))
+    parti.append(base.cilindro_tra("ritto", (X + 1.9, -1.9, 0), (X + 1.9, -1.9, 1.3), 0.05, 0.05, m["legno"], lati=5))
+    # Tettoia lungo il lato di fondo (-x).
+    prof = 3.0
+    for y in (-Y + 0.3, 0.0, Y - 0.3):
+        parti.append(base.cilindro_tra("palo_tettoia", (-X + prof, y, -0.1), (-X + prof, y, 2.1), 0.1, 0.09, m["corteccia"], lati=6))
+        parti.append(base.cilindro_tra("palo_tettoia", (-X + 0.15, y, -0.1), (-X + 0.15, y, 2.6), 0.1, 0.09, m["corteccia"], lati=6))
+    falda = base.scatola("falda", (prof + 0.8, 2 * Y + 0.4, 0.18), (0, 0, 0), m["paglia"], tagli=3)
+    falda.rotation_euler = (0, math.atan2(0.5, prof), 0)
+    falda.location = (-X + prof / 2, 0, 2.5)
+    parti.append(falda)
+    terra_calpestata = base.materiale("calpestato", "terra", tinta=(0.78, 0.7, 0.62))
+    parti.append(_disco("calpestato", (0.5, 0), 4.2, terra_calpestata, rnd, lati=18, irregolare=0.2, z=0.04))
+    tronco = base.cilindro_tra("abbeveratoio", (2.0, Y - 1.0, 0.24), (4.6, Y - 1.0, 0.24), 0.3, 0.3, m["corteccia"], lati=10)
+    for v in tronco.data.vertices:
+        v.co.z = min(v.co.z, 0.42)
+    parti.append(tronco)
+    parti.append(base.scatola("acqua", (2.4, 0.4, 0.02), (3.3, Y - 1.0, 0.425), m["acqua_vasca"]))
+    for k in range(3):
+        bm = bmesh.new()
+        bmesh.ops.create_cone(bm, cap_ends=True, segments=10, radius1=0.9, radius2=0.3, depth=0.9)
+        bmesh.ops.translate(bm, vec=Vector((-X + 1.4, -Y + 1.4 + k * 1.6, 0.45)), verts=bm.verts)
+        bm.normal_update()
+        parti.append(base.da_bmesh("fieno", bm, m["paglia"], tile=1.0))
+    letame = base.materiale("letame", "terra", tinta=(0.45, 0.36, 0.28))
+    parti.append(villaggio.sasso("letame", (1.8, 1.2, 0.5), (X - 1.8, Y - 1.4, 0), letame, seme + 60))
+    return base.unisci(nome, parti)
+
+
+LUNGO_PONTE = 16.0
+
+
+def ponte(nome, seme, cantiere=False):
+    """Ponte di legno sui torrenti larghi (decisione di Fede del 26/11/2026: nel villaggio la strada si
+    fermava al guado). Lungo 16 m (asse x), largo 3: impalcato di tavole a 1,4 m sull'origine, su
+    coppie di pali ogni 4 m con le sbadacchiature, parapetto di stanghe, rampe di terra ai due capi.
+    I pali si piantano nel letto: nel gioco il ponte si posa alla quota delle sponde."""
+    m = _materiali_lotto2()
+    rnd = random.Random(seme)
+    parti = []
+    L, W, z = LUNGO_PONTE / 2, 1.5, 1.4
+    campate = 4
+    for i in range(campate + 1):
+        x = -L + 2.0 + i * (2 * L - 4.0) / campate
+        for y in (-W + 0.1, W - 0.1):
+            parti.append(base.cilindro_tra("palo", (x + rnd.uniform(-0.05, 0.05), y, -0.25), (x, y, z - 0.1), 0.16, 0.14, m["corteccia"], lati=7))
+        parti.append(base.cilindro_tra("traverso", (x, -W - 0.2, z - 0.15), (x, W + 0.2, z - 0.15), 0.12, 0.12, m["corteccia"], lati=6))
+        parti.append(base.cilindro_tra("sbadacchio", (x, -W + 0.1, 0.1), (x, W - 0.1, z - 0.3), 0.06, 0.06, m["legno"], lati=5))
+    for y in (-W + 0.3, 0.0, W - 0.3):
+        parti.append(base.cilindro_tra("longherone", (-L + 1.6, y, z - 0.02), (L - 1.6, y, z - 0.02), 0.11, 0.11, m["corteccia"], lati=6))
+    if cantiere:
+        villaggio.materiali_a_terra(parti, m, rnd, -L + 1.0, W + 1.5, seme, pali=5, lungo=4.0)
+        return base.unisci(nome, parti)
+    # Tavole di traverso, una per una, appena disuguali.
+    x = -L + 1.6
+    while x < L - 1.6:
+        larga = rnd.uniform(0.28, 0.36)
+        parti.append(base.scatola("tavola", (larga - 0.02, 2 * W + rnd.uniform(-0.1, 0.1), 0.08), (x + larga / 2, rnd.uniform(-0.04, 0.04), z + 0.1 + rnd.uniform(-0.01, 0.01)), m["assi"]))
+        x += larga
+    # Parapetto.
+    for y in (-W, W):
+        for i in range(5):
+            xp = -L + 1.8 + i * (2 * L - 3.6) / 4
+            parti.append(base.cilindro_tra("ritto", (xp, y, z), (xp, y, z + 1.0), 0.06, 0.05, m["legno"], lati=5))
+        parti.append(base.cilindro_tra("corrimano", (-L + 1.8, y, z + 0.95), (L - 1.8, y, z + 0.95), 0.05, 0.05, m["legno"], lati=5))
+    # Rampe di terra ai capi.
+    for s in (-1, 1):
+        bm = bmesh.new()
+        x0, x1 = s * (L - 1.7), s * L
+        pts = [(x0, -W - 0.3, 0.0), (x0, W + 0.3, 0.0), (x0, W + 0.1, z + 0.12), (x0, -W - 0.1, z + 0.12),
+               (x1, -W - 0.6, 0.0), (x1, W + 0.6, 0.0)]
+        v = [bm.verts.new(p) for p in pts]
+        facce = [[v[3], v[2], v[5], v[4]], [v[0], v[3], v[4]], [v[1], v[5], v[2]], [v[0], v[1], v[2], v[3]]]
+        for f in facce:
+            bm.faces.new(f if s > 0 else f[::-1])
+        bm.normal_update()
+        parti.append(base.da_bmesh("rampa", bm, m["terra"], tile=2.0))
+    return base.unisci(nome, parti)
+
+
+# ---------- cantieri del secondo lotto ----------
+def cantiere_casa(nome, lungo, largo, seme, capo=False):
+    """Casa su impalcato in costruzione: l'impalcato finito, i pali delle pareti, metà dei correnti del
+    tetto; accanto i pali stesi, i fasci di paglia e l'argilla per l'intonaco."""
+    m = materiali()
+    rnd = random.Random(seme)
+    parti = []
+    z0 = ALTO_IMPALCATO + 0.05
+    alto = 1.75 if not capo else 2.0
+    ballatoio = 1.6 if not capo else 3.2
+    impalcato(parti, m, rnd, -lungo / 2 - 0.3, lungo / 2 + ballatoio, -largo / 2 - 0.3, largo / 2 + 0.3)
+    n = max(2, int(lungo / 1.6))
+    for k in range(n + 1):
+        x = -lungo / 2 + k * lungo / n
+        for y in (-largo / 2, largo / 2):
+            parti.append(base.cilindro_tra("palo", (x, y, z0 - 0.05), (x, y, z0 + alto - 0.08), 0.11, 0.1, m["corteccia"], lati=6))
+    # Graticcio ancora senza intonaco su un lato lungo, a metà.
+    villaggio._graticcio_dritto(parti, m, rnd, (-lungo / 2, largo / 2), (0.0, largo / 2), z0 + 0.1, 6)
+    gronda = z0 + alto - 0.05
+    colmo = gronda + largo * 0.62
+    for y in (-largo / 2, largo / 2):
+        parti.append(base.cilindro_tra("trave", (-lungo / 2 - 0.3, y, gronda), (lungo / 2 + 0.3, y, gronda), 0.09, 0.09, m["corteccia"], lati=6))
+    for x in (-lungo / 2, lungo / 2):
+        for s in (-1, 1):
+            parti.append(base.cilindro_tra("puntone", (x, s * largo / 2, gronda), (x, 0, colmo), 0.07, 0.07, m["corteccia"], lati=6))
+    parti.append(base.cilindro_tra("colmo", (-lungo / 2, 0, colmo), (lungo / 2, 0, colmo), 0.08, 0.08, m["corteccia"], lati=6))
+    for k in range(1, n, 2):
+        x = -lungo / 2 + k * lungo / n
+        for s in (-1, 1):
+            parti.append(base.cilindro_tra("corrente", (x, s * (largo / 2 + 0.4), gronda - 0.2), (x, 0, colmo), 0.05, 0.05, m["legno"], lati=5))
+    scaletta(parti, m, lungo / 2 + ballatoio + 0.2, 0.0)
+    villaggio.materiali_a_terra(parti, m, rnd, 0.0, -largo / 2 - 1.8, seme)
+    parti.append(villaggio.sasso("argilla", (0.9, 0.7, 0.35), (-lungo / 2 - 1.0, largo / 2 + 1.2, 0), m["argilla"], seme + 50))
+    return base.unisci(nome, parti)
+
+
+def cantiere_recinto(nome, seme):
+    """Tratto di recinto in costruzione: il terrapieno a metà altezza, i primi pali della palizzata,
+    gli altri stesi a terra con le ceste della terra."""
+    m = materiali()
+    rnd = random.Random(seme)
+    parti = []
+    L = LUNGO_TRATTO / 2 + 0.05
+    alto, base_lato, cima = 0.8, 2.6, 1.5
+    bm = bmesh.new()
+    sezione = [(-base_lato, 0.0), (-cima, alto), (cima, alto), (base_lato, 0.0)]
+    davanti = [bm.verts.new((-L, y, z)) for y, z in sezione]
+    dietro = [bm.verts.new((L, y, z)) for y, z in sezione]
+    for k in range(3):
+        bm.faces.new([davanti[k], dietro[k], dietro[k + 1], davanti[k + 1]])
+    bm.faces.new(davanti[::-1])
+    bm.faces.new(dietro)
+    bmesh.ops.subdivide_edges(bm, edges=bm.edges[:], cuts=4, use_grid_fill=True)
+    for v in bm.verts:
+        if 0.05 < v.co.z:
+            v.co.z += rnd.uniform(-0.12, 0.08)
+    bm.normal_update()
+    parti.append(base.da_bmesh("terrapieno", bm, m["terra"], tile=2.0))
+    y_pal = -cima + 0.4
+    x = -L + 0.12
+    while x < -L + 3.5:
+        r = rnd.uniform(0.1, 0.14)
+        h = alto + rnd.uniform(2.0, 2.4)
+        parti.append(base.cilindro_tra("palo", (x, y_pal, alto - 0.4), (x, y_pal, h), r, r * 0.95, m["corteccia"], lati=6))
+        parti.append(base.cilindro_tra("punta", (x, y_pal, h), (x, y_pal, h + 0.35), r * 0.95, 0.02, m["legno"], lati=6))
+        x += r * 2.05
+    villaggio.materiali_a_terra(parti, m, rnd, 1.5, 2.2, seme, pali=6, lungo=3.4)
+    vimini = base.materiale("vimini", "paglia", tinta=(0.72, 0.58, 0.4))
+    for k in range(3):
+        cx, cy = 3.6 + k * 0.6, -2.4
+        parti.append(base.cilindro_tra("cesta", (cx, cy, 0), (cx, cy, 0.4), 0.25, 0.3, vimini, lati=9))
+    return base.unisci(nome, parti)
+
+
 ASSET = [
     ("casa_impalcato_piccola", lambda n: casa(n, 7.5, 4.6, 61)),
     ("casa_impalcato_media", lambda n: casa(n, 10.5, 5.6, 62)),
@@ -532,6 +966,23 @@ ASSET = [
     ("recinto_porta", lambda n: porta(n, 65)),
     ("officina_fabbro", lambda n: officina_fabbro(n, 66)),
     ("cantiere_officina_fabbro", lambda n: cantiere_officina_fabbro(n, 67)),
+    # Secondo lotto (27/11/2026).
+    ("casa_impalcato_piccola_b", lambda n: casa(n, 7.5, 4.6, 61, annessi=annessi_piccola)),
+    ("casa_impalcato_media_b", lambda n: casa(n, 10.5, 5.6, 62, annessi=annessi_media)),
+    ("santuario", lambda n: santuario(n, 68)),
+    ("tumulo", lambda n: tumulo(n, 69)),
+    ("granaio_comune", lambda n: granaio_comune(n, 70)),
+    ("pozzo", lambda n: pozzo(n, 71)),
+    ("recinto_bestiame", lambda n: recinto_bestiame(n, 72)),
+    ("ponte", lambda n: ponte(n, 73)),
+    ("cantiere_casa_impalcato_piccola", lambda n: cantiere_casa(n, 7.5, 4.6, 74)),
+    ("cantiere_casa_impalcato_media", lambda n: cantiere_casa(n, 10.5, 5.6, 75)),
+    ("cantiere_casa_del_capo", lambda n: cantiere_casa(n, 15.0, 7.5, 76, capo=True)),
+    ("cantiere_recinto_tratto", lambda n: cantiere_recinto(n, 77)),
+    ("cantiere_santuario", lambda n: santuario(n, 78, cantiere=True)),
+    ("cantiere_granaio_comune", lambda n: granaio_comune(n, 79, cantiere=True)),
+    ("cantiere_pozzo", lambda n: pozzo(n, 80, cantiere=True)),
+    ("cantiere_ponte", lambda n: ponte(n, 81, cantiere=True)),
 ]
 
 

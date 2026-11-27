@@ -2,6 +2,32 @@
 
 Voci più recenti in cima.
 
+## 27/11/2026 (mattina, 4) — fabbro rifatto, fumo dei camini, secondo lotto dell'epoca 2
+**Fatto**
+- **Officina del fabbro rifatta** (Fede: "così è un po' anonimo"; legno e pietra; la fornace non si distingue, l'incudine non si vede):
+  - fonditore dell'età del Bronzo: banco di tavole con stampi di pietra, crogioli e panelle; rastrelliera con asce, punte di lancia e una spada di bronzo;
+  - pali grossi su zoccoli di sassi, metà muretto a secco sul retro;
+  - fornace a cupola sul piede di pietre, annerita in alto, camino con la fuliggine, bocca accesa rientrata con le braci;
+  - incudine di pietra chiara fuori dalla tettoia, nello spiazzo di terra battuta;
+  - fronte sulla via; cantiere rifatto. Foto `fabbro-rifatto-27-11.jpg`, `fabbro-rifatto-retro-27-11.jpg`, `fabbro-cantiere-27-11.jpg`.
+- **Fumo animato dei camini:**
+  - `VistaFumo` (una MultiMesh per tutti i camini, 12 sbuffi l'uno) e `shader/fumo.gdshader` (sbuffi rivolti alla camera che salgono, si allargano, piegano col vento e sfumano, contorno di rumore);
+  - i punti dei camini in `camini.json`, scritti da `protourbano.py`; la vista lo aggiunge agli edifici finiti;
+  - GIF di 9 secondi: `docs/immagini/fumo-fabbro-27-11.gif` (fotogrammi da `test/foto_fumo.gd`).
+- **Secondo lotto di modelli:** santuario (con il fuoco dell'altare che fuma), tumulo, granaio comune, pozzo, recinto del bestiame, ponte; varianti `_b` delle case su impalcato pensate per la fila sulla via; cantieri di case, casa del capo, recinto, santuario, granaio comune, pozzo e ponte. Foto `protourbano-lotto2-27-11.jpg` e `case-sulla-via-27-11.jpg` (modi `lotto2` e `via` di `foto_cantieri.gd`).
+- `verifica_asset.gd` legge anche i modelli dell'epoca 2 e controlla il fumo; 12 verifiche superate. Niente partite "umane": le dinamiche non cambiano.
+
+**Decisioni** (Fede, 27/11)
+- Con il protourbano le strade diventano più importanti e **le case si sviluppano sulla via** (`epoca2-proposte.md` § 1, voce 12; la parte di simulazione arriva con recinto e zone).
+- **Fumo:** non legato alla simulazione; per ora solo le officine e gli edifici comunitari, non le case ("altrimenti diventa una coltre di fumo, ben prima dell'epoca industriale").
+- "Procedi come suggerisci": prima il fabbro, poi il fumo, poi il secondo lotto.
+- Da decidere: quali altri edifici comunitari fumano (proposta di Claude: il santuario sì; la casa del capo, il luogo sacro del villaggio e il granaio comune da vedere).
+
+**Prossimo passo**
+- Fede guarda le foto, la GIF e le proposte dell'epoca 2 (§ 1, § 2, § 2b).
+- Poi la simulazione dell'epoca 2, cominciando dal fabbro.
+- Resta in attesa: la prova di Fede al PC (F3) e le scorrerie da provare in gioco.
+
 ## 27/11/2026 (mattina, 3) — si comincia l'abitato protourbano
 **Fatto**
 - **Proposte per l'epoca 2** in `docs/epoca2-proposte.md`:

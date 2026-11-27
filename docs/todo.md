@@ -268,7 +268,10 @@ Solo documenti, senza toccare codice o modelli (richiesta di Fede).
 - [x] Proposte: evoluzioni del gioco, sinergie, funzioni degli edifici, scheda del fabbro (§ 1, 1b, 2, 2b).
 - [x] Modelli, primo lotto: case su impalcato (piccola, media), casa del capo, tratto di recinto, porta, officina del fabbro con il cantiere; vesti dell'epoca 2 con i bronzi.
 - [ ] Fede conferma le proposte del § 1, § 2 e § 2b (segnate come proposte).
-- [ ] Modelli, secondo lotto: santuario, tumulo, granaio comune, pozzo, recinto del bestiame, ponte, varianti `_b` delle case su impalcato, cantieri di case e recinto.
+- [x] Fabbro rifatto (27/11, richiesta di Fede: legno, pietra, fornace riconoscibile, incudine visibile) e **fumo animato** dei camini (decisioni di Fede: non legato alla simulazione, solo officine ed edifici comunitari). Da guardare con Fede: le foto e la GIF.
+- [x] Modelli, secondo lotto (27/11): santuario, tumulo, granaio comune, pozzo, recinto del bestiame, ponte, varianti `_b` delle case pensate per la fila sulla via, cantieri di case, casa del capo, recinto, santuario, granaio comune, pozzo e ponte. Da guardare con Fede.
+- **Deciso** (Fede, 27/11): con l'abitato le strade contano di più e **le case si sviluppano sulla via** (`epoca2-proposte.md` § 1, voce 12): da fare nella simulazione con recinto e zone.
+- **(?)** Quali edifici comunitari fumano: oggi l'officina e il santuario (fuoco dell'altare, proposta di Claude); da decidere la casa del capo, il luogo sacro del villaggio, il granaio comune (senza fuoco: proposta di no).
 - [ ] Simulazione dell'epoca 2, cominciando dal fabbro (strumento, scheda con la scelta attrezzi/armi, metallo, effetti su cibo e scorrerie, tutorial, specchietto delle conseguenze), poi recinto e zone.
 - Recinto o palizzata, con terrapieno e fossato: la regolazione dello spazio della seconda epoca (decisioni di Fede del 24 e 25/11/2026).
 - Gruppi capi, clan, sacerdote; famiglie eminenti e comuni che nascono dalla disuguaglianza creata dal giocatore, con attenzione agli equilibri di potere (`era-origini.md` § 6).

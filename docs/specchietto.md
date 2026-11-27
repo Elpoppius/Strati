@@ -8,7 +8,7 @@
 | `pilastri-e-decisioni.md` | concept, pilastri, ritmo, Ere ed eventi soglia, indicatori, mappe |
 | `epoche-future.md` | sistemi che attraversano le epoche, identità e regime, proprietà, vita delle costruzioni, dinamica calda, sottosuolo, schema delle dinamiche e sinergie |
 | `era-origini.md` | Villaggio e Abitato protourbano in dettaglio |
-| `epoca2-proposte.md` | Epoca 2 (27/11/2026): proposte di gioco, sinergie, edifici, fabbro (primo edificio dell'epoca, **D**), modelli |
+| `epoca2-proposte.md` | Epoca 2 (27/11/2026): proposte di gioco, sinergie, edifici, fabbro (primo edificio dell'epoca, **D**), case che si sviluppano sulla via (**D**), modelli |
 | `era-antichita.md` | Città-stato e Città imperiale in dettaglio |
 | `edifici-per-epoca.md` | catalogo degli edifici per categoria di gioco, con lo scopo |
 | `regolazione-dello-spazio.md` | come si regola lo spazio epoca per epoca |
@@ -59,6 +59,8 @@ Territorio e sensibilità → opere e zone → **campi del lotto** → edifici c
 - **Scorrerie** (voce 4, 26/11/2026): dalla tappa dei 100 abitanti; segni prima, politica "Ai segni di pericolo" e torre di avvistamento sull'altura; dopo una scorreria l'abitato si stringe (ponte verso il recinto dell'epoca 2).
 
 - **Popolazione visibile** (voce 7): figure che fanno i lavori veri della simulazione, con animazioni; numeri da misurare con Fede.
+- **Fumo dei camini** (27/11/2026) **D**: animato, non legato alla simulazione; per ora solo officine ed edifici comunitari (niente case: "altrimenti diventa una coltre di fumo"). Dettagli in `asset.md`.
+- **Epoca 2, le case sulla via** (27/11/2026) **D**: con l'abitato le strade contano di più e le case si sviluppano lungo la strada (`epoca2-proposte.md` § 1, voce 12).
 
 ## Regole da non dimenticare **D**
 - Ritmo meditativo: il gioco si ferma solo per le scelte vere (e per l'ultimo esemplare di un'epoca).

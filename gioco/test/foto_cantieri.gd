@@ -56,6 +56,50 @@ func _process(_d: float) -> bool:
 			u.costruisci(u.celle_nel_cerchio(c.x, c.z, 50.0), "capanna", false)
 			_posa("officina_fabbro", c.x - 6.0, c.z, p)
 			_posa("cantiere_officina_fabbro", c.x + 6.0, c.z, p)
+		elif args.size() > 3 and args[3] == "lotto2":
+			# Secondo lotto dell'epoca 2 (27/11/2026): in alto gli edifici finiti, sotto i cantieri.
+			var p := "res://asset/protourbano"
+			u.costruisci(u.celle_nel_cerchio(c.x, c.z, 90.0), "capanna", false)
+			var fila := [["santuario", -36.0, 12.0], ["granaio_comune", -22.0, 9.0], ["pozzo", -12.0, 6.0], ["ponte", 2.0, 18.0], ["tumulo", 18.0, 12.0], ["recinto_bestiame", 36.0, 20.0]]
+			for e in fila:
+				_posa(e[0], c.x + float(e[1]), c.z - 12.0, p)
+				if e[0] != "tumulo" and e[0] != "recinto_bestiame":
+					_posa("cantiere_" + e[0], c.x + float(e[1]), c.z + 8.0, p)
+			_posa("cantiere_casa_impalcato_piccola", c.x + 16.0, c.z + 8.0, p, 90.0)
+			_posa("cantiere_recinto_tratto", c.x + 34.0, c.z + 8.0, p)
+			_posa("cantiere_casa_del_capo", c.x + 2.0, c.z + 26.0, p, 90.0)
+			_posa("cantiere_casa_impalcato_media", c.x - 20.0, c.z + 26.0, p, 90.0)
+		elif args.size() > 3 and args[3] == "via":
+			# Case su impalcato in fila lungo una via (decisione di Fede del 27/11/2026: nell'abitato
+			# le case si sviluppano sulla strada): la testata con la porta guarda la via; si alternano
+			# le case di base e le varianti _b (banco e telaio davanti, orto e cataste dietro).
+			var p := "res://asset/protourbano"
+			u.costruisci(u.celle_nel_cerchio(c.x, c.z, 70.0), "capanna", false)
+			# La via: un nastro di terra battuta largo 7 m, a pezzi di 2 m che seguono il terreno (nel
+			# gioco la disegna la vista delle strade).
+			var mat := StandardMaterial3D.new()
+			mat.albedo_texture = load("res://asset/texture/terra.png")
+			mat.albedo_color = Color(0.85, 0.78, 0.68)
+			mat.uv1_triplanar = true
+			mat.uv1_scale = Vector3.ONE * 0.4
+			for dz in range(-40, 41, 2):
+				var pezzo := MeshInstance3D.new()
+				var scatola := BoxMesh.new()
+				scatola.size = Vector3(7.0, 0.6, 2.05)
+				pezzo.mesh = scatola
+				pezzo.material_override = mat
+				pezzo.position = Vector3(c.x, _s.terreno.quota_mondo(c.x, c.z + dz) - 0.24, c.z + dz)
+				_s.add_child(pezzo)
+			var tipi := ["casa_impalcato_piccola", "casa_impalcato_media_b", "casa_impalcato_media", "casa_impalcato_piccola_b", "casa_impalcato_piccola", "casa_impalcato_media_b"]
+			for k in tipi.size():
+				var z := c.z - 28.0 + k * 9.0
+				# A ovest della via la porta guarda a est (+x), a est guarda a ovest. Il fronte (mezza
+				# casa, ballatoio e scaletta) arriva al ciglio della via.
+				for lato in [-1, 1]:
+					var tipo: String = tipi[k] if lato < 0 else tipi[(k + 3) % tipi.size()]
+					var fronte := (3.75 if tipo.contains("piccola") else 5.25) + 1.6 + 1.6
+					_posa(tipo, c.x + lato * (3.5 + fronte), z + (0.0 if lato < 0 else 4.5), p, 0.0 if lato < 0 else 180.0)
+			_posa("pozzo", c.x, c.z + 30.0, p)
 		elif args.size() > 3 and args[3] == "officina":
 			# Solo l'officina finita, al centro, per guardarla da vicino.
 			u.costruisci(u.celle_nel_cerchio(c.x, c.z, 30.0), "capanna", false)

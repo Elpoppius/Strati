@@ -4,7 +4,7 @@
 
 **Riferimento storico per la mappa pedecollinare** (area emiliana): l'età del Bronzo delle **terramare** (circa 1650–1150 a.C.): abitati quadrangolari con terrapieno, fossato e case su impalcato, crollati di colpo verso il 1150 per il sovrasfruttamento della terra. Dopo arriva l'età del Ferro **villanoviana** (dal IX secolo a.C., Bologna): capanne ovali o rettangolari, villaggi sparsi che si uniscono in un centro. L'epoca 2 va dal metallo (circa 2000 a.C.) a "la città si dà leggi" (circa 700 a.C.) e copre tutte e due.
 
-**Indicazioni di Fede (27/11/2026, 09:30):** l'abitato si gestisce con lo **zoning**; il **recinto** serve a proteggere dalle scorrerie; il **fabbro** rende più efficienti la **raccolta del cibo** e la **difesa**. "Controlla che sia tutto sinergico" (§ 1b). Alle 09:33: il fabbro va inserito **come edificio** (§ 2b). Alle 09:38: **il fabbro è il primo edificio che si sblocca con la nuova epoca.**
+**Indicazioni di Fede (27/11/2026, 09:30):** l'abitato si gestisce con lo **zoning**; il **recinto** serve a proteggere dalle scorrerie; il **fabbro** rende più efficienti la **raccolta del cibo** e la **difesa**. "Controlla che sia tutto sinergico" (§ 1b). Alle 09:33: il fabbro va inserito **come edificio** (§ 2b). Alle 09:38: **il fabbro è il primo edificio che si sblocca con la nuova epoca.** Alle 09:59: **con il protourbano le strade diventano più importanti, quindi le case iniziano a svilupparsi maggiormente sulla strada** (voce 12 qui sotto). Alle 10:07, sul fumo dei camini: non è legato alla simulazione; per ora fumano solo gli edifici comunitari (e l'officina), "altrimenti diventa una coltre di fumo, ben prima dell'epoca industriale".
 
 ## 1. Evoluzioni logiche del gioco: dal villaggio all'abitato
 Ogni voce dice cosa c'era nel villaggio e cosa diventa.
@@ -33,6 +33,7 @@ Ogni voce dice cosa c'era nel villaggio e cosa diventa.
 10. **Il suolo che sale.** Le case su impalcato si rifanno sul posto e il suolo dentro il recinto sale: è il primo strato del sottosuolo.
 11. **Dai casali al centro.** I casali del contado tendono a entrare nel recinto, come a Bologna nell'VIII secolo. È la strada verso l'evento soglia 2.
 12. **Vie.** Il **ponte** sui torrenti larghi, dove la strada del villaggio si fermava al guado (Fede, 26/11), e l'**approdo** sul fiume.
+    - **Le case sulla via (decisione di Fede, 27/11):** con l'abitato le strade contano di più e le case si sviluppano lungo la strada. *Come lo intende Claude (da confermare nella simulazione):* nel villaggio le case comparivano lungo la via solo a centro pieno; nell'abitato le strade attirano le case da subito; ogni casa dà sulla via la testata con la porta e la scaletta, e le case si mettono in fila lungo gli assi che entrano dalle porte del recinto. I modelli sono già pensati così (varianti `_b` con il banco o il telaio davanti, l'orto e le cataste dietro, i fianchi liberi; foto `docs/immagini/case-sulla-via-27-11.jpg`).
 13. **Eventi d'epoca:** razzie e guerre tra clan, morie del bestiame, il crollo. Presagi veri: mercanti stranieri, armi nuove; presagi falsi: le profezie del sacerdote.
 14. **Tempo.** Tutta l'epoca scorre a decenni, circa 1300 anni.
 
@@ -91,7 +92,7 @@ Struttura separata dalla funzione (`epoche-future.md`): un edificio del villaggi
   - la famiglia del fabbro diventa eminente: il metallo arricchisce chi lo lavora;
   - perde il bosco, per il carbone.
 - **Quanti.** Uno basta all'inizio; il secondo serve solo con lo scambio, perché il metallo da isolati non basta per due.
-- **Modello:** `officina_fabbro` in `strumenti/blender/protourbano.py`, già fatto. Per il cantiere ne serve uno a parte, come per le altre costruzioni (`cantiere_officina_fabbro`).
+- **Modello:** `officina_fabbro` in `strumenti/blender/protourbano.py`, con il suo cantiere (`cantiere_officina_fabbro`). **Rifatto il 27/11** su richiesta di Fede (più legno e pietra, fornace riconoscibile, incudine visibile): fonditore dell'età del Bronzo con stampi, crogioli e panelle, bronzo sulla rastrelliera, fronte sulla via. Dal camino esce il **fumo animato** (`asset.md`, "Fumo dei camini"); foto `docs/immagini/fabbro-rifatto-27-11.jpg`, GIF `fumo-fabbro-27-11.gif`.
 
 ## 3. Modelli: la nuova pelle e gli edifici nuovi
 - **Pelle dell'epoca (case):**
@@ -125,7 +126,9 @@ Struttura separata dalla funzione (`epoche-future.md`): un edificio del villaggi
   - Colori più vivi del villaggio: rosso di robbia, giallo di reseda, blu di guado.
   - Il bronzo appare come colore a sé, quindi lo shader deve leggere una classe in più.
 
+**Fatti (27/11/2026):** primo lotto (case, casa del capo, recinto, porta, fabbro, vesti) e secondo lotto (santuario, tumulo, granaio comune, pozzo, recinto del bestiame, ponte, varianti `_b` delle case per la fila sulla via, cantieri di case, casa del capo, recinto, santuario, granaio comune, pozzo e ponte). Elenco e misure in `asset.md`.
+
 ## 4. Ordine di lavoro proposto
-1. Modelli: la pelle delle case e la casa del capo, il recinto e la porta, il fabbro, le vesti (si cominciano subito, su richiesta di Fede).
+1. Modelli: la pelle delle case e la casa del capo, il recinto e la porta, il fabbro, le vesti (si cominciano subito, su richiesta di Fede). **Fatti, con il secondo lotto (27/11).**
 2. Fede conferma le evoluzioni del § 1 e le funzioni del § 2.
 3. Simulazione dell'epoca 2, voce per voce come per il villaggio, **cominciando dal fabbro** (Fede, 27/11: è il primo edificio che si sblocca), poi recinto e zone, gruppi e famiglie, concessione, scambio, crollo.
