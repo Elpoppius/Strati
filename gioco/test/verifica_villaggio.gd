@@ -498,18 +498,32 @@ func _verifica_soglia(d: MappaDati) -> void:
 	if not dec.is_empty():
 		s.identita["terra"] = 0.8
 		s.identita["decide"] = -0.4
+		s.disuguaglianza = 0.6
 		s.scegli(dec[0]["id"], "aprirsi")
-	controlla(s.finito and s.soglia_scelta == "aprirsi" and s.primo_governo == "Casa dominante", "terra alle famiglie e pochi che decidono: Casa dominante (%s)" % s.primo_governo)
+	controlla(s.finito and s.soglia_scelta == "aprirsi" and s.primo_governo == "Casa dominante", "raccolto alle famiglie e disuguaglianza alta: Casa dominante (%s)" % s.primo_governo)
 	controlla(s.tecnica_corrente >= 1 and float(s.identita["apertura"]) > 0.3, "arriva l'aratro e la città nasce aperta")
 	var fine: Array = s.decisioni.filter(func(x: Dictionary) -> bool: return x["tipo"] == "fine")
 	controlla(not fine.is_empty() and String(fine[0]["testo"]).contains("Casa dominante") and String(fine[0]["testo"]).contains("abitanti"), "il riepilogo del villaggio dice il primo governo")
 	s.identita["terra"] = -0.6
-	s.identita["decide"] = 0.5
+	s.disuguaglianza = 0.1
 	s.consenso["anziani"] = 70.0
-	controlla(s.governo_da_identita() == "Comunità", "terra in comune e molti che decidono: Comunità")
-	s.identita["terra"] = 0.1
-	s.identita["decide"] = 0.0
-	controlla(s.governo_da_identita() == "Consiglio dei clan", "in mezzo: Consiglio dei clan")
+	controlla(s.governo_da_identita() == "Comunità", "raccolto in comune, poca disuguaglianza, anziani contenti: Comunità")
+	s.consenso["anziani"] = 30.0
+	controlla(s.governo_da_identita() == "Consiglio dei clan", "raccolto in comune ma anziani scontenti: Consiglio dei clan")
+	s.identita["terra"] = 0.5
+	s.disuguaglianza = 0.05
+	controlla(s.governo_da_identita() == "Consiglio dei clan", "raccolto alle famiglie con poca disuguaglianza: Consiglio dei clan")
+	# Ritmo dei presagi (Fede, 26/11/2026): a decenni più radi, con il sacerdote scontento più fitti.
+	var r1 := SimVillaggio.new(d, 41)
+	r1.fonda(c)
+	var anni_prima: Array = r1.ritmo_presagi()
+	r1.decenni = true
+	var anni_dopo: Array = r1.ritmo_presagi()
+	controlla(int(anni_dopo[0]) >= 4 * int(anni_prima[0]) and float(anni_dopo[1]) < float(anni_prima[1]), "a decenni i presagi si allentano (almeno %d anni fra uno e l'altro)" % int(anni_dopo[0]))
+	r1.sacerdote_attivo = true
+	r1.consenso["sacerdote"] = 30.0
+	var scontento: Array = r1.ritmo_presagi()
+	controlla(int(scontento[0]) < int(anni_dopo[0]) and float(scontento[1]) > float(anni_dopo[1]), "con il sacerdote scontento i presagi tornano più fitti (%d anni)" % int(scontento[0]))
 	# Al 1800 a.C. l'evento arriva comunque.
 	var u := SimVillaggio.new(d, 41)
 	u.fonda(c)

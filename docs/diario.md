@@ -2,6 +2,34 @@
 
 Voci più recenti in cima.
 
+## 27/11/2026 (mattina, 2) — presagi, primo governo, passerelle
+**Fatto** (decisioni di Fede del 26/11 sera)
+- **Presagi** ("allenta i presagi, aumentali col sacerdote scontento"):
+  - nei primi secoli come prima;
+  - a decenni almeno 400 anni fra l'uno e l'altro (uno ogni 6–7 secoli);
+  - con il sacerdote scontento l'attesa si dimezza e la probabilità raddoppia, sempre. I testi del sacerdote lo dicono.
+  - Nelle partite lunghe le pause scendono da circa 20 a 11.
+- **Primo governo** ("ok da fare"): soglie rifatte sulla tabella di `era-origini.md`:
+  - raccolto in comune, poca disuguaglianza, anziani contenti → Comunità;
+  - raccolto alle famiglie e mandrie grandi delle famiglie → Casa dominante;
+  - il resto → Consiglio dei clan.
+  - Nelle partite di prova escono tutte e tre (6, 4, 2).
+- **Passerelle:** niente sui torrenti larghi (oltre 14 m d'acqua). Lì la strada si ferma al guado; servirà il ponte nell'epoca dopo.
+- **Prove:**
+  - 12 verifiche superate;
+  - 72 partite "umane" sui primi cinque secoli (come prima);
+  - 24 + 12 partite lunghe;
+  - registro degli avvisi: 3,6 pause.
+  - Risultati in `sessioni-giocatori.md`.
+
+**Decisioni**
+- Fede: "passa al prossimo". Le case lungo la via restano come sono; i sentieri li fa solo il giocatore.
+- Da guardare con Fede: le scorrerie nelle partite lunghe (in media 9 in 3000 anni, fino a 20).
+
+**Prossimo passo**
+- La prova di Fede al PC (finestra F3, 17 caselle), poi la lettura del Registro.
+- La prossima Era sulla carta: si sceglie con Fede.
+
 ## 27/11/2026 (mattina) — menù delle impostazioni (voce 10)
 **Fatto**
 - **Impostazioni** (proposta di Claude approvata da Fede il 26/11): F10 o Strumenti › Partita › Impostazioni.

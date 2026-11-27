@@ -102,7 +102,7 @@ const SCHEDE := {
 		"titolo": "Luogo sacro",
 		"testo": "La popolazione ha bisogno di fede e il sacerdote chiede un luogo sacro. Lì saprà leggere meglio i segni del cielo e delle acque; senza, potrebbe adirarsi.",
 		"domanda": "Cosa fa un luogo sacro?",
-		"dettaglio": "In Edifici (O): un cerchio di pali attorno a una pietra eretta, uno solo, non lontano dalle case. Servono 10 di legna e tre anni di lavoro. Da oggi il sacerdote ha voce nel villaggio e non avrà pace finché il luogo sacro non sarà eretto. Contento, i suoi segni saranno chiari e affidabili; scontento, parlerà per enigmi e più spesso si sbaglierà. Le famiglie amano costruire le case vicino al luogo sacro.",
+		"dettaglio": "In Edifici (O): un cerchio di pali attorno a una pietra eretta, uno solo, non lontano dalle case. Servono 10 di legna e tre anni di lavoro. Da oggi il sacerdote ha voce nel villaggio e non avrà pace finché il luogo sacro non sarà eretto. Contento, i suoi segni saranno chiari e affidabili; scontento, parlerà per enigmi, più spesso, e più spesso si sbaglierà. Le famiglie amano costruire le case vicino al luogo sacro.",
 		"avviso": "Luogo sacro (O): il sacerdote lo chiede; senza, si adira.",
 	},
 	"pascolo": {

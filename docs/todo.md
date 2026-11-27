@@ -65,7 +65,7 @@ In tutto **7–10 ore di lavoro di Claude**, cioè 2–3 giornate, più le confe
 
 **Claude lavora:**
 1. [x] Voce 10, menù delle impostazioni (27/11 mattina).
-2. Le decisioni 2–5 di Fede, con le prove dei giocatori "umani" (anche lunghe) e il registro degli avvisi.
+2. [x] Le decisioni 2–5 di Fede (27/11 mattina): presagi più radi a decenni e più fitti con il sacerdote scontento; soglie del primo governo rifatte sulla tabella; niente passerella sui torrenti larghi; prove dei giocatori "umani" (anche lunghe) e registro degli avvisi. Da guardare con Fede: le scorrerie nelle partite lunghe (6–16 in 3000 anni, una ogni 200–500 anni).
 3. Lettura del Registro dopo la prova di Fede e correzioni (come la voce C del 26/11).
 4. Ritocchi di direzione artistica che Fede chiede.
 5. Sulla carta: la prossima Era si decide domani con Fede (in ordine la Città in contrazione, oppure l'Età industriale come in `epoche-future.md`).
@@ -211,7 +211,7 @@ Un menù delle impostazioni del gioco, con dentro anche l'opzione dei tutorial (
 - **Prove di Fede, aperte (26/11/2026 sera):** legna (alberi tagliati uno alla volta), scheda della legnaia, cursori e cornice di selezione, puntatore rosso, HUD fermo e cose che compaiono, edifici più grandi, specchietti, scorrerie (Prova: Scorreria). Sono le caselle della finestra Debug (F3). Spuntate da Fede il 26/11 sera: persone (aspetto e animazioni), scheda della famiglia, maiale, fluidità con animali e figure (60 fps, minimo 33 a 40 m con 149 figure sulla GTX 1050), tutorial.
 - **Proposte di Claude in attesa di uno sguardo (26/11/2026):** i dodici nomi comuni delle famiglie, l'ordine dei desideri ("Vorrebbe"), la cornice bianca della casa; i numeri dell'umore delle famiglie (−12 piena ricordata, −8 zona delle piene, −6 legna lontana, −5 campi stanchi e casale senza sentiero, +3 focolare e luogo sacro); i numeri della popolazione visibile (150 figure, 1/2/5 persone per figura, visibili sotto i 450 m).
 - **Menù delle impostazioni (voce 10):** cosa contiene oltre ai tutorial.
-- **Partite lunghe (voce 6, 26/11/2026 notte):** a decenni i presagi (sorgenti, cometa) fermano il gioco circa ogni 200 anni, cioè ogni 20 secondi a velocità 1: troppo fitti. Proposta di Claude: a decenni più rari (ogni 5–8 secoli) o notifiche grigie senza pausa. Inoltre nelle 18 partite lunghe nessun villaggio ha avuto il Consiglio dei clan: le soglie del primo governo sono da rivedere con Fede (`sessioni-giocatori.md`).
+- **Partite lunghe (voce 6):** presagi e soglie del governo **fatti** il 27/11 (decisioni di Fede del 26/11). **Resta da guardare** (bilanciamento, Fede: "occhio al bilanciamento"): nelle partite lunghe le scorrerie sono 6–16 in 3000 anni (di più per chi conosce il genere, villaggi più grandi e ricchi); a decenni una scorreria ogni 200 anni circa vuol dire una ogni 20 secondi a velocità 1. Proposta di Claude: a decenni la probabilità segue i decenni come i presagi (più rade), oppure si lascia così perché sono soprattutto notifiche (la scelta sui segni ferma il gioco solo la prima volta).
 - **Salvataggio e piene (voce 9, 26/11/2026 notte), proposte di Claude:** cartella `D:\Godot\Strati\Salvataggi`, F5 salva e F8 riprende, Strumenti › Partita, automatici a ogni tappa e ogni 50 anni (ultimi 3); acqua della piena torbida e bruna, 3 s su, 5 fermi, 7 giù.
 - **Strade (voce 5, 26/11/2026 sera), domande di Claude:**
   - Le **passerelle sui torrenti**: **niente passerella sui torrenti larghi** (Fede, 26/11/2026: servirà il ponte nell'epoca dopo); restano sui corsi stretti e sul fradicio. Da fare il 27/11.

@@ -517,6 +517,13 @@ var _anno_piena := 0
 var gia_piena_disastrosa := false
 ## Presagi: al massimo uno ogni secolo circa (proposta approvata da Fede il 25/11/2026).
 const ANNI_TRA_PRESAGI := 100
+## Ritmo dei presagi (Fede, 26/11/2026: "allenta i presagi, aumentali col sacerdote scontento";
+## numeri proposti da Claude): a decenni almeno 400 anni fra l'uno e l'altro e meno probabili (uno
+## ogni 6–7 secoli in media, prima erano uno ogni 2); con il sacerdote scontento (sotto 40) l'attesa
+## si dimezza e la probabilità raddoppia, anche nei primi secoli.
+const ANNI_TRA_PRESAGI_DECENNI := 400
+const PROB_PRESAGIO_DECENNI := 0.004
+const SACERDOTE_SCONTENTO := 40.0
 var _ultimo_presagio := -99999
 var gia_stranieri := false
 var _stranieri_prima := false
@@ -1885,6 +1892,16 @@ func obiettivo_sacerdote() -> float:
 	return o
 
 
+## [anni minimi fra due presagi, probabilità all'anno dopo l'attesa].
+func ritmo_presagi() -> Array:
+	var attesa := float(ANNI_TRA_PRESAGI_DECENNI if decenni else ANNI_TRA_PRESAGI)
+	var prob := PROB_PRESAGIO_DECENNI if decenni else PROB_PRESAGIO
+	if sacerdote_attivo and consenso["sacerdote"] < SACERDOTE_SCONTENTO:
+		attesa *= 0.5
+		prob *= 2.0
+	return [roundi(attesa), prob]
+
+
 func quota_presagi_falsi() -> float:
 	if not sacerdote_attivo:
 		return PRESAGI_FALSI
@@ -3245,9 +3262,11 @@ func passo() -> void:
 			_inizia_siccita()
 			siccita_tra = -1
 	# Presagi: al massimo uno ogni secolo circa; sono le sole scelte che fermano il gioco ogni volta.
-	var presagio_possibile := anno - _ultimo_presagio >= ANNI_TRA_PRESAGI and anno > ANNO_INIZIO + 20 \
+	# A decenni più radi, con il sacerdote scontento più fitti (Fede, 26/11/2026; `ritmo_presagi`).
+	var ritmo := ritmo_presagi()
+	var presagio_possibile := anno - _ultimo_presagio >= int(ritmo[0]) and anno > ANNO_INIZIO + 20 \
 		and siccita == 0 and siccita_tra < 0 and cometa.is_empty() and presagio_vero.is_empty()
-	if presagio_possibile and rng.randf() < PROB_PRESAGIO:
+	if presagio_possibile and rng.randf() < float(ritmo[1]):
 		_ultimo_presagio = anno
 		stat["presagi_totali"] += 1
 		if rng.randf() >= quota_presagi_falsi():
@@ -4218,15 +4237,25 @@ func _soglia() -> void:
 		 {"id": "isolarsi", "testo": "Restare isolati", "nota": "Più sicuro, con le usanze di sempre; ma senza metallo il villaggio resterà indietro."}])
 
 
-## Il primo governo con un nome (era-origini.md § 5), dall'identità costruita nel villaggio: terra in
-## comune e molti che decidono danno la Comunità, terra alle famiglie e pochi che decidono la Casa
-## dominante, in mezzo il Consiglio dei clan. Anziani molto scontenti tolgono la Comunità.
-## Soglie: proposta di Claude.
+## Il primo governo con un nome (era-origini.md § 5), dalla tabella delle condizioni: raccolto in
+## comune, poca disuguaglianza e anziani contenti danno la Comunità; raccolto alle famiglie e
+## disuguaglianza alta (mandrie delle famiglie) la Casa dominante; il resto, alcune famiglie più forti,
+## il Consiglio dei clan. Il raccolto si legge dall'asse "terra" dell'identità (lento: conta come si è
+## vissuto, non l'ultima scelta); la disuguaglianza viene dagli animali delle famiglie (una mandria
+## di 300 capi la porta a 1). Soglie rifatte il 27/11/2026 (Fede: "ok da fare"; prima la Casa
+## dominante usciva con ogni raccolto alle famiglie e il Consiglio dei clan mai). Numeri: proposta di
+## Claude, tarati sulle partite lunghe (a fine partita la disuguaglianza sta fra 0 e 0,2).
+const SOGLIA_TERRA_COMUNE := 0.0
+const SOGLIA_TERRA_FAMIGLIE := 0.25
+const DISUGUAGLIANZA_COMUNITA := 0.3
+const DISUGUAGLIANZA_CASA := 0.12  # mandrie delle famiglie di una quarantina di capi
+const ANZIANI_COMUNITA := 45.0
+
 func governo_da_identita() -> String:
-	var verso := (float(identita["terra"]) - float(identita["decide"])) * 0.5
-	if verso < -0.15 and consenso["anziani"] >= 45.0:
+	var terra := float(identita["terra"])
+	if terra < SOGLIA_TERRA_COMUNE and disuguaglianza < DISUGUAGLIANZA_COMUNITA and consenso["anziani"] >= ANZIANI_COMUNITA:
 		return "Comunità"
-	if verso > 0.3:
+	if terra > SOGLIA_TERRA_FAMIGLIE and disuguaglianza >= DISUGUAGLIANZA_CASA:
 		return "Casa dominante"
 	return "Consiglio dei clan"
 
@@ -4348,14 +4377,14 @@ func cause_di(nome: String) -> Array[String]:
 				out.append("Gli uomini vegliano ai margini: gli anziani sono contenti, ma lavorano meno nei campi.")
 			# Il sacerdote (decisioni di Fede del 24–25/11/2026).
 			if sbloccato("luogo_sacro") and luogo_sacro.x < 0:
-				out.append("Il sacerdote è contrariato finché non si erige il luogo sacro (Edifici): i presagi si fanno ambigui.")
+				out.append("Il sacerdote è contrariato finché non si erige il luogo sacro (Edifici): i presagi si fanno ambigui e più frequenti.")
 			elif cantiere_luogo_sacro > 0:
 				out.append("Il luogo sacro è in costruzione: ancora %d anni." % cantiere_luogo_sacro)
 			if sacerdote_attivo:
 				if consenso["sacerdote"] >= 60.0:
 					out.append("Il sacerdote è contento: i presagi sono chiari e le voci false poche.")
 				elif consenso["sacerdote"] < 40.0:
-					out.append("Il sacerdote è scontento: i presagi si fanno ambigui e girano più voci false.")
+					out.append("Il sacerdote è scontento: i presagi si fanno ambigui e più frequenti, e girano più voci false.")
 				if sbloccato("bosco_sacro") and ettari_bosco_sacro() < ETTARI_BOSCO_SACRO:
 					out.append("Il sacerdote vuole un bosco sacro più grande (ora %s ha su %d)." % [String.num(ettari_bosco_sacro(), 1).replace(".", ","), roundi(ETTARI_BOSCO_SACRO)])
 		"Legna":

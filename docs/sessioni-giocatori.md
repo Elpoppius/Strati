@@ -212,6 +212,13 @@ Per sito, scorrerie a partita: Sbocco del fiume 1,67, Pianura aperta 1,17, Terra
 
 **Registro degli avvisi** (5 partite, livello 5): nessuna scorreria (il giocatore automatico del registro non stende il pascolo, quindi la ricchezza resta bassa); 4,2 pause vere e 16 riquadri di tutorial a partita, come prima.
 
+## Presagi allentati e governo rifatto (27/11/2026, mattina)
+**Primi cinque secoli** (72 partite): mediane 734 / 789 / 905 / 136 abitanti, carestie 3,1 / 3,9 / 4,2 / 2,6, pause vere 4,3 / 3,9 / 4,3 / 3,7, scorrerie 0,9 / 0,9 / 1,3 / 0,3 a partita (impara sbagliando, legge, conosce il genere, casual): quasi come prima (cambia solo il ritmo dei presagi con il sacerdote scontento). Registro degli avvisi: 3,6 pause vere a partita, come prima.
+
+**Partite lunghe** (24 partite, tutti i profili): le pause scendono da circa 20 a **11 a partita** (5–20); nessun abbandono; mediane 800–950 abitanti. Con le soglie nuove del governo (12 partite di prova, impara sbagliando e conosce il genere): **6 Comunità, 4 Casa dominante, 2 Consiglio dei clan**. A fine partita la disuguaglianza sta fra 0 e 0,17: la Casa dominante esce a chi tiene raccolto e animali alle famiglie con mandrie grandi, il Consiglio dei clan a chi tiene il raccolto alle famiglie con poche bestie, la Comunità a chi mette il raccolto in comune.
+
+**Da guardare (bilanciamento delle scorrerie):** in 3000 anni 2–20 scorrerie a partita (in media 9; chi conosce il genere, con villaggi più grandi e ricchi, 10–20).
+
 ## Partite lunghe, fino al metallo (26/11/2026, notte)
 **Giocatori "umani"** con `lunghe` (18 partite: legge, genere, casual × 6 siti × 1 seme), fino all'evento soglia: 17 villaggi su 18 arrivano al metallo al 2999 a.C. (territorio pieno o 600 abitanti); il casual nell'Area dei gessi, rimasto a 44 abitanti, ci arriva al 1799. Nessun abbandono. A fine partita 378–1203 abitanti (mediana circa 900), 0–21 strade. Scelte a caso: 11 volte aprirsi, 7 isolarsi; governi: 11 Casa dominante, 7 Comunità, nessun Consiglio dei clan (le soglie dell'identità sono da guardare). Carestie in 3000 anni da 1 a 47 (in media circa una ogni due secoli; di più a Sbocco del fiume e Pianura aperta).
 

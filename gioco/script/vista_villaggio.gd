@@ -739,7 +739,10 @@ func _aggiorna_nastri() -> bool:
 				if umido and acqua:
 					sull_acqua = true
 				elif not umido and umido_da.x != INF:
-					passerelle.append([umido_da, q, sull_acqua])
+					# Sui torrenti larghi niente passerella (Fede, 26/11/2026: servirà il ponte
+					# nell'epoca dopo): la strada si ferma al guado, come il sentiero.
+					if not sull_acqua or umido_da.distance_to(q) <= LARGHEZZA_MAX_PASSERELLA:
+						passerelle.append([umido_da, q, sull_acqua])
 					umido_da = Vector2(INF, INF)
 			var buono := su_sentiero and not acqua and not umido
 			if buono:
@@ -764,7 +767,8 @@ func _aggiorna_nastri() -> bool:
 
 ## Strade (voce 5, 26/11/2026): lo stesso sentiero allargato a 5 m e consumato in terra compatta.
 const LARGHEZZA_STRADA := 5.0
-const SOGLIA_FRADICIO := 0.6  # palude_fine sopra cui la strada passa su tronchi
+const SOGLIA_FRADICIO := 0.6
+const LARGHEZZA_MAX_PASSERELLA := 14.0  # metri d'acqua: oltre, guado senza passerella  # palude_fine sopra cui la strada passa su tronchi
 const LUNGO_PASSERELLA := 6.0
 
 func _disegna_strade(pezzi: Array) -> void:
