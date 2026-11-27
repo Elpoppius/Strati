@@ -212,6 +212,13 @@ Per sito, scorrerie a partita: Sbocco del fiume 1,67, Pianura aperta 1,17, Terra
 
 **Registro degli avvisi** (5 partite, livello 5): nessuna scorreria (il giocatore automatico del registro non stende il pascolo, quindi la ricchezza resta bassa); 4,2 pause vere e 16 riquadri di tutorial a partita, come prima.
 
+## Quanto pesano le scorrerie (27/11/2026, mattina)
+Domanda di Fede: "le scorrerie quanto influenzano la crescita? Sono molto punitive?". Prova: le stesse 12 partite lunghe (legge e conosce il genere × 6 siti, stesso seme) con e senza scorrerie (`giocatore_umano.gd -- uscita 1 lunghe genere,legge senza_scorrerie`, interruttore `SimVillaggio.scorrerie_spente`, solo per le prove).
+- **Cosa toglie una scorreria:** dal 10 al 40% degli animali (di più con i pascoli lontani), dal 10 al 25% delle scorte di cibo, una volta su tre circa una o due case ai margini (2,5 abitanti l'una); anziani −8, famiglie −3 (−3 per casa). Granaio, torre e politica del pericolo riducono le perdite.
+- **Sulla crescita quasi niente:** a fine partita gli abitanti con e senza scorrerie stanno entro il ±10% (mediana del rapporto 1,05), cioè nel rumore delle partite: i villaggi si riprendono. Due partite al Dosso nelle paludi divergono molto (+90%) per strade diverse prese dalle partite, non per le scorrerie.
+- **Sulle carestie sì:** con le scorrerie le carestie in 3000 anni quasi raddoppiano (chi conosce il genere 73 contro 37 in tutto, chi legge 76 contro 46), perché portano via le scorte. Case bruciate poche (0–7 a partita). Pause quasi uguali (le scorrerie sono notifiche).
+- **Conclusione:** non sono punitive per la crescita; pesano come colpi alle scorte (carestie) e al consenso, e a decenni sono frequenti (10–20 in una partita lunga di chi ha villaggi grandi).
+
 ## Presagi allentati e governo rifatto (27/11/2026, mattina)
 **Primi cinque secoli** (72 partite): mediane 734 / 789 / 905 / 136 abitanti, carestie 3,1 / 3,9 / 4,2 / 2,6, pause vere 4,3 / 3,9 / 4,3 / 3,7, scorrerie 0,9 / 0,9 / 1,3 / 0,3 a partita (impara sbagliando, legge, conosce il genere, casual): quasi come prima (cambia solo il ritmo dei presagi con il sacerdote scontento). Registro degli avvisi: 3,6 pause vere a partita, come prima.
 

@@ -1409,8 +1409,11 @@ func calcola_rischio_scorrerie() -> Dictionary:
 
 
 ## Ogni anno: la scorreria annunciata arriva, oppure (se non c'è) forse arrivano i segni.
+## Solo per le prove: senza scorrerie (per misurare quanto pesano sulla crescita).
+var scorrerie_spente := false
+
 func _scorrerie() -> void:
-	if not scorrerie_aperte():
+	if not scorrerie_aperte() or scorrerie_spente:
 		return
 	memoria_scorrerie = maxf(0.0, memoria_scorrerie - 100.0 / ANNI_MEMORIA_RAZZIA / 2.0)
 	if segni_tra > 0:

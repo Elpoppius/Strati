@@ -28,6 +28,7 @@ extends SceneTree
 
 var _righe: Array[String] = []
 var _anno_limite := SimVillaggio.ANNO_PROVE
+var _senza_scorrerie := false
 
 
 func _initialize() -> void:
@@ -37,6 +38,8 @@ func _initialize() -> void:
 	if args.size() > 2 and args[2] == "lunghe":
 		_anno_limite = SimVillaggio.ANNO_FINE
 	var profili: Array = args[3].split(",") if args.size() > 3 else ["sbaglia", "legge", "genere", "casual"]
+	# "senza_scorrerie" come quinto argomento: le stesse partite senza scorrerie (per misurarne il peso).
+	_senza_scorrerie = args.size() > 4 and args[4] == "senza_scorrerie"
 	var d: MappaDati = load("res://mappe/pedecollinare/mappa.res")
 	_righe.append("profilo,sito,seme,pop_finale,pop_minima,carestie,carestie_gravi,abbandoni,scissioni,pause,tutorial,piene_grandi,granaio_anno,cosa_ha_imparato,legnaie,casali,nucleo,poste,capanni,luogo_sacro,bosco_sacro_ha,sacerdote,capi,pascolo_ha,segni,scorrerie,case_bruciate,torre,pericolo,sentieri_km,strade,anno_fine,soglia,governo,id_terra,id_decide,anziani,disuguaglianza")
 	for profilo in profili:
@@ -53,6 +56,7 @@ func _initialize() -> void:
 
 func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dictionary:
 	var sim := SimVillaggio.new(d, seme)
+	sim.scorrerie_spente = _senza_scorrerie
 	var caso := RandomNumberGenerator.new()
 	caso.seed = seme * 104729 + (1 if profilo == "legge" else 0)
 	var legge: float = {"sbaglia": 0.3, "legge": 0.8, "genere": 0.0, "casual": 0.0}[profilo]
