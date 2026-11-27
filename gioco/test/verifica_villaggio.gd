@@ -558,7 +558,11 @@ func _verifica_fabbro(s: SimVillaggio, d: MappaDati) -> void:
 			break
 	controlla(punto != Vector2.ZERO, "c'è un posto per l'officina vicino al villaggio")
 	s.legna = 5.0
+	s.ultima_legna = 3.0
 	controlla(s.motivo_officina(punto).contains("legna"), "senza legna l'officina non si costruisce")
+	s.ultima_legna = 40.0
+	s.legna = 0.0
+	controlla(s.motivo_officina(punto) == "", "con la scorta vuota l'officina si paga con il taglio dell'anno")
 	s.legna = 200.0
 	controlla(s.costruisci_officina(punto) == "" and int(s.officine[0]["cantiere"]) == SimVillaggio.ANNI_CANTIERE_OFFICINA, "l'officina si costruisce in %d anni" % SimVillaggio.ANNI_CANTIERE_OFFICINA)
 	controlla(s.motivo_officina(c + Vector2(30, 0)).contains("c'è già"), "ne basta una")

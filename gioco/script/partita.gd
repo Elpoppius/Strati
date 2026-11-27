@@ -1125,7 +1125,7 @@ func conseguenze(cmd: String, punto: Vector2, raggio: float) -> Dictionary:
 			return {"titolo": "Officina del fabbro", "guadagna": "Famiglie ▲  (attrezzi) · Anziani ▲  (armi)",
 				"perde": "Famiglie ▼  (la casa accanto può bruciare)" if not vicine.is_empty() else "Bosco ▼  (legna per il carbone)",
 				"territorio": ("case a meno di %d m: rischio d'incendio" % roundi(SimVillaggio.DISTANZA_FUOCO)) if not vicine.is_empty() else "fumo della fornace · più legna tagliata",
-				"costo": "%d di legna · %d anni · poi una famiglia%s" % [roundi(c_o), SimVillaggio.ANNI_CANTIERE_OFFICINA, "" if sim.legna >= c_o else " (legna: %d)" % floori(sim.legna)],
+				"costo": "%d di legna · %d anni · poi una famiglia%s" % [roundi(c_o), SimVillaggio.ANNI_CANTIERE_OFFICINA, "" if sim.legna + sim.ultima_legna >= c_o else " (legna: %d)" % floori(sim.legna + sim.ultima_legna)],
 				"resta": "la famiglia del fabbro, più ricca"}
 		"bosco_sacro":
 			if not bosco:
@@ -1270,7 +1270,8 @@ func leggi_per_strumento(punto: Vector3) -> void:
 			voci.append(["Legnaia per il carbone", "vicina" if legnaia_vicina else "lontana", 1.0 if legnaia_vicina else 0.3, false])
 			voci.append(["Case vicine al forno", ("%d: rischio d'incendio" % n_vicine) if n_vicine > 0 else "nessuna", 0.0 if n_vicine > 0 else 1.0, n_vicine > 0])
 			voci.append(["Distanza dal centro", "%d m" % roundi(d), 1.0 - clampf(d / SimVillaggio.DISTANZA_OFFICINA, 0.0, 1.0), d > SimVillaggio.DISTANZA_OFFICINA])
-			voci.append(["Legna", "%d / %d" % [floori(sim.legna), roundi(SimVillaggio.COSTO_OFFICINA)], sim.legna / SimVillaggio.COSTO_OFFICINA, sim.legna < SimVillaggio.COSTO_OFFICINA])
+			var legna_o := sim.legna + sim.ultima_legna
+			voci.append(["Legna, con il taglio dell'anno", "%d / %d" % [floori(legna_o), roundi(SimVillaggio.COSTO_OFFICINA)], legna_o / SimVillaggio.COSTO_OFFICINA, legna_o < SimVillaggio.COSTO_OFFICINA])
 		"luogo_sacro":
 			voci.append(["Distanza dal centro", "%d m" % roundi(d), 1.0 - clampf(d / SimVillaggio.DISTANZA_LUOGO_SACRO, 0.0, 1.0), d > SimVillaggio.DISTANZA_LUOGO_SACRO])
 			voci.append(["Legna", "%d / %d" % [floori(sim.legna), roundi(SimVillaggio.COSTO_LUOGO_SACRO)], sim.legna / SimVillaggio.COSTO_LUOGO_SACRO, sim.legna < SimVillaggio.COSTO_LUOGO_SACRO])
@@ -1766,7 +1767,7 @@ func dati_officina(k: int) -> Dictionary:
 	elif sim.lavoro_fabbro <= 0.0:
 		stato = "fermo: mancano metallo o legna"
 	elif sim.lavoro_fabbro < 0.95:
-		stato = "lavora a metà: manca metallo" if sim.metallo < SimVillaggio.METALLO_LAVORO else "lavora poco: manca legna"
+		stato = "lavora a metà: manca metallo" if sim.metallo < SimVillaggio.METALLO_LAVORO else "lavora poco: si taglia poca legna"
 	var righe: Array = [
 		["Stato", stato, "Il fabbro lavora quanto gli permettono il metallo e la legna per il carbone."],
 		["Metallo", "%d in scorta · %s l'anno" % [floori(sim.metallo), String.num(arrivo, 1).replace(".", ",")], "Lo portano i mercanti: poco a un villaggio isolato, di più se si è aperto alle vie. A pieno lavoro il fabbro ne usa 1 l'anno."],

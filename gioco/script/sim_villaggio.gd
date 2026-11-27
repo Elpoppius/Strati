@@ -1628,6 +1628,9 @@ var armi := 0.0      # 0–1: quanto l'abitato ha armi di metallo
 var lavoro_fabbro := 0.0  # quanto ha lavorato il fabbro quest'anno (0–1)
 var carbone_anno := 0.0   # legna bruciata nel forno quest'anno
 var metallo_arrivato := 0.0
+## Legna presa in prestito dal taglio dell'anno (l'officina costruita con la scorta vuota): si somma
+## al consumo dell'anno dopo.
+var legna_da_scontare := 0.0
 const COSTO_OFFICINA := 12.0
 const ANNI_CANTIERE_OFFICINA := 3
 const DISTANZA_OFFICINA := 600.0  # dal centro
@@ -1687,8 +1690,10 @@ func motivo_officina(punto: Vector2) -> String:
 		return "L'officina del fabbro arriva con il metallo."
 	if not officine.is_empty():
 		return "L'officina del fabbro c'è già: il metallo basta per una sola."
-	if legna < COSTO_OFFICINA:
-		return "Servono %d di legna per l'officina (ora %d)." % [roundi(COSTO_OFFICINA), floori(legna)]
+	# Nell'abitato grande la scorta di legna è spesso vuota (i focolari bruciano più del taglio):
+	# l'officina si paga anche con la legna tagliata quest'anno (27/11/2026, proposta di Claude).
+	if legna + ultima_legna < COSTO_OFFICINA:
+		return "Servono %d di legna per l'officina (ora %d, più %d tagliata quest'anno)." % [roundi(COSTO_OFFICINA), floori(legna), floori(ultima_legna)]
 	var p := px_da_mondo(punto.x, punto.y)
 	var i := px(p)
 	if not edificabile(i) or campi.has(i) or sentieri.has(i) or p == centro:
@@ -1705,7 +1710,9 @@ func costruisci_officina(punto: Vector2) -> String:
 	var l := lotto_da_mondo(punto.x, punto.y)
 	case = case.filter(func(c: Vector2i) -> bool: return cheb(c, l) > 1)
 	officine.append({"punto": centro_lotto(l), "cantiere": ANNI_CANTIERE_OFFICINA, "lavoro": "attrezzi"})
-	legna -= COSTO_OFFICINA
+	var dalla_scorta := minf(legna, COSTO_OFFICINA)
+	legna -= dalla_scorta
+	legna_da_scontare += COSTO_OFFICINA - dalla_scorta
 	_scrivi("Si comincia a costruire l'officina del fabbro: servono %d anni di lavoro." % ANNI_CANTIERE_OFFICINA)
 	disponi_case()
 	return ""
@@ -1739,7 +1746,8 @@ func _lavora_officine() -> void:
 			continue
 		var q := 1.0
 		q = minf(q, metallo / METALLO_LAVORO)
-		q = minf(q, legna / maxf(CARBONE_OFFICINA, 0.01))
+		# Il carbone viene dal taglio dell'anno, prima dei focolari (il fabbro ha la precedenza).
+		q = minf(q, (legna + ultima_legna) / maxf(CARBONE_OFFICINA, 0.01))
 		q = clampf(q, 0.0, 1.0)
 		metallo -= METALLO_LAVORO * q
 		carbone_anno += CARBONE_OFFICINA * q
@@ -3593,7 +3601,8 @@ func passo() -> void:
 	# Legna (decisione di Fede del 25/11/2026): la raccolgono le legnaie, abbattendo il bosco vicino;
 	# serve ai focolari e a tenere in piedi le case.
 	consumo_focolari = pop * CONSUMO_PERSONA
-	consumo_legna = consumo_focolari + case.size() * COSTO_CASA / float(ANNI_VITA_CASA) + carbone_anno
+	consumo_legna = consumo_focolari + case.size() * COSTO_CASA / float(ANNI_VITA_CASA) + carbone_anno + legna_da_scontare
+	legna_da_scontare = 0.0
 	_lavora_legnaie()
 	legna = clampf(legna + ultima_legna - consumo_legna, 0.0, massimo_legna())
 	_aggiorna_traffico()

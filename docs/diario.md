@@ -2,6 +2,27 @@
 
 Voci più recenti in cima.
 
+## 27/11/2026 (mezzogiorno) — fabbro giocabile, scorrerie più rade, il tema della legna
+**Fatto**
+- **Scorrerie diradate a decenni:** almeno 250 anni fra una e l'altra, probabilità al 40%. Nelle 12 partite lunghe da 2–20 a 1–7 in 3000 anni (media da 9 a 4,3); registro degli avvisi 3,4 pause.
+- **Epoca 2 giocabile in parte, con l'officina del fabbro:**
+  - dopo l'evento del metallo la partita continua a decenni fino al 700 a.C.;
+  - officina (Edifici, M): metallo (0,4 l'anno da isolati, 1,2 da aperti), carbone, una famiglia tolta ai campi, scheda Attrezzi / Armi / Metà e metà; effetti su campi, caccia, pesca, legnaie e scorrerie; incendio vicino alle case; prestigio della famiglia del fabbro;
+  - tutorial, conseguenze, lettura del terreno, modello con il fumo, vesti dell'epoca 2;
+  - giocatori automatici che la usano (`giocatore_umano.gd ... epoca2`); verifiche nuove in `verifica_villaggio.gd`; due caselle nuove nella finestra F3. Foto `docs/immagini/fabbro-nel-gioco-27-11.jpg`.
+- **Dalle prove automatiche:** nell'epoca 2 la scorta di legna dei villaggi grandi resta a zero (i focolari bruciano più del taglio), e quasi nessuno riusciva a costruire l'officina. Correzione: il carbone viene dal taglio dell'anno, l'officina si paga anche con la legna tagliata nell'anno. La rifatta delle 12 partite è stata fermata per la domanda di Fede sulla legna (sotto).
+- 12 verifiche superate.
+
+**Decisioni** (Fede, 27/11, 11:15)
+- Scheda del fabbro (§ 2b), evoluzioni (§ 1) e funzioni degli edifici (§ 2) di `epoca2-proposte.md`: **approvate tutte**.
+- Scorrerie: **diradate a decenni**.
+- Prossima Era sulla carta: **per ora nessuna**.
+- 12:28: "il tema del legno rimane importante"; **dare più valore al singolo albero tagliato**. Claude ha spiegato come si calcola oggi e ha proposto come cambiarlo: in attesa dell'ok.
+
+**Prossimo passo**
+- Il valore dell'albero (proposta in conversazione), poi di nuovo le 12 partite fino al 700 a.C.
+- Prova di Fede al PC: Prova › Metallo, poi l'officina (M), la sua scheda e il fumo.
+
 ## 27/11/2026 (mattina, 5) — fumo della casa del capo, foto della via
 **Fatto**
 - **Fumo della casa del capo:** nasce sotto il colmo, tra le corna (le capanne non avevano camino), più rado e piccolo di quello della fornace. `camini.json` accetta densità e scala; `VistaFumo` le applica. Foto `docs/immagini/fumo-casa-del-capo-27-11.jpg`.

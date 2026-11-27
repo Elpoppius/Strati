@@ -225,7 +225,7 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 			# Officina del fabbro (epoca 2): chi conosce il genere subito e nel posto giusto.
 			if sim.sbloccato("officina") and not officina_voluta and caso.randf() < (1.0 if genere else 0.05):
 				officina_voluta = true
-			if officina_voluta and sim.officine.is_empty() and sim.sbloccato("officina") and sim.legna >= SimVillaggio.COSTO_OFFICINA + SimVillaggio.COSTO_CASA:
+			if officina_voluta and sim.officine.is_empty() and sim.sbloccato("officina") and sim.legna + sim.ultima_legna >= SimVillaggio.COSTO_OFFICINA:
 				AiutiGiocatori.costruisci_officina(sim, caso, 0.9 if genere else (0.2 if casual else (0.6 if legge > 0.5 else 0.4)))
 			# Cosa forgia: chi legge sceglie attrezzi e passa alle armi dopo una scorreria; chi conosce
 			# il genere fa metà e metà se le scorrerie arrivano; il casual prova un tasto a caso.
