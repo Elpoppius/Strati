@@ -86,6 +86,11 @@ func _process(_d: float) -> bool:
 	controlla(righe[0].begins_with("REGISTRO TECNICO DI STRATI"), "prima riga: il titolo (nessun ripiego)")
 	controlla(testo.contains("Gioco: commit ") and testo.contains("Godot 4.7"), "intestazione: commit e versione di Godot")
 	controlla(testo.contains("Sistema: ") and testo.contains("Scheda video: ") and testo.contains("Renderer: "), "intestazione: sistema, scheda video, renderer")
+	controlla(testo.contains("Impostazioni: ") and testo.contains("qualita "), "intestazione: le impostazioni del giocatore")
+	var sv := SimVillaggio.new(load("res://mappe/pedecollinare/mappa.res"), 1)
+	sv.fonda(Vector2i(sv.dati.siti[0]["px"]))
+	var st := Registro.stato_partita(sv)
+	controlla(st.contains("abitanti") and st.contains("legna") and st.contains("legnaie"), "lo stato della partita in una riga: %s" % st)
 	var numeri := Array(righe).filter(func(r: String) -> bool: return r.contains("  fps "))
 	controlla(numeri.size() >= 2, "righe dei numeri: ogni 10 s e alla chiusura (%d)" % numeri.size())
 	var campi_ok := true

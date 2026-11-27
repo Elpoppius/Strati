@@ -332,14 +332,13 @@ func _verifica_scorrerie(d: MappaDati) -> void:
 			somma += 400.0 - t.cibo
 		perdite[pol] = somma / 40.0
 	controlla(perdite["raccogliere"] < perdite["avanti"] * 0.65 and perdite["vegliare"] < perdite["avanti"] * 0.75, "raccogliere e vegliare riducono le perdite (cibo perso: %d, %d, %d)" % [roundi(perdite["avanti"]), roundi(perdite["raccogliere"]), roundi(perdite["vegliare"])])
-	# Torre: solo su un'altura, entro 1200 m, una sola; segni prima.
+	# Torre: ovunque entro 1200 m (Fede, 27/11/2026 sera), una sola; segni prima.
 	var u := SimVillaggio.new(d, 19)
 	u.fonda(c)
 	u.legna = 40.0
 	controlla(u.motivo_torre(cm + Vector2(200, 0)).contains("primi segni"), "la torre si apre con i primi segni di pericolo")
 	u.gia_segni = true
 	var alto := Vector2(-1, -1)
-	var basso := Vector2(-1, -1)
 	for r in [200.0, 400.0, 600.0, 800.0, 1000.0]:
 		for k in 24:
 			var w: Vector2 = cm + Vector2.from_angle(TAU * k / 24.0) * r
@@ -347,10 +346,14 @@ func _verifica_scorrerie(d: MappaDati) -> void:
 			var m := u.motivo_torre(w)
 			if alto.x < 0 and m == "":
 				alto = w
-			if basso.x < 0 and m.contains("dosso"):
-				basso = w
-	controlla(alto.x >= 0, "attorno al sito 1 c'è un'altura per la torre")
-	controlla(basso.x >= 0, "in pianura la torre non si può fare: «%s»" % (u.motivo_torre(basso) if basso.x >= 0 else ""))
+	controlla(alto.x >= 0, "attorno al sito 1 c'è un posto per la torre")
+	var piano := Vector2(-1, -1)
+	for r in [200.0, 400.0, 600.0, 800.0, 1000.0]:
+		for k in 24:
+			var w: Vector2 = cm + Vector2.from_angle(TAU * k / 24.0) * r
+			if piano.x < 0 and u.motivo_torre(w) == "" and u.rilievo(u.px_da_mondo(w.x, w.y)) < SimVillaggio.RILIEVO_TORRE:
+				piano = w
+	controlla(piano.x >= 0, "la torre si fa anche in piano")
 	controlla(u.motivo_torre(cm + Vector2(1500, 0)) != "", "la torre va vicino al villaggio")
 	controlla(u.costruisci_torre(alto) == "" and u.cantiere_torre == SimVillaggio.ANNI_CANTIERE_TORRE and is_equal_approx(u.legna, 32.0), "la torre costa 8 di legna e due anni di cantiere")
 	controlla(u.motivo_torre(alto + Vector2(40, 0)).contains("c'è già"), "una torre sola")
@@ -942,8 +945,12 @@ func _initialize() -> void:
 	for k in 3:
 		tl.decisioni.clear()
 		tl.passo()
+	# Legna alla maniera dei giochi di strategia (Fede, 27/11/2026 sera): niente legna da ardere nel
+	# conto; qui senza risemina, per vedere il fronte del taglio.
+	tl.imposta_risemina(0, false)
 	var cap0 := tl.capacita_legnaia(l0)
-	controlla(cap0 > 0.0 and tl.raccolta_legna > 0.0 and tl.offerta_raccolta > 0.0, "finita la legnaia, si raccoglie legna da ardere (%.1f l'anno su %.1f) e si possono tagliare tronchi (fino a %.1f)" % [tl.raccolta_legna, tl.offerta_raccolta, cap0])
+	controlla(cap0 > 0.0 and tl.raccolta_legna == 0.0 and tl.consumo_focolari == 0.0, "finita la legnaia si tagliano tronchi (fino a %.1f l'anno); il fuoco dei focolari non pesa sulla legna" % cap0)
+	controlla(absf(tl.consumo_legna - tl.case.size() * SimVillaggio.COSTO_CASA / float(SimVillaggio.ANNI_VITA_CASA)) <= SimVillaggio.COSTO_CASA / float(SimVillaggio.ANNI_VITA_CASA) + 0.01, "la legna si consuma solo per rifare le case (%.1f l'anno per %d case)" % [tl.consumo_legna, tl.case.size()])
 	var tagli_max := 0
 	var primo_taglio := -1.0
 	for k in 40:
@@ -962,6 +969,7 @@ func _initialize() -> void:
 	# del valore medio del bosco attorno.
 	var vm := tl.valore_medio_legnaia(l0)
 	controlla(vm > 0.5 and cap0 > 0.0 and cap0 <= SimVillaggio.ALBERI_TAGLIO * vm * 1.1 + 0.01, "una legnaia abbatte fino a %d alberi l'anno da %.1f m³ in media (%.0f m³)" % [roundi(SimVillaggio.ALBERI_TAGLIO), vm, cap0])
+	controlla(tl.fatica_legna > 0.0 and tl.fatica_legna <= SimVillaggio.BOSCAIOLI_LEGNAIA + 0.01, "i boscaioli sono tolti ai campi solo quando tagliano (%.1f su %d)" % [tl.fatica_legna, roundi(SimVillaggio.BOSCAIOLI_LEGNAIA)])
 	controlla(SimVillaggio.valore_albero(0, 1.15) == 4.0 and SimVillaggio.valore_albero(0, 2.3) == 16.0, "una quercia media vale 4 m³, una grande il quadruplo")
 	controlla(primo_taglio >= 0.0 and primo_taglio < 60.0, "si comincia dagli alberi attorno alla legnaia (primo taglio a %d m)" % roundi(primo_taglio))
 	controlla(not tl.celle_tagliate.is_empty() and tl.capacita_legnaia(l0) < cap0 and float(l0["raggio"]) < 400.0, "il fronte avanza piano e i tronchi calano (%.1f → %.1f l'anno, fronte a %d m)" % [cap0, tl.capacita_legnaia(l0), roundi(float(l0["raggio"]))])
@@ -971,30 +979,50 @@ func _initialize() -> void:
 			vicine_in_piedi += 1
 	controlla(vicine_in_piedi == 0, "dietro il fronte non restano alberi da tagliare (gli abbattuti non ricrescono)")
 	var una: Vector2i = (l0["fatte"] as Dictionary).keys()[0]
-	# Zona di taglio: finché la legnaia lavora è un luogo di passaggio e non ricresce nulla (Fede,
-	# 26/11/2026); a riposo il bosco ricaccia dalle ceppaie in ANNI_RICRESCITA anni.
-	controlla(tl.legnaia_attiva(l0) and tl.celle_zona_attiva.has(una), "la zona di taglio della legnaia al lavoro resta aperta (%s)" % tl.stato_legnaia(l0))
-	tl.anno += SimVillaggio.ANNI_RICRESCITA + 5
-	l0["ultimo"] = tl.anno
-	controlla(not tl.cella_in_piedi(una), "finché la zona è di passaggio il bosco non ricresce")
+	# Senza risemina il bosco tagliato resta radura, per sempre (Fede, 27/11/2026 sera).
+	controlla(tl.celle_spoglie.has(una) and tl.celle_zona_attiva.has(una), "senza risemina la cella tagliata resta spoglia (%s)" % tl.stato_legnaia(l0))
+	var anno_prova := tl.anno
+	tl.anno += 200
+	controlla(not tl.cella_in_piedi(una), "senza risemina il bosco non ricresce nemmeno in 200 anni")
+	tl.anno = anno_prova
+	# A riposo i boscaioli tornano ai campi.
 	tl.metti_a_riposo(0, true)
-	controlla(not tl.legnaia_attiva(l0) and not tl.celle_zona_attiva.has(una) and tl.capacita_legnaia(l0) == 0.0, "lasciar ricrescere: la legnaia si ferma e la zona va a riposo")
-	controlla(not tl.cella_in_piedi(una), "appena messa a riposo la zona è ancora tagliata")
-	tl.anno += SimVillaggio.ANNI_RICRESCITA
-	controlla(tl.cella_in_piedi(una), "dopo %d anni a riposo il bosco abbattuto ricresce" % SimVillaggio.ANNI_RICRESCITA)
+	controlla(not tl.legnaia_attiva(l0) and tl.capacita_legnaia(l0) == 0.0, "a riposo la legnaia non taglia")
+	tl.decisioni.clear()
+	tl.passo()
+	controlla(tl.tronchi_legna == 0.0 and tl.fatica_legna == 0.0, "a riposo nessun boscaiolo lascia i campi")
 	tl.metti_a_riposo(0, false)
 	controlla(tl.legnaia_attiva(l0), "la legnaia torna al lavoro")
-	# La catasta: due anni di consumo più il legname per costruire, e quanto accatasta ogni legnaia
-	# (Fede, 27/11/2026: la legnaia serve il taglio e l'accumulo).
-	controlla(tl.massimo_legna() < 2.5 * tl.consumo_legna + SimVillaggio.RISERVA_LEGNAME + SimVillaggio.COSTO_CASA + SimVillaggio.MAGAZZINO_LEGNAIA * tl.legnaie.size() + 1.0, "la catasta tiene due anni di consumo, il legname per costruire e quanto accatastano le legnaie (%d)" % roundi(tl.massimo_legna()))
-	# Senza legnaie le famiglie vanno a far legna da sole, con il doppio della fatica (Fede, 27/11/2026).
+	# Risemina: un po' meno tronchi, e il bosco ricresce in ANNI_RICRESCITA anni.
+	var senza := tl.capacita_legnaia(l0)
+	tl.imposta_risemina(0, true)
+	controlla(tl.risemina_legnaia(l0) and absf(tl.capacita_legnaia(l0) - senza * SimVillaggio.RESA_RISEMINA) < 0.01, "con la risemina i boscaioli portano un quinto di tronchi in meno (%.0f → %.0f)" % [senza, tl.capacita_legnaia(l0)])
+	tl.legna = 0.0
+	tl.decisioni.clear()
+	tl.cibo = maxf(tl.cibo, tl.pop)
+	tl.passo()
+	var riseminata := Vector2i(-99999, -99999)
+	for cf in l0["fatte"]:
+		if not tl.celle_spoglie.has(cf):
+			riseminata = cf
+			break
+	controlla(riseminata.x != -99999, "con la risemina le celle tagliate non restano spoglie")
+	tl.anno += SimVillaggio.ANNI_RICRESCITA
+	controlla(riseminata.x != -99999 and tl.cella_in_piedi(riseminata), "il bosco riseminato ricresce in %d anni e si può tagliare di nuovo" % SimVillaggio.ANNI_RICRESCITA)
+	# La catasta piena ferma i boscaioli.
+	tl.legna = tl.massimo_legna()
+	tl.decisioni.clear()
+	tl.cibo = maxf(tl.cibo, tl.pop)
+	tl.passo()
+	controlla(tl.tronchi_legna <= tl.consumo_legna + 5.0 and tl.fatica_legna < 1.0, "con la catasta piena i boscaioli tagliano solo quel che si consuma (%.1f) e tornano ai campi" % tl.tronchi_legna)
+	controlla(absf(tl.massimo_legna() - (SimVillaggio.RISERVA_LEGNAME + 2.0 * SimVillaggio.COSTO_CASA + tl.consumo_legna + SimVillaggio.MAGAZZINO_LEGNAIA)) < 0.01, "la catasta tiene il legname da parte, due case, un anno di consumo e quanto accatasta ogni legnaia (%d)" % roundi(tl.massimo_legna()))
+	# Senza legnaie la legna non arriva (Fede, 27/11/2026 sera: niente famiglie che fanno legna da sole).
 	var sf := SimVillaggio.new(d, 3)
 	sf.fonda(Vector2i(d.siti[2]["px"]))
 	sf.decisioni.clear()
 	sf.legna = 0.0
 	sf.passo()
-	controlla(sf.legnaie.is_empty() and sf.legna_famiglie > 0.0 and sf.fatica_legna > 0.0 and sf.legna > 0.0, "senza legnaie e senza legna le famiglie se la prendono da sole (%.0f, %.1f persone tolte ai campi)" % [sf.legna_famiglie, sf.fatica_legna])
-	controlla(sf.fatica_legna <= sf.pop * SimVillaggio.QUOTA_FAMIGLIE_LEGNA + 0.01 and absf(sf.fatica_legna * SimVillaggio.RESA_FAMIGLIE - sf.legna_famiglie) < 0.01, "a far legna da sole vanno al più 3 persone su 10 (%.1f su %.0f)" % [sf.fatica_legna, sf.pop])
+	controlla(sf.legnaie.is_empty() and sf.legna_famiglie == 0.0 and sf.fatica_legna == 0.0 and sf.ultima_legna == 0.0, "senza legnaie la legna non arriva")
 	# Campi che si stancano (decisione di Fede del 25/11/2026).
 	if not tl.campi.is_empty():
 		var cs: int = tl.campi[0]

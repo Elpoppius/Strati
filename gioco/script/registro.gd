@@ -168,6 +168,10 @@ func _intestazione() -> void:
 	var schermo := DisplayServer.screen_get_size() if DisplayServer.get_name() != "headless" else Vector2i.ZERO
 	_scrivi("Renderer: %s · finestra %d×%d · schermo %d×%d · sincronia verticale %s" % [metodo, dim.x, dim.y, schermo.x, schermo.y,
 		"sì" if DisplayServer.get_name() != "headless" and DisplayServer.window_get_vsync_mode() != DisplayServer.VSYNC_DISABLED else "no"])
+	var imp: Array[String] = []
+	for v in Impostazioni.VOCI:
+		imp.append("%s %s" % [v["chiave"], str(Impostazioni.valore(v["chiave"]))])
+	_scrivi("Impostazioni: " + " · ".join(imp))
 	# Mappa e seme arrivano con l'evento PARTITA, quando la partita è pronta.
 	_scrivi("Ogni %d s una riga: ora · fps medi (minimo) · fotogramma più lento · disegni · memoria · video · zoom · anno · alberi · animali · figure" % int(INTERVALLO))
 	_scrivi("-".repeat(60))
@@ -232,10 +236,15 @@ func evento(tipo: String, testo: String) -> void:
 func scrivi_riga() -> void:
 	if not attivo:
 		return
+	var p = scena.get("partita") if scena else null
+	if p and p.has_method("svuota_gesto"):
+		p.svuota_gesto()
 	var n := misura()
 	_scrivi("%s  fps %d (min %d) · più lento %d ms · disegni %d · memoria %s · video %s · zoom %s · anno %s%s · alberi %d · animali %d · figure %d%s" % [
 		_ora(), n["fps"], n["fps_min"], n["lento_ms"], n["disegni"], _mb(n["memoria"]), _mb(n["video"]), n["zoom"], n["anno"], n["velocita"],
 		n["alberi"], n["animali"], n["figure"], (" · altri %d fotogrammi lenti" % _lenti_taciuti) if _lenti_taciuti > 0 else ""])
+	if p and p.sim and p.sim.fondato:
+		_scrivi("%s  STATO  %s" % [_ora(), stato_partita(p.sim)])
 	_ultimi = n
 	_tempo = 0.0
 	_fotogrammi = 0
@@ -273,6 +282,17 @@ func misura() -> Dictionary:
 			if p.vista.persone and p.vista.persone._visibili:
 				n["figure"] = p.vista.persone.figure().size()
 	return n
+
+
+## Lo stato della partita in una riga (registro del gioco, 27/11/2026 sera): per capire come gioca Fede.
+static func stato_partita(s: SimVillaggio) -> String:
+	var legnaie: Array[String] = []
+	for l in s.legnaie:
+		legnaie.append(("riposo" if bool(l["riposo"]) else "lavoro") + ("+risemina" if s.risemina_legnaia(l) else ""))
+	return "abitanti %d · case %d (affollate %d%%) · cibo %d (%+d) · legna %d/%d (+%d −%d) · legnaie %d [%s] · campi %d · capi %d · consenso %d · salute %d · tappa %s · epoca %d" % [
+		roundi(s.pop), s.case.size(), roundi(s.affollamento * 100.0), roundi(s.cibo), roundi(s.ultimo_raccolto + s.ultima_caccia + s.ultima_pesca - s.pop),
+		floori(s.legna), roundi(s.massimo_legna()), roundi(s.ultima_legna), roundi(s.consumo_legna), s.legnaie.size(), ", ".join(legnaie),
+		s.campi.size(), roundi(s.capi), roundi(s.legittimita), roundi(s.salute), SimVillaggio.TAPPE[s.tappa]["nome"], s.epoca]
 
 
 static func _mb(byte: int) -> String:

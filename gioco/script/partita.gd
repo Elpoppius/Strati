@@ -100,14 +100,14 @@ func avvia(s: Node, seme_voluto: int = -1) -> void:
 		{"id": "granaio", "icona": "granaio", "testo": "Granaio (15 di legna)", "breve": "Granaio", "tasto": "H",
 		 "descrizione": "Costa 15 di legna e qualche anno di lavoro, e va vicino al centro: le scorte si conservano meglio."},
 		{"id": "legnaia", "icona": "legnaia", "testo": "Legnaia", "breve": "Legnaia", "tasto": "L",
-		 "descrizione": "I boscaioli tagliano e accatastano legna in fretta, il doppio di quanto farebbero le famiglie da sole, che senza legnaie vicine lasciano i campi per andarci. Abbattono gli alberi più vicini: più il bosco è vicino, più in fretta si raccoglie; la zona di taglio resta aperta finché la legnaia lavora. Clic su una legnaia: lasciar ricrescere il bosco o rimetterla al lavoro."},
+		 "descrizione": "Due famiglie di boscaioli tagliano gli alberi più vicini e portano i tronchi alla catasta: più il bosco è vicino, più legna arriva. La legna serve a costruire e a rifare le case. Quando la catasta è piena i boscaioli tornano ai campi. Clic su una legnaia: al lavoro o a riposo, con o senza risemina."},
 		# Capanno da pesca e Posta di caccia (decisioni di Fede del 25/11/2026): senza, caccia e pesca
 		# rendono un terzo. Tasti K e T: proposta di Claude.
 		{"id": "luogo_sacro", "icona": "luogo_sacro", "testo": "Luogo sacro (10 di legna)", "breve": "L. sacro", "tasto": "O",
 		 "descrizione": "Un cerchio di pali attorno a una pietra, vicino al villaggio. Costa 10 di legna e tre anni di lavoro. Il sacerdote è contrariato finché non c'è; contento, i presagi sono più chiari, scontento, ambigui. Le case gli crescono attorno."},
 		# Torre di avvistamento (scorrerie, decisione di Fede del 26/11/2026); tasto U: proposta di Claude.
 		{"id": "torre", "icona": "torre", "testo": "Torre di avvistamento (8 di legna)", "breve": "Torre", "tasto": "U",
-		 "descrizione": "Una piattaforma su pali con la catasta per il fuoco di segnalazione. Va su un dosso o un colle, entro 1200 m dal centro; ne basta una. Costa 8 di legna e due anni di lavoro. Dalla torre i segni di una scorreria arrivano prima, e quando arriva si perde meno."},
+		 "descrizione": "Una piattaforma su pali con la catasta per il fuoco di segnalazione. Si fa ovunque entro 1200 m dal centro; ne basta una. Costa 8 di legna e due anni di lavoro. Dalla torre i segni di una scorreria arrivano prima, e quando arriva si perde meno."},
 		# Officina del fabbro (epoca 2; Fede, 27/11/2026: il primo edificio che si sblocca); tasto M,
 		# proposta di Claude.
 		{"id": "officina", "icona": "officina_fabbro", "testo": "Officina del fabbro (12 di legna)", "breve": "Fabbro", "tasto": "M",
@@ -201,7 +201,8 @@ func avvia(s: Node, seme_voluto: int = -1) -> void:
 	# Un clic su una fonte nel blocco Info apre le politiche (lì si accende e si spegne).
 	hud.fonte_scelta.connect(func(_id: String) -> void: hud.apri_politiche(true))
 	hud.politica_scelta.connect(func(id: String, valore: String) -> void:
-		sim.imposta_politica(id, valore)
+		var fatta := sim.imposta_politica(id, valore)
+		registra("gioco", "politica %s: %s%s" % [id, valore, "" if fatta else " (non cambiata)"])
 		aggiorna_hud())
 	hud.aggiungi_tempo([
 		{"id": "v0", "testo": "Pausa (Spazio)", "breve": "‖"},
@@ -263,6 +264,8 @@ func imposta_velocita(v: int) -> void:
 	if not sim.fondato and v > 0:
 		scena.hud.imposta_messaggio("Il tempo parte dopo la fondazione.")
 		v = 0
+	if v != velocita:
+		registra("gioco", "velocità %s" % ("pausa" if v == 0 else NOMI_VELOCITA[v]))
 	velocita = v
 	if v > 0:
 		_ultima_velocita = v
@@ -330,6 +333,7 @@ func _process(delta: float) -> void:
 		var r: Dictionary = raccolte[t]
 		var a: Dictionary = r["avviso"]
 		hud.notifica(a["testo"] if r["volte"] == 1 else "%s (%d volte)" % [a["testo"], r["volte"]], a["pericolo"], a["punto"])
+		registra("notifica", a["testo"] if r["volte"] == 1 else "%s (%d volte)" % [a["testo"], r["volte"]])
 	if famiglia != NESSUNA_CASA and hud.focus_aperto() != _titolo_famiglia:
 		_evidenzia_famiglia(NESSUNA_CASA)
 	_attesa_conseguenze -= delta
@@ -341,15 +345,18 @@ func _process(delta: float) -> void:
 		var d: Dictionary = sim.decisioni[0]
 		var tipi := {"sorgenti": "Presagio", "cometa": "Presagio", "primo_cattivo": "Momento decisivo", "affollamento": "Momento decisivo", "stranieri": "Evento", "pericolo": "Pericolo", "piena": "Evento", "abbandono": "Fallimento", "fine": "Fine del prototipo", "soglia": "Evento soglia", "epoca": "Nuova epoca"}
 		if d["tipo"] == "tutorial":
+			registra("pausa", "tutorial: %s" % d["titolo"])
 			hud.mostra_tutorial(d, _scelto.bind(d["id"], d["tipo"]))
 			return
 		var opzioni: Array = d["opzioni"]
 		if d["tipo"] == "fine":
 			opzioni = [{"id": "nuova", "testo": "Nuova partita", "nota": ""}] + opzioni
+		registra("pausa", "%s: %s" % [d["tipo"], d["titolo"]])
 		hud.mostra_scelta(tipi.get(d["tipo"], ""), d["titolo"], d["testo"], opzioni, _scelto.bind(d["id"], d["tipo"]))
 
 
 func _scelto(opzione: String, id: int, tipo: String) -> void:
+	registra("gioco", "scelta (%s): %s" % [tipo, opzione])
 	if opzione == "nuova":
 		scena.get_tree().reload_current_scene()
 		return
@@ -372,8 +379,40 @@ func _scelto(opzione: String, id: int, tipo: String) -> void:
 	scena._aggiorna_pennello()
 
 
+## Registro del gioco (Fede, 27/11/2026 sera: "fai in modo che il log registri anche come gioco
+## io"): ogni gesto con il punto e ciò che il gioco ha risposto. Le pennellate si scrivono una volta,
+## quando finiscono (alla pennellata dopo, a un altro gesto o alla riga dei numeri).
+var _gesto := {}
+
+
+func registra(tipo: String, testo: String) -> void:
+	if scena and scena.has_method("_registra"):
+		scena._registra(tipo, testo)
+
+
+func svuota_gesto() -> void:
+	if _gesto.is_empty():
+		return
+	registra("gioco", "%s da %s (%d tocchi) · %s" % [_gesto["comando"], _gesto["da"], int(_gesto["volte"]), _gesto["messaggio"]])
+	_gesto = {}
+
+
 ## Usa lo strumento del villaggio nel punto della mappa (raggio in metri per i campi).
 func applica(comando: String, punto: Vector3, raggio: float) -> void:
+	_applica_dentro(comando, punto, raggio)
+	var dove := "%d,%d" % [roundi(punto.x), roundi(punto.z)]
+	var msg := (scena.hud as Hud).messaggio() if scena and scena.hud else ""
+	if comando in ["zona", "bosco_sacro", "pascolo", "abitato", "campi"]:
+		if _gesto.is_empty():
+			_gesto = {"comando": comando, "da": dove, "volte": 0, "messaggio": ""}
+		_gesto["volte"] = int(_gesto["volte"]) + 1
+		_gesto["messaggio"] = msg
+	else:
+		svuota_gesto()
+		registra("gioco", "%s a %s · %s" % [comando, dove, msg])
+
+
+func _applica_dentro(comando: String, punto: Vector3, raggio: float) -> void:
 	var hud: Hud = scena.hud
 	var p := sim.px_da_mondo(punto.x, punto.z)
 	match comando:
@@ -634,6 +673,7 @@ func leggi_sito(punto: Vector3) -> void:
 
 
 func inizia_pennellata() -> void:
+	svuota_gesto()
 	_pennellata = 0
 
 
@@ -723,7 +763,7 @@ func aggiorna_hud() -> void:
 		["Cibo", ("%d / %d l'anno" % [roundi(sim.cibo), roundi(sim.pop)]) if on else trattino, on and sim.cibo < sim.pop * 0.3],
 		["Legna", ("%d  +%d −%d" % [floori(sim.legna), roundi(sim.ultima_legna), roundi(sim.consumo_legna)]) if on else trattino,
 			on and sim.legna < SimVillaggio.COSTO_CASA and sim.ultima_legna < sim.consumo_legna,
-			"Legna in catasta (metri cubi), poi quanta ne arriva e quanta se ne consuma ogni anno. Arriva dalle legnaie: legna da ardere raccolta nel bosco senza abbattere, e tronchi degli alberi abbattuti uno alla volta. Se ne bruciano nei focolari e servono per rifare le case. Una casa nuova ne chiede %d, il granaio %d." % [roundi(SimVillaggio.COSTO_CASA), roundi(SimVillaggio.COSTO_GRANAIO)]],
+			"Legna in catasta (metri cubi), poi quanta ne arriva e quanta se ne consuma ogni anno. Arriva dalle legnaie: i boscaioli abbattono gli alberi uno alla volta. Serve a costruire e a rifare le case. Una casa nuova ne chiede %d, il granaio %d." % [roundi(SimVillaggio.COSTO_CASA), roundi(SimVillaggio.COSTO_GRANAIO)]],
 		# Animali (decisione di Fede del 25/11/2026): capi / quanti ne nutre il pascolo.
 		["Animali", ("%d / %d" % [roundi(sim.capi), roundi(sim.portata_capi)]) if on and sim.sbloccato("pascolo") else trattino,
 			on and sim.sbloccato("pascolo") and sim.pascolo_eccessivo > 0.3,
@@ -963,7 +1003,7 @@ func dati_focus(nome: String) -> Dictionary:
 		"Salute":
 			d["valore"] = str(roundi(sim.salute))
 			d["allarme"] = sim.salute < 45.0
-			d["descrizione"] = "Acqua, paludi, affollamento, fame e focolari decidono la salute; la salute pesa sulle nascite."
+			d["descrizione"] = "Acqua, paludi, affollamento e fame decidono la salute; la salute pesa sulle nascite."
 			d["serie"] = serie_di.call("salute", 1.0)
 			d["mappa"] = 1
 			d["testo_mappa"] = "Mostra l'acqua"
@@ -974,10 +1014,10 @@ func dati_focus(nome: String) -> Dictionary:
 		"Legna":
 			d["valore"] = str(floori(sim.legna))
 			d["allarme"] = sim.legna < SimVillaggio.COSTO_CASA and sim.ultima_legna < sim.consumo_legna
-			d["descrizione"] = "Metri cubi. La legna da ardere si raccoglie nel bosco senza abbattere; i tronchi vengono dagli alberi abbattuti uno alla volta, dal più vicino alla legnaia. Una casa nuova ne chiede %d, il granaio %d; le case si rifanno ogni %d anni." % [roundi(SimVillaggio.COSTO_CASA), roundi(SimVillaggio.COSTO_GRANAIO), SimVillaggio.ANNI_VITA_CASA]
-			d["parti"] = [["Legna da ardere / ciò che offre il bosco", sim.raccolta_legna / maxf(1.0, sim.offerta_raccolta), "%d / %d" % [roundi(sim.raccolta_legna), roundi(sim.offerta_raccolta)]],
+			d["descrizione"] = "Metri cubi. La legna serve a costruire: la portano i boscaioli delle legnaie, un albero alla volta dal più vicino. Una casa nuova ne chiede %d, il granaio %d; le case si rifanno ogni %d anni." % [roundi(SimVillaggio.COSTO_CASA), roundi(SimVillaggio.COSTO_GRANAIO), SimVillaggio.ANNI_VITA_CASA]
+			d["parti"] = [["Catasta", clampf(sim.legna / maxf(1.0, sim.massimo_legna()), 0.0, 1.0), "%d / %d" % [floori(sim.legna), roundi(sim.massimo_legna())]],
 				["Tronchi / ciò che si può tagliare", sim.tronchi_legna / maxf(1.0, sim.capacita_taglio), "%d / %d" % [roundi(sim.tronchi_legna), roundi(sim.capacita_taglio)]],
-				["Focolari", clampf(sim.consumo_focolari / maxf(1.0, sim.consumo_legna), 0.0, 1.0), "%d l'anno" % roundi(sim.consumo_focolari)],
+				["Case da rifare", clampf(sim.consumo_legna / maxf(1.0, sim.capacita_taglio), 0.0, 1.0), "%d l'anno" % roundi(sim.consumo_legna)],
 				["Bosco rimasto attorno", 1.0 - sim.disboscamento, "%d%%" % roundi((1.0 - sim.disboscamento) * 100.0)]]
 			d["serie"] = serie_di.call("legna", 1.0)
 			d["mappa"] = 5
@@ -1161,13 +1201,13 @@ func conseguenze(cmd: String, punto: Vector2, raggio: float) -> Dictionary:
 			var k := sim.legnaia_vicina(punto)
 			if k >= 0:
 				if bool(sim.legnaie[k]["riposo"]):
-					return {"titolo": "Rimetti al lavoro la legnaia", "guadagna": "Famiglie ▲  (di nuovo legna)", "perde": nessuno,
-						"territorio": "si torna a tagliare il bosco attorno", "costo": "braccia", "resta": "la radura si riapre"}
-				return {"titolo": "Lascia ricrescere il bosco", "guadagna": nessuno, "perde": "Famiglie ▼  (meno legna)",
-					"territorio": "il bosco ricaccia dalle ceppaie", "costo": "nessuno", "resta": "un ceduo, di nuovo utile tra decenni"}
-			return {"titolo": "Legnaia", "guadagna": "Famiglie ▲  (legna per case e focolari)", "perde": nessuno,
-				"territorio": "il bosco arretra: meno selvaggina, piene più rapide", "costo": "braccia · %d anni di lavoro" % SimVillaggio.ANNI_CANTIERE_LEGNAIA,
-				"resta": "una radura, poi un ceduo"}
+					return {"titolo": "Rimetti al lavoro la legnaia", "guadagna": "Famiglie ▲  (di nuovo legna)", "perde": "Famiglie ▼  (boscaioli via dai campi)",
+						"territorio": "si torna a tagliare il bosco attorno", "costo": "due famiglie di boscaioli", "resta": "radura o bosco ripiantato"}
+				return {"titolo": "Metti a riposo la legnaia", "guadagna": "Famiglie ▲  (boscaioli ai campi)", "perde": "Famiglie ▼  (niente legna)",
+					"territorio": "il bosco non si taglia più", "costo": "nessuno", "resta": "il bosco com'è ora"}
+			return {"titolo": "Legnaia", "guadagna": "Famiglie ▲  (legna per costruire)", "perde": "Famiglie ▼  (boscaioli via dai campi)",
+				"territorio": "il bosco arretra; con la risemina ricresce", "costo": "due famiglie · %d anni di lavoro" % SimVillaggio.ANNI_CANTIERE_LEGNAIA,
+				"resta": "radura, o bosco ripiantato"}
 		"capanno", "posta":
 			var caccia := cmd == "posta"
 			var elenco: Array = sim.poste if caccia else sim.capanni
@@ -1193,14 +1233,11 @@ func conseguenze(cmd: String, punto: Vector2, raggio: float) -> Dictionary:
 				"resta": "il centro sacro: poi tempio e piazza"}
 		"torre":
 			var c_t := SimVillaggio.COSTO_TORRE
-			var motivo_t := sim.motivo_torre(punto)
-			if motivo_t.contains("dosso"):
-				return {"titolo": "Torre di avvistamento", "guadagna": nessuno, "perde": nessuno, "territorio": "qui la vista è chiusa: serve un'altura"}
 			return {"titolo": "Torre di avvistamento", "guadagna": "Anziani ▲  (segni prima, si perde meno)",
 				"perde": "Famiglie ▼  (meno legna per le case)" if poca_legna.call(c_t) else nessuno,
 				"territorio": "si vedono i margini del contado",
 				"costo": "%d di legna · %d anni di lavoro%s" % [roundi(c_t), SimVillaggio.ANNI_CANTIERE_TORRE, "" if sim.legna >= c_t else " (ne hai %d)" % floori(sim.legna)],
-				"resta": "un punto di guardia sull'altura"}
+				"resta": "un punto di guardia"}
 		"recinto":
 			if sim.recinto_tracciato():
 				return {"titolo": "Recinto", "guadagna": nessuno, "perde": nessuno, "territorio": "il recinto c'è già"}
@@ -1355,18 +1392,16 @@ func leggi_per_strumento(punto: Vector3) -> void:
 				var l: Dictionary = sim.legnaie[k]
 				hud.imposta_lettura_strumento([["Legnaia", sim.stato_legnaia(l), 1.0 if sim.legnaia_attiva(l) else 0.3, false],
 					["Tronchi", "fino a %.0f l'anno" % sim.capacita_legnaia(l), sim.capacita_legnaia(l) / SimVillaggio.CAPACITA_TAGLIO, sim.capacita_legnaia(l) < SimVillaggio.CAPACITA_TAGLIO * 0.3],
-					["Clic", "rimetti al lavoro" if bool(l["riposo"]) else "lascia ricrescere", 0.0, false]])
+					["Clic", "apri la scheda: lavoro e risemina", 0.0, false]])
 				return
 			var b := sim.bosco_per_legnaia(Vector2(punto.x, punto.z))
 			var vicino: float = b["vicino"]
-			var eff := clampf(1.0 - vicino / SimVillaggio.RAGGIO_LEGNAIA, 0.0, 1.0) if vicino >= 0.0 else 0.0
+			var eff := 1.0 / (1.0 + vicino / SimVillaggio.DISTANZA_META_LEGNAIA) if vicino >= 0.0 and vicino <= SimVillaggio.RAGGIO_LEGNAIA else 0.0
 			voci.append(["Bosco vicino", ("a %d m" % roundi(vicino)) if vicino >= 0.0 else "nessuno", eff, eff < 0.4])
 			voci.append(["Bosco attorno", "%d%%" % roundi(float(b["quota"]) * 100.0), float(b["quota"]), float(b["quota"]) < 0.15])
 			voci.append(["Distanza dal centro", "%d m" % roundi(d), 1.0 - clampf(d / SimVillaggio.DISTANZA_MASSIMA_LEGNAIA, 0.0, 1.0), d > SimVillaggio.DISTANZA_MASSIMA_LEGNAIA])
 			voci.append(piena_voce)
 		"torre":
-			var ril := sim.rilievo(sim.px_da_mondo(punto.x, punto.z))
-			voci.append(["Altura", ("%d m sopra i dintorni" % roundi(ril)) if ril >= 0.5 else "nessuna: vista chiusa", clampf(ril / 10.0, 0.0, 1.0), ril < SimVillaggio.RILIEVO_TORRE])
 			voci.append(["Distanza dal centro", "%d m" % roundi(d), 1.0 - clampf(d / SimVillaggio.DISTANZA_TORRE, 0.0, 1.0), d > SimVillaggio.DISTANZA_TORRE])
 			voci.append(["Legna", "%d / %d" % [floori(sim.legna), roundi(SimVillaggio.COSTO_TORRE)], sim.legna / SimVillaggio.COSTO_TORRE, sim.legna < SimVillaggio.COSTO_TORRE])
 		"recinto":
@@ -1833,17 +1868,20 @@ func dati_legnaia(k: int) -> Dictionary:
 	var l: Dictionary = sim.legnaie[k]
 	var vicino := sim._bosco_vicino_legnaia(l)
 	var riposo := bool(l["riposo"])
+	var risemina := sim.risemina_legnaia(l)
 	var righe: Array = [
-		["Stato", sim.stato_legnaia(l), "Al lavoro i boscaioli raccolgono legna da ardere e abbattono gli alberi, dal più vicino. A riposo non tagliano e il bosco ricresce."],
-		["Alberi", ("i più vicini a %d m" % roundi(vicino)) if vicino >= 0.0 else "nessuno entro %d m" % roundi(SimVillaggio.RAGGIO_LEGNAIA), "Più gli alberi sono lontani, più i boscaioli camminano e meno tagliano."],
-		["Tronchi", "fino a %d m³ l'anno" % roundi(sim.capacita_legnaia(l)), "Quanti tronchi può dare in un anno, con gli alberi a questa distanza."],
-		["Zona di taglio", ("%d m attorno" % roundi(float(l["raggio"]))) if float(l["raggio"]) > 0.0 else "non ancora", "Finché la legnaia lavora la zona tagliata resta aperta: è di passaggio."],
+		["Stato", sim.stato_legnaia(l), "Al lavoro due famiglie di boscaioli tagliano gli alberi, dal più vicino, finché la catasta non è piena; poi tornano ai campi. A riposo restano ai campi."],
+		["Alberi", ("i più vicini a %d m" % roundi(vicino)) if vicino >= 0.0 else "nessuno entro %d m" % roundi(SimVillaggio.RAGGIO_LEGNAIA), "Più gli alberi sono lontani, più i boscaioli camminano e meno portano: la metà a %d m." % roundi(SimVillaggio.DISTANZA_META_LEGNAIA)],
+		["Tronchi", "fino a %d m³ l'anno" % roundi(sim.capacita_legnaia(l)), "Quanti tronchi può portare in un anno, con gli alberi a questa distanza."],
+		["Risemina", "sì: il bosco ricresce in %d anni" % SimVillaggio.ANNI_RICRESCITA if risemina else "no: dietro resta la radura", "Con la risemina i boscaioli ripiantano dietro di sé: portano un quinto di tronchi in meno, ma il bosco ricresce e si taglia di nuovo. Senza, il bosco tagliato resta radura: utile per far posto ai campi."],
 	]
 	return {"scheda": "LEGNAIA", "titolo": "Legnaia %d" % (k + 1), "valore": "a riposo" if riposo else ("in costruzione" if int(l["cantiere"]) > 0 else "al lavoro"),
-		"righe": righe, "scelte": [{"id": "lavoro", "testo": "Al lavoro", "attiva": not riposo}, {"id": "riposo", "testo": "A riposo", "attiva": riposo}]}
+		"righe": righe, "scelte": [{"id": "lavoro", "testo": "Al lavoro", "attiva": not riposo}, {"id": "riposo", "testo": "A riposo", "attiva": riposo},
+			{"id": "risemina", "testo": "Risemina", "attiva": risemina, "a_capo": true}, {"id": "radura", "testo": "Senza risemina", "attiva": not risemina}]}
 
 
 func _scelta_focus(id: String) -> void:
+	registra("gioco", "scheda %s: %s" % ["officina %d" % (officina_aperta + 1) if officina_aperta >= 0 else "legnaia %d" % (legnaia_aperta + 1), id])
 	if officina_aperta >= 0 and officina_aperta < sim.officine.size():
 		sim.scegli_lavoro_officina(officina_aperta, id)
 		scena.hud.mostra_focus(dati_officina(officina_aperta))
@@ -1851,7 +1889,10 @@ func _scelta_focus(id: String) -> void:
 		return
 	if legnaia_aperta < 0 or legnaia_aperta >= sim.legnaie.size():
 		return
-	sim.metti_a_riposo(legnaia_aperta, id == "riposo")
+	if id == "risemina" or id == "radura":
+		sim.imposta_risemina(legnaia_aperta, id == "risemina")
+	else:
+		sim.metti_a_riposo(legnaia_aperta, id == "riposo")
 	scena.hud.mostra_focus(dati_legnaia(legnaia_aperta))
 	scena.aggiorna_zone_taglio()
 	aggiorna_hud()

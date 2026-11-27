@@ -235,9 +235,12 @@ static func stendi_pascolo(sim: SimVillaggio, caso: RandomNumberGenerator, quali
 	return sim.pascolo.size() * SimVillaggio.AREA_PIXEL_HA
 
 
-## Vero se le legnaie raccolgono meno della metà di ciò che servirebbe.
+## Vero se la legna non basta: poca in catasta mentre mancano case, o legnaie che portano meno di
+## ciò che si consuma (legna alla maniera dei giochi di strategia, 27/11/2026 sera).
 static func legna_scarsa(sim: SimVillaggio) -> bool:
-	return sim.offerta_legna < sim.consumo_legna * 1.2
+	if sim.legna >= SimVillaggio.COSTO_CASA * 2.0:
+		return false
+	return sim.affollamento > 0.05 or sim.offerta_legna < sim.consumo_legna * 1.2
 
 
 ## Sentieri verso i luoghi di lavoro lontani (voce 5, 26/11/2026): dalla rete (o dal centro) fino a

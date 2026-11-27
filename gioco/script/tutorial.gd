@@ -50,9 +50,9 @@ const SCHEDE := {
 	},
 	"legnaia": {
 		"titolo": "Legnaia",
-		"testo": "Senza legna i focolari si spengono e non si costruiscono case nuove. Manda i boscaioli nel bosco.",
+		"testo": "Per costruire e rifare le case serve legna. Manda i boscaioli nel bosco.",
 		"domanda": "Cosa fa una legnaia?",
-		"dettaglio": "In Edifici (L), vicino al bosco; costa solo braccia. Le famiglie raccolgono nel bosco attorno rami e legna morta per i focolari, senza abbattere. Per rifare le case e costruire, i boscaioli abbattono gli alberi uno alla volta, dai più vicini alla legnaia; ogni albero vale secondo la sua specie e la sua grandezza, e una quercia grande vale più di un carpino. Finché la legnaia lavora, dove si è tagliato si passa e non ricresce nulla; più gli alberi si allontanano, più i boscaioli camminano e meno tagliano: allora conviene una legnaia nuova più vicina al bosco. Con un clic sulla legnaia si apre la sua scheda: a riposo, il bosco tagliato ricresce. Attento ai boschi lungo il fiume: senza alberi, le piene corrono più forti.",
+		"dettaglio": "In Edifici (L), vicino al bosco; costa solo braccia. Due famiglie di boscaioli abbattono gli alberi uno alla volta, dai più vicini alla legnaia, e portano i tronchi alla catasta; ogni albero vale secondo la sua specie e la sua grandezza. Più gli alberi si allontanano, più i boscaioli camminano e meno portano: allora conviene una legnaia nuova più vicina al bosco. Quando la catasta è piena tornano ai campi. Nella scheda della legnaia (clic) scegli se riseminare: con la risemina il bosco ricresce in 25 anni e si taglia di nuovo; senza, resta la radura. Il fuoco delle case lo fanno le famiglie da sole, con i rami del bosco. Attento ai boschi lungo il fiume: senza alberi, le piene corrono più forti.",
 		"avviso": "Legnaia (L): senza boscaioli non arriva legna.",
 	},
 	"capanno": {
@@ -129,10 +129,10 @@ const SCHEDE := {
 	},
 	"torre": {
 		"titolo": "Torre di avvistamento",
-		"testo": "Da un'altura si vede arrivare chi viene dalle colline. Una torre dà il tempo di prepararsi.",
+		"testo": "Dall'alto si vede arrivare chi viene dalle colline. Una torre dà il tempo di prepararsi.",
 		"domanda": "A cosa serve la torre?",
-		"dettaglio": "In Edifici (U): una piattaforma su quattro pali, con la catasta per il fuoco di segnalazione. Va su un dosso o un colle, non lontano dal villaggio, e ne basta una. Servono 8 di legna e due anni di lavoro. Dalla torre i segni arrivano prima, e quando la scorreria arriva si perde meno.",
-		"avviso": "Torre di avvistamento (U): su un'altura, dà i segni prima e si perde meno.",
+		"dettaglio": "In Edifici (U): una piattaforma su quattro pali, con la catasta per il fuoco di segnalazione. Si fa dove vuoi, non lontano dal villaggio, e ne basta una. Servono 8 di legna e due anni di lavoro. Dalla torre i segni arrivano prima, e quando la scorreria arriva si perde meno.",
+		"avviso": "Torre di avvistamento (U): dà i segni prima e si perde meno.",
 	},
 	# Strade (voce 5, 26/11/2026): con la tappa dei 250 abitanti, insieme ai casali.
 	"strade": {

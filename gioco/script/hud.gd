@@ -1664,6 +1664,11 @@ func imposta_messaggio(testo: String) -> void:
 	_messaggio.text = testo
 
 
+## Il messaggio che il giocatore vede ora (per il registro del gioco).
+func messaggio() -> String:
+	return _messaggio.text
+
+
 # ---------- elementi ----------
 
 func _intestazione(col: VBoxContainer, testo: String) -> Control:
@@ -2063,6 +2068,11 @@ func _riempi_scelte(scelte: Array) -> void:
 	riga.add_theme_constant_override("separation", 6)
 	_colonna_focus.add_child(riga)
 	for v in scelte:
+		# Una scelta con "a_capo" comincia una riga nuova (la legnaia: lavoro e risemina, 27/11/2026).
+		if bool(v.get("a_capo", false)):
+			riga = HBoxContainer.new()
+			riga.add_theme_constant_override("separation", 6)
+			_colonna_focus.add_child(riga)
 		var b := Button.new()
 		b.text = String(v["testo"])
 		b.toggle_mode = true
