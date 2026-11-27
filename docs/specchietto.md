@@ -51,6 +51,7 @@ Territorio e sensibilità → opere e zone → **campi del lotto** → edifici c
 ## In gioco **D**
 - Due specchietti per il giocatore, già nel villaggio (priorità 1 del todo, voce A): **Conseguenze** (chi guadagna, chi perde, sul territorio, costo, resta) nella scheda dello strumento; **Rapporti di forza** (peso e umore dei gruppi, tensione, verso dove si muove la città) dal pannello del Consenso.
 
+- **Impostazioni** (voce 10, 27/11/2026): F10; tutorial, salvataggi automatici, tempo dopo la fondazione, qualità a tre livelli, fotogrammi, schermo intero, scala dell'interfaccia, registro; file `D:\Godot\Strati\impostazioni.cfg`. Dettagli in `prototipo0-godot.md`.
 - **Tempo ed evento soglia 1** (voce 6, 26/11/2026 notte): la partita va fino al metallo (3000–1800 a.C.); a decenni dal 5600 a.C.; presagi, scelta aprirsi o isolarsi, primo governo (Comunità, Consiglio dei clan, Casa dominante), aratro, riepilogo. Dettagli in `prototipo0-godot.md`.
 - **Salvataggio** (voce 9, 26/11/2026 notte, proposte di Claude): F5 salva, F8 riprende; automatici a ogni tappa e ogni 50 anni; file in `D:\Godot\Strati\Salvataggi`. **Piene visibili:** l'acqua torbida sale sulle terre basse e si ritira. Dettagli in `prototipo0-godot.md`.
 - **Strade** (voce 5, 26/11/2026 sera): dalla tappa dei 250, i tratti di sentiero battuti da 40 persone l'anno per 20 anni diventano strade e restano; campi vicini +15%, case anche lungo la via, passerelle di tronchi sul bagnato; le figure camminano sulla rete. Dettagli in `prototipo0-godot.md`.

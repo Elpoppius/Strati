@@ -2,6 +2,24 @@
 
 Voci più recenti in cima.
 
+## 27/11/2026 (mattina) — menù delle impostazioni (voce 10)
+**Fatto**
+- **Impostazioni** (proposta di Claude approvata da Fede il 26/11): F10 o Strumenti › Partita › Impostazioni.
+  - Partita: tutorial, salvataggi automatici, tempo dopo la fondazione.
+  - Grafica: qualità bassa, media o alta (alberi completi, figure, animali, ombre, bordi lisci), fotogrammi massimi, schermo intero, scala dell'interfaccia.
+  - Registro tecnico acceso o spento; elenco dei comandi.
+  - Ogni scelta si applica e si salva subito in `D:\Godot\Strati\impostazioni.cfg`. Foto: `docs/immagini/impostazioni-27-11.jpg`.
+- Verifica nuova `verifica_impostazioni.gd` (la dodicesima); tutte superate. Nuova casella nella finestra F3.
+
+**Decisioni**
+- Fede: "vai procedi col primo punto della lista".
+
+**Prossimo passo** (piano in testa al todo)
+- Presagi più radi a decenni e più fitti con il sacerdote scontento.
+- Soglie del primo governo.
+- Passerelle solo sui corsi stretti.
+- Prove con i giocatori "umani".
+
 ## 26/11/2026 (chiusura della sessione) — decisioni di Fede e piano per il 27/11
 **Decisioni di Fede**
 - **Menù delle impostazioni (voce 10):** proposta di Claude approvata così com'è:

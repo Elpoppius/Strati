@@ -13,8 +13,9 @@ extends Node3D
 ## sotto la volta dipinta, così tra una sagoma e l'altra (e nei blocchi non ancora pronti) si vede
 ## bosco e non terra.
 
-const DIM_COMPLETI := 220.0
-const DIM_LEGGERI := 700.0
+## Le due misure qui sotto cambiano con la qualità (Impostazioni.applica_qualita).
+static var DIM_COMPLETI := 220.0
+static var DIM_LEGGERI := 700.0
 const DIM_SAGOME := 2600.0
 ## Sagome rade: quota di alberi tenuti, ingrandimento, blocchi per lato di un blocco grande.
 const RADE_QUOTA := 0.4

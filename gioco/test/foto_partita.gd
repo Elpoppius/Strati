@@ -164,6 +164,10 @@ func _process(_d: float) -> bool:
 				p.vista._anima_piena(1.0)
 			p.vista._t_piena = -1.0  # ferma l'acqua al massimo fino alla foto
 			print("   livello della piena %.2f" % p.vista.livello_piena())
+		elif args.size() > 4 and args[4] == "impostazioni":
+			# Finestra delle impostazioni (voce 10).
+			Impostazioni.percorso_voluto = "user://foto_impostazioni.cfg"
+			_s.apri_impostazioni()
 		elif args.size() > 4 and args[4] == "carica":
 			# Elenco delle partite salvate (voce 9): due salvataggi di prova, poi F8.
 			Salvataggio.cartella_voluta = "user://foto_salvataggi"

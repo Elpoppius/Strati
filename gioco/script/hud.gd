@@ -1246,7 +1246,7 @@ func apri_politiche(aperto: bool) -> void:
 	var sotto := maxf(_fascia.size.y, ALTEZZA_FASCIA) + 2
 	_pannello_politiche.offset_bottom = -sotto
 	# Altezza: quella del contenuto, ma senza coprire la cronaca in alto a sinistra.
-	var schermo := get_viewport().get_visible_rect().size.y if is_inside_tree() else 900.0
+	var schermo := get_viewport().get_visible_rect().size.y / scale.y if is_inside_tree() else 900.0
 	var spazio := schermo - sotto - 190.0
 	var alto := clampf(_colonna_politiche.get_combined_minimum_size().y, 120.0, maxf(spazio, 120.0))
 	_scorri_politiche.custom_minimum_size.y = alto
@@ -1329,6 +1329,173 @@ func mostra_scelta(tipo: String, titolo: String, testo: String, opzioni: Array, 
 			nota.add_theme_font_size_override("font_size", 12)
 			nota.add_theme_color_override("font_color", GRIGIO)
 			box.add_child(nota)
+
+
+# ---------- impostazioni (todo voce 10, 26/11/2026) ----------
+
+## Finestra delle impostazioni: per sezione, ogni voce con le sue scelte in fila (quella attiva in
+## bianco), una nota sotto; in fondo i tasti, il file dove si salvano e Chiudi. `voci` come
+## Impostazioni.VOCI, `valori` chiave -> valore attuale, `comandi` [[tasti, cosa fanno]].
+## `al_cambio(chiave, valore)` a ogni scelta; `al_termine()` alla chiusura.
+func mostra_impostazioni(voci: Array, valori: Dictionary, comandi: Array, file: String, al_cambio: Callable, al_termine: Callable) -> void:
+	chiudi_scelta()
+	var velo := ColorRect.new()
+	velo.name = "Impostazioni"
+	velo.set_meta("impostazioni", true)
+	_al_chiudi_impostazioni = al_termine
+	velo.color = Color(0, 0, 0, 0.35)
+	velo.set_anchors_preset(Control.PRESET_FULL_RECT)
+	velo.mouse_filter = Control.MOUSE_FILTER_STOP
+	_radice.add_child(velo)
+	_modale = velo
+	var centro := CenterContainer.new()
+	centro.set_anchors_preset(Control.PRESET_FULL_RECT)
+	velo.add_child(centro)
+	var p := PanelContainer.new()
+	p.custom_minimum_size.x = 720
+	centro.add_child(p)
+	var fuori := VBoxContainer.new()
+	fuori.add_theme_constant_override("separation", 10)
+	p.add_child(fuori)
+	var k := Label.new()
+	k.text = "IMPOSTAZIONI"
+	k.add_theme_font_override("font", _carattere(true, 1.6))
+	k.add_theme_font_size_override("font_size", 11)
+	k.add_theme_color_override("font_color", GRIGIO)
+	fuori.add_child(k)
+	var scorri := ScrollContainer.new()
+	scorri.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var alto := (get_viewport().get_visible_rect().size.y / scale.y if is_inside_tree() else 900.0) - 180.0
+	scorri.custom_minimum_size = Vector2(700, clampf(alto, 300.0, 640.0))
+	fuori.add_child(scorri)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 6)
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scorri.add_child(col)
+	var sezione := ""
+	for v in voci:
+		if v["sezione"] != sezione:
+			sezione = v["sezione"]
+			_titolo_sezione_impostazioni(col, sezione)
+		var riga := HBoxContainer.new()
+		riga.add_theme_constant_override("separation", 2)
+		col.add_child(riga)
+		var nome := Label.new()
+		nome.text = v["nome"]
+		nome.custom_minimum_size.x = 230
+		riga.add_child(nome)
+		var gruppo := ButtonGroup.new()
+		var chiave: String = v["chiave"]
+		for sc in v["scelte"]:
+			var b := Button.new()
+			b.name = ("%s_%s" % [chiave, str(sc[0])]).replace(".", "_")
+			b.text = String(sc[1])
+			b.toggle_mode = true
+			b.button_group = gruppo
+			b.focus_mode = Control.FOCUS_NONE
+			b.custom_minimum_size = Vector2(92, 28)
+			b.button_pressed = valori.has(chiave) and typeof(valori[chiave]) == typeof(sc[0]) and valori[chiave] == sc[0]
+			var x: Variant = sc[0]
+			b.pressed.connect(func() -> void: al_cambio.call(chiave, x))
+			riga.add_child(b)
+		if String(v.get("nota", "")) != "":
+			var nota := Label.new()
+			nota.text = v["nota"]
+			nota.add_theme_font_size_override("font_size", 12)
+			nota.add_theme_color_override("font_color", GRIGIO)
+			nota.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			nota.custom_minimum_size.x = 660
+			col.add_child(nota)
+	_titolo_sezione_impostazioni(col, "Comandi")
+	var griglia := GridContainer.new()
+	griglia.columns = 2
+	griglia.add_theme_constant_override("h_separation", 18)
+	griglia.add_theme_constant_override("v_separation", 3)
+	col.add_child(griglia)
+	for c in comandi:
+		var tasti := Label.new()
+		tasti.text = c[0]
+		tasti.custom_minimum_size.x = 230
+		tasti.add_theme_font_override("font", _carattere(true))
+		griglia.add_child(tasti)
+		var cosa := Label.new()
+		cosa.text = c[1]
+		cosa.add_theme_color_override("font_color", GRIGIO)
+		griglia.add_child(cosa)
+	var piede := HBoxContainer.new()
+	fuori.add_child(piede)
+	var dove := Label.new()
+	dove.text = "Si salvano da sole in " + file
+	dove.add_theme_font_size_override("font_size", 12)
+	dove.add_theme_color_override("font_color", GRIGIO)
+	dove.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	dove.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	piede.add_child(dove)
+	var chiudi := Button.new()
+	chiudi.name = "Chiudi"
+	chiudi.text = "Chiudi"
+	chiudi.focus_mode = Control.FOCUS_NONE
+	chiudi.custom_minimum_size = Vector2(110, 32)
+	var st := StyleBoxFlat.new()
+	st.bg_color = Color(0, 0, 0, 0)
+	st.set_border_width_all(1)
+	st.border_color = RIGA
+	st.set_content_margin_all(6)
+	chiudi.add_theme_stylebox_override("normal", st)
+	chiudi.pressed.connect(chiudi_impostazioni)
+	piede.add_child(chiudi)
+
+
+func _titolo_sezione_impostazioni(col: VBoxContainer, testo: String) -> void:
+	var spazio := Control.new()
+	spazio.custom_minimum_size.y = 4
+	col.add_child(spazio)
+	var t := Label.new()
+	t.text = testo.to_upper()
+	t.add_theme_font_override("font", _carattere(true, 1.6))
+	t.add_theme_font_size_override("font_size", 11)
+	t.add_theme_color_override("font_color", GRIGIO)
+	col.add_child(t)
+	var riga := ColorRect.new()
+	riga.color = RIGA
+	riga.custom_minimum_size.y = 1
+	col.add_child(riga)
+
+
+var _al_chiudi_impostazioni := Callable()
+
+## Vero se la finestra delle impostazioni è aperta.
+func impostazioni_aperte() -> bool:
+	return _modale != null and is_instance_valid(_modale) and _modale.has_meta("impostazioni")
+
+
+## Chiude la finestra delle impostazioni (Chiudi, F10 o Esc) e avvisa chi l'ha aperta.
+func chiudi_impostazioni() -> void:
+	if not impostazioni_aperte():
+		return
+	chiudi_scelta()
+	if _al_chiudi_impostazioni.is_valid():
+		var f := _al_chiudi_impostazioni
+		_al_chiudi_impostazioni = Callable()
+		f.call()
+
+
+## Scala dell'interfaccia (impostazioni): tutto l'HUD più grande, misurato sullo schermo diviso per
+## la scala, così i blocchi restano ai loro bordi.
+func imposta_scala(f: float) -> void:
+	scale = Vector2(f, f)
+	if _radice == null:
+		return
+	_radice.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_adatta_radice()
+	if is_inside_tree() and not get_viewport().size_changed.is_connected(_adatta_radice):
+		get_viewport().size_changed.connect(_adatta_radice)
+
+
+func _adatta_radice() -> void:
+	if _radice and is_inside_tree():
+		_radice.position = Vector2.ZERO
+		_radice.size = get_viewport().get_visible_rect().size / scale.x
 
 
 ## Riquadro del tutorial (decisione di Fede del 26/11/2026): la novità in due o tre righe, un tasto

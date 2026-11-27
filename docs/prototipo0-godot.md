@@ -117,6 +117,24 @@ Vedi `era-origini.md`. Nel codice (`sim_villaggio.gd`, numeri da tarare, propost
 ## Note di bilanciamento
 Con il contado che cresce con gli abitanti e l'economia mista (24/11/2026) le popolazioni finali con il giocatore automatico scendono a 450–570 abitanti (prima oltre il migliaio). L'area dei gessi resta poverissima: entro 400 m la fertilità è molto bassa e il villaggio vive di caccia e carestie; è un sito sfavorevole, ma va controllato nelle prove. Con la resa raddoppiata, una casa ogni 6 abitanti e i campi dissodati secondo il bisogno (24/11/2026, Fede: il rapporto tra campi e case sembrava un'azienda agricola) con la resa portata a 36, una casa ogni 5 abitanti e caccia e pesca più forti, dopo 150 anni al Terrazzo centrale: 224 abitanti, 45 case, 134 campi (3 per casa; all'inizio della giornata erano più di 25). Le popolazioni finali salgono a 1000–1400 (gessi 600): da tarare con le prove. Il dosso nelle paludi resta piccolo (poche case trovano posto), l'area dei gessi soffre più carestie.
 
+## Impostazioni (todo voce 10, 27/11/2026; proposta di Claude approvata da Fede il 26/11)
+- **Dove:** F10, oppure Strumenti › Partita › Impostazioni; Esc, F10 o Chiudi la chiudono. Il tempo si ferma finché è aperta e poi riparte. Ogni scelta si applica e si salva subito in `D:\Godot\Strati\impostazioni.cfg` (su Windows; altrimenti la cartella dei dati di Godot). Un valore sconosciuto nel file torna al predefinito. Codice: `script/impostazioni.gd` (classe `Impostazioni`), `Hud.mostra_impostazioni`, `principale.apri_impostazioni`. Foto: `docs/immagini/impostazioni-27-11.jpg`.
+- **Partita:** tutorial accesi o spenti (vale anche per la partita in corso); salvataggi automatici a tappe e ogni 50 anni, solo alle tappe, o spenti; tempo dopo la fondazione fermo, lento, medio o veloce.
+- **Grafica:**
+  - Qualità a tre livelli (`Impostazioni.LIVELLI`):
+
+    | | Alberi completi fino a | Alberi leggeri fino a | Figure | Figure visibili fino a | Animali | Ombre | Bordi lisci |
+    |---|---|---|---|---|---|---|---|
+    | Bassa | 110 m | 400 m | 60 | 300 m | 150 | 1024 | no |
+    | Media | 160 m | 550 m | 100 | 380 m | 250 | 2048 | 2× |
+    | Alta (predefinita, come prima) | 220 m | 700 m | 150 | 450 m | 400 | 4096 | 2× |
+  - Fotogrammi massimi 30, 60 o senza limite.
+  - Finestra o schermo intero.
+  - Scala dell'interfaccia 100, 125 o 150%: l'HUD si ingrandisce restando nei bordi dello schermo.
+- **Registro tecnico:** acceso o spento, dal prossimo avvio.
+- **Comandi:** l'elenco dei tasti, solo da leggere.
+- Verifiche e foto usano sempre i valori predefiniti, senza leggere il file.
+
 ## Passo elastico ed evento soglia 1 (todo voce 6, 26/11/2026 notte; proposta di Claude approvata da Fede: "ok vai procedi")
 - **La partita è più lunga** (Fede: "aumenta il periodo di tempo della demo"): non finisce più al 5500 a.C. ma con l'evento soglia, tra il 3000 e il 1800 a.C. (`ANNO_FINE` è il 1700, solo come riparo). Le prove automatiche giocano di norma i primi cinque secoli (`ANNO_PROVE`), per confrontarsi con le misure di prima; `giocatore_umano.gd` con `lunghe` gioca fino all'evento.
 - **Passo elastico** (`SimVillaggio.anni_per_passo`, `_aggiorna_decenni`): un anno per passo nei primi quattro secoli; dal 5600 a.C. un decennio, se il villaggio ha la tappa Territorio, altrimenti quando ci arriva e comunque dal 5200. Le regole restano per anno: la partita calcola i dieci anni uno per uno, spalmati sui fotogrammi con un tetto di 12 ms per fotogramma (`Partita.TEMPO_ANNI_MS`, più alto se il gioco va lento); se il calcolo non sta dietro, il tempo va un po' più piano. Una scelta ferma il passo nell'anno in cui arriva. Le notifiche uguali dello stesso passo si raccolgono ("… (3 volte)"). Una riga di cronaca e la scheda di tutorial "Il tempo a decenni". A velocità 1 un decennio al secondo: 3000 anni in circa 5 minuti.

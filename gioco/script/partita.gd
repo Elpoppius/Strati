@@ -56,7 +56,8 @@ func avvia(s: Node, seme_voluto: int = -1) -> void:
 	# Le foto di controllo (test/foto_*.gd) partono senza tutorial, che coprirebbero la scena.
 	var ml := Engine.get_main_loop()
 	var script_avvio: String = (ml.get_script() as Script).resource_path if ml.get_script() != null else ""
-	if not script_avvio.contains("/test/foto"):
+	# Dal 26/11/2026 si possono spegnere nelle impostazioni (voce 10).
+	if not script_avvio.contains("/test/foto") and Impostazioni.valore("tutorial"):
 		sim.tutorial_attivi = true
 		sim.tutorial(["fondare"], "Inizio della partita")
 	vista = VistaVillaggio.new()
@@ -123,9 +124,10 @@ func avvia(s: Node, seme_voluto: int = -1) -> void:
 	], "strumenti", true)
 	# Le politiche non sono costruzioni (decisione di Fede): un pannello a parte, aperto da qui.
 	# Salvataggio (todo voce 9, 26/11/2026; tasti F5 e F8 proposti da Claude).
-	hud.aggiungi_menu("partita_menu", "Partita", "Salvare e riprendere la partita.", [
+	hud.aggiungi_menu("partita_menu", "Partita", "Salvare e riprendere la partita; le impostazioni del gioco.", [
 		{"id": "salva", "icona": "salva", "testo": "Salva la partita", "breve": "Salva", "tasto": "F5", "strumento": false},
 		{"id": "carica", "icona": "carica", "testo": "Riprendi una partita salvata", "breve": "Carica", "tasto": "F8", "strumento": false},
+		{"id": "impostazioni", "icona": "impostazioni", "testo": "Impostazioni del gioco", "breve": "Impostazioni", "tasto": "F10", "strumento": false},
 	], "strumenti")
 	hud.aggiungi_menu("politiche_menu", "Politiche", "Le regole del villaggio.", [
 		{"id": "politiche", "icona": "politiche", "testo": "Politiche del villaggio", "breve": "Politiche", "tasto": "P", "strumento": false},
@@ -231,6 +233,8 @@ func _azione(id: String) -> void:
 			salva_partita()
 		"carica":
 			mostra_caricamento()
+		"impostazioni":
+			scena.apri_impostazioni()
 	aggiorna_hud()
 
 
@@ -372,6 +376,8 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 					if o == "fonda":
 						sim.fonda(p)
 						vista.sincronizza()
+						# Il tempo parte come dicono le impostazioni (di norma fermo).
+						imposta_velocita(int(Impostazioni.valore("velocita_partenza")))
 						var c := sim.mondo_di_px(p)
 						scena.cam.vai_a(c.x, c.y, 600.0)
 						hud.seleziona_comando("zona")
@@ -1405,13 +1411,14 @@ var _tappa_salvata := 0
 var _anno_salvato := -999999
 
 func _salvataggio_automatico() -> void:
-	if not Registro.per_questo_avvio() or not sim.fondato:
+	if not Registro.per_questo_avvio() or not sim.fondato or Impostazioni.valore("automatici") == "no":
 		return
 	if _anno_salvato == -999999:
 		_anno_salvato = sim.anno
 		_tappa_salvata = sim.tappa
 		return
-	if sim.tappa != _tappa_salvata or sim.anno - _anno_salvato >= ANNI_AUTOMATICO:
+	var ogni_50: bool = Impostazioni.valore("automatici") == "tappe_50"
+	if sim.tappa != _tappa_salvata or (ogni_50 and sim.anno - _anno_salvato >= ANNI_AUTOMATICO):
 		_tappa_salvata = sim.tappa
 		_anno_salvato = sim.anno
 		Salvataggio.salva(self, "", true)

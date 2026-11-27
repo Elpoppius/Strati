@@ -136,3 +136,7 @@ Riquadro al centro come le scelte, con il velo scuro e il tempo fermo (`Hud.most
 - **Comandi:** Fondare, Campi, Sentiero, Granaio; politiche a parte (divisione del raccolto, accoglienza degli stranieri).
 - **Scelte:** finestra al centro, con tipo (presagio, momento decisivo, evento, crisi…), titolo, testo e opzioni con la loro conseguenza in grigio. Il tempo si ferma finché non si sceglie.
 - **Notifiche:** vedi sopra.
+
+## Impostazioni (27/11/2026)
+Finestra al centro come le scelte, larga 720: per sezione (Partita, Grafica, Registro tecnico, Comandi) un titolo in maiuscoletto grigio con la riga sottile; ogni voce ha il nome a sinistra e le scelte in fila, quella attiva in bianco con il testo nero (come la velocità del tempo); sotto, la nota in grigio. In fondo il file dove si salvano e Chiudi. Se lo schermo è basso, la finestra scorre. La scala dell'interfaccia ingrandisce tutto l'HUD (`Hud.imposta_scala`).
+

@@ -41,6 +41,7 @@ const PROVE := [
 	"Tempo a decenni dopo il 5600 a.C.: fluido?",
 	"Metallo: presagi, scelta, riepilogo (Prova: Metallo)",
 	"Fotogrammi al secondo a decenni e da vicino",
+	"Impostazioni (F10): qualità, scala, schermo intero",
 ]
 
 var cartella := ""

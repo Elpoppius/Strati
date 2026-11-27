@@ -94,7 +94,7 @@ var _firma_sacro := -1
 ## zona di pascolo): il gregge pascola attorno a un punto che si sposta piano nel pascolo vicino allo
 ## stabbio, e ogni animale va da un ciuffo all'altro attorno a quel punto. Senza zona di pascolo
 ## stanno attorno alle case.
-const MASSIMO_ANIMALI := 400
+static var MASSIMO_ANIMALI := 400  # cambia con la qualità (Impostazioni)
 const SPECIE_ANIMALI := ["pecora", "capra", "maiale", "bue"]
 const CAPI_PER_STABBIO := 30
 ## Movimento (26/11/2026, Fede): gli animali partono e si fermano con calma, girano piano verso la

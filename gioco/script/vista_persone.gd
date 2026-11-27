@@ -13,8 +13,10 @@ extends Node3D
 ## Numeri (proposta di Claude, da misurare con Fede sui suoi PC): al massimo TETTO figure; una figura
 ## vale 1, 2 o 5 persone secondo gli abitanti.
 
-const TETTO := 150
-const DIM_VISIBILI := 450.0  # oltre questa vista (metri) le persone non si disegnano
+## Le misure qui sotto cambiano con la qualità (Impostazioni.applica_qualita): questi sono i valori
+## dell'alta.
+static var TETTO := 150
+static var DIM_VISIBILI := 450.0  # oltre questa vista (metri) le persone non si disegnano
 const DIM_COMPLETE := 140.0  # sotto, i modelli completi
 const VELOCITA := 1.1  # metri al secondo, il passo di chi va al lavoro
 const ACCELERAZIONE := 1.2

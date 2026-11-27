@@ -53,7 +53,13 @@ var registro: Registro
 
 
 func _ready() -> void:
+	# Impostazioni (todo voce 10): dal file solo nel gioco vero; verifiche e foto usano i valori
+	# predefiniti (qualità alta).
 	if Registro.per_questo_avvio():
+		Impostazioni.carica()
+	Impostazioni.applica_qualita()
+	Impostazioni.applica_finestra(get_tree())
+	if Registro.per_questo_avvio() and Impostazioni.valore("registro"):
 		registro = Registro.new()
 		registro.name = "Registro"
 		add_child(registro)
@@ -103,6 +109,7 @@ func _ready() -> void:
 		_stato_alberi = "calcolo degli alberi in corso"
 		alberi.calcola_in_sottofondo(cam.bersaglio.x, cam.bersaglio.z)
 	_crea_interfaccia()
+	hud.imposta_scala(float(Impostazioni.valore("scala")))
 	partita = Partita.new()
 	partita.name = "Partita"
 	add_child(partita)
@@ -346,6 +353,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 			KEY_F8:
 				if partita:
 					partita.mostra_caricamento()
+			KEY_F10:
+				apri_impostazioni()
 			KEY_F9:
 				# Segnalibro: "qui c'è qualcosa", con ora, camera e foto dello schermo.
 				if registro:
@@ -366,7 +375,9 @@ func _unhandled_input(ev: InputEvent) -> void:
 ## Esc o clic destro: chiude le politiche, poi la catena del sentiero, poi deseleziona lo strumento.
 func annulla() -> void:
 	_pennellando = false
-	if hud.focus_aperto() != "":
+	if hud.impostazioni_aperte():
+		hud.chiudi_impostazioni()
+	elif hud.focus_aperto() != "":
 		hud.chiudi_focus()
 	elif hud.politiche_aperte():
 		hud.apri_politiche(false)
@@ -388,6 +399,44 @@ func applica_strumento() -> void:
 		partita.applica(hud.comando(), p, raggio_pennello)
 		hud.imposta_lettura(testo_lettura(p.x, p.z))
 		return
+
+
+## Finestra delle impostazioni (F10, Strumenti › Partita › Impostazioni): il tempo si ferma finché
+## è aperta; ogni scelta si salva e si applica subito.
+func apri_impostazioni() -> void:
+	if hud.impostazioni_aperte():
+		hud.chiudi_impostazioni()
+		return
+	var prima := partita.velocita if partita else 0
+	if partita:
+		partita.imposta_velocita(0)
+	var valori := {}
+	for v in Impostazioni.VOCI:
+		valori[v["chiave"]] = Impostazioni.valore(v["chiave"])
+	hud.mostra_impostazioni(Impostazioni.VOCI, valori, Impostazioni.COMANDI, ProjectSettings.globalize_path(Impostazioni.percorso()),
+		func(chiave: String, x: Variant) -> void:
+			Impostazioni.imposta(chiave, x)
+			_applica_impostazione(chiave),
+		func() -> void:
+			if partita and prima > 0:
+				partita.imposta_velocita(prima))
+
+
+func _applica_impostazione(chiave: String) -> void:
+	match chiave:
+		"qualita":
+			Impostazioni.applica_qualita()
+			Impostazioni.applica_finestra(get_tree())
+			if partita:
+				partita.vista.sincronizza()
+		"fps", "schermo_intero":
+			Impostazioni.applica_finestra(get_tree())
+		"scala":
+			hud.imposta_scala(float(Impostazioni.valore("scala")))
+		"tutorial":
+			# Vale anche per la partita in corso: spenti, le schede non compaiono più.
+			if partita and partita.sim.fondato:
+				partita.sim.tutorial_attivi = bool(Impostazioni.valore("tutorial"))
 
 
 func _azione(id: String) -> void:

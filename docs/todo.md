@@ -64,7 +64,7 @@ In tutto **7–10 ore di lavoro di Claude**, cioè 2–3 giornate, più le confe
 **Fede verifica** al PC: le 16 caselle della finestra Debug (F3), con il Registro acceso (Claude poi lo legge da `D:\Godot\Strati\Registro`).
 
 **Claude lavora:**
-1. Voce 10, menù delle impostazioni, appena Fede decide (poi prove, foto, verifiche).
+1. [x] Voce 10, menù delle impostazioni (27/11 mattina).
 2. Le decisioni 2–5 di Fede, con le prove dei giocatori "umani" (anche lunghe) e il registro degli avvisi.
 3. Lettura del Registro dopo la prova di Fede e correzioni (come la voce C del 26/11).
 4. Ritocchi di direzione artistica che Fede chiede.
@@ -199,7 +199,9 @@ Si muove verso    terra alle famiglie · più aperta
 - [x] Varianti dei modelli del villaggio (26/11/2026 notte, proposta di Claude: una seconda versione per ogni tipo di casa, con cataste, orto, tettoia, recintino o telaio per le pelli; metà dei lotti; foto `docs/immagini/varianti-case-26-11.jpg`). Da guardare con Fede.
 - Prove sui PC di Fede: tempi degli alberi e fotogrammi al secondo (con il Registro, F3; anche il salvataggio).
 
-### 10. [ ] Menù delle impostazioni (Fede, 26/11/2026)
+### 10. [x] Menù delle impostazioni (fatto il 27/11/2026 mattina)
+**Fatto** (proposta di Claude approvata da Fede il 26/11: "tutto ok"; regole in `prototipo0-godot.md`, foto `docs/immagini/impostazioni-27-11.jpg`): F10 o Strumenti › Partita › Impostazioni; Partita (tutorial, salvataggi automatici, tempo dopo la fondazione), Grafica (qualità a tre livelli, fotogrammi, schermo, scala dell'interfaccia), Registro, Comandi; file `D:\Godot\Strati\impostazioni.cfg`. **Resta:** la prova di Fede (casella in F3).
+
 Un menù delle impostazioni del gioco, con dentro anche l'opzione dei tutorial (accesi o spenti per le partite nuove). Da progettare con Fede: cosa contiene oltre ai tutorial (per esempio velocità di partenza, qualità grafica, lingua), dove si apre (tasto, voce dell'HUD), dove si salva sul PC.
 
 ## Da decidere con Fede
