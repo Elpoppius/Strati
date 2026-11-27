@@ -55,10 +55,16 @@ func prepara(s: SimVillaggio, u: UsoSuolo, t: Terreno) -> void:
 	persone.name = "Persone"
 	add_child(persone)
 	persone.prepara(sim, terreno, self)
+	# Fumo dei camini (27/11/2026): officine ed edifici comunitari finiti (`camini.json`).
+	fumo = VistaFumo.new()
+	add_child(fumo)
 
 
 ## Le figure delle persone (script/vista_persone.gd).
 var persone: VistaPersone
+## Il fumo dei camini (script/vista_fumo.gd): c'è finché l'edificio è finito, senza legami con la
+## simulazione (decisione di Fede del 27/11/2026).
+var fumo: VistaFumo
 
 
 func numero_case() -> int:
@@ -1024,6 +1030,7 @@ func _sincronizza_edifici() -> void:
 				(e["barra"] as Node3D).queue_free()
 			uso.libera(uso.celle_nel_cerchio(p.x, p.y, float(e["raggio"])))
 			_edifici.erase(p)
+			fumo.togli(p)
 	_cantieri = {}
 	for p in ora:
 		var v: Array = ora[p]
@@ -1042,6 +1049,8 @@ func _sincronizza_edifici() -> void:
 			nodo.scale = Vector3.ONE * float(SCALA_EDIFICI.get(v[0], 1.0))
 			e["nodo"] = nodo
 			e["modello"] = modello
+			if in_cantiere or not fumo.aggiungi_edificio(p, modello, nodo):
+				fumo.togli(p)
 		if in_cantiere:
 			if e["barra"] == null:
 				e["barra"] = _nuova_barra(p)

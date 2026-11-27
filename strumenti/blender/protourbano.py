@@ -289,111 +289,239 @@ def porta(nome, seme):
 
 
 # ---------- fabbro ----------
-def officina_fabbro(nome, seme):
-    """Officina del fabbro: tettoia a una falda di 5 × 3,2 m, aperta davanti (y negativo), con l'incudine
-    di pietra sul ceppo e la rastrelliera degli attrezzi; di fianco, fuori dalla paglia per il fuoco,
-    il forno a pozzetto d'argilla con il camino alto, la bocca accesa e i due mantici di pelle; attorno
-    la terra bruciata, il mucchio di carbone, il minerale e la vasca per temprare. Dall'alto si devono
-    leggere il forno e l'incudine, quindi la tettoia è bassa dietro e lascia vedere il davanti."""
+def _materiale_speciale(nome, immagine, tinta, metallo=0.0, ruvidezza=0.9, luce=None, forza=0.0):
+    """Materiale con la tinta e, se serve, metallo (il bronzo) o luce propria (le braci)."""
+    nuovo = nome not in bpy.data.materials
+    mat = base.materiale(nome, immagine, ruvidezza=ruvidezza, tinta=tinta)
+    if nuovo:
+        bsdf = mat.node_tree.nodes["Principled BSDF"]
+        bsdf.inputs["Metallic"].default_value = metallo
+        if luce is not None:
+            bsdf.inputs["Emission Color"].default_value = (*luce, 1.0)
+            bsdf.inputs["Emission Strength"].default_value = forza
+    return mat
+
+
+def materiali_fabbro():
     m = materiali()
-    rnd = random.Random(seme)
-    parti = []
-    lungo, largo = 5.0, 3.2
-    alto_davanti, alto_dietro = 2.7, 1.9
-    for y, h in ((-largo / 2, alto_davanti), (largo / 2, alto_dietro)):
-        for k in range(3):
-            x = (k - 1) * lungo / 2 + rnd.uniform(-0.06, 0.06)
-            parti.append(base.cilindro_tra("palo", (x, y, -0.15), (x + rnd.uniform(-0.04, 0.04), y, h), 0.12, 0.1, m["corteccia"], lati=6))
-        parti.append(base.cilindro_tra("trave", (-lungo / 2 - 0.3, y, h - 0.06), (lungo / 2 + 0.3, y, h - 0.06), 0.09, 0.09, m["corteccia"], lati=6))
-    for k in range(5):
-        x = (k - 2) * lungo / 4
-        parti.append(base.cilindro_tra("corrente", (x, -largo / 2 - 0.4, alto_davanti + 0.05), (x, largo / 2 + 0.4, alto_dietro + 0.05), 0.05, 0.05, m["legno"], lati=5))
-    falda = base.scatola("falda", (lungo + 0.7, largo + 1.0, 0.2), (0, 0, 0), m["paglia"], tagli=3)
-    for v in falda.data.vertices:
-        v.co.z += rnd.uniform(-0.04, 0.04)
-    falda.rotation_euler = (-math.atan2(alto_davanti - alto_dietro, largo + 0.8), 0, 0)
-    falda.location = (0, 0, (alto_davanti + alto_dietro) / 2 + 0.18)
-    parti.append(falda)
-    # Parete di graticcio sul retro, mezza alta: ripara dal vento.
-    for k in range(9):
-        x = -lungo / 2 + (k + 0.5) * lungo / 9
-        parti.append(base.cilindro_tra("graticcio", (x, largo / 2 + 0.05, 0), (x, largo / 2 + 0.05, 1.2), 0.07, 0.06, m["intonaco"], lati=5, uv_tile=0.8))
-    # Terra bruciata attorno al forno.
-    fx, fy = -lungo / 2 - 1.3, -0.4
+    m["bronzo"] = _materiale_speciale("bronzo", "pietra", (1.45, 0.95, 0.42), metallo=0.25, ruvidezza=0.4)
+    m["brace"] = _materiale_speciale("brace", "argilla", (0.55, 0.16, 0.04), luce=(1.0, 0.3, 0.04), forza=0.8)
+    m["bruciata"] = base.materiale("argilla_bruciata", "argilla", tinta=(0.38, 0.3, 0.26))
+    m["fuliggine"] = base.materiale("fuliggine", "argilla", tinta=(0.13, 0.12, 0.11))
+    m["pietra_chiara"] = base.materiale("pietra_chiara", "pietra", tinta=(1.25, 1.22, 1.15))
+    m["acqua_vasca"] = base.materiale("acqua_vasca", "pietra", ruvidezza=0.15, tinta=(0.16, 0.2, 0.2))
+    m["vimini"] = base.materiale("vimini", "paglia", tinta=(0.72, 0.58, 0.4))
+    return m
+
+
+def _disco(nome, centro, raggio, mat, rnd, lati=16, irregolare=0.15, z=0.02):
     bm = bmesh.new()
-    bmesh.ops.create_circle(bm, cap_ends=True, segments=16, radius=1.7)
+    bmesh.ops.create_circle(bm, cap_ends=True, segments=lati, radius=raggio)
     for v in bm.verts:
-        v.co.x *= rnd.uniform(0.8, 1.1)
-        v.co.y *= rnd.uniform(0.8, 1.1)
-    bmesh.ops.translate(bm, vec=Vector((fx + 0.4, fy, 0.025)), verts=bm.verts)
+        k = 1.0 + rnd.uniform(-irregolare, irregolare)
+        v.co.x *= k
+        v.co.y *= k
+    bmesh.ops.translate(bm, vec=Vector((centro[0], centro[1], z)), verts=bm.verts)
     bm.normal_update()
-    parti.append(base.da_bmesh("bruciato", bm, m["carbone"], tile=1.0))
-    # Forno a pozzetto: tronco di cono d'argilla con il camino e la bocca accesa verso la tettoia.
-    parti.append(base.cilindro_tra("forno", (fx, fy, 0), (fx, fy, 1.0), 0.65, 0.42, m["argilla"], lati=12, uv_tile=1.0))
-    parti.append(base.cilindro_tra("camino", (fx, fy, 0.95), (fx + 0.04, fy, 2.0), 0.24, 0.15, m["argilla"], lati=10))
-    parti.append(base.cilindro_tra("fumo", (fx + 0.04, fy, 1.98), (fx + 0.04, fy, 2.02), 0.13, 0.13, m["carbone"], lati=8))
-    parti.append(base.scatola("bocca", (0.14, 0.4, 0.34), (fx + 0.6, fy, 0.28), m["fuoco"]))
-    # Mantici: due sacchi di pelle con il becco d'argilla verso la bocca del forno.
-    for dy in (-0.5, 0.5):
-        mx, my = fx + 1.5, fy + dy
+    return base.da_bmesh(nome, bm, mat, tile=1.0)
+
+
+def _cupola(nome, centro, raggio, z0, mat, schiaccia=0.85):
+    """Mezza sfera d'argilla appoggiata a quota z0 (la volta della fornace)."""
+    bm = bmesh.new()
+    bmesh.ops.create_uvsphere(bm, u_segments=14, v_segments=8, radius=raggio)
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.z < -0.01], context="VERTS")
+    for v in bm.verts:
+        v.co.z *= schiaccia
+    bmesh.ops.translate(bm, vec=Vector((centro[0], centro[1], z0)), verts=bm.verts)
+    bm.normal_update()
+    return base.da_bmesh(nome, bm, mat, tile=1.0)
+
+
+def _incudine(parti, m, rnd, x, y, seme):
+    """Incudine di pietra chiara, piatta sopra, su un ceppo grosso; il martello col bronzo, le
+    scaglie attorno. Sta fuori dalla tettoia perché dall'alto si veda."""
+    parti.append(base.cilindro_tra("ceppo", (x, y, 0), (x, y, 0.58), 0.46, 0.42, m["corteccia"], lati=11))
+    parti.append(_disco("taglio", (x, y), 0.41, m["legno"], rnd, lati=11, irregolare=0.02, z=0.585))
+    s = villaggio.sasso("incudine", (0.9, 0.56, 0.38), (x, y, 0.5), m["pietra_chiara"], seme + 5)
+    alto = max(v.co.z for v in s.data.vertices) - 0.09
+    for v in s.data.vertices:
+        v.co.z = min(v.co.z, alto)
+    parti.append(s)
+    parti.append(base.cilindro_tra("manico", (x + 0.25, y - 0.32, alto + 0.03), (x + 0.75, y - 0.55, 0.62), 0.028, 0.026, m["legno"], lati=5))
+    parti.append(base.cilindro_tra("martello", (x + 0.2, y - 0.38, alto + 0.03), (x + 0.32, y - 0.24, alto + 0.03), 0.06, 0.05, m["bronzo"], lati=6))
+    parti.append(base.cilindro_tra("pinza", (x - 0.15, y + 0.1, alto + 0.02), (x - 0.75, y + 0.3, alto - 0.05), 0.018, 0.018, m["bronzo"], lati=4))
+    parti.append(base.cilindro_tra("pinza", (x - 0.15, y + 0.14, alto + 0.02), (x - 0.74, y + 0.42, alto - 0.05), 0.018, 0.018, m["bronzo"], lati=4))
+    for k in range(10):
+        a = rnd.uniform(0, 2 * math.pi)
+        d = rnd.uniform(0.55, 1.1)
+        parti.append(base.scatola("scaglia", (0.08, 0.06, 0.02), (x + d * math.cos(a), y + d * math.sin(a), 0.03), m["fuliggine"]))
+
+
+def _fornace(parti, m, rnd, fx, fy, seme, cantiere=False):
+    """Fornace a cupola d'argilla su un piede di pietre: in basso argilla chiara, in alto annerita;
+    camino con le colature di fuliggine; la bocca accesa verso chi guarda (-y) con le braci davanti;
+    i due mantici di fianco, con i becchi nella parete. Restituisce la cima del camino."""
+    # Piede di pietre.
+    for k in range(13):
+        a = 2 * math.pi * k / 13 + rnd.uniform(-0.08, 0.08)
+        if not cantiere and abs(a - 1.5 * math.pi) < 0.35:
+            continue  # davanti alla bocca le pietre si aprono
+        parti.append(villaggio.sasso("piede", (0.38, 0.3, 0.3), (fx + 0.95 * math.cos(a), fy + 0.95 * math.sin(a), 0), m["pietra"], seme + 60 + k))
+    alto_corpo = 0.55 if cantiere else 0.95
+    parti.append(base.cilindro_tra("corpo", (fx, fy, 0), (fx, fy, alto_corpo), 0.86, 0.8, m["argilla"], lati=14, uv_tile=1.0))
+    if cantiere:
+        return None
+    parti.append(_cupola("volta", (fx, fy), 0.8, alto_corpo - 0.02, m["bruciata"]))
+    cima = 2.55
+    parti.append(base.cilindro_tra("camino", (fx, fy, alto_corpo + 0.5), (fx + 0.05, fy + 0.03, cima), 0.27, 0.17, m["bruciata"], lati=10))
+    parti.append(base.cilindro_tra("bocca_camino", (fx + 0.05, fy + 0.03, cima - 0.25), (fx + 0.05, fy + 0.03, cima + 0.02), 0.19, 0.2, m["fuliggine"], lati=10))
+    for k in range(4):
+        a = rnd.uniform(0, 2 * math.pi)
+        z1 = rnd.uniform(1.5, 2.0)
+        parti.append(base.cilindro_tra("colatura", (fx + 0.2 * math.cos(a), fy + 0.2 * math.sin(a), cima - 0.1),
+                                       (fx + 0.25 * math.cos(a), fy + 0.25 * math.sin(a), z1), 0.07, 0.05, m["fuliggine"], lati=5))
+    # Bocca accesa: arco annerito attorno, fuoco dentro, braci davanti.
+    # La cornice annerita sporge dalla parete; il fuoco sta dentro, rientrato, così si legge come una
+    # bocca e non come un riquadro.
+    for dx in (-0.36, 0.36):
+        parti.append(base.scatola("stipite", (0.16, 0.26, 0.62), (fx + dx, fy - 0.84, 0.31), m["fuliggine"]))
+    parti.append(base.scatola("architrave", (0.88, 0.26, 0.16), (fx, fy - 0.84, 0.66), m["fuliggine"]))
+    parti.append(base.scatola("soglia", (0.6, 0.3, 0.06), (fx, fy - 0.9, 0.03), m["fuliggine"]))
+    parti.append(base.scatola("bocca", (0.56, 0.1, 0.52), (fx, fy - 0.74, 0.32), m["brace"]))
+    for k in range(9):
+        parti.append(villaggio.sasso("brace", (0.14, 0.12, 0.07), (fx + rnd.uniform(-0.35, 0.35), fy - 1.05 - rnd.uniform(0, 0.35), 0), m["brace"], seme + 80 + k))
+    # Mantici: due sacchi di pelle a sinistra, i becchi d'argilla nella parete.
+    for dy in (-0.32, 0.38):
+        mx, my = fx - 1.55, fy + dy
         bm = bmesh.new()
         bmesh.ops.create_uvsphere(bm, u_segments=10, v_segments=6, radius=0.5)
         for v in bm.verts:
-            v.co = Vector((v.co.x * 0.55, v.co.y * 0.38, v.co.z * 0.3))
+            v.co = Vector((v.co.x * 0.6, v.co.y * 0.4, v.co.z * 0.32))
         bmesh.ops.translate(bm, vec=Vector((mx, my, 0.3)), verts=bm.verts)
         bm.normal_update()
         parti.append(base.da_bmesh("mantice", bm, m["pelle"], tile=1.0))
-        parti.append(base.cilindro_tra("becco", (mx - 0.25, my, 0.28), (fx + 0.6, fy + dy * 0.2, 0.25), 0.05, 0.035, m["argilla"], lati=6))
-    # Incudine di pietra sul ceppo, sotto il bordo alto della tettoia, con il martello.
-    ix, iy = -1.0, -largo / 2 + 0.7
-    parti.append(base.cilindro_tra("ceppo", (ix, iy, 0), (ix, iy, 0.55), 0.32, 0.3, m["corteccia"], lati=9))
-    parti.append(villaggio.sasso("incudine", (0.5, 0.34, 0.22), (ix, iy, 0.5), m["pietra"], seme + 5))
-    parti.append(base.cilindro_tra("manico", (ix + 0.2, iy - 0.1, 0.72), (ix + 0.6, iy - 0.35, 0.75), 0.025, 0.025, m["legno"], lati=4))
-    parti.append(villaggio.sasso("mazza", (0.14, 0.09, 0.09), (ix + 0.17, iy - 0.08, 0.7), m["pietra"], seme + 6, appoggiato=False))
-    # Rastrelliera con gli attrezzi finiti, contro il graticcio.
-    parti.append(base.cilindro_tra("rastrelliera", (0.6, largo / 2 - 0.3, 1.1), (2.2, largo / 2 - 0.3, 1.1), 0.04, 0.04, m["legno"], lati=5))
+        parti.append(base.cilindro_tra("bastone", (mx - 0.1, my, 0.45), (mx - 0.15, my, 1.0), 0.025, 0.025, m["legno"], lati=4))
+        parti.append(base.cilindro_tra("becco", (mx + 0.3, my, 0.3), (fx - 0.82, fy + dy * 0.3, 0.32), 0.06, 0.045, m["bruciata"], lati=6))
+    return Vector((fx + 0.05, fy + 0.03, cima))
+
+
+# Dove nasce il fumo dei camini, in coordinate del modello di Blender (x, y, z); in Godot (x, z, −y).
+CAMINI = {}
+
+
+def officina_fabbro(nome, seme, cantiere=False):
+    """Officina del fabbro (rifatta il 27/11/2026, richiesta di Fede: "più personalizzazione, legno e
+    roccia; la fornace non si distingue, l'incudine non si vede"). Nell'età del Bronzo il fabbro è
+    soprattutto un fonditore: stampi di pietra, crogioli, panelle di metallo.
+    - Tettoia a una falda di 5 × 3,2 m, aperta davanti (y negativo, il lato della via), pali grossi su
+      uno zoccolo di sassi, trave davanti che sporge; dietro metà muretto a secco e metà graticcio.
+    - A sinistra, fuori dalla paglia, la fornace a cupola sul piede di pietre, bocca accesa verso la
+      via, mantici di fianco, camino annerito (il fumo animato nasce lì: `CAMINI`).
+    - Davanti, nello spiazzo di terra battuta, l'incudine di pietra chiara sul ceppo, fuori dal tetto.
+    - Sotto la tettoia il banco di tavole con stampi, crogioli e panelle; contro il fondo la
+      rastrelliera con asce, punte di lancia e una spada di bronzo; sgabello, cassa, cesti di carbone.
+    - Attorno legna, minerale, vasca per temprare in un tronco scavato."""
+    m = materiali_fabbro()
+    rnd = random.Random(seme)
+    parti = []
+    lungo, largo = 5.0, 3.2
+    alto_davanti, alto_dietro = 2.75, 1.95
+    fx, fy = -lungo / 2 - 1.5, -0.7
+    # Spiazzo di terra battuta davanti e terra bruciata attorno alla fornace.
+    parti.append(_disco("spiazzo", (-0.6, -largo / 2 - 1.0), 2.6, m["terra"], rnd, lati=18, z=0.07))
+    parti.append(_disco("bruciato", (fx + 0.2, fy - 0.4), 1.8, m["carbone"], rnd, lati=16, z=0.08))
+    # Pali su zoccoli di sassi, travi; davanti più grossi, con la trave che sporge.
+    for y, h, r in ((-largo / 2, alto_davanti, 0.16), (largo / 2, alto_dietro, 0.12)):
+        for k in range(3):
+            x = (k - 1) * lungo / 2 + rnd.uniform(-0.06, 0.06)
+            parti.append(villaggio.sasso("zoccolo", (0.48, 0.44, 0.3), (x, y, 0), m["pietra"], seme + 10 + k + int(y * 10)))
+            parti.append(base.cilindro_tra("palo", (x, y, 0.1), (x + rnd.uniform(-0.04, 0.04), y, h), r, r * 0.85, m["corteccia"], lati=7))
+        sporge = 0.75 if y < 0 else 0.3
+        if cantiere and y > 0:
+            continue
+        parti.append(base.cilindro_tra("trave", (-lungo / 2 - sporge, y, h - 0.06), (lungo / 2 + sporge, y, h - 0.06), r * 0.75, r * 0.75, m["corteccia"], lati=7))
+    correnti = 3 if cantiere else 5
+    for k in range(correnti):
+        x = (k - 2) * lungo / 4
+        parti.append(base.cilindro_tra("corrente", (x, -largo / 2 - 0.4, alto_davanti + 0.06), (x, largo / 2 + 0.4, alto_dietro + 0.06), 0.055, 0.05, m["legno"], lati=5))
+    if not cantiere:
+        falda = base.scatola("falda", (lungo + 0.6, largo + 0.9, 0.2), (0, 0, 0), m["paglia"], tagli=3)
+        for v in falda.data.vertices:
+            v.co.z += rnd.uniform(-0.04, 0.04)
+        falda.rotation_euler = (-math.atan2(alto_davanti - alto_dietro, largo + 0.8), 0, 0)
+        falda.location = (0, 0.1, (alto_davanti + alto_dietro) / 2 + 0.2)
+        parti.append(falda)
+    # Dietro: metà muretto a secco (verso la fornace), metà graticcio.
+    for fila in range(3):
+        n = 7 - fila
+        for k in range(n):
+            x = -lungo / 2 + 0.2 + (k + 0.5 * (fila % 2)) * (lungo / 2) / 7
+            parti.append(villaggio.sasso("muretto", (0.42, 0.34, 0.24), (x, largo / 2 + 0.1, fila * 0.2), m["pietra"], seme + 100 + fila * 10 + k))
+    if not cantiere:
+        villaggio._graticcio_dritto(parti, m, rnd, (0.1, largo / 2 + 0.08), (lungo / 2, largo / 2 + 0.08), 0.1, 6)
+    cima = _fornace(parti, m, rnd, fx, fy, seme, cantiere)
+    if cantiere:
+        villaggio.materiali_a_terra(parti, m, rnd, 0.6, -largo / 2 - 1.7, seme)
+        parti.append(villaggio.sasso("argilla", (1.0, 0.8, 0.4), (fx - 0.3, fy + 2.0, 0), m["argilla"], seme + 50))
+        for k in range(5):
+            parti.append(villaggio.sasso("sasso", (0.36, 0.3, 0.26), (fx + 0.5 + rnd.uniform(-0.4, 0.4), fy + 1.9 + rnd.uniform(-0.3, 0.3), 0), m["pietra"], seme + 150 + k))
+        return base.unisci(nome, parti)
+    # Il fumo nasce poco sotto l'orlo del camino: così la colonna parte attaccata alla bocca.
+    CAMINI[nome] = (cima.x, cima.y, cima.z - 0.2)
+    _incudine(parti, m, rnd, -0.9, -largo / 2 - 1.25, seme)
+    # Banco di tavole sotto la tettoia, con stampi, crogioli, panelle.
+    bx, by = 1.2, -0.55
+    for dx in (-0.8, 0.8):
+        for dy in (-0.28, 0.28):
+            parti.append(base.cilindro_tra("gamba", (bx + dx, by + dy, 0), (bx + dx, by + dy, 0.78), 0.045, 0.04, m["legno"], lati=5))
+    parti.append(base.scatola("piano", (1.9, 0.78, 0.08), (bx, by, 0.82), m["legno"]))
+    for k, dx in enumerate((-0.6, -0.15)):
+        parti.append(base.scatola("stampo", (0.34, 0.22, 0.08), (bx + dx, by + 0.1, 0.9), m["pietra_chiara"]))
+        parti.append(base.scatola("incavo", (0.24, 0.06, 0.012), (bx + dx, by + 0.1, 0.945), m["fuliggine"]))
+    for k, dx in enumerate((0.3, 0.52)):
+        parti.append(base.cilindro_tra("crogiolo", (bx + dx, by - 0.12, 0.86), (bx + dx, by - 0.12, 1.0), 0.07, 0.1, m["bruciata"], lati=8))
+    for k in range(3):
+        parti.append(base.cilindro_tra("panella", (bx + 0.75, by + 0.2, 0.86 + k * 0.035), (bx + 0.75, by + 0.2, 0.89 + k * 0.035), 0.14, 0.13, m["bronzo"], lati=9))
+    # Rastrelliera contro il fondo: asce, punte di lancia, una spada.
+    rx0, rx1, ry = 0.4, 2.3, largo / 2 - 0.25
+    for x in (rx0, rx1):
+        parti.append(base.cilindro_tra("ritto", (x, ry, 0), (x, ry, 1.55), 0.045, 0.04, m["legno"], lati=5))
+    parti.append(base.cilindro_tra("traversa", (rx0, ry, 1.45), (rx1, ry, 1.45), 0.04, 0.04, m["legno"], lati=5))
     for k in range(5):
-        x = 0.75 + k * 0.33
-        parti.append(base.cilindro_tra("manico", (x, largo / 2 - 0.45, 0), (x, largo / 2 - 0.3, 1.25), 0.025, 0.025, m["legno"], lati=4))
-        parti.append(base.scatola("lama", (0.05, 0.03, 0.2), (x, largo / 2 - 0.3, 1.33), m["pietra"]))
-    # Fuori: carbone, minerale, vasca d'acqua.
-    bm = bmesh.new()
-    bmesh.ops.create_cone(bm, cap_ends=True, segments=10, radius1=0.9, radius2=0.1, depth=0.7)
-    bmesh.ops.translate(bm, vec=Vector((fx - 0.3, fy + 2.0, 0.35)), verts=bm.verts)
-    for v in bm.verts:
-        v.co.x += rnd.uniform(-0.05, 0.05)
-        v.co.y += rnd.uniform(-0.05, 0.05)
-    bm.normal_update()
-    parti.append(base.da_bmesh("carbone", bm, m["carbone"], tile=1.0))
-    for k in range(5):
-        parti.append(villaggio.sasso("minerale", (0.3, 0.25, 0.2), (fx - 0.9 + rnd.uniform(-0.3, 0.3), fy - 1.6 + rnd.uniform(-0.3, 0.3), 0), m["minerale"], seme + 20 + k))
-    parti.append(base.scatola("vasca", (1.2, 0.6, 0.35), (0.6, -largo / 2 - 0.9, 0.17), m["legno"]))
-    parti.append(base.scatola("acqua", (1.05, 0.46, 0.04), (0.6, -largo / 2 - 0.9, 0.33), m["carbone"]))
+        x = rx0 + 0.25 + k * 0.36
+        if k % 2 == 0:  # lancia: asta e punta a foglia
+            parti.append(base.cilindro_tra("asta", (x, ry - 0.2, 0), (x, ry - 0.05, 1.5), 0.022, 0.02, m["legno"], lati=4))
+            parti.append(base.cilindro_tra("punta", (x, ry - 0.05, 1.5), (x, ry - 0.03, 1.9), 0.075, 0.005, m["bronzo"], lati=4))
+        else:  # ascia appesa per il manico
+            parti.append(base.cilindro_tra("manico", (x, ry - 0.1, 0.75), (x, ry - 0.05, 1.45), 0.024, 0.022, m["legno"], lati=4))
+            parti.append(base.scatola("ascia", (0.09, 0.06, 0.26), (x + 0.07, ry - 0.08, 0.82), m["bronzo"]))
+    parti.append(base.scatola("spada", (0.6, 0.05, 0.012), (bx - 0.2, by - 0.2, 0.87), m["bronzo"]))
+    parti.append(base.scatola("elsa", (0.16, 0.06, 0.03), (bx - 0.55, by - 0.2, 0.875), m["legno"]))
+    # Sgabello, cassa, cesti di carbone.
+    parti.append(base.cilindro_tra("sgabello", (-0.2, -0.1, 0), (-0.2, -0.1, 0.42), 0.2, 0.18, m["corteccia"], lati=8))
+    parti.append(base.scatola("cassa", (0.8, 0.5, 0.45), (-1.6, 0.9, 0.23), m["legno"]))
+    for k, (cx, cy) in enumerate(((fx + 0.9, fy + 1.35), (fx + 1.45, fy + 1.1), (fx + 1.2, fy + 1.75))):
+        parti.append(base.cilindro_tra("cesto", (cx, cy, 0), (cx, cy, 0.42), 0.24, 0.29, m["vimini"], lati=9))
+        parti.append(_disco("carbone", (cx, cy), 0.26, m["carbone"], rnd, lati=9, irregolare=0.05, z=0.4))
+    # Fuori: legna, minerale, vasca per temprare in un tronco scavato.
+    villaggio._catasta(parti, m, rnd, fx - 0.2, fy + 2.4, lungo=1.6, file=(4, 3, 2))
+    for k in range(6):
+        parti.append(villaggio.sasso("minerale", (0.3, 0.25, 0.2), (fx - 1.0 + rnd.uniform(-0.35, 0.35), fy - 1.6 + rnd.uniform(-0.3, 0.3), 0), m["minerale"], seme + 20 + k))
+    vx, vy = 1.4, -largo / 2 - 1.35
+    tronco = base.cilindro_tra("vasca", (vx - 0.7, vy, 0.26), (vx + 0.7, vy, 0.26), 0.3, 0.3, m["corteccia"], lati=10)
+    for v in tronco.data.vertices:
+        v.co.z = min(v.co.z, 0.44)
+    parti.append(tronco)
+    parti.append(base.scatola("acqua", (1.3, 0.42, 0.02), (vx, vy, 0.445), m["acqua_vasca"]))
     return base.unisci(nome, parti)
 
 
 def cantiere_officina_fabbro(nome, seme):
-    """Officina del fabbro in costruzione: i sei pali con le travi e metà dei correnti, niente paglia;
-    il forno d'argilla a metà altezza, ancora senza camino; accanto i pali stesi, i fasci di paglia e
-    l'argilla."""
-    m = materiali()
-    rnd = random.Random(seme)
-    parti = []
-    lungo, largo = 5.0, 3.2
-    alto_davanti, alto_dietro = 2.7, 1.9
-    for y, h in ((-largo / 2, alto_davanti), (largo / 2, alto_dietro)):
-        for k in range(3):
-            x = (k - 1) * lungo / 2 + rnd.uniform(-0.06, 0.06)
-            parti.append(base.cilindro_tra("palo", (x, y, -0.15), (x + rnd.uniform(-0.04, 0.04), y, h), 0.12, 0.1, m["corteccia"], lati=6))
-        parti.append(base.cilindro_tra("trave", (-lungo / 2 - 0.3, y, h - 0.06), (lungo / 2 + 0.3, y, h - 0.06), 0.09, 0.09, m["corteccia"], lati=6))
-    for k in range(3):
-        x = (k - 2) * lungo / 4
-        parti.append(base.cilindro_tra("corrente", (x, -largo / 2 - 0.4, alto_davanti + 0.05), (x, largo / 2 + 0.4, alto_dietro + 0.05), 0.05, 0.05, m["legno"], lati=5))
-    fx, fy = -lungo / 2 - 1.3, -0.4
-    parti.append(base.cilindro_tra("forno", (fx, fy, 0), (fx, fy, 0.5), 0.65, 0.54, m["argilla"], lati=12, uv_tile=1.0))
-    villaggio.materiali_a_terra(parti, m, rnd, 0.6, -largo / 2 - 1.5, seme)
-    parti.append(villaggio.sasso("argilla", (1.0, 0.8, 0.4), (fx - 0.2, fy + 1.8, 0), m["argilla"], seme + 50))
-    return base.unisci(nome, parti)
+    """Officina del fabbro in costruzione: pali sugli zoccoli, la trave davanti e metà dei correnti,
+    niente paglia; il muretto a secco già su, la fornace col piede di pietre e il corpo a metà, senza
+    volta né camino; accanto pali stesi, fasci di paglia, argilla e sassi."""
+    return officina_fabbro(nome, seme, cantiere=True)
 
 
 ASSET = [
@@ -422,6 +550,24 @@ def main():
         d = ob.dimensions
         print(f"{nome}: {d.x:.1f} x {d.y:.1f} x {d.z:.1f} m, {len(ob.data.polygons)} facce")
         bpy.data.objects.remove(ob, do_unlink=True)
+    _salva_camini()
+
+
+def _salva_camini():
+    """Scrive in `camini.json`, accanto ai modelli, dove nasce il fumo di ogni edificio con un
+    camino (coordinate di Godot: x, y in alto, z = −y di Blender). Si fondono con quelle già scritte,
+    così rifare un solo modello non cancella le altre."""
+    import json
+    percorso = os.path.join(USCITA, "camini.json")
+    dati = {}
+    if os.path.exists(percorso):
+        with open(percorso) as f:
+            dati = json.load(f)
+    for nome, (x, y, z) in CAMINI.items():
+        dati[nome] = [round(x, 3), round(z, 3), round(-y, 3)]
+    if dati:
+        with open(percorso, "w") as f:
+            json.dump(dati, f, indent=1, sort_keys=True)
 
 
 if __name__ == "__main__":

@@ -56,6 +56,10 @@ func _process(_d: float) -> bool:
 			u.costruisci(u.celle_nel_cerchio(c.x, c.z, 50.0), "capanna", false)
 			_posa("officina_fabbro", c.x - 6.0, c.z, p)
 			_posa("cantiere_officina_fabbro", c.x + 6.0, c.z, p)
+		elif args.size() > 3 and args[3] == "officina":
+			# Solo l'officina finita, al centro, per guardarla da vicino.
+			u.costruisci(u.celle_nel_cerchio(c.x, c.z, 30.0), "capanna", false)
+			_posa("officina_fabbro", c.x + 1.0, c.z, "res://asset/protourbano")
 		elif args.size() > 3 and args[3] == "varianti":
 			u.costruisci(u.celle_nel_cerchio(c.x, c.z, 70.0), "capanna", false)
 			var case := ["capanna_tonda_piccola", "capanna_tonda", "casa_lunga_piccola", "casa_lunga_media", "casa_lunga_grande"]
