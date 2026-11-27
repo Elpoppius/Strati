@@ -12,6 +12,7 @@ Voci più recenti in cima.
 **Decisioni** (Fede)
 - "La legnaia è la fonte professionale di legno, ottimizzata, veloce. Ma non deve tappare l'approvvigionamento. Quindi sta a me capire se è sufficiente creare due o tre legnaie."
 - 16:46: le 12 partite lunghe si sospendono (poco tempo su questo account).
+- 16:52: "aggiorna tutto, diario, repo e file": aggiornati anche `CLAUDE.md` (la legna delle famiglie nella base del gioco) e le copie nel Progetto Claude di `specchietto.md`, `regolazione-dello-spazio.md` e `produzione-e-collaborazione.md` (le altre erano già uguali al repository).
 
 **Prossimo passo**
 - Rifare le 12 partite fino al 700 a.C. e confrontarle (todo, epoca 2).
