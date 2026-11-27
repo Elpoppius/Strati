@@ -119,7 +119,7 @@ func _gioca(d: MappaDati, sito: Vector2i, k: int, seme: int, nome: String) -> Di
 			ultimo = sim.cronaca[0]
 		for t in nuove:
 			_uscita.append("%5d  cronaca   %s" % [eta, t])
-	_uscita.append("Fine: %d abitanti, carestie %d, salute %d, consenso %d" % [roundi(sim.pop), sim.stat["carestie"], roundi(sim.salute), roundi(sim.legittimita)])
+	_uscita.append("Fine: %d abitanti, flessioni e carestie %d, salute %d, consenso %d" % [roundi(sim.pop), sim.stat["carestie"] + int(sim.stat.get("flessioni", 0)), roundi(sim.salute), roundi(sim.legittimita)])
 	_uscita.append("Piene di stagione: in media %.1f%% dei campi allagati ogni volta" % (100.0 * perdita_piene / maxf(1.0, conti["piene_stagione"])))
 	return conti
 

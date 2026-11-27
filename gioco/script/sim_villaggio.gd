@@ -578,7 +578,7 @@ var _stranieri_prima := false
 var gia_carestia := false
 ## La zona agricola è piena (niente avviso: lo dice la mappa; decisione di Fede del 25/11/2026).
 var zona_piena := false
-var stat := {"carestie": 0, "piene": 0, "siccita": 0, "fondazioni": 0, "presagi_letti": 0, "presagi_totali": 0, "abbandoni": 0, "febbri": 0, "segni": 0, "scorrerie": 0, "case_bruciate": 0}
+var stat := {"carestie": 0, "flessioni": 0, "piene": 0, "siccita": 0, "fondazioni": 0, "presagi_letti": 0, "presagi_totali": 0, "abbandoni": 0, "febbri": 0, "segni": 0, "scorrerie": 0, "case_bruciate": 0}
 var storia := {"pop": [], "cibo": [], "salute": [], "legittimita": [], "abbondanza": [], "legna": [], "capi": []}
 ## Cronaca: [{anno, testo, tipo ("", "buono", "allarme")}], la più recente in testa.
 var cronaca: Array = []
@@ -603,6 +603,8 @@ const PROB_STRANIERI := 0.016  # all'anno con abbondanza piena
 ## Dal 27/11/2026 sera il 15% (prima il 5%; Fede: carestie più rare, ritmo meditativo): le famiglie
 ## stringono la cinghia e passano l'inverno.
 const SOGLIA_CARESTIA := 0.15
+## Fino a questa quota di cibo mancante è una flessione (cronaca); oltre è carestia (avviso rosso).
+const SOGLIA_CARESTIA_VERA := 0.4
 ## Distanza in celle del prototipo dalla palude più vicina, per pixel.
 var _d_palude := PackedFloat32Array()
 var _prossimo_id := 1
@@ -4105,9 +4107,14 @@ func passo() -> void:
 			salute -= carestia * 25.0
 			_cambia_consenso("anziani", -carestia * 30.0)
 			_cambia_consenso("famiglie", -carestia * 20.0)
-			stat["carestie"] += 1
-			_scrivi("Carestia: manca il %d%% del cibo necessario." % roundi(carestia * 100.0), "allarme")
-			if carestia > 0.25:
+			# Le parole (Fede, 27/11/2026 sera: "sei molto pesante coi termini, io la chiamo flessione"):
+			# fino a SOGLIA_CARESTIA_VERA è una flessione, solo cronaca; oltre, carestia (proposta di Claude).
+			if carestia < SOGLIA_CARESTIA_VERA:
+				stat["flessioni"] = int(stat.get("flessioni", 0)) + 1
+				_scrivi("Un anno di flessione: manca il %d%% del cibo, le famiglie stringono la cinghia." % roundi(carestia * 100.0))
+			else:
+				stat["carestie"] += 1
+				_scrivi("Carestia: manca il %d%% del cibo necessario." % roundi(carestia * 100.0), "allarme")
 				_notifica("Carestia: manca il %d%% del cibo necessario." % roundi(carestia * 100.0), true, mondo_di_px(centro))
 		else:
 			carestia = 0.0
@@ -4983,9 +4990,9 @@ func _abbandona() -> void:
 
 func _fine() -> void:
 	finito = true
-	var testo := "Il villaggio conta %d abitanti%s.\nAnni di carestia: %d · Piene: %d · Siccità: %d\nPresagi letti correttamente: %d su %d · Fondazioni: %d%s\nLa domanda del prototipo: la scelta del sito ha pesato? Prova un'altra partita da un sito diverso e confronta." % [
+	var testo := "Il villaggio conta %d abitanti%s.\nFlessioni: %d · Carestie: %d · Piene: %d · Siccità: %d\nPresagi letti correttamente: %d su %d · Fondazioni: %d%s\nLa domanda del prototipo: la scelta del sito ha pesato? Prova un'altra partita da un sito diverso e confronta." % [
 		roundi(pop), (" (emigrazioni: %d)" % stat["emigrazioni"]) if stat.get("emigrazioni", 0) > 0 else "",
-		stat["carestie"], stat["piene"], stat["siccita"], stat["presagi_letti"], stat["presagi_totali"], stat["fondazioni"],
+		stat.get("flessioni", 0), stat["carestie"], stat["piene"], stat["siccita"], stat["presagi_letti"], stat["presagi_totali"], stat["fondazioni"],
 		(" (abbandoni: %d)" % stat["abbandoni"]) if stat["abbandoni"] > 0 else ""]
 	_decidi("fine", "%s: la fine dei tempi del villaggio" % anno_testo(anno), testo, [{"id": "ok", "testo": "Resta a guardare la mappa", "nota": ""}])
 
@@ -5110,9 +5117,9 @@ func _transizione(o: String) -> void:
 	var anni := anno - ANNO_INIZIO
 	var chi := consenso.keys().filter(func(g: String) -> bool: return g != "sacerdote" or sacerdote_attivo)
 	chi.sort_custom(func(a: String, b: String) -> bool: return consenso[a] > consenso[b])
-	var testo := "%d anni dalla fondazione. Il villaggio conta %d abitanti in %d case, %d nei casali; %d ettari di campi, %d strade.\nCarestie: %d · Piene grandi: %d · Scorrerie: %d · Abbandoni: %d\nConta di più: %s.\n\nIl primo governo: %s. %s\n%s\n\nArriva l'aratro, e con il metallo il fabbro. Comincia l'epoca dell'abitato." % [
+	var testo := "%d anni dalla fondazione. Il villaggio conta %d abitanti in %d case, %d nei casali; %d ettari di campi, %d strade.\nFlessioni: %d · Carestie: %d · Piene grandi: %d · Scorrerie: %d · Abbandoni: %d\nConta di più: %s.\n\nIl primo governo: %s. %s\n%s\n\nArriva l'aratro, e con il metallo il fabbro. Comincia l'epoca dell'abitato." % [
 		anni, roundi(pop), case.size(), case_casale.size(), roundi(campi.size() * 0.16), strade.size(),
-		stat["carestie"], stat["piene"], stat["scorrerie"], stat["abbandoni"], ", ".join(chi.map(func(g: String) -> String: return {"anziani": "gli anziani", "famiglie": "le famiglie", "sacerdote": "il sacerdote"}[g])),
+		stat.get("flessioni", 0), stat["carestie"], stat["piene"], stat["scorrerie"], stat["abbandoni"], ", ".join(chi.map(func(g: String) -> String: return {"anziani": "gli anziani", "famiglie": "le famiglie", "sacerdote": "il sacerdote"}[g])),
 		primo_governo, DESCRIZIONE_GOVERNI[primo_governo],
 		"La città nascerà aperta alle vie del commercio." if o == "aprirsi" else "La città nascerà chiusa e agricola, fedele alle usanze."]
 	_decidi("epoca", "%s: il metallo e lo scambio" % anno_testo(anno), testo, [{"id": "ok", "testo": "Comincia l'epoca dell'abitato", "nota": ""}])

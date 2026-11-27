@@ -848,7 +848,7 @@ func _gioca(sim: SimVillaggio, sito: Vector2i, scelta_presagi := "") -> Dictiona
 				var w := sim.centro_lotto(l)
 				if not sim.edificabile(sim.px(sim.px_da_mondo(w.x, w.y))):
 					case_sbagliate += 1
-	return {"pop": sim.pop, "minimo": minimo_pop, "case": massimo_case, "sbagliate": case_sbagliate, "abbandoni": sim.stat["abbandoni"], "carestie": sim.stat["carestie"], "piene": sim.stat["piene"], "scorrerie": sim.stat["scorrerie"]}
+	return {"pop": sim.pop, "minimo": minimo_pop, "case": massimo_case, "sbagliate": case_sbagliate, "abbandoni": sim.stat["abbandoni"], "carestie": sim.stat["carestie"] + int(sim.stat.get("flessioni", 0)), "piene": sim.stat["piene"], "scorrerie": sim.stat["scorrerie"]}
 
 
 func _initialize() -> void:

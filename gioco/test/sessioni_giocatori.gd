@@ -149,7 +149,7 @@ func _gioca(d: MappaDati, sito: Vector2i, k: int, seme: int) -> Dictionary:
 	while campioni.size() <= 500 / ANNI_CAMPIONE:
 		campioni.append(sim.pop)
 	return {"pop": sim.pop, "massima": massima, "case": sim.case.size(), "campi": sim.campi.size(),
-		"carestie": sim.stat["carestie"], "abbandoni": sim.stat["abbandoni"], "emigrazioni": sim.stat.get("emigrazioni", 0),
+		"carestie": sim.stat["carestie"] + int(sim.stat.get("flessioni", 0)), "abbandoni": sim.stat["abbandoni"], "emigrazioni": sim.stat.get("emigrazioni", 0),
 		"salute": sim.salute, "legittimita": sim.legittimita, "soglie": soglie, "campioni": campioni}
 
 

@@ -276,14 +276,14 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 				raccolto_provato = true
 				if caso.randf() < (0.3 if casual else 0.5):
 					sim.imposta_politica("raccolto", "famiglie")
-		var prima: int = sim.stat["carestie"]
+		var prima: int = sim.stat["carestie"] + int(sim.stat.get("flessioni", 0))
 		var pop_prima := sim.pop
 		sim.passo()
-		if sim.stat["carestie"] > prima and sim.pop < pop_prima * 0.9:
+		if sim.stat["carestie"] + int(sim.stat.get("flessioni", 0)) > prima and sim.pop < pop_prima * 0.9:
 			gravi += 1
 		if sim.fondato:
 			minima = minf(minima, sim.pop)
-	return {"pop": roundi(sim.pop), "minima": roundi(minima), "carestie": sim.stat["carestie"], "gravi": gravi,
+	return {"pop": roundi(sim.pop), "minima": roundi(minima), "carestie": sim.stat["carestie"] + int(sim.stat.get("flessioni", 0)), "gravi": gravi,
 		"abbandoni": sim.stat["abbandoni"], "scissioni": scissioni, "pause": pause, "tutorial": tutorial, "piene": sim.stat["piene"],
 		"granaio": granaio_anno, "imparato": " ".join(imparato.keys()), "legnaie": sim.legnaie.size(), "casali": sim.casali.size(), "nucleo": roundi(sim.abitanti_nucleo()),
 		"poste": sim.poste.size(), "capanni": sim.capanni.size(),
