@@ -21,6 +21,7 @@ Voci più recenti in cima.
 - 19:16 (domande di Claude): fuoco fuori dal conto; risemina come opzione della legnaia; boscaioli fissi; le famiglie non fanno più legna da sole.
 - 19:17: "L'unico vero baco rimane la legna ed è tutto troppo angosciante e poco meditativo."
 - 19:25: "Fai in modo che il log registri anche come gioco io, per darti una indicazione."
+- 19:40: "L'obiettivo del gioco è un ritmo meditativo alla Cities Skylines o anche ad Age of Empires, calmo, tranquillo, poso le cose e vedo che succede. Se è necessario rimuovere delle cose toccherà farlo." Sulle domande di Claude: **niente avvisi rossi ripetuti**, **carestie più rare**, **piene grandi più rare**; tutorial, presagi, stranieri e scorrerie restano come sono. Fatto: avvisi rossi uno ogni 50 anni per tipo, carestia sopra il 15% di cibo mancante, piene grandi dimezzate; carestie da 3,6–4,7 a 1,4–2,4 a partita.
 
 **Prossimo passo**
 - Fede riprova la legna (scheda della legnaia, risemina) con il registro del gioco acceso; Claude lo legge.

@@ -595,12 +595,14 @@ var avvisi: Array = []
 ## Probabilità all'anno (decisione di Fede: le piene di stagione sono frequenti e toccano solo i
 ## campi più bassi; le piene disastrose sono rare; contano solo se toccano il villaggio).
 const PROB_PIENA_STAGIONALE := 0.3
-const PROB_PIENA_DISASTROSA := 0.0025
+const PROB_PIENA_DISASTROSA := 0.0012  # dimezzata il 27/11/2026 sera (Fede: piene grandi più rare)
 ## Presagi, stranieri, carestie (decisioni di Fede del 25/11/2026; numeri da tarare).
 const PROB_PRESAGIO := 0.012  # all'anno, quando un presagio può arrivare
 const PROB_STRANIERI := 0.016  # all'anno con abbondanza piena
 ## Sotto questa quota di cibo mancante è un'annata magra: le scorte finiscono, ma non è carestia.
-const SOGLIA_CARESTIA := 0.05
+## Dal 27/11/2026 sera il 15% (prima il 5%; Fede: carestie più rare, ritmo meditativo): le famiglie
+## stringono la cinghia e passano l'inverno.
+const SOGLIA_CARESTIA := 0.15
 ## Distanza in celle del prototipo dalla palude più vicina, per pixel.
 var _d_palude := PackedFloat32Array()
 var _prossimo_id := 1
@@ -706,7 +708,19 @@ func _scrivi(testo: String, tipo := "") -> void:
 		cronaca.pop_back()
 
 
+## Avvisi rossi (Fede, 27/11/2026 sera: ritmo meditativo, "niente avvisi rossi ripetuti"): ogni
+## tipo di avviso rosso (la parte prima dei due punti) al più una volta ogni ANNI_TRA_ROSSI anni; le
+## altre volte resta solo la riga di cronaca.
+const ANNI_TRA_ROSSI := 50
+var _ultimi_rossi := {}
+
+
 func _notifica(testo: String, pericolo := false, punto := Vector2(-1, -1)) -> void:
+	if pericolo:
+		var tipo := testo.get_slice(":", 0).get_slice(".", 0).strip_edges()
+		if _ultimi_rossi.has(tipo) and anno - int(_ultimi_rossi[tipo]) < ANNI_TRA_ROSSI:
+			return
+		_ultimi_rossi[tipo] = anno
 	avvisi.append({"testo": testo, "pericolo": pericolo, "punto": punto})
 
 

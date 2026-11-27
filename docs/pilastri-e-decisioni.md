@@ -19,7 +19,7 @@ Gestionale urbanistico-politico. Il giocatore governa una città europea verosim
 
 **Principio di produzione:** prima la profondità, poi l'ampiezza. Un'epoca giocabile bene vale più di sei abbozzate.
 
-**Ritmo (decisione di Fede del 24/11/2026):** il ritmo del gioco non è incalzante ma meditativo, strategico. Fermano il gioco solo le scelte vere; ciò che non chiede un intervento (piene, carestie) arriva come notifica discreta, sulla mappa e negli indicatori.
+**Ritmo (decisione di Fede del 24/11/2026):** il ritmo del gioco non è incalzante ma meditativo, strategico. Fermano il gioco solo le scelte vere; ciò che non chiede un intervento (piene, carestie) arriva come notifica discreta, sulla mappa e negli indicatori. **Ribadito il 27/11/2026 sera:** "L'obiettivo del gioco è un ritmo meditativo alla Cities: Skylines o anche ad Age of Empires, calmo, tranquillo: poso le cose e vedo che succede. Se è necessario rimuovere delle cose toccherà farlo." Ogni sistema nuovo si misura su questo: niente angoscia di gestione (per questo la legna è stata semplificata), pochi colpi improvvisi, avvisi rossi rari.
 
 **Tutorial alle tappe (decisione di Fede del 26/11/2026):** oltre alle scelte vere, il gioco si ferma per spiegare ciò che si sblocca (la fondazione, una tappa, una costruzione, una regola): un riquadro con la novità in due o tre righe e la spiegazione completa a richiesta. Con "Salta i tutorial" (per il giocatore esperto) per il resto della partita le novità arrivano come notifica grigia. Nelle prove le pause dei tutorial si contano a parte da quelle del ritmo.
 
