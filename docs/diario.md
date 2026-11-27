@@ -2,6 +2,21 @@
 
 Voci più recenti in cima.
 
+## 27/11/2026 (mattina, 5) — fumo della casa del capo, foto della via
+**Fatto**
+- **Fumo della casa del capo:** nasce sotto il colmo, tra le corna (le capanne non avevano camino), più rado e piccolo di quello della fornace. `camini.json` accetta densità e scala; `VistaFumo` le applica. Foto `docs/immagini/fumo-casa-del-capo-27-11.jpg`.
+- **Foto della via rifatta** con un nastro di terra continuo. Le "traversine" viste da Fede erano gli scalini fra i pezzi della via provvisoria della foto; nel gioco le strade non le hanno.
+- `verifica_asset.gd`: fumano officina, santuario e casa del capo, e la casa del capo fuma meno della fornace. 12 verifiche superate.
+
+**Decisioni** (Fede, 27/11, 11:06–11:07)
+- Altare e santuario: **perfetti**. GIF del fumo: **perfetta così**.
+- Fuma anche la **casa del capo**, come proposto (dal colmo, più rado). Il granaio comune no.
+
+**Prossimo passo**
+- Fede conferma le proposte dell'epoca 2 (§ 1, § 2, § 2b di `epoca2-proposte.md`).
+- Poi la simulazione dell'epoca 2, cominciando dal fabbro.
+- In attesa: la prova al PC (F3) e la lettura del Registro; il bilanciamento delle scorrerie; la prossima Era sulla carta.
+
 ## 27/11/2026 (mattina, 4) — fabbro rifatto, fumo dei camini, secondo lotto dell'epoca 2
 **Fatto**
 - **Officina del fabbro rifatta** (Fede: "così è un po' anonimo"; legno e pietra; la fornace non si distingue, l'incudine non si vede):

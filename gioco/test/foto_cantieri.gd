@@ -75,21 +75,25 @@ func _process(_d: float) -> bool:
 			# le case di base e le varianti _b (banco e telaio davanti, orto e cataste dietro).
 			var p := "res://asset/protourbano"
 			u.costruisci(u.celle_nel_cerchio(c.x, c.z, 70.0), "capanna", false)
-			# La via: un nastro di terra battuta largo 7 m, a pezzi di 2 m che seguono il terreno (nel
-			# gioco la disegna la vista delle strade).
+			# La via: un nastro continuo di terra battuta largo 7 m che segue il terreno, un vertice
+			# ogni metro (nel gioco la disegna la vista delle strade).
 			var mat := StandardMaterial3D.new()
 			mat.albedo_texture = load("res://asset/texture/terra.png")
 			mat.albedo_color = Color(0.85, 0.78, 0.68)
 			mat.uv1_triplanar = true
 			mat.uv1_scale = Vector3.ONE * 0.4
-			for dz in range(-40, 41, 2):
-				var pezzo := MeshInstance3D.new()
-				var scatola := BoxMesh.new()
-				scatola.size = Vector3(7.0, 0.6, 2.05)
-				pezzo.mesh = scatola
-				pezzo.material_override = mat
-				pezzo.position = Vector3(c.x, _s.terreno.quota_mondo(c.x, c.z + dz) - 0.24, c.z + dz)
-				_s.add_child(pezzo)
+			var st := SurfaceTool.new()
+			st.begin(Mesh.PRIMITIVE_TRIANGLE_STRIP)
+			for dz in range(-40, 41):
+				for dx in [-3.5, 3.5]:
+					var x: float = c.x + dx
+					var z: float = c.z + dz
+					st.set_normal(Vector3.UP)
+					st.add_vertex(Vector3(x, _s.terreno.quota_mondo(x, z) + 0.08, z))
+			var via := MeshInstance3D.new()
+			via.mesh = st.commit()
+			via.material_override = mat
+			_s.add_child(via)
 			var tipi := ["casa_impalcato_piccola", "casa_impalcato_media_b", "casa_impalcato_media", "casa_impalcato_piccola_b", "casa_impalcato_piccola", "casa_impalcato_media_b"]
 			for k in tipi.size():
 				var z := c.z - 28.0 + k * 9.0

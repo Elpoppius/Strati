@@ -59,7 +59,7 @@ Territorio e sensibilità → opere e zone → **campi del lotto** → edifici c
 - **Scorrerie** (voce 4, 26/11/2026): dalla tappa dei 100 abitanti; segni prima, politica "Ai segni di pericolo" e torre di avvistamento sull'altura; dopo una scorreria l'abitato si stringe (ponte verso il recinto dell'epoca 2).
 
 - **Popolazione visibile** (voce 7): figure che fanno i lavori veri della simulazione, con animazioni; numeri da misurare con Fede.
-- **Fumo dei camini** (27/11/2026) **D**: animato, non legato alla simulazione; per ora solo officine ed edifici comunitari (niente case: "altrimenti diventa una coltre di fumo"). Dettagli in `asset.md`.
+- **Fumo dei camini** (27/11/2026) **D**: animato, non legato alla simulazione; per ora solo officine ed edifici comunitari (niente case: "altrimenti diventa una coltre di fumo"): officina del fabbro, santuario, casa del capo. Dettagli in `asset.md`.
 - **Epoca 2, le case sulla via** (27/11/2026) **D**: con l'abitato le strade contano di più e le case si sviluppano lungo la strada (`epoca2-proposte.md` § 1, voce 12).
 
 ## Regole da non dimenticare **D**

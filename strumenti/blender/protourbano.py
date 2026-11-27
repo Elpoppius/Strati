@@ -187,6 +187,10 @@ def casa(nome, lungo, largo, seme, capo=False, annessi=None):
                 villaggio._graticcio_dritto(parti, m, rnd, p, q, 0.15, 5)
         villaggio._catasta(parti, m, rnd, -1.0, y0 + 1.2, lungo=3.0)
         parti.append(villaggio.sasso("macina", (0.7, 0.5, 0.3), (x1 - 2.0, y1 - 1.5, 0), m["pietra"], seme + 7))
+    if capo:
+        # Fumo del focolare (Fede, 27/11/2026: anche la casa del capo, luogo di riunione): senza
+        # camino, esce dalla paglia sotto il colmo; più rado e più piccolo di quello della fornace.
+        CAMINI[nome] = (-lungo / 6, 0.0, colmo - 0.15, 0.55, 0.8)
     if annessi is not None:
         annessi(parti, m, rnd, lungo, largo, ballatoio)
     return base.unisci(nome, parti)
@@ -409,6 +413,7 @@ def _fornace(parti, m, rnd, fx, fy, seme, cantiere=False):
 
 
 # Dove nasce il fumo dei camini, in coordinate del modello di Blender (x, y, z); in Godot (x, z, −y).
+# Due valori in più, facoltativi: densità e scala del fumo.
 CAMINI = {}
 
 
@@ -1014,8 +1019,10 @@ def _salva_camini():
     if os.path.exists(percorso):
         with open(percorso) as f:
             dati = json.load(f)
-    for nome, (x, y, z) in CAMINI.items():
-        dati[nome] = [round(x, 3), round(z, 3), round(-y, 3)]
+    for nome, v in CAMINI.items():
+        # x, y, z di Blender; poi, se ci sono, densità e scala del fumo (1 e 1 se mancano).
+        x, y, z = v[:3]
+        dati[nome] = [round(x, 3), round(z, 3), round(-y, 3)] + [round(a, 3) for a in v[3:]]
     if dati:
         with open(percorso, "w") as f:
             json.dump(dati, f, indent=1, sort_keys=True)

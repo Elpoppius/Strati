@@ -13,7 +13,14 @@ const FILE_CAMINI := ["res://asset/protourbano/camini.json", "res://asset/villag
 
 ## Modello -> punto del camino (coordinate del modello). Si legge una volta sola.
 static var _camini := {}
+## Modello -> [densità, scala] del fumo, se `camini.json` le dà (la casa del capo fuma più rado).
+static var _misure := {}
 static var _camini_letti := false
+
+## Densità e scala del fumo di un camino (per le verifiche).
+func misure(chiave) -> Vector2:
+	return Vector2(_bocche[chiave][1], _bocche[chiave][2]) if _bocche.has(chiave) else Vector2.ZERO
+
 
 ## Per le foto: se è zero o più, il tempo resta fermo lì invece di scorrere.
 var tempo_fisso := -1.0
@@ -50,6 +57,7 @@ static func camini() -> Dictionary:
 				for nome in dati:
 					var v: Array = dati[nome]
 					_camini[nome] = Vector3(float(v[0]), float(v[1]), float(v[2]))
+					_misure[nome] = [float(v[3]) if v.size() > 3 else 1.0, float(v[4]) if v.size() > 4 else 1.0]
 	return _camini
 
 
@@ -65,7 +73,8 @@ func aggiungi_edificio(chiave, modello: String, nodo: Node3D, densita := 1.0) ->
 	var t := nodo.transform
 	if nodo.is_inside_tree():
 		t = nodo.global_transform
-	aggiungi(chiave, t * (camini()[modello] as Vector3), densita, t.basis.get_scale().x)
+	var misure: Array = _misure.get(modello, [1.0, 1.0])
+	aggiungi(chiave, t * (camini()[modello] as Vector3), densita * float(misure[0]), t.basis.get_scale().x * float(misure[1]))
 	return true
 
 

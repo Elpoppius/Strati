@@ -44,7 +44,7 @@ func _initialize() -> void:
 ## entro la sua pianta; la MultiMesh ha SBUFFI sbuffi per camino e li toglie con l'edificio.
 func _verifica_fumo() -> void:
 	var camini := VistaFumo.camini()
-	controlla(camini.has("officina_fabbro"), "l'officina del fabbro ha il camino")
+	controlla(camini.has("officina_fabbro") and camini.has("santuario") and camini.has("casa_del_capo"), "fumano officina, santuario e casa del capo")
 	for nome in camini:
 		var percorso := ""
 		for cartella in CARTELLE:
@@ -69,6 +69,9 @@ func _verifica_fumo() -> void:
 	controlla(fumo.multimesh.instance_count == VistaFumo.SBUFFI, "%d sbuffi per camino" % VistaFumo.SBUFFI)
 	var atteso: Vector3 = nodo.transform * (camini["officina_fabbro"] as Vector3)
 	controlla(fumo.bocca("a").distance_to(atteso) < 0.01, "il fumo segue posizione e rotazione dell'edificio")
+	controlla(fumo.aggiungi_edificio("c", "casa_del_capo", nodo), "la casa del capo fuma (Fede, 27/11/2026)")
+	controlla(fumo.misure("c").x < fumo.misure("a").x and fumo.misure("c").y < fumo.misure("a").y, "il fumo della casa del capo è più rado e piccolo di quello della fornace")
+	fumo.togli("c")
 	fumo.togli("a")
 	controlla(fumo.multimesh.instance_count == 0, "il fumo si toglie con l'edificio")
 	nodo.free()
