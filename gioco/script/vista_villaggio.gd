@@ -58,6 +58,10 @@ func prepara(s: SimVillaggio, u: UsoSuolo, t: Terreno) -> void:
 	# Fumo dei camini (27/11/2026): officine ed edifici comunitari finiti (`camini.json`).
 	fumo = VistaFumo.new()
 	add_child(fumo)
+	# Recinto e zona dell'abitato (epoca 2, 27/11/2026).
+	recinto = VistaRecinto.new()
+	add_child(recinto)
+	recinto.prepara(sim, terreno)
 
 
 ## Le figure delle persone (script/vista_persone.gd).
@@ -65,6 +69,8 @@ var persone: VistaPersone
 ## Il fumo dei camini (script/vista_fumo.gd): c'è finché l'edificio è finito, senza legami con la
 ## simulazione (decisione di Fede del 27/11/2026).
 var fumo: VistaFumo
+## Il recinto e la zona dell'abitato (script/vista_recinto.gd).
+var recinto: VistaRecinto
 
 
 func numero_case() -> int:
@@ -530,12 +536,27 @@ func sincronizza() -> void:
 	_sincronizza_case()
 	_sincronizza_edifici()
 	_sincronizza_rovine()
+	recinto.sincronizza()
+	recinto.sincronizza_zona()
 	persone.sincronizza()
+
+
+func mostra_bozza_recinto(punti: Array) -> void:
+	recinto.mostra_bozza(punti)
+
+
+func sincronizza_zona_abitato() -> void:
+	recinto.sincronizza_zona()
+
+
+func mostra_zona_abitato(si: bool) -> void:
+	recinto.mostra_zona(si)
 
 
 ## Modelli dell'epoca 2 (strumenti/blender/protourbano.py), caricati dalla loro cartella.
 const CARTELLA_EPOCA2 := "res://asset/protourbano/"
-const MODELLI_EPOCA2 := ["officina_fabbro", "cantiere_officina_fabbro"]
+const MODELLI_EPOCA2 := ["officina_fabbro", "cantiere_officina_fabbro", "casa_impalcato_piccola", "casa_impalcato_piccola_b",
+	"casa_impalcato_media", "casa_impalcato_media_b", "recinto_porta"]
 
 
 func _istanza(nome: String) -> Node3D:
@@ -964,25 +985,61 @@ static func modello_casa(l: Vector2i) -> String:
 	return CASE[0][0]
 
 
+var _case_impalcato := {}  # lotto -> true se disegnata su impalcato
+
+
+## Rotazione (radianti) che porta la testata di una casa su impalcato (+x del modello) verso il punto
+## di sentiero o strada più vicino entro 60 m; altrimenti verso il centro del villaggio.
+func _verso_la_via(l: Vector2i) -> float:
+	var w := sim.centro_lotto(l)
+	var meta := sim.mondo_di_px(sim.centro)
+	var meglio := 60.0
+	for i in sim.sentieri:
+		var q := sim.mondo_di_px(sim.px_di(i))
+		var d := q.distance_to(w)
+		if d < meglio:
+			meglio = d
+			meta = q
+	var v := meta - w
+	if v.length() < 0.5:
+		return 0.0
+	# Ruotare di θ attorno a y porta +x in (cos θ, −sin θ): si vuole (v.x, v.y).
+	return snappedf(atan2(-v.y, v.x), PI / 2.0)
+
+
 func _sincronizza_case() -> void:
 	var ora := {}
 	for l in sim.case:
 		ora[l] = true
 	for l in sim.case:
+		# Epoca 2 (27/11/2026): le case nate o rifatte dopo l'evento del metallo sono su impalcato,
+		# con la testata e la porta (+x del modello) verso la via più vicina, o verso il centro.
+		var impalcato := sim.casa_su_impalcato(l)
 		if _case.has(l):
-			continue
+			if impalcato == _case_impalcato.has(l):
+				continue
+			(_case[l] as Node3D).queue_free()
+			_case.erase(l)
 		var nome := modello_casa(l)
+		var gradi := roundf(_caso(l, 2) * 24.0) * 15.0
+		if impalcato:
+			nome = "casa_impalcato_piccola" if _caso(l, 1) < 0.6 else "casa_impalcato_media"
+			gradi = rad_to_deg(_verso_la_via(l))
+			_case_impalcato[l] = true
+		else:
+			_case_impalcato.erase(l)
 		# Varianti (todo voce 9, 26/11/2026; proposta di Claude): metà delle case ha attorno ciò
 		# che la famiglia tiene fuori (cataste, orto, tettoia, recintino, telaio per le pelli).
 		var nodo := _istanza(nome + ("_b" if _caso(l, 3) < QUOTA_VARIANTI else ""))
 		var w := sim.centro_lotto(l)
-		_posa(nodo, w, roundf(_caso(l, 2) * 24.0) * 15.0)
+		_posa(nodo, w, gradi)
 		_case[l] = nodo
 		uso.costruisci(uso.celle_nel_cerchio(w.x, w.y, RAGGIO_CORTILE), "casa_lunga" if nome.begins_with("casa") else "capanna")
 	for l in _case.keys():
 		if not ora.has(l):
 			(_case[l] as Node3D).queue_free()
 			_case.erase(l)
+			_case_impalcato.erase(l)
 			var w := sim.centro_lotto(l)
 			uso.libera(uso.celle_nel_cerchio(w.x, w.y, RAGGIO_CORTILE))
 

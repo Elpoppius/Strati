@@ -1148,6 +1148,9 @@ func traccia_sentiero_da(a: Vector2i, b: Vector2i) -> String:
 			tratto.append(px(q))
 	sentieri.append_array(tratto)
 	tratti_sentiero.append([a, b])
+	# Dove il sentiero attraversa il recinto nasce una porta.
+	if recinto_tracciato():
+		calcola_porte()
 	# Le case sul nuovo sentiero si spostano.
 	var prima := case.size()
 	case = case.filter(func(c: Vector2i) -> bool: return not tratto.has(px(px_da_mondo(centro_lotto(c).x, centro_lotto(c).y))))
@@ -1350,8 +1353,14 @@ func luogo_sacro_pronto() -> bool:
 func _azzera_scorrerie() -> void:
 	torre = Vector2(-1, -1)
 	cantiere_torre = 0
-	# Una rifondazione riparte senza officina (il metallo e il livello di attrezzi e armi restano).
+	# Una rifondazione riparte senza officina e senza recinto (il metallo e il livello di attrezzi e
+	# armi restano).
 	officine = []
+	recinto_punti = []
+	recinto_tratti = 0
+	recinto_fatti = 0
+	porte = []
+	zona_abitato = {}
 	segni_tra = -1
 	segni_punto = Vector2(-1, -1)
 	segni_da = ""
@@ -1507,11 +1516,17 @@ func _scorreria() -> void:
 	var quota_capi := clampf((0.1 + 0.3 * float(r["pascolo_lontano"]) * rng_scorrerie.randf_range(0.5, 1.0)) * f, 0.0, 0.4)
 	var capi_persi := floori(capi * quota_capi)
 	var cibo_perso := cibo * rng_scorrerie.randf_range(0.1, 0.25) * f * (0.7 if granaio_pronto() else 1.0)
+	# Il granaio dentro il recinto: le scorte sono al sicuro (epoca 2).
+	if granaio_pronto() and dentro_recinto(granaio):
+		cibo_perso *= SCORTE_DENTRO
+	if epoca >= 2:
+		scorrerie_epoca2 += 1
 	capi -= capi_persi
 	cibo -= cibo_perso
 	# Case: i casali e le case del nucleo ai margini, le più vicine a dove colpiscono.
 	var c := mondo_di_px(centro)
-	var esposte: Array = case.filter(func(l: Vector2i) -> bool: return case_casale.has(l) or centro_lotto(l).distance_to(c) > MARGINE_ABITATO)
+	# Le case dentro il recinto finito non bruciano (epoca 2).
+	var esposte: Array = case.filter(func(l: Vector2i) -> bool: return (case_casale.has(l) or centro_lotto(l).distance_to(c) > MARGINE_ABITATO) and not dentro_recinto(centro_lotto(l)))
 	esposte.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return centro_lotto(a).distance_to(segni_punto) < centro_lotto(b).distance_to(segni_punto))
 	var bruciate := 0
 	var p_case := 0.35 * (1.0 - float(r["difesa"])) * (0.5 if politica("pericolo") == "vegliare" else 1.0) * (PERDITE_TORRE if torre_pronta() else 1.0) * (1.0 - RIDUZIONE_ARMI * armi)
@@ -1790,6 +1805,357 @@ func _brucia_casa(l: Vector2i, testo: String) -> void:
 	stat["case_bruciate"] += 1
 	_scrivi(testo, "allarme")
 	_notifica(testo, false, centro_lotto(l))
+
+
+# ---------- epoca 2: il recinto e le zone dell'abitato (decisioni di Fede del 27/11/2026) ----------
+# Approvati da Fede (13:39): recinto tracciato a punti come un sentiero e chiuso ad anello; porte che
+# nascono da sole dove sentieri e strade attraversano il recinto; 3 di legna ogni 10 m, 10 tratti
+# l'anno (15 con la Comunità); si sblocca con la prima scorreria dell'epoca 2 o 100 anni dopo
+# l'inizio dell'epoca. Dentro le scorrerie non bruciano le case e con il granaio dentro rubano meno
+# scorte; la casa dentro dà prestigio. Zone dell'abitato a pennello, una sola densità: le case nuove
+# nascono prima nella zona dentro il recinto, poi in quella fuori, poi da sole fuori dalle zone
+# (borgo spontaneo); nella zona i lotti lungo strade e sentieri valgono di più (le case sulla via).
+# Numeri: proposte di Claude.
+
+var anno_epoca2 := 0
+var scorrerie_epoca2 := 0
+var gia_recinto := false
+var recinto_punti: Array = []  # vertici dell'anello (metri), in ordine
+var recinto_tratti := 0        # tratti da 10 m in tutto
+var recinto_fatti := 0         # tratti finiti
+var porte: Array = []          # [{punto: Vector2, verso: Vector2 (direzione del recinto lì)}]
+var zona_abitato := {}         # lotto -> true
+## Posti in più nel nucleo che la zona dell'abitato apre (abitanti): crescono piano verso la
+## capienza della zona, e i casali del contado entrano nell'abitato (epoca2-proposte § 1, voce 11).
+var posti_zona := 0.0
+const POSTI_ANNO := 20.0
+const LATO_TRATTO := 10.0
+const COSTO_TRATTO := 3.0
+const TRATTI_ANNO := 10
+const TRATTI_ANNO_COMUNITA := 15
+const RECINTO_MASSIMO := 3000.0  # metri di perimetro
+const RECINTO_MINIMO := 1.0      # ettari dentro
+const ANNI_SBLOCCO_RECINTO := 100
+const SCORTE_DENTRO := 0.3       # le scorte rubate con il granaio dentro il recinto
+
+
+func recinto_tracciato() -> bool:
+	return recinto_punti.size() >= 3
+
+
+func recinto_pronto() -> bool:
+	return recinto_tracciato() and recinto_fatti >= recinto_tratti
+
+
+func perimetro(punti: Array) -> float:
+	var tot := 0.0
+	for k in punti.size():
+		tot += (punti[k] as Vector2).distance_to(punti[(k + 1) % punti.size()])
+	return tot
+
+
+func _poligono(punti: Array) -> PackedVector2Array:
+	var p := PackedVector2Array()
+	for v in punti:
+		p.append(v)
+	return p
+
+
+## Vero se il punto sta dentro il recinto finito (con `anche_in_cantiere` basta che sia tracciato).
+func dentro_recinto(w: Vector2, anche_in_cantiere := false) -> bool:
+	if not (recinto_pronto() or (anche_in_cantiere and recinto_tracciato())):
+		return false
+	return Geometry2D.is_point_in_polygon(w, _poligono(recinto_punti))
+
+
+## Distanza di un punto dalla linea del recinto (INF se non c'è).
+func distanza_recinto(w: Vector2) -> float:
+	if not recinto_tracciato():
+		return INF
+	var d := INF
+	for k in recinto_punti.size():
+		var a: Vector2 = recinto_punti[k]
+		var b: Vector2 = recinto_punti[(k + 1) % recinto_punti.size()]
+		d = minf(d, w.distance_to(Geometry2D.get_closest_point_to_segment(w, a, b)))
+	return d
+
+
+## Perché un recinto con questi punti non si può tracciare ("" se va bene). Con `chiuso` falso si
+## controlla solo la linea aperta (mentre si traccia).
+func motivo_recinto(punti: Array, chiuso: bool) -> String:
+	if not fondato:
+		return "Prima bisogna fondare il villaggio."
+	if not sbloccato("recinto"):
+		return "Il recinto arriva con le prime razzie dell'abitato."
+	if recinto_tracciato():
+		return "Il recinto c'è già: per rifarlo, demoliscilo."
+	var c := mondo_di_px(centro)
+	var lati := punti.size() if chiuso else punti.size() - 1
+	for k in maxi(lati, 0):
+		var a: Vector2 = punti[k]
+		var b: Vector2 = punti[(k + 1) % punti.size()]
+		var passi := maxi(1, ceili(a.distance_to(b) / 5.0))
+		for j in passi + 1:
+			var w := a.lerp(b, float(j) / passi)
+			if w.distance_to(c) > raggio_contado():
+				return "Il recinto va dentro il contado (fino a %d m dal villaggio)." % roundi(raggio_contado())
+			var p := px_da_mondo(w.x, w.y)
+			if p.x < 0 or p.y < 0 or p.x >= n or p.y >= n:
+				return "Fuori dalla mappa."
+			var t := dati.tipo[px(p)]
+			if t == MappaDati.FIUME or t == MappaDati.PALUDE:
+				return "Il recinto non attraversa il fiume né la palude."
+		# Niente incroci con i lati di prima.
+		for h in range(0, k - 1):
+			if chiuso and k == lati - 1 and h == 0:
+				continue
+			if Geometry2D.segment_intersects_segment(a, b, punti[h], punti[h + 1]) != null:
+				return "Il recinto non può incrociarsi."
+	if perimetro(punti) - (0.0 if chiuso else (punti[-1] as Vector2).distance_to(punti[0])) > RECINTO_MASSIMO:
+		return "Il recinto è lungo al massimo %d m." % roundi(RECINTO_MASSIMO)
+	if chiuso:
+		if punti.size() < 3:
+			return "Servono almeno tre punti."
+		if absf(_area(punti)) / 10000.0 < RECINTO_MINIMO:
+			return "Dentro il recinto ci vuole almeno un ettaro."
+	return ""
+
+
+static func _area(punti: Array) -> float:
+	var a := 0.0
+	for k in punti.size():
+		var p: Vector2 = punti[k]
+		var q: Vector2 = punti[(k + 1) % punti.size()]
+		a += p.x * q.y - q.x * p.y
+	return a * 0.5
+
+
+## Traccia il recinto chiuso: comincia il cantiere, le case sulla linea si spostano, nascono le porte.
+func traccia_recinto(punti: Array) -> String:
+	var m := motivo_recinto(punti, true)
+	if m != "":
+		return m
+	recinto_punti = punti.duplicate()
+	recinto_tratti = maxi(1, ceili(perimetro(recinto_punti) / LATO_TRATTO))
+	recinto_fatti = 0
+	calcola_porte()
+	var prima := case.size()
+	case = case.filter(func(l: Vector2i) -> bool: return distanza_recinto(centro_lotto(l)) > 12.0)
+	if case.size() != prima:
+		disponi_case()
+	_scrivi("Si comincia il recinto: %d m di terrapieno, fossato e palizzata, %d tratti. Servono %d di legna e circa %d anni di lavoro." % [roundi(perimetro(recinto_punti)), recinto_tratti, roundi(recinto_tratti * COSTO_TRATTO), ceili(float(recinto_tratti) / tratti_anno())])
+	return ""
+
+
+func tratti_anno() -> int:
+	return TRATTI_ANNO_COMUNITA if primo_governo == "Comunità" else TRATTI_ANNO
+
+
+## Le porte: dove un sentiero o una strada attraversa il recinto; se non ne passa nessuno, una porta
+## verso il centro del villaggio (o verso i campi, se il centro è dentro).
+func calcola_porte() -> void:
+	porte = []
+	if not recinto_tracciato():
+		return
+	var nr := recinto_punti.size()
+	for t in tratti_sentiero:
+		var sa := mondo_di_px(t[0])
+		var sb := mondo_di_px(t[1])
+		for k in nr:
+			var a: Vector2 = recinto_punti[k]
+			var b: Vector2 = recinto_punti[(k + 1) % nr]
+			var x = Geometry2D.segment_intersects_segment(sa, sb, a, b)
+			if x == null:
+				continue
+			var nuovo := true
+			for p in porte:
+				if (p["punto"] as Vector2).distance_to(x) < 40.0:
+					nuovo = false
+			if nuovo:
+				porte.append({"punto": x, "verso": (b - a).normalized()})
+	if porte.is_empty():
+		var meta := mondo_di_px(centro)
+		if Geometry2D.is_point_in_polygon(meta, _poligono(recinto_punti)) and not campi.is_empty():
+			var s := Vector2.ZERO
+			for i in campi:
+				s += mondo_di_px(px_di(i))
+			meta = s / campi.size()
+		var meglio := INF
+		var scelta := {}
+		for k in nr:
+			var a: Vector2 = recinto_punti[k]
+			var b: Vector2 = recinto_punti[(k + 1) % nr]
+			var q := Geometry2D.get_closest_point_to_segment(meta, a, b)
+			if q.distance_to(meta) < meglio:
+				meglio = q.distance_to(meta)
+				scelta = {"punto": q, "verso": (b - a).normalized()}
+		porte.append(scelta)
+
+
+## Ogni anno: il cantiere del recinto avanza di qualche tratto, se c'è la legna (anche dal taglio
+## dell'anno, come per l'officina); lo sblocco e la scheda di tutorial.
+func _lavora_recinto() -> void:
+	if epoca >= 2 and not gia_recinto and sbloccato("recinto"):
+		gia_recinto = true
+		_scrivi("Le famiglie chiedono un recinto: un terrapieno con il fossato e la palizzata, che tenga fuori le razzie.", "buono")
+		tutorial(["recinto"], "Il recinto")
+	# I casali entrano nell'abitato: i posti della zona si aprono un po' ogni anno.
+	var capienza := zona_abitato.size() * ABITANTI_PER_CASA
+	# Solo se le case nuove tengono il passo (senza legna per le case i casali restano dove sono).
+	if affollamento < 0.05 or capienza < posti_zona:
+		posti_zona = move_toward(posti_zona, capienza, POSTI_ANNO)
+	if not recinto_tracciato() or recinto_pronto():
+		return
+	var disponibile := legna + maxf(0.0, ultima_legna * 0.5 - legna_da_scontare)
+	var fatti := mini(mini(tratti_anno(), recinto_tratti - recinto_fatti), floori(disponibile / COSTO_TRATTO))
+	if fatti <= 0:
+		return
+	var costo := fatti * COSTO_TRATTO
+	var dalla_scorta := minf(legna, costo)
+	legna -= dalla_scorta
+	legna_da_scontare += costo - dalla_scorta
+	recinto_fatti += fatti
+	if recinto_pronto():
+		_scrivi("Il recinto è chiuso: terrapieno, fossato e palizzata girano attorno all'abitato. Dentro le case sono al sicuro.", "buono")
+		_notifica("Il recinto è finito: dentro le case sono al sicuro dalle razzie.", false, recinto_punti[0])
+		tutorial(["abitato"], "Le zone dell'abitato")
+
+
+func demolisci_recinto() -> void:
+	recinto_punti = []
+	recinto_tratti = 0
+	recinto_fatti = 0
+	porte = []
+	_scrivi("Demolito il recinto.")
+
+
+# ---- zone dell'abitato ----
+
+## Perché la zona dell'abitato non va su questo lotto ("" se va bene).
+func motivo_abitato(l: Vector2i) -> String:
+	if not fondato:
+		return "Prima bisogna fondare il villaggio."
+	if not sbloccato("abitato"):
+		return "Le zone dell'abitato arrivano con il recinto."
+	var w := centro_lotto(l)
+	var p := px_da_mondo(w.x, w.y)
+	if p.x < 0 or p.y < 0 or p.x >= n or p.y >= n or not edificabile(px(p)):
+		return "Qui non si costruisce: acqua o palude."
+	if not a_portata(p):
+		return "La zona dell'abitato va dentro il contado."
+	if sentieri.has(px(p)) or distanza_recinto(w) < 12.0:
+		return "Qui passano un sentiero o il recinto."
+	return ""
+
+
+func aggiungi_zona_abitato(lotti: Array) -> int:
+	var aggiunti := 0
+	for l in lotti:
+		if not zona_abitato.has(l) and motivo_abitato(l) == "":
+			zona_abitato[l] = true
+			aggiunti += 1
+	return aggiunti
+
+
+func togli_zona_abitato(lotti: Array) -> int:
+	var tolti := 0
+	for l in lotti:
+		if zona_abitato.erase(l):
+			tolti += 1
+	return tolti
+
+
+## I lotti lungo strade e sentieri (accanto a un punto della rete, non sopra).
+func lotti_lungo_le_vie() -> Dictionary:
+	var out := {}
+	for i in sentieri:
+		var w := mondo_di_px(px_di(i))
+		var l0 := lotto_da_mondo(w.x, w.y)
+		for oy in range(-2, 3):
+			for ox in range(-2, 3):
+				var l := l0 + Vector2i(ox, oy)
+				var c := centro_lotto(l)
+				var d := c.distance_to(w)
+				if d > 18.0 and d < 45.0:
+					out[l] = true
+	return out
+
+
+## Le case nell'epoca 2 nascono prima nella zona dell'abitato: dentro il recinto, poi fuori; lungo
+## le vie valgono di più. Restituisce quante ne ha messe.
+func _disponi_nelle_zone(servono: int, ci_sono: int, occupati: Dictionary, paga: bool) -> int:
+	if zona_abitato.is_empty():
+		return ci_sono
+	var c := mondo_di_px(centro)
+	var vie := lotti_lungo_le_vie()
+	var granaio_l := lotto_da_mondo(granaio.x, granaio.y) if granaio.x >= 0 else Vector2i(-99999, -99999)
+	var sacro_l := lotto_da_mondo(luogo_sacro.x, luogo_sacro.y) if luogo_sacro.x >= 0 else Vector2i(-99999, -99999)
+	var punteggi := {}
+	for l in zona_abitato:
+		if occupati.has(l) or macerie.has(l) or cheb(l, granaio_l) <= 1 or cheb(l, sacro_l) <= 1 or _vicino_a_legnaia(l):
+			continue
+		if officina_vicina(centro_lotto(l), 15.0) >= 0:
+			continue
+		var w := centro_lotto(l)
+		var i := px(px_da_mondo(w.x, w.y))
+		if not edificabile(i) or sentieri.has(i) or distanza_recinto(w) < 12.0:
+			continue
+		var sc := 4.0 - w.distance_to(c) / 80.0 + float((l.x * 73856093 ^ l.y * 19349663) & 0xffff) / 65536.0 * 0.1
+		if dentro_recinto(w):
+			sc += 3.0
+		if vie.has(l):
+			sc += 2.5
+		punteggi[l] = sc
+	var ordine := punteggi.keys()
+	ordine.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return punteggi[a] > punteggi[b])
+	for l in ordine:
+		if ci_sono >= servono or (paga and legna < COSTO_CASA):
+			break
+		# Dentro il recinto le case si toccano (case fitte); fuori lasciano un lotto libero di lato.
+		var w := centro_lotto(l)
+		if not dentro_recinto(w):
+			var vicina := false
+			for o in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				if occupati.has(l + o):
+					vicina = true
+			if vicina:
+				continue
+		if occupati.has(l):
+			continue
+		# La zona dell'abitato prende il posto dei campi quando servono case.
+		var i := px(px_da_mondo(w.x, w.y))
+		if campi.has(i):
+			campi.erase(i)
+		case.append(l)
+		_segna_casa(l)
+		occupati[l] = true
+		ci_sono += 1
+		if paga:
+			legna -= COSTO_CASA
+	return ci_sono
+
+
+## Le case dell'epoca 2 sono su impalcato: quelle nate dopo l'inizio dell'epoca subito, le vecchie
+## quando si rifanno (ognuna entro 30 anni, in un anno suo).
+func casa_su_impalcato(l: Vector2i) -> bool:
+	if epoca < 2:
+		return false
+	if int(nascita_case.get(l, -99999)) >= anno_epoca2:
+		return true
+	var rifacimento := anno_epoca2 + int(float((l.x * 19349663 ^ l.y * 83492791) & 0xffff) / 65536.0 * ANNI_VITA_CASA)
+	return anno >= rifacimento
+
+
+## Quante case stanno dentro il recinto (per la salute: le case fitte).
+func case_dentro() -> int:
+	if not recinto_pronto():
+		return 0
+	var poli := _poligono(recinto_punti)
+	var k := 0
+	for l in case:
+		if Geometry2D.is_point_in_polygon(centro_lotto(l), poli):
+			k += 1
+	return k
 
 
 # ---------- sentieri che diventano strade (voce 5, 26/11/2026) ----------
@@ -3017,6 +3383,9 @@ func demolisci(punto: Vector2, raggio: float) -> Dictionary:
 		cantiere_torre = 0
 		esito["torre"] = true
 		_scrivi("Demolita la torre di avvistamento.")
+	if recinto_tracciato() and distanza_recinto(punto) <= raggio:
+		demolisci_recinto()
+		esito["recinto"] = true
 	var n_officine := officine.size()
 	officine = officine.filter(fuori)
 	esito["officine"] = n_officine - officine.size()
@@ -3260,6 +3629,12 @@ func sbloccato(cosa: String) -> bool:
 	# L'officina del fabbro è il primo edificio dell'epoca 2 (Fede, 27/11/2026).
 	if cosa == "officina":
 		return epoca >= 2
+	# Recinto: con la prima scorreria dell'epoca 2, o comunque 100 anni dopo (Fede, 27/11/2026).
+	if cosa == "recinto":
+		return epoca >= 2 and (scorrerie_epoca2 > 0 or anno >= anno_epoca2 + ANNI_SBLOCCO_RECINTO)
+	# Le zone dell'abitato si aprono con il recinto.
+	if cosa == "abitato":
+		return epoca >= 2 and (recinto_tracciato() or not zona_abitato.is_empty())
 	return tappa >= tappa_di(cosa)
 
 
@@ -3552,8 +3927,11 @@ func passo() -> void:
 	# (decisione di Fede del 25/11/2026); un cantiere aperto toglie un po' di braccia.
 	var in_cantiere := func(e: Dictionary) -> bool: return int(e["cantiere"]) > 0
 	var cantieri := (1 if cantiere_granaio > 0 else 0) + (1 if cantiere_luogo_sacro > 0 else 0) + (1 if cantiere_torre > 0 else 0) + legnaie.filter(in_cantiere).size() + poste.filter(in_cantiere).size() + capanni.filter(in_cantiere).size() + officine.filter(in_cantiere).size()
-	# Officina del fabbro (epoca 2): cantiere, metallo, carbone, attrezzi e armi.
+	# Officina del fabbro (epoca 2): cantiere, metallo, carbone, attrezzi e armi; il recinto.
 	_lavora_officine()
+	_lavora_recinto()
+	if recinto_tracciato() and not recinto_pronto():
+		cantieri += 1
 	var lavoro: float = (0.9 + 0.2 * consenso["famiglie"] / 100.0) * (1.0 - 0.05 * mini(cantieri, 3))
 	# Ai segni di pericolo, con la veglia ai margini, un po' di braccia lascia i campi.
 	if in_allerta() and politica("pericolo") == "vegliare":
@@ -3680,7 +4058,8 @@ func passo() -> void:
 	# Salute: acqua, paludi, affollamento, fame, focolari senza legna.
 	var dm := _d_palude[px(centro)]
 	var obiettivo := 72.0 + 15.0 * acqua_qualsiasi(px(centro)) - (25.0 if dm <= 3.0 else (10.0 if dm <= 6.0 else 0.0)) \
-		- affollamento * 25.0 - (5.0 if razionamento > 0 else 0.0) - (8.0 if cibo < pop * 0.1 else 0.0) - (6.0 if legna <= 0.0 else 0.0)
+		- affollamento * 25.0 - (5.0 if razionamento > 0 else 0.0) - (8.0 if cibo < pop * 0.1 else 0.0) - (6.0 if legna <= 0.0 else 0.0) \
+		- 6.0 * clampf(float(case_dentro()) / 80.0, 0.0, 1.0)  # le case fitte dentro il recinto (epoca 2)
 	salute += (clampf(obiettivo, 5.0, 95.0) - salute) * 0.15
 	# Febbri (decisione di Fede del 25/11/2026): estati di febbri vicino alle paludi e nelle case affollate.
 	# In una città sana una febbre è solo una flessione; si scrive in cronaca solo se è grave.
@@ -4025,7 +4404,7 @@ func disponi_case(paga := false) -> void:
 
 ## Abitanti del nucleo e dei casali.
 func abitanti_nucleo() -> float:
-	return minf(pop, NUCLEO_MASSIMO) if sbloccato("casali") else pop
+	return minf(pop, NUCLEO_MASSIMO + posti_zona) if sbloccato("casali") else pop
 
 
 func abitanti_casali() -> float:
@@ -4047,6 +4426,12 @@ func _disponi_nucleo(servono: int, ci_sono: int, paga: bool) -> void:
 	var occupati := {}
 	for c in case:
 		occupati[c] = true
+	# Epoca 2: prima la zona dell'abitato (dentro il recinto, poi fuori); il resto cresce da solo,
+	# come borgo spontaneo (decisioni di Fede del 26–27/11/2026).
+	if epoca >= 2:
+		ci_sono = _disponi_nelle_zone(servono, ci_sono, occupati, paga)
+		if ci_sono >= servono:
+			return
 	var granaio_l := lotto_da_mondo(granaio.x, granaio.y) if granaio.x >= 0 else Vector2i(-99999, -99999)
 	var sacro_l := lotto_da_mondo(luogo_sacro.x, luogo_sacro.y) if luogo_sacro.x >= 0 else Vector2i(-99999, -99999)
 	# Candidati: i lotti attorno al centro e, dalle strade, i lotti lungo le strade (il borgo
@@ -4077,7 +4462,7 @@ func _disponi_nucleo(servono: int, ci_sono: int, paga: bool) -> void:
 			if true:
 				var dx := l.x - lc.x
 				var dy := l.y - lc.y
-				if l == lc or cheb(l, granaio_l) <= 1 or cheb(l, sacro_l) <= 1 or macerie.has(l) or _vicino_a_legnaia(l):
+				if l == lc or cheb(l, granaio_l) <= 1 or cheb(l, sacro_l) <= 1 or macerie.has(l) or _vicino_a_legnaia(l) or (recinto_tracciato() and distanza_recinto(centro_lotto(l)) < 12.0):
 					continue
 				var w := centro_lotto(l)
 				var p := px_da_mondo(w.x, w.y)
@@ -4167,6 +4552,9 @@ func _aggiorna_prestigio() -> void:
 			d += 0.5 * (p / massimo if massimo > 0.0 else 0.5)
 		if l == fabbro:
 			d += 1.5 * lavoro_fabbro
+		# Una casa dentro il recinto vale di più.
+		if recinto_pronto() and dentro_recinto(w):
+			d += 0.5
 		nuovo[l] = p + 0.02 * d
 	prestigio_case = nuovo
 
@@ -4530,6 +4918,7 @@ func _transizione(o: String) -> void:
 	# Comincia l'epoca 2 (Fede, 27/11/2026: il primo edificio che si sblocca è il fabbro). Il gioco
 	# continua, a decenni, fino a quando la città si darà le leggi.
 	epoca = 2
+	anno_epoca2 = anno
 	var anni := anno - ANNO_INIZIO
 	var chi := consenso.keys().filter(func(g: String) -> bool: return g != "sacerdote" or sacerdote_attivo)
 	chi.sort_custom(func(a: String, b: String) -> bool: return consenso[a] > consenso[b])
@@ -4562,7 +4951,7 @@ func cause_di(nome: String) -> Array[String]:
 	match nome:
 		"Abbondanza", "Popolazione":
 			if not casali.is_empty():
-				out.append("%d abitanti nel villaggio e %d nei %d casali del contado: il villaggio tiene fino a %d abitanti, le famiglie in più vanno a vivere vicino ai loro campi." % [roundi(abitanti_nucleo()), roundi(abitanti_casali()), casali.size(), roundi(NUCLEO_MASSIMO)])
+				out.append("%d abitanti nel villaggio e %d nei %d casali del contado: il villaggio tiene fino a %d abitanti, le famiglie in più vanno a vivere vicino ai loro campi%s." % [roundi(abitanti_nucleo()), roundi(abitanti_casali()), casali.size(), roundi(NUCLEO_MASSIMO + posti_zona), " (la zona dell'abitato apre altri posti)" if posti_zona > 0.0 else ""])
 			if abbondanza >= SOGLIA_CRESCITA + 0.02:
 				out.append("La popolazione cresce: c'è cibo da parte, salute e spazio.")
 			elif abbondanza <= SOGLIA_CRESCITA - 0.02:

@@ -39,7 +39,7 @@ var _trascinando := false
 var _destro_da := Vector2.ZERO
 const SOGLIA_CLIC_DESTRO := 5.0
 ## Strumenti a pennello (Fede: la zona agricola si disegna tenendo premuto e trascinando).
-const STRUMENTI_PENNELLO := ["zona", "bosco_sacro", "pascolo"]
+const STRUMENTI_PENNELLO := ["zona", "bosco_sacro", "pascolo", "abitato"]
 var _pennellando := false
 var _ultimo_pennello := Vector3.INF
 ## Etichette dei siti adatti alle dighe: visibili solo nella mappa dell'energia dell'acqua.
@@ -328,8 +328,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 				imposta_modo((ev as InputEventKey).keycode - KEY_1)
 			KEY_HOME:
 				torna_al_sito()
-			KEY_X, KEY_F, KEY_C, KEY_Z, KEY_V, KEY_H, KEY_L, KEY_K, KEY_T, KEY_O, KEY_U, KEY_M, KEY_B, KEY_N:
-				var id: String = {KEY_X: "demolisci", KEY_F: "fonda", KEY_C: "campi", KEY_Z: "zona", KEY_V: "sentiero", KEY_H: "granaio", KEY_L: "legnaia", KEY_K: "capanno", KEY_T: "posta", KEY_O: "luogo_sacro", KEY_U: "torre", KEY_M: "officina", KEY_B: "bosco_sacro", KEY_N: "pascolo"}[(ev as InputEventKey).keycode]
+			KEY_X, KEY_F, KEY_C, KEY_Z, KEY_V, KEY_H, KEY_L, KEY_K, KEY_T, KEY_O, KEY_U, KEY_M, KEY_J, KEY_B, KEY_N:
+				var id: String = {KEY_X: "demolisci", KEY_F: "fonda", KEY_C: "campi", KEY_Z: "zona", KEY_V: "sentiero", KEY_H: "granaio", KEY_L: "legnaia", KEY_K: "capanno", KEY_T: "posta", KEY_O: "luogo_sacro", KEY_U: "torre", KEY_M: "officina", KEY_J: "recinto", KEY_B: "bosco_sacro", KEY_N: "pascolo"}[(ev as InputEventKey).keycode]
 				hud.seleziona_comando("" if hud.comando() == id else id)
 				_aggiorna_pennello()
 			KEY_P:
@@ -381,6 +381,10 @@ func annulla() -> void:
 		hud.chiudi_focus()
 	elif hud.politiche_aperte():
 		hud.apri_politiche(false)
+	elif partita and not partita.recinto_bozza.is_empty():
+		partita.annulla_recinto()
+		hud.imposta_messaggio("Recinto annullato. Un clic dove comincia.")
+		_aggiorna_pennello()
 	elif partita and partita.inizio_sentiero.x >= 0:
 		partita.annulla_sentiero()
 		hud.imposta_messaggio("Sentiero chiuso. Un clic dove comincia il prossimo.")
@@ -473,10 +477,12 @@ func _aggiorna_pennello() -> void:
 		if not hud.comando() in ["campi", "zona"]:
 			terreno.materiale.set_shader_parameter("contado", Vector3(0, 0, -1))
 		if partita:
-			if hud.comando() == "sentiero":
+			if hud.comando() in ["sentiero", "recinto"]:
 				partita.vista.nascondi_anteprima()
 			else:
 				partita.annulla_sentiero()
+				if not partita.recinto_bozza.is_empty():
+					partita.annulla_recinto()
 		return
 	var p: Vector3 = punto_corrente
 	var r := raggio_pennello
@@ -492,7 +498,10 @@ func _aggiorna_pennello() -> void:
 		"campi", "zona":
 			# Celle da 40 m centrate sui punti della mappa: si prendono quelle col centro nel cerchio.
 			griglia = Vector3(dati.metri_per_px, dati.metri_per_px * 0.5, r * 1.15)
-		"granaio", "luogo_sacro", "torre", "officina":
+		"abitato":
+			# Lotti da 20 m: la zona dell'abitato si dipinge a lotti.
+			griglia = Vector3(LATO_LOTTO, 0.0, r * 1.15)
+		"granaio", "luogo_sacro", "torre", "officina", "recinto":
 			# Lotti da 20 m: l'edificio si aggancia al centro del lotto sotto il puntatore.
 			centro = (Vector2(floorf(p.x / LATO_LOTTO), floorf(p.z / LATO_LOTTO)) + Vector2(0.5, 0.5)) * LATO_LOTTO
 			griglia = Vector3(LATO_LOTTO, 0.0, 70.0)
@@ -517,12 +526,17 @@ func _aggiorna_pennello() -> void:
 		var cc := partita.sim.mondo_di_px(partita.sim.centro)
 		contado = Vector3(cc.x, cc.y, partita.sim.raggio_contado())
 	terreno.materiale.set_shader_parameter("contado", contado)
-	# Sentieri: anteprima come in Cities.
+	# Sentieri: anteprima come in Cities. Il recinto: il lato che si sta tracciando.
 	if partita:
 		if hud.comando() == "sentiero":
 			partita.anteprima_sentiero(p)
+		elif hud.comando() == "recinto":
+			partita.anteprima_recinto(p)
 		elif not hud.comando() in ["capanno", "posta"]:
 			partita.annulla_sentiero()
+		if hud.comando() != "recinto" and not partita.recinto_bozza.is_empty():
+			partita.annulla_recinto()
+		partita.vista.mostra_zona_abitato(hud.comando() in ["abitato", "recinto"])
 		partita.vista.evidenzia_sentieri(hud.comando() == "sentiero")
 	terreno.materiale.set_shader_parameter("colore_pennello", Hud.PERICOLO if hud.comando() == "demolisci" or vietato else Hud.BIANCO)
 

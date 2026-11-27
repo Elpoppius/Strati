@@ -5,7 +5,7 @@ extends Node
 ## Tempo continuo con pausa e tre velocità; si ferma da solo nei momenti decisivi
 ## (decisione di Fede del 23/11/2026).
 
-const STRUMENTI := ["fonda", "zona", "campi", "pascolo", "sentiero", "granaio", "legnaia", "capanno", "posta", "luogo_sacro", "torre", "officina", "bosco_sacro", "demolisci"]
+const STRUMENTI := ["fonda", "zona", "campi", "pascolo", "sentiero", "granaio", "legnaia", "capanno", "posta", "luogo_sacro", "torre", "officina", "recinto", "abitato", "bosco_sacro", "demolisci"]
 ## Tempo massimo di calcolo della simulazione per fotogramma (ms), a decenni.
 const TEMPO_ANNI_MS := 12.0
 var _anni_da_fare := 0
@@ -26,6 +26,10 @@ var collega_rete := false
 ## lascia campi e animali dove sono.
 var togli_zona := false
 var togli_pascolo := false
+## Recinto (epoca 2): i punti messi finora, prima di chiudere l'anello; opzione Togli della zona
+## dell'abitato.
+var recinto_bozza: Array = []
+var togli_abitato := false
 ## Ettari aggiunti alla zona agricola nella pennellata in corso (il messaggio dice il totale).
 var _pennellata := 0
 var _ultima_velocita := 1
@@ -82,6 +86,9 @@ func avvia(s: Node, seme_voluto: int = -1) -> void:
 		 "descrizione": "Un clic dissoda subito la terra libera nel cerchio, a mano; i campi che ci sono già restano. Gli alberi sui nuovi campi si tagliano. Per abbandonare un campo: Demolisci."},
 		# Bosco sacro (decisione di Fede: tappa dei 150, la riserva); tasto B, proposta di Claude
 		# approvata da Fede il 25/11/2026 sera.
+		# Zona dell'abitato (epoca 2; Fede, 26–27/11/2026): una sola densità, prima dentro il recinto.
+		{"id": "abitato", "icona": "abitato", "testo": "Zona dell'abitato", "breve": "Abitato", "tasto": "",
+		 "descrizione": "Tieni premuto e trascina, come un pennello: lì le famiglie costruiscono le case nuove quando servono, prima dentro il recinto, poi fuori; lungo le vie le preferiscono. Dentro il recinto le case si stringono. Dove servono case la zona prende il posto dei campi. Per toglierla: opzione Togli."},
 		{"id": "bosco_sacro", "icona": "bosco_sacro", "testo": "Bosco sacro", "breve": "B. sacro", "tasto": "B",
 		 "descrizione": "Tieni premuto e trascina sul bosco, come un pennello: diventa bosco sacro. Le legnaie non lo tagliano e nessuno lo dissoda; il sacerdote lo vuole grande. Tagliarlo con Demolisci lo offende."},
 	])
@@ -105,6 +112,9 @@ func avvia(s: Node, seme_voluto: int = -1) -> void:
 		# proposta di Claude.
 		{"id": "officina", "icona": "officina_fabbro", "testo": "Officina del fabbro (12 di legna)", "breve": "Fabbro", "tasto": "M",
 		 "descrizione": "Una tettoia con la fornace e l'incudine, entro 600 m dal centro; ne basta una. Costa 12 di legna e tre anni di lavoro; poi una famiglia lascia i campi e la fornace brucia legna. Forgia attrezzi (più cibo, legna più in fretta) o armi (scorrerie meno dannose): clic sull'officina per scegliere. Lontano dalle case: una scintilla basta."},
+		# Recinto (epoca 2; Fede, 27/11/2026): tasto J, l'unico libero (proposta approvata).
+		{"id": "recinto", "icona": "recinto", "testo": "Recinto (3 di legna ogni 10 m)", "breve": "Recinto", "tasto": "J",
+		 "descrizione": "Un clic dopo l'altro attorno all'abitato; un clic sul primo punto chiude l'anello. Terrapieno, fossato e palizzata: 3 di legna ogni 10 m, una decina di tratti l'anno. Le porte nascono dove passano sentieri e strade. Finito, dentro le case non bruciano e il granaio è al sicuro."},
 		{"id": "capanno", "icona": "capanno_pesca", "testo": "Capanno da pesca (5 di legna)", "breve": "Capanno", "tasto": "K",
 		 "descrizione": "Costa 5 di legna. Senza capanno le famiglie pescano come capita e rendono un terzo. Va sulla riva di un fiume o di un torrente: si aggancia da solo alla riva più vicina. Il fiume dà più pesce dei torrenti; più capanni vicini si dividono il pesce di quel tratto, e troppi lo fanno calare."},
 		{"id": "posta", "icona": "posta_caccia", "testo": "Posta di caccia (5 di legna)", "breve": "Posta", "tasto": "T",
@@ -116,6 +126,9 @@ func avvia(s: Node, seme_voluto: int = -1) -> void:
 	])
 	hud.aggiungi_opzioni("pascolo", [
 		{"id": "togli_pascolo", "testo": "Togli", "suggerimento": "Acceso: il pennello toglie il pascolo e lascia campi e animali dove sono."},
+	])
+	hud.aggiungi_opzioni("abitato", [
+		{"id": "togli_abitato", "testo": "Togli", "suggerimento": "Acceso: il pennello toglie la zona dell'abitato e lascia le case dove sono."},
 	])
 	hud.aggiungi_opzioni("sentiero", [
 		{"id": "collega_rete", "testo": "Collega alla rete", "suggerimento": "Acceso: ogni sentiero parte dal punto più vicino del villaggio o dei sentieri. Spento: il sentiero comincia dove vuoi."},
@@ -222,6 +235,10 @@ func _azione(id: String) -> void:
 			togli_zona = not togli_zona
 			scena.hud.seleziona_comando("zona")
 			scena.hud.imposta_messaggio("Togli acceso: il pennello toglie la zona agricola; i campi restano." if togli_zona else "Togli spento: il pennello stende la zona agricola.")
+		"togli_abitato":
+			togli_abitato = not togli_abitato
+			scena.hud.seleziona_comando("abitato")
+			scena.hud.imposta_messaggio("Togli acceso: il pennello toglie la zona dell'abitato; le case restano." if togli_abitato else "Togli spento: il pennello stende la zona dell'abitato.")
 		"togli_pascolo":
 			togli_pascolo = not togli_pascolo
 			scena.hud.seleziona_comando("pascolo")
@@ -406,6 +423,25 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 			if fuori_z > 0:
 				testo_z += " %d celle fuori dal contado (fino a %d m dal villaggio)." % [fuori_z, roundi(sim.raggio_contado())]
 			hud.imposta_messaggio(testo_z)
+		"abitato":
+			if not sim.fondato:
+				return
+			var lotti := lotti_nel_cerchio(Vector2(punto.x, punto.z), raggio)
+			if togli_abitato:
+				_pennellata += sim.togli_zona_abitato(lotti)
+				hud.imposta_messaggio("Zona dell'abitato: tolti %d lotti (ne restano %d). Le case restano." % [_pennellata, sim.zona_abitato.size()])
+				vista.sincronizza_zona_abitato()
+				return
+			_pennellata += sim.aggiungi_zona_abitato(lotti)
+			vista.sincronizza_zona_abitato()
+			if _pennellata > 0:
+				hud.imposta_messaggio("Zona dell'abitato: %d lotti in più (in tutto %d, %d dentro il recinto). Le case nasceranno qui quando servono." % [_pennellata, sim.zona_abitato.size(), _lotti_dentro()])
+			else:
+				var l0 := sim.lotto_da_mondo(punto.x, punto.z)
+				var m_ab := sim.motivo_abitato(l0)
+				hud.imposta_messaggio(m_ab if m_ab != "" else "Qui la zona dell'abitato c'è già.")
+		"recinto":
+			_clic_recinto(Vector2(punto.x, punto.z))
 		"pascolo":
 			if not sim.fondato:
 				return
@@ -492,6 +528,8 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 				parti.append("la torre di avvistamento")
 			if esito.get("officine", 0) > 0:
 				parti.append("l'officina del fabbro")
+			if esito.get("recinto", false):
+				parti.append("il recinto")
 			if esito.get("bosco_sacro", 0) > 0:
 				parti.append("%d alberi del bosco sacro" % esito["bosco_sacro"])
 			if esito.get("poste", 0) > 0:
@@ -660,6 +698,10 @@ func raggio_strumento(comando: String, raggio: float) -> float:
 			return 5.0
 		"officina":
 			return 8.0
+		"abitato":
+			return raggio
+		"recinto":
+			return 4.0
 	return -1.0
 
 
@@ -737,8 +779,15 @@ func aggiorna_hud() -> void:
 	hud.segna("togli_pascolo", togli_pascolo)
 	hud.abilita("pascolo", on and not sim.finito and sim.sbloccato("pascolo"))
 	# Ciò che una tappa non ha ancora aperto non si vede: quando si apre, compare (Fede, 26/11/2026).
-	for id in ["pascolo", "granaio", "luogo_sacro", "bosco_sacro", "torre", "officina"]:
+	for id in ["pascolo", "granaio", "luogo_sacro", "bosco_sacro", "torre", "officina", "recinto", "abitato"]:
 		hud.mostra(id, sim.sbloccato(id))
+	hud.abilita("recinto", on and not sim.finito and sim.sbloccato("recinto"))
+	hud.abilita("abitato", on and not sim.finito and sim.sbloccato("abitato"))
+	hud.segna("togli_abitato", togli_abitato)
+	var testo_recinto := "Recinto (3 di legna ogni 10 m)"
+	if sim.recinto_tracciato():
+		testo_recinto = ("Recinto (in costruzione: %d tratti su %d)" % [sim.recinto_fatti, sim.recinto_tratti]) if not sim.recinto_pronto() else "Recinto (finito)"
+	hud.cambia_testo("recinto", testo_recinto, "Recinto")
 	for id in ["zona", "campi", "sentiero", "legnaia", "capanno", "posta"]:
 		hud.abilita(id, on and not sim.finito)
 	for id in ["comune", "famiglie"]:
@@ -1117,6 +1166,28 @@ func conseguenze(cmd: String, punto: Vector2, raggio: float) -> Dictionary:
 				"territorio": "si vedono i margini del contado",
 				"costo": "%d di legna · %d anni di lavoro%s" % [roundi(c_t), SimVillaggio.ANNI_CANTIERE_TORRE, "" if sim.legna >= c_t else " (ne hai %d)" % floori(sim.legna)],
 				"resta": "un punto di guardia sull'altura"}
+		"recinto":
+			if sim.recinto_tracciato():
+				return {"titolo": "Recinto", "guadagna": nessuno, "perde": nessuno, "territorio": "il recinto c'è già"}
+			var lung := 0.0
+			if recinto_bozza.size() >= 2:
+				lung = sim.perimetro(recinto_bozza + [punto]) - punto.distance_to(recinto_bozza[0])
+			elif recinto_bozza.size() == 1:
+				lung = (recinto_bozza[0] as Vector2).distance_to(punto)
+			var tratti := ceili(lung / SimVillaggio.LATO_TRATTO)
+			return {"titolo": "Recinto · %d m" % roundi(lung), "guadagna": "Famiglie ▲  (case sicure) · Anziani ▲",
+				"perde": "Famiglie ▼  (braccia al cantiere)",
+				"territorio": "dentro e fuori · porte sulle vie",
+				"costo": "%d di legna · %d anni" % [roundi(tratti * SimVillaggio.COSTO_TRATTO), ceili(float(tratti) / sim.tratti_anno())],
+				"resta": "la linea delle future mura"}
+		"abitato":
+			if togli_abitato:
+				return {"titolo": "Togli zona dell'abitato", "guadagna": nessuno, "perde": nessuno, "territorio": "le case che ci sono restano", "costo": "nessuno", "resta": "nessuna traccia"}
+			var dentro := sim.dentro_recinto(punto, true)
+			return {"titolo": "Zona dell'abitato · %s" % _ettari_testo(ha), "guadagna": "Famiglie ▲  (case dove servono)",
+				"perde": "Famiglie ▼  (case fitte, salute)" if dentro else nessuno,
+				"territorio": "case dentro il recinto, fitte" if dentro else "case fuori dal recinto",
+				"costo": "gratis; le case le pagano le famiglie", "resta": "i primi lotti dell'abitato"}
 		"officina":
 			if sim.officina_vicina(punto) >= 0:
 				return {}
@@ -1180,6 +1251,9 @@ func _conseguenze_demolizione(punto: Vector2, raggio: float) -> Dictionary:
 	if officina:
 		perde.append("Famiglia del fabbro ▼")
 		cose.append("l'officina")
+	if sim.recinto_tracciato() and sim.distanza_recinto(punto) <= raggio:
+		perde.append("Anziani ▼")
+		cose.append("tutto il recinto")
 	if cose.is_empty():
 		return {"titolo": "Demolisci", "guadagna": "nessuno", "perde": "nessuno", "territorio": "alberi e sentieri nel cerchio, se ci sono",
 			"costo": "irreversibile", "irreversibile": true, "resta": "terra libera: il bosco può ricrescere"}
@@ -1193,7 +1267,7 @@ func _conseguenze_demolizione(punto: Vector2, raggio: float) -> Dictionary:
 func leggi_per_strumento(punto: Vector3) -> void:
 	var hud: Hud = scena.hud
 	var cmd := hud.comando()
-	if not sim.fondato or not cmd in ["zona", "campi", "granaio", "legnaia", "sentiero", "capanno", "posta", "luogo_sacro", "torre", "officina", "bosco_sacro", "pascolo"]:
+	if not sim.fondato or not cmd in ["zona", "campi", "granaio", "legnaia", "sentiero", "capanno", "posta", "luogo_sacro", "torre", "officina", "recinto", "abitato", "bosco_sacro", "pascolo"]:
 		hud.imposta_lettura_strumento([])
 		return
 	if cmd in ["capanno", "posta"]:
@@ -1260,6 +1334,21 @@ func leggi_per_strumento(punto: Vector3) -> void:
 			voci.append(["Altura", ("%d m sopra i dintorni" % roundi(ril)) if ril >= 0.5 else "nessuna: vista chiusa", clampf(ril / 10.0, 0.0, 1.0), ril < SimVillaggio.RILIEVO_TORRE])
 			voci.append(["Distanza dal centro", "%d m" % roundi(d), 1.0 - clampf(d / SimVillaggio.DISTANZA_TORRE, 0.0, 1.0), d > SimVillaggio.DISTANZA_TORRE])
 			voci.append(["Legna", "%d / %d" % [floori(sim.legna), roundi(SimVillaggio.COSTO_TORRE)], sim.legna / SimVillaggio.COSTO_TORRE, sim.legna < SimVillaggio.COSTO_TORRE])
+		"recinto":
+			var lung_r := 0.0
+			if recinto_bozza.size() >= 2:
+				lung_r = sim.perimetro(recinto_bozza) - (recinto_bozza[-1] as Vector2).distance_to(recinto_bozza[0])
+			voci.append(["Tracciato", "%d m, %d punti" % [roundi(lung_r), recinto_bozza.size()], clampf(lung_r / SimVillaggio.RECINTO_MASSIMO, 0.0, 1.0), false])
+			var legna_r := sim.legna + sim.ultima_legna * 0.5
+			voci.append(["Legna, con il taglio dell'anno", "%d (%d tratti l'anno)" % [floori(legna_r), floori(legna_r / SimVillaggio.COSTO_TRATTO)], clampf(legna_r / 60.0, 0.0, 1.0), legna_r < SimVillaggio.COSTO_TRATTO * 3.0])
+			voci.append(["Distanza dal centro", "%d m" % roundi(d), 1.0 - clampf(d / sim.raggio_contado(), 0.0, 1.0), d > sim.raggio_contado()])
+		"abitato":
+			var w_a := Vector2(punto.x, punto.z)
+			var dentro_a := sim.dentro_recinto(w_a, true)
+			var via := sim.lotti_lungo_le_vie().has(sim.lotto_da_mondo(w_a.x, w_a.y))
+			voci.append(["Dentro il recinto", "sì" if dentro_a else "no", 1.0 if dentro_a else 0.3, false])
+			voci.append(["Lungo una via", "sì" if via else "no", 1.0 if via else 0.3, false])
+			voci.append(["Lotti nella zona", "%d (%d dentro)" % [sim.zona_abitato.size(), _lotti_dentro()], 1.0, false])
 		"officina":
 			var w := Vector2(punto.x, punto.z)
 			var prova := {"punto": w}
@@ -1676,6 +1765,10 @@ func motivo_strumento(cmd: String, punto: Vector2) -> String:
 			return sim.motivo_torre(punto)
 		"officina":
 			return "" if sim.officina_vicina(punto) >= 0 else sim.motivo_officina(punto)
+		"recinto":
+			return _motivo_punto_recinto(punto)
+		"abitato":
+			return "" if togli_abitato else sim.motivo_abitato(sim.lotto_da_mondo(punto.x, punto.y))
 		"bosco_sacro":
 			return sim.motivo_bosco_sacro(p)
 		"capanno", "posta":
@@ -1737,6 +1830,96 @@ func _aggiorna_legnaia() -> void:
 		legnaia_aperta = -1
 		return
 	hud.aggiorna_focus(dati_legnaia(legnaia_aperta))
+
+
+# ---------- recinto e zona dell'abitato (epoca 2, 27/11/2026) ----------
+
+## I lotti da 20 m con il centro nel cerchio.
+func lotti_nel_cerchio(c: Vector2, raggio: float) -> Array:
+	var out: Array = []
+	var l0 := sim.lotto_da_mondo(c.x - raggio, c.y - raggio)
+	var l1 := sim.lotto_da_mondo(c.x + raggio, c.y + raggio)
+	for y in range(l0.y, l1.y + 1):
+		for x in range(l0.x, l1.x + 1):
+			var l := Vector2i(x, y)
+			if sim.centro_lotto(l).distance_to(c) <= maxf(raggio, 10.0):
+				out.append(l)
+	return out
+
+
+func _lotti_dentro() -> int:
+	var k := 0
+	for l in sim.zona_abitato:
+		if sim.dentro_recinto(sim.centro_lotto(l), true):
+			k += 1
+	return k
+
+
+## Il punto del recinto si aggancia al centro del lotto sotto il puntatore.
+func _punto_recinto(w: Vector2) -> Vector2:
+	return sim.centro_lotto(sim.lotto_da_mondo(w.x, w.y))
+
+
+## Vero se il punto chiude l'anello (vicino al primo punto, con almeno tre punti).
+func _chiude_recinto(w: Vector2) -> bool:
+	return recinto_bozza.size() >= 3 and _punto_recinto(w).distance_to(recinto_bozza[0]) < 25.0
+
+
+func _motivo_punto_recinto(w: Vector2) -> String:
+	if recinto_bozza.is_empty():
+		return sim.motivo_recinto([_punto_recinto(w), _punto_recinto(w) + Vector2(1, 0)], false) if not sim.recinto_tracciato() else "Il recinto c'è già: per rifarlo, demoliscilo."
+	if _chiude_recinto(w):
+		return sim.motivo_recinto(recinto_bozza, true)
+	return sim.motivo_recinto(recinto_bozza + [_punto_recinto(w)], false)
+
+
+func _clic_recinto(w: Vector2) -> void:
+	var hud: Hud = scena.hud
+	if not sim.fondato:
+		hud.imposta_messaggio("Prima bisogna fondare il villaggio.")
+		return
+	var m := _motivo_punto_recinto(w)
+	if m != "":
+		hud.imposta_messaggio(m)
+		return
+	if _chiude_recinto(w):
+		var esito := sim.traccia_recinto(recinto_bozza)
+		if esito != "":
+			hud.imposta_messaggio(esito)
+			return
+		hud.imposta_messaggio("Recinto tracciato: %d m, %d porte. Il cantiere comincia: tratto dopo tratto, finché c'è legna." % [roundi(sim.perimetro(sim.recinto_punti)), sim.porte.size()])
+		annulla_recinto()
+		vista.sincronizza()
+		aggiorna_hud()
+		return
+	recinto_bozza.append(_punto_recinto(w))
+	vista.mostra_bozza_recinto(recinto_bozza)
+	if recinto_bozza.size() == 1:
+		hud.imposta_messaggio("Primo punto del recinto. Un clic dopo l'altro attorno all'abitato; un clic sul primo punto chiude l'anello (Esc per annullare).")
+	else:
+		hud.imposta_messaggio("Recinto: %d punti, %d m. Un clic sul primo punto chiude l'anello." % [recinto_bozza.size(), roundi(sim.perimetro(recinto_bozza) - recinto_bozza[-1].distance_to(recinto_bozza[0]))])
+
+
+func anteprima_recinto(punto: Vector3) -> void:
+	if not sim.fondato or recinto_bozza.is_empty():
+		vista.nascondi_anteprima()
+		return
+	var w := Vector2(punto.x, punto.z)
+	var chiude := _chiude_recinto(w)
+	var b: Vector2 = recinto_bozza[0] if chiude else _punto_recinto(w)
+	var m := _motivo_punto_recinto(w)
+	var testo := m
+	if m == "":
+		var lung := sim.perimetro(recinto_bozza + [b]) - (0.0 if chiude else b.distance_to(recinto_bozza[0]))
+		testo = ("Chiudi l'anello · %d m" if chiude else "%d m") % roundi(lung)
+	vista.mostra_anteprima(recinto_bozza[-1], b, m == "", testo)
+
+
+func annulla_recinto() -> void:
+	recinto_bozza = []
+	if vista:
+		vista.mostra_bozza_recinto([])
+		vista.nascondi_anteprima()
 
 
 # ---------- scheda dell'officina del fabbro (epoca 2, 27/11/2026) ----------

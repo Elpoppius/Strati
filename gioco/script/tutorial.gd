@@ -158,6 +158,21 @@ const SCHEDE := {
 		"dettaglio": "In Edifici (M): l'officina del fabbro, una tettoia con la fornace e l'incudine. Servono 12 di legna e tre anni di lavoro, entro 600 m dal centro; ne basta una. Il fabbro e la sua famiglia lasciano i campi per l'officina; la fornace brucia gli scarti delle legnaie. Il metallo arriva poco dai mercanti di passaggio, di più se il villaggio si è aperto alle vie. Il fabbro lavora meglio vicino all'acqua e a una legnaia. Tienilo lontano dalle case: una scintilla basta a bruciarne una.",
 		"avviso": "Officina del fabbro (M): attrezzi e armi di metallo.",
 	},
+	# Recinto e zone dell'abitato (epoca 2; Fede, 27/11/2026).
+	"recinto": {
+		"titolo": "Il recinto",
+		"testo": "Le razzie si fanno più audaci. Le famiglie chiedono un recinto: un terrapieno con il fossato e la palizzata, che tenga fuori chi viene a prendere.",
+		"domanda": "Come si traccia il recinto?",
+		"dettaglio": "In Edifici (J): un clic dopo l'altro attorno all'abitato, e un clic sul primo punto chiude l'anello. Ogni 10 m costano 3 di legna; le braccia ne fanno una decina di tratti l'anno, e finché l'anello non è finito non protegge. Le porte si aprono da sole dove passano i sentieri e le strade. Dentro il recinto le razzie non bruciano le case e, se il granaio è dentro, rubano poco delle scorte. Fuori si resta esposti.",
+		"avviso": "Recinto (J): terrapieno e palizzata attorno all'abitato.",
+	},
+	"abitato": {
+		"titolo": "Le zone dell'abitato",
+		"testo": "Con il recinto l'abitato si dà una regola: dove si costruisce e dove no.",
+		"domanda": "Come funzionano le zone?",
+		"dettaglio": "In Territorio, Zona dell'abitato: dipingi i lotti dove le famiglie possono costruire. Le case nuove nascono lì quando servono, prima dentro il recinto e poi fuori; preferiscono i lotti lungo le vie, con la porta sulla strada. Dentro il recinto si stringono l'una all'altra: sono più sicure, ma le case fitte fanno ammalare di più. Dove servono case la zona prende il posto dei campi. Se la zona è piena, le case crescono da sole fuori, come prima.",
+		"avviso": "Zona dell'abitato: le case nuove nascono lì, prima dentro il recinto.",
+	},
 	"officina_lavoro": {
 		"titolo": "L'officina al lavoro",
 		"testo": "Il fabbro ha acceso la fornace. Fai clic sull'officina per decidere cosa forgia: attrezzi, armi, o un po' e un po'.",

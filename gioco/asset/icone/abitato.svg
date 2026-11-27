@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="miter">
+<!-- Zona dell'abitato: due case su impalcato lungo una via -->
+<path d="M3 15 L8 8 L13 15 Z" fill="#ffffff" stroke="none"/>
+<rect x="4" y="15" width="8" height="5" fill="#ffffff" stroke="none"/>
+<path d="M19 15 L24 8 L29 15 Z" fill="#ffffff" stroke="none"/>
+<rect x="20" y="15" width="8" height="5" fill="#ffffff" stroke="none"/>
+<line x1="5" y1="20" x2="5" y2="23"/>
+<line x1="11" y1="20" x2="11" y2="23"/>
+<line x1="21" y1="20" x2="21" y2="23"/>
+<line x1="27" y1="20" x2="27" y2="23"/>
+<line x1="2" y1="28" x2="30" y2="28"/>
+</svg>

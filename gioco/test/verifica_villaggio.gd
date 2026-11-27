@@ -505,6 +505,7 @@ func _verifica_soglia(d: MappaDati) -> void:
 	var fine: Array = s.decisioni.filter(func(x: Dictionary) -> bool: return x["tipo"] == "epoca")
 	controlla(not fine.is_empty() and String(fine[0]["testo"]).contains("Casa dominante") and String(fine[0]["testo"]).contains("abitanti"), "il riepilogo del villaggio dice il primo governo")
 	_verifica_fabbro(s, d)
+	_verifica_recinto(d, c)
 	s.identita["terra"] = -0.6
 	s.disuguaglianza = 0.1
 	s.consenso["anziani"] = 70.0
@@ -617,6 +618,96 @@ func _verifica_fabbro(s: SimVillaggio, d: MappaDati) -> void:
 	s.anno = SimVillaggio.ANNO_FINE_EPOCA2
 	s.passo()
 	controlla(s.finito and s.decisioni.any(func(x: Dictionary) -> bool: return x["tipo"] == "fine"), "verso il 700 a.C. il prototipo dell'epoca 2 finisce")
+
+
+## Epoca 2, il recinto e le zone dell'abitato (decisioni di Fede del 27/11/2026).
+func _verifica_recinto(d: MappaDati, sito: Vector2i) -> void:
+	var r := SimVillaggio.new(d, 41)
+	r.fonda(sito)
+	r.decisioni.clear()
+	r.epoca = 2
+	r.anno_epoca2 = r.anno
+	r.pop = 400.0
+	controlla(not r.sbloccato("recinto"), "all'inizio dell'epoca 2 il recinto non c'è ancora")
+	r.anno += SimVillaggio.ANNI_SBLOCCO_RECINTO
+	controlla(r.sbloccato("recinto") and not r.sbloccato("abitato"), "cento anni dopo il fabbro il recinto si sblocca (le zone ancora no)")
+	var c := r.mondo_di_px(r.centro)
+	var quadrato: Array = [c + Vector2(-200, -200), c + Vector2(200, -200), c + Vector2(200, 200), c + Vector2(-200, 200)]
+	controlla(r.motivo_recinto([c + Vector2(-200, -200), c + Vector2(200, 200), c + Vector2(200, -200), c + Vector2(-200, 200)], true).contains("incrociarsi"), "il recinto non può incrociarsi")
+	controlla(r.motivo_recinto([c, c + Vector2(40, 0), c + Vector2(0, 40)], true).contains("ettaro"), "dentro ci vuole almeno un ettaro")
+	var m := r.motivo_recinto(quadrato, true)
+	if m != "":
+		print("   (recinto di prova: %s)" % m)
+	controlla(r.traccia_recinto(quadrato) == "" and r.recinto_tratti == 160 and r.sbloccato("abitato"), "un recinto di 1600 m: 160 tratti, e si aprono le zone")
+	controlla(r.porte.size() >= 1, "almeno una porta (%d)" % r.porte.size())
+	r.legna = 1000.0
+	r.ultima_legna = 0.0
+	r._lavora_recinto()
+	controlla(r.recinto_fatti == SimVillaggio.TRATTI_ANNO and is_equal_approx(r.legna, 1000.0 - SimVillaggio.TRATTI_ANNO * SimVillaggio.COSTO_TRATTO), "10 tratti l'anno, 3 di legna l'uno")
+	controlla(not r.dentro_recinto(c), "finché non è finito il recinto non protegge")
+	r.primo_governo = "Comunità"
+	r._lavora_recinto()
+	controlla(r.recinto_fatti == SimVillaggio.TRATTI_ANNO + SimVillaggio.TRATTI_ANNO_COMUNITA, "con la Comunità 15 tratti l'anno")
+	r.legna = 0.0
+	r.ultima_legna = 0.0
+	var prima := r.recinto_fatti
+	r._lavora_recinto()
+	controlla(r.recinto_fatti == prima, "senza legna il cantiere si ferma")
+	r.recinto_fatti = r.recinto_tratti
+	controlla(r.recinto_pronto() and r.dentro_recinto(c) and not r.dentro_recinto(c + Vector2(400, 0)), "finito, il centro è dentro e fuori resta fuori")
+	# Le case dentro non bruciano: case solo dentro il recinto, oltre i margini dell'abitato.
+	r.case = []
+	for k in 8:
+		r.case.append(r.lotto_da_mondo(c.x + 170.0, c.y - 160.0 + k * 40.0))
+	r.segni_punto = c + Vector2(170, 0)
+	var bruciate := int(r.stat["case_bruciate"])
+	for k in 40:
+		r.cibo = 500.0
+		r._scorreria()
+	controlla(int(r.stat["case_bruciate"]) == bruciate, "le scorrerie non bruciano le case dentro il recinto")
+	controlla(r.scorrerie_epoca2 >= 40, "le scorrerie dell'epoca 2 si contano (sbloccano il recinto)")
+	# Il granaio dentro: le scorte rubate scendono.
+	r.granaio = c + Vector2(60, 0)
+	r.cantiere_granaio = 0
+	var rubato_dentro := 0.0
+	for k in 40:
+		r.cibo = 1000.0
+		r._scorreria()
+		rubato_dentro += 1000.0 - r.cibo
+	r.recinto_fatti = 0
+	var rubato_fuori := 0.0
+	for k in 40:
+		r.cibo = 1000.0
+		r._scorreria()
+		rubato_fuori += 1000.0 - r.cibo
+	controlla(rubato_dentro < rubato_fuori * 0.5, "con il granaio dentro il recinto le razzie rubano meno scorte (%d contro %d)" % [roundi(rubato_dentro), roundi(rubato_fuori)])
+	r.recinto_fatti = r.recinto_tratti
+	# Zone dell'abitato: le case nuove nascono nella zona, prima dentro; lungo le vie.
+	r.case = []
+	r.case_casale = {}
+	r.tappa = 0
+	var lotti: Array = []
+	for y in range(-12, 13):
+		for x in range(-12, 13):
+			lotti.append(r.lotto_da_mondo(c.x, c.y) + Vector2i(x, y))
+	for y in range(-4, 5):
+		for x in range(14, 23):
+			lotti.append(r.lotto_da_mondo(c.x, c.y) + Vector2i(x, y))
+	var messi := r.aggiungi_zona_abitato(lotti)
+	controlla(messi > 200, "la zona dell'abitato si dipinge a lotti (%d)" % messi)
+	r.pop = 300.0
+	r.disponi_case()
+	var dentro := r.case.filter(func(l: Vector2i) -> bool: return r.dentro_recinto(r.centro_lotto(l))).size()
+	var in_zona := r.case.filter(func(l: Vector2i) -> bool: return r.zona_abitato.has(l)).size()
+	controlla(in_zona == r.case.size() and dentro == r.case.size(), "le case nuove nascono nella zona, dentro il recinto (%d su %d)" % [dentro, r.case.size()])
+	var nuova: Vector2i = r.case[0]
+	controlla(r.casa_su_impalcato(nuova), "le case nuove dell'epoca 2 sono su impalcato")
+	r.sentieri.append(r.px(r.px_da_mondo(c.x + 120.0, c.y + 120.0)))
+	controlla(r.lotti_lungo_le_vie().size() > 0, "i lotti lungo le vie si riconoscono")
+	controlla(r.togli_zona_abitato(lotti) == messi and r.zona_abitato.is_empty(), "la zona si toglie con Togli")
+	# Demolire il recinto.
+	var esito := r.demolisci(c + Vector2(200, 0), 10.0)
+	controlla(esito.get("recinto", false) and not r.recinto_tracciato(), "Demolisci toglie il recinto")
 
 
 func _gioca(sim: SimVillaggio, sito: Vector2i, scelta_presagi := "") -> Dictionary:

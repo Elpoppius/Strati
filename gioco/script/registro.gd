@@ -45,6 +45,8 @@ const PROVE := [
 	# Epoca 2 (27/11/2026): dopo Prova › Metallo, l'officina del fabbro.
 	"Fabbro (M): officina, fumo, scheda attrezzi/armi",
 	"Epoca 2: vesti nuove delle persone",
+	"Recinto (J): tracciare, chiudere, cantiere, porte",
+	"Zona dell'abitato: case dentro, sulla via, su impalcato",
 ]
 
 var cartella := ""

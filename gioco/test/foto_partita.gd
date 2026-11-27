@@ -121,6 +121,53 @@ func _process(_d: float) -> bool:
 			if not sim.officine.is_empty():
 				c = sim.officine[0]["punto"]
 				su_edificio = true
+		# Recinto e zone dell'abitato (epoca 2, 27/11/2026): evento del metallo, recinto ottagonale
+		# attorno al centro (finito, o a metà con "recinto:cantiere"), zona dell'abitato dentro e un
+		# po' fuori, qualche decennio; la vista su una porta.
+		if args.size() > 4 and args[4].begins_with("recinto"):
+			sim.decisioni.clear()
+			sim.prova_soglia()
+			while sim.in_attesa():
+				var dd: Dictionary = sim.decisioni[0]
+				sim.scegli(dd["id"], "aprirsi" if dd["tipo"] == "soglia" else dd["opzioni"][0]["id"])
+			sim.anno_epoca2 -= SimVillaggio.ANNI_SBLOCCO_RECINTO
+			var c0 := sim.mondo_di_px(sim.centro)
+			var fatto := false
+			for raggio_r in [240.0, 200.0, 160.0, 130.0]:
+				var anello: Array = []
+				for k in 8:
+					anello.append(sim.centro_lotto(sim.lotto_da_mondo(c0.x + cos(k * TAU / 8.0 + 0.2) * raggio_r, c0.y + sin(k * TAU / 8.0 + 0.2) * raggio_r)))
+				if sim.traccia_recinto(anello) == "":
+					fatto = true
+					break
+			print("   recinto: %s, %d tratti, %d porte" % [str(fatto), sim.recinto_tratti, sim.porte.size()])
+			sim.recinto_fatti = sim.recinto_tratti / 2 if args[4] == "recinto:cantiere" else sim.recinto_tratti
+			var lotti_z := p.lotti_nel_cerchio(c0, 260.0)
+			sim.aggiungi_zona_abitato(lotti_z)
+			for k in 30:
+				# Legna in abbondanza: la foto mostra dove nascono le case, non il bilancio della legna.
+				sim.legna = maxf(sim.legna, 600.0)
+				sim.pop = maxf(sim.pop, 450.0)
+				sim.passo()
+				while sim.in_attesa():
+					sim.scegli(sim.decisioni[0]["id"], sim.decisioni[0]["opzioni"][0]["id"])
+				if args[4] == "recinto:cantiere":
+					sim.recinto_fatti = sim.recinto_tratti / 2
+			p.vista.sincronizza()
+			p.aggiorna_hud()
+			print("   case %d (dentro %d, su impalcato %d), zona %d" % [sim.case.size(), sim.case_dentro(), sim.case.filter(func(l): return sim.casa_su_impalcato(l)).size(), sim.zona_abitato.size()])
+			if not sim.porte.is_empty():
+				c = sim.porte[0]["punto"]
+				su_edificio = true
+			# "recinto:case": la vista sulla casa dentro il recinto più vicina alla porta.
+			if args[4] == "recinto:case":
+				var meglio := INF
+				var porta := c
+				for l in sim.case:
+					var w := sim.centro_lotto(l)
+					if sim.dentro_recinto(w) and w.distance_to(porta) < meglio:
+						meglio = w.distance_to(porta)
+						c = w
 		if args.size() > 4 and args[4] in ["capanno", "posta"]:
 			var elenco: Array = sim.capanni if args[4] == "capanno" else sim.poste
 			if not elenco.is_empty():
@@ -236,8 +283,12 @@ func _process(_d: float) -> bool:
 		elif args.size() > 4 and args[4] == "legnaia":
 			_s.hud.seleziona_comando("legnaia")
 			_s.aggiorna_zone_taglio()
-		elif su_edificio and (args[4] == "cantiere" or args[4].begins_with("strade")):
+		elif su_edificio and (args[4] == "cantiere" or args[4].begins_with("strade") or args[4] in ["recinto", "recinto:cantiere", "recinto:case"]):
 			pass
+		elif su_edificio and args[4] == "recinto:abitato":
+			_s.hud.seleziona_comando("abitato")
+			_s.punto_corrente = Vector3(c.x, 0.0, c.y)
+			_s._aggiorna_pennello()
 		elif su_edificio:
 			_s.hud.seleziona_comando(args[4])
 			_s.punto_corrente = Vector3(c.x, 0.0, c.y)

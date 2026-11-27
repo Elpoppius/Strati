@@ -113,6 +113,48 @@ static func costruisci_officina(sim: SimVillaggio, caso: RandomNumberGenerator, 
 	return migliore.x >= 0 and sim.costruisci_officina(migliore) == ""
 
 
+## Recinto (epoca 2, 27/11/2026): un anello di otto punti attorno all'abitato, largo quanto le case
+## del nucleo più un margine (con qualita alta anche il granaio dentro); se non si può, più stretto.
+static func traccia_recinto(sim: SimVillaggio, caso: RandomNumberGenerator, qualita: float) -> bool:
+	var c := sim.mondo_di_px(sim.centro)
+	var raggio := 80.0
+	for l in sim.case_nel_nucleo():
+		raggio = maxf(raggio, sim.centro_lotto(l).distance_to(c) + 30.0)
+	if qualita >= 0.6 and sim.granaio.x >= 0:
+		raggio = maxf(raggio, sim.granaio.distance_to(c) + 40.0)
+	raggio *= lerpf(0.75, 1.1, qualita) + caso.randf_range(-0.05, 0.05)
+	var giro := caso.randf() * TAU
+	for k in 8:
+		var anello: Array = []
+		for j in 8:
+			var w := c + Vector2.from_angle(giro + j * TAU / 8.0) * raggio
+			anello.append(sim.centro_lotto(sim.lotto_da_mondo(w.x, w.y)))
+		if sim.traccia_recinto(anello) == "":
+			return true
+		raggio *= 0.85
+	return false
+
+
+## Zona dell'abitato (epoca 2): i lotti dentro il recinto; chi conosce il genere anche una fascia fuori.
+static func stendi_abitato(sim: SimVillaggio, caso: RandomNumberGenerator, qualita: float) -> int:
+	var c := sim.mondo_di_px(sim.centro)
+	var raggio := 120.0
+	if sim.recinto_tracciato():
+		raggio = 0.0
+		for p in sim.recinto_punti:
+			raggio = maxf(raggio, (p as Vector2).distance_to(c))
+	raggio *= lerpf(0.7, 1.15, qualita) + caso.randf_range(-0.05, 0.05)
+	var lotti: Array = []
+	var l0 := sim.lotto_da_mondo(c.x - raggio, c.y - raggio)
+	var l1 := sim.lotto_da_mondo(c.x + raggio, c.y + raggio)
+	for y in range(l0.y, l1.y + 1):
+		for x in range(l0.x, l1.x + 1):
+			var l := Vector2i(x, y)
+			if sim.centro_lotto(l).distance_to(c) <= raggio:
+				lotti.append(l)
+	return sim.aggiungi_zona_abitato(lotti)
+
+
 ## Torre di avvistamento (scorrerie, 26/11/2026): qualita 1 cerca l'altura più alta vicino al
 ## villaggio; qualita bassa prende la prima che va bene, girando a caso.
 static func costruisci_torre(sim: SimVillaggio, caso: RandomNumberGenerator, qualita: float) -> bool:
