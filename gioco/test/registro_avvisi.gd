@@ -3,15 +3,21 @@ extends SceneTree
 ## giocatore vede: scelte che fermano il gioco, notifiche (rosse e grigie), righe della cronaca.
 ## Serve a misurare quanti avvisi arrivano e quanto pesano le piene (richiesta di Fede del
 ## 25/11/2026). Il giocatore automatico è lo stesso di sessioni_giocatori.gd, in versione ridotta.
-## Uso: godot --headless --path gioco -s res://test/registro_avvisi.gd -- uscita.txt [livello]
+## Uso: godot --headless --path gioco -s res://test/registro_avvisi.gd -- uscita.txt [livello] [lunghe]
+## Con "lunghe" (27/11/2026 sera, ripasso del ritmo) le partite vanno fino alla fine del prototipo
+## (700 a.C.) e ogni riga dice anche i secondi di gioco a velocità 1 (un anno al secondo, poi un
+## decennio al secondo).
 
 var _uscita: Array[String] = []
+var _lunghe := false
+var _secondi := 0.0
 
 
 func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
 	var file := args[0] if args.size() > 0 else "/tmp/avvisi.txt"
 	var k := int(args[1]) if args.size() > 1 else 5
+	_lunghe = args.size() > 2 and args[2] == "lunghe"
 	var d: MappaDati = load("res://mappe/pedecollinare/mappa.res")
 	var totale := {}
 	for n in 5:
@@ -52,17 +58,23 @@ func _gioca(d: MappaDati, sito: Vector2i, k: int, seme: int, nome: String) -> Di
 	AiutiGiocatori.costruisci_legnaia(sim, caso, 0.5)
 	for caccia in [true, false]:
 		AiutiGiocatori.costruisci_edificio_risorse(sim, caso, 0.5, caccia)
-	while not sim.finito and sim.anno < SimVillaggio.ANNO_PROVE:
+	_secondi = 0.0
+	var fine := SimVillaggio.ANNO_FINE_EPOCA2 if _lunghe else SimVillaggio.ANNO_PROVE
+	var decenni_prima := false
+	while not sim.finito and sim.anno < fine:
+		if sim.decenni != decenni_prima:
+			decenni_prima = sim.decenni
+			_uscita.append("%5d  [%4d s]  DECENNI" % [sim.anno - anno0, roundi(_secondi)])
 		while sim.in_attesa():
 			var dec: Dictionary = sim.decisioni[0]
 			if dec["tipo"] == "tutorial":
 				conti["tutorial"] += 1
-				_uscita.append("%5d  TUTORIAL  %s" % [sim.anno - anno0, dec["titolo"]])
+				_uscita.append("%5d  [%4d s]  TUTORIAL  %s" % [sim.anno - anno0, roundi(_secondi), dec["titolo"]])
 				sim.scegli(dec["id"], "salta" if k >= 7 else "continua")
 				continue
 			if dec["tipo"] != "fine":
 				conti["pause"] += 1
-				_uscita.append("%5d  PAUSA     %s" % [sim.anno - anno0, dec["titolo"]])
+				_uscita.append("%5d  [%4d s]  PAUSA     %s" % [sim.anno - anno0, roundi(_secondi), dec["titolo"]])
 			sim.scegli(dec["id"], _risposta(dec, caso, p_giusta, sim))
 		if not sim.fondato:
 			sim.fonda(sito)
@@ -93,12 +105,13 @@ func _gioca(d: MappaDati, sito: Vector2i, k: int, seme: int, nome: String) -> Di
 					sim.traccia_sentiero_da(sim.centro, sim.centro + Vector2i(roundi(cos(ang) * 9.0), roundi(sin(ang) * 9.0)))
 		var campi_prima := sim.campi.size()
 		sim.passo()
+		_secondi += 1.0 / float(sim.anni_per_passo())
 		eta = sim.anno - anno0
 		while not sim.avvisi.is_empty():
 			var a: Dictionary = sim.avvisi.pop_front()
 			var testo := String(a["testo"])
 			conti["notifiche_rosse" if a["pericolo"] else "notifiche_grigie"] += 1
-			_uscita.append("%5d  %s  %s" % [eta, "ROSSA  " if a["pericolo"] else "grigia ", testo])
+			_uscita.append("%5d  [%4d s]  %s  %s" % [eta, roundi(_secondi), "ROSSA  " if a["pericolo"] else "grigia ", testo])
 			if testo.begins_with("Piena di stagione"):
 				conti["piene_stagione"] += 1
 				perdita_piene += float(sim.allagati.size()) / maxf(1.0, campi_prima)
@@ -118,7 +131,8 @@ func _gioca(d: MappaDati, sito: Vector2i, k: int, seme: int, nome: String) -> Di
 		if not sim.cronaca.is_empty():
 			ultimo = sim.cronaca[0]
 		for t in nuove:
-			_uscita.append("%5d  cronaca   %s" % [eta, t])
+			_uscita.append("%5d  [%4d s]  cronaca   %s" % [eta, roundi(_secondi), t])
+	_uscita.append("Durata a velocità 1: %d secondi (%d minuti), fino al %s" % [roundi(_secondi), roundi(_secondi / 60.0), SimVillaggio.anno_testo(sim.anno)])
 	_uscita.append("Fine: %d abitanti, flessioni e carestie %d, salute %d, consenso %d" % [roundi(sim.pop), sim.stat["carestie"] + int(sim.stat.get("flessioni", 0)), roundi(sim.salute), roundi(sim.legittimita)])
 	_uscita.append("Piene di stagione: in media %.1f%% dei campi allagati ogni volta" % (100.0 * perdita_piene / maxf(1.0, conti["piene_stagione"])))
 	return conti

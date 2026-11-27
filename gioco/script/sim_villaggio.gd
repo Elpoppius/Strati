@@ -722,6 +722,22 @@ const ANNI_TRA_ROSSI := 50
 var _ultimi_rossi := {}
 
 
+## Righe di cronaca che si ripetono (ripasso del ritmo, 27/11/2026 sera): a decenni la cronaca
+## arrivava a una riga ogni due secondi, quasi tutte uguali (macellazioni, stranieri respinti, pendii,
+## flessioni, eminenti). Una riga dello stesso tipo al più ogni `anni` anni nei primi secoli e ogni
+## ANNI_RIGHE_DECENNI anni a decenni.
+const ANNI_RIGHE_DECENNI := 100
+var _ultime_righe := {}
+
+
+func _scrivi_raro(chiave: String, testo: String, anni := 5, tipo := "") -> void:
+	var attesa := ANNI_RIGHE_DECENNI if decenni else anni
+	if _ultime_righe.has(chiave) and anno - int(_ultime_righe[chiave]) < attesa:
+		return
+	_ultime_righe[chiave] = anno
+	_scrivi(testo, tipo)
+
+
 func _notifica(testo: String, pericolo := false, punto := Vector2(-1, -1)) -> void:
 	if pericolo:
 		var tipo := testo.get_slice(":", 0).get_slice(".", 0).strip_edges()
@@ -1364,7 +1380,7 @@ func _pascola(lavorati: Dictionary) -> void:
 	var prima := pascolo_eccessivo
 	pascolo_eccessivo = clampf((capi / maxf(portata_capi, 1.0) - 0.9) / 0.1, 0.0, 1.0) * quota_pendii
 	if pascolo_eccessivo > 0.3 and prima <= 0.3:
-		_scrivi("Troppi animali sui pendii: l'erba non ricresce e la terra comincia a scendere.")
+		_scrivi_raro("pendii", "Troppi animali sui pendii: l'erba non ricresce e la terra comincia a scendere.", 30)
 	# Gli animali delle famiglie arricchiscono chi ne ha di più (decisione di Fede del 25/11/2026).
 	var meta := clampf(capi / 300.0, 0.0, 1.0) if famiglie else 0.0
 	disuguaglianza += (meta - disuguaglianza) * 0.05
@@ -3801,7 +3817,7 @@ func _arrivo_stranieri() -> void:
 			_accogli(n_persone)
 		"chiusa":
 			_cambia_consenso("anziani", 1.0)
-			_scrivi("Un gruppo di %d stranieri chiede di fermarsi: viene mandato via." % n_persone)
+			_scrivi_raro("respinti", "Un gruppo di %d stranieri chiede di fermarsi: viene mandato via." % n_persone, 20)
 		_:
 			_gruppo_stranieri = n_persone
 			_decidi("stranieri", "Arrivano degli stranieri",
@@ -3820,7 +3836,7 @@ func _accogli(n_persone: int) -> void:
 	_anno_stranieri = anno
 	if sbloccato("pascolo"):
 		capi += n_persone * CAPI_PER_STRANIERO
-	_scrivi("%d stranieri si fermano al villaggio e portano nuovi modi di coltivare." % n_persone, "buono")
+	_scrivi_raro("accolti", "%d stranieri si fermano al villaggio e portano nuovi modi di coltivare." % n_persone, 20, "buono")
 
 
 ## Risolve una decisione in attesa con l'opzione scelta.
@@ -4099,7 +4115,8 @@ func passo() -> void:
 			capi -= ultimi_macellati
 			cibo += ultimi_macellati * CIBO_PER_CAPO
 			# Una riga ogni 5 anni al massimo (ritmo meditativo, decisione di Fede del 24/11/2026).
-			if anno - _anno_macellazione >= 5:
+			# A decenni al più una ogni ANNI_RIGHE_DECENNI anni (ripasso del ritmo, 27/11/2026 sera).
+			if anno - _anno_macellazione >= (ANNI_RIGHE_DECENNI if decenni else 5):
 				_scrivi("Annate cattive: si macellano gli animali per passare l'inverno (%d capi quest'anno)." % ultimi_macellati)
 			_anno_macellazione = anno
 	if razionamento > 0:
@@ -4117,7 +4134,7 @@ func passo() -> void:
 			# fino a SOGLIA_CARESTIA_VERA è una flessione, solo cronaca; oltre, carestia (proposta di Claude).
 			if carestia < SOGLIA_CARESTIA_VERA:
 				stat["flessioni"] = int(stat.get("flessioni", 0)) + 1
-				_scrivi("Un anno di flessione: manca il %d%% del cibo, le famiglie stringono la cinghia." % roundi(carestia * 100.0))
+				_scrivi_raro("flessione", "Un anno di flessione: manca il %d%% del cibo, le famiglie stringono la cinghia." % roundi(carestia * 100.0), 10)
 			else:
 				stat["carestie"] += 1
 				_scrivi("Carestia: manca il %d%% del cibo necessario." % roundi(carestia * 100.0), "allarme")
@@ -4730,7 +4747,7 @@ func _aggiorna_eminenti() -> void:
 		if not eminenti.has(l):
 			eminenti[l] = anno
 			_anno_eminente = anno
-			_scrivi("Una famiglia sale fra le eminenti: ora sono %d." % eminenti.size())
+			_scrivi_raro("eminente", "Una famiglia sale fra le eminenti: ora sono %d." % eminenti.size(), 50)
 			break
 
 
