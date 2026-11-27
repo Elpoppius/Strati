@@ -264,6 +264,12 @@ Solo documenti, senza toccare codice o modelli (richiesta di Fede).
 - [ ] Da raffinare: salute e scarti, bilancio della città. Da ragionare: stratificazione in altezza.
 
 ## Per l'abitato protourbano (dopo il villaggio)
+**Avviato il 27/11/2026** (Fede: "prossima è abitato protourbano"). Proposte in `epoca2-proposte.md`; indicazioni di Fede: zoning per l'abitato, recinto contro le scorrerie, fabbro per cibo e difesa, **il fabbro è il primo edificio che si sblocca con la nuova epoca**.
+- [x] Proposte: evoluzioni del gioco, sinergie, funzioni degli edifici, scheda del fabbro (§ 1, 1b, 2, 2b).
+- [x] Modelli, primo lotto: case su impalcato (piccola, media), casa del capo, tratto di recinto, porta, officina del fabbro con il cantiere; vesti dell'epoca 2 con i bronzi.
+- [ ] Fede conferma le proposte del § 1, § 2 e § 2b (segnate come proposte).
+- [ ] Modelli, secondo lotto: santuario, tumulo, granaio comune, pozzo, recinto del bestiame, ponte, varianti `_b` delle case su impalcato, cantieri di case e recinto.
+- [ ] Simulazione dell'epoca 2, cominciando dal fabbro (strumento, scheda con la scelta attrezzi/armi, metallo, effetti su cibo e scorrerie, tutorial, specchietto delle conseguenze), poi recinto e zone.
 - Recinto o palizzata, con terrapieno e fossato: la regolazione dello spazio della seconda epoca (decisioni di Fede del 24 e 25/11/2026).
 - Gruppi capi, clan, sacerdote; famiglie eminenti e comuni che nascono dalla disuguaglianza creata dal giocatore, con attenzione agli equilibri di potere (`era-origini.md` § 6).
 - Decisi e scartati: prologo nomade **bocciato** (25/11/2026); inizio al 6000 a.C. (i primi quattro secoli per mettere le pedine).

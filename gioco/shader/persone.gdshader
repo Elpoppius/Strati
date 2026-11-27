@@ -34,6 +34,9 @@ uniform float peso_ginocchio = 0.47;
 // Radianti di spalla e gomito per tenere ciascun attrezzo (come TENERE in persone.py).
 const float TENERE[5] = float[](1.2, 1.2, 1.2, 0.5, 0.15);
 uniform float variante = 0.0; // per modello: i colori di due modelli diversi non coincidono
+// Epoca (27/11/2026): 1 il villaggio, 2 l'abitato protourbano (vesti tinte più vive e il bronzo degli
+// ornamenti: sul corpo la classe 7, che negli attrezzi è la selce, è bronzo).
+uniform int epoca = 1;
 uniform vec4 posa = vec4(0.0); // per le foto di prova, si somma ai dati della MultiMesh
 
 // Colore e grana per vertice, sfumati tra un vertice e l'altro: con un colore per triangolo i
@@ -41,6 +44,7 @@ uniform vec4 posa = vec4(0.0); // per le foto di prova, si somma ai dati della M
 varying vec3 v_colore;
 varying vec3 v_grane; // quanto pesano la grana della lana (x), del pelo (y), del legno e del vimini (z)
 varying float v_pelle;
+varying float v_bronzo;
 // Membri della famiglia aperta nella scheda (alfa del colore dell'istanza sotto 0,75): più chiari.
 varying float v_evidenzia;
 
@@ -50,6 +54,12 @@ const vec3 CAPELLI[5] = vec3[](vec3(0.018, 0.014, 0.012), vec3(0.045, 0.028, 0.0
 const vec3 VESTI[7] = vec3[](vec3(0.38, 0.33, 0.26), vec3(0.47, 0.43, 0.35), vec3(0.17, 0.11, 0.065), vec3(0.33, 0.21, 0.09),
 	vec3(0.16, 0.17, 0.10), vec3(0.24, 0.11, 0.07), vec3(0.23, 0.22, 0.20));
 const vec3 MANTELLI[4] = vec3[](vec3(0.22, 0.13, 0.07), vec3(0.12, 0.08, 0.05), vec3(0.10, 0.09, 0.08), vec3(0.30, 0.24, 0.17));
+// Epoca 2, età del Bronzo e del Ferro (proposta di Claude): lane tinte con la robbia (rosso), la
+// reseda (giallo), il guado (blu), il mallo di noce (bruno), accanto alle lane naturali.
+const vec3 VESTI_2[8] = vec3[](vec3(0.42, 0.09, 0.05), vec3(0.50, 0.38, 0.10), vec3(0.10, 0.15, 0.27), vec3(0.20, 0.11, 0.06),
+	vec3(0.47, 0.43, 0.35), vec3(0.32, 0.12, 0.07), vec3(0.14, 0.20, 0.14), vec3(0.38, 0.33, 0.26));
+const vec3 MANTELLI_2[4] = vec3[](vec3(0.25, 0.06, 0.04), vec3(0.08, 0.10, 0.18), vec3(0.18, 0.12, 0.06), vec3(0.30, 0.27, 0.22));
+const vec3 BRONZO = vec3(0.55, 0.36, 0.14);
 
 float caso(float s, float k) {
 	return fract(sin(s * 12.9898 + k * 78.233) * 43758.5453);
@@ -86,10 +96,14 @@ void vertex() {
 	// Colori di questa persona.
 	float s2 = seme + variante;
 	float hc = caso(s2, 2.0);
+	vec3 veste = epoca >= 2 ? VESTI_2[int(caso(s2, 3.0) * 8.0) % 8] : VESTI[int(caso(s2, 3.0) * 7.0) % 7];
+	vec3 manto = epoca >= 2 ? MANTELLI_2[int(caso(s2, 4.0) * 4.0) % 4] : MANTELLI[int(caso(s2, 4.0) * 4.0) % 4];
 	vec3 tinte[10] = vec3[](PELLE[int(caso(s2, 1.0) * 4.0) % 4], CAPELLI[hc > 0.92 ? 4 : int(hc / 0.92 * 4.0) % 4],
-		VESTI[int(caso(s2, 3.0) * 7.0) % 7], MANTELLI[int(caso(s2, 4.0) * 4.0) % 4],
+		veste, manto,
 		vec3(0.085, 0.055, 0.035), vec3(0.07, 0.045, 0.028), vec3(0.20, 0.13, 0.07), vec3(0.16, 0.15, 0.14), vec3(0.36, 0.28, 0.15), vec3(0.025, 0.018, 0.014));
 	v_colore = tinte[clamp(classe, 0, 9)];
+	v_bronzo = (classe == 7 && parte != 6) ? 1.0 : 0.0;
+	v_colore = mix(v_colore, BRONZO, v_bronzo);
 	v_grane = vec3(classe == 2 ? 1.0 : 0.0, (classe == 1 || classe == 3) ? 1.0 : 0.0, (classe == 6 || classe == 8) ? 1.0 : 0.0);
 	v_pelle = classe == 0 ? 1.0 : 0.0;
 	v_evidenzia = COLOR.a < 0.75 ? 1.0 : 0.0;
@@ -239,6 +253,7 @@ void fragment() {
 	float grana = 1.0 + v_grane.x * (lana - 1.0) + v_grane.y * (pelo - 1.0) + v_grane.z * (legno - 1.0);
 	ALBEDO = v_colore * COLOR.r * mix(1.0, grana, 0.6) * (1.0 + 0.5 * v_evidenzia);
 	EMISSION = vec3(0.3, 0.26, 0.18) * v_evidenzia;
-	ROUGHNESS = mix(0.92, 0.7, v_pelle);
-	SPECULAR = mix(0.2, 0.35, v_pelle);
+	ROUGHNESS = mix(mix(0.92, 0.7, v_pelle), 0.35, v_bronzo);
+	SPECULAR = mix(mix(0.2, 0.35, v_pelle), 0.5, v_bronzo);
+	METALLIC = 0.7 * v_bronzo;
 }

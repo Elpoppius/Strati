@@ -8,6 +8,7 @@
 | `pilastri-e-decisioni.md` | concept, pilastri, ritmo, Ere ed eventi soglia, indicatori, mappe |
 | `epoche-future.md` | sistemi che attraversano le epoche, identità e regime, proprietà, vita delle costruzioni, dinamica calda, sottosuolo, schema delle dinamiche e sinergie |
 | `era-origini.md` | Villaggio e Abitato protourbano in dettaglio |
+| `epoca2-proposte.md` | Epoca 2 (27/11/2026): proposte di gioco, sinergie, edifici, fabbro (primo edificio dell'epoca, **D**), modelli |
 | `era-antichita.md` | Città-stato e Città imperiale in dettaglio |
 | `edifici-per-epoca.md` | catalogo degli edifici per categoria di gioco, con lo scopo |
 | `regolazione-dello-spazio.md` | come si regola lo spazio epoca per epoca |

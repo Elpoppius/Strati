@@ -298,22 +298,67 @@ PERSONE = {
 }
 SCALA_DONNA = 0.93
 
+# Epoca 2, età del Bronzo e del Ferro (27/11/2026, proposta di Claude: `docs/epoca2-proposte.md` § 3):
+# uomini con la tunica al ginocchio, la cintura con la placca di bronzo, il mantello fermato da una
+# fibula, le fasce alle gambe, qualcuno con il berretto di feltro; donne con la veste lunga alla
+# caviglia, la cintura con le placchette, bracciali e collana, uno scialle. Il bronzo sul corpo ha la
+# classe 7 (negli attrezzi è la selce): lo shader lo colora e lo fa lucido.
+PERSONE_2 = {
+    "uomo_1": {"donna": False, "capelli": "lunghi", "barba": "corta", "mantello": "lungo", "maniche": 0.5, "fibula": True, "fasce": True, "berretto": False},
+    "uomo_2": {"donna": False, "capelli": "corti", "barba": None, "mantello": None, "maniche": 0.45, "fibula": False, "fasce": True, "berretto": True},
+    "uomo_3": {"donna": False, "capelli": "crocchia", "barba": "lunga", "mantello": "lungo", "maniche": 0.6, "fibula": True, "fasce": False, "berretto": False},
+    "donna_1": {"donna": True, "capelli": "treccia", "barba": None, "mantello": None, "maniche": 0.55, "bracciali": True, "collana": True},
+    "donna_2": {"donna": True, "capelli": "crocchia", "barba": None, "mantello": "lungo", "maniche": 0.6, "fibula": True, "collana": True},
+    "donna_3": {"donna": True, "capelli": "sciolti", "barba": None, "mantello": None, "maniche": 0.5, "bracciali": True},
+}
 
-def persona(nome):
-    d = PERSONE[nome]
+
+def ornamenti(p, sk, d):
+    """Bronzi e lane dell'epoca 2: placca della cintura, fibula, bracciali, collana, berretto."""
+    s = sk.s
+    donna = d["donna"]
+    if donna:
+        for x in (-0.07, 0.0, 0.07):
+            p.add(Elli((x * s, 0.112 * s, 1.01 * s), (0.022 * s, 0.01 * s, 0.018 * s), "selce", 0, k=0.004))
+    else:
+        p.add(Elli((0, 0.116 * s, 1.01 * s), (0.05 * s, 0.012 * s, 0.03 * s), "selce", 0, k=0.004))
+    if d.get("fibula"):
+        p.add(Elli((0.11 * s, 0.085 * s, 1.37 * s), (0.026 * s, 0.014 * s, 0.018 * s), "selce", 0, k=0.004))
+    if d.get("bracciali"):
+        for lato, parte in ((-1, PARTI["braccio_sx"]), (1, PARTI["braccio_dx"])):
+            px, py, pz = sk.polso
+            gx, gy, gz = sk.gomito
+            a = (lato * (px + (gx - px) * 0.12), py + (gy - py) * 0.12, pz + (gz - pz) * 0.12)
+            b = (lato * (px + (gx - px) * 0.3), py + (gy - py) * 0.3, pz + (gz - pz) * 0.3)
+            p.add(Cono(a, b, 0.041 * s, 0.045 * s, "selce", parte, k=0.004))
+    if d.get("collana"):
+        for k in range(7):
+            ang = math.radians(-60 + k * 20)
+            p.add(Elli((0.072 * s * math.sin(ang), 0.06 * s * math.cos(ang) + 0.02 * s, (1.405 - 0.02 * math.cos(ang)) * s), (0.013 * s,) * 3, "selce", 0, k=0.003))
+    if d.get("berretto"):
+        p.add(Elli((0, -0.005 * s, sk.testa + 0.07 * s), (0.098 * s, 0.108 * s, 0.06 * s), "mantello", 1, k=0.01))
+
+
+def persona(nome, epoca=1):
+    d = PERSONE[nome] if epoca == 1 else PERSONE_2[nome]
     donna = d["donna"]
     sk = Scheletro(SCALA_DONNA if donna else 1.0)
     p = corpo_base(sk, donna)
-    gonna(p, sk, 0.24 * sk.s if donna else 0.52 * sk.s, 0.205 if donna else 0.195)
+    if epoca == 1:
+        gonna(p, sk, 0.24 * sk.s if donna else 0.52 * sk.s, 0.205 if donna else 0.195)
+    else:
+        gonna(p, sk, 0.09 * sk.s if donna else 0.5 * sk.s, 0.22 if donna else 0.19)
     for lato, parte in ((-1, PARTI["braccio_sx"]), (1, PARTI["braccio_dx"])):
         braccio(p, sk, lato, parte, manica=d["maniche"])
     for lato, parte in ((-1, PARTI["gamba_sx"]), (1, PARTI["gamba_dx"])):
-        gamba(p, sk, lato, parte, polpaccio_coperto=False)
+        gamba(p, sk, lato, parte, polpaccio_coperto=bool(d.get("fasce")))
     capelli(p, sk, d["capelli"])
     if d["barba"]:
         barba(p, sk, d["barba"] == "lunga")
     if d["mantello"]:
         mantello(p, sk, d["mantello"] == "lungo", d["mantello"] == "pelle")
+    if epoca >= 2:
+        ornamenti(p, sk, d)
     return p, sk
 
 
@@ -454,11 +499,14 @@ def main():
     bpy.ops.mesh.primitive_plane_add(size=60, location=(0, 0, 0))
     mat = base.materiale("persona", "lana", ruvidezza=0.9)
     dati = {}
-    for nome in PERSONE:
-        p, sk = persona(nome)
+    # "e2" come secondo argomento: solo le persone dell'epoca 2 (persona_<nome>_e2[_leggero]).
+    solo_e2 = len(sys.argv) > 2 and sys.argv[2] == "e2"
+    lista = [(n, 2) for n in PERSONE_2] if solo_e2 else [(n, 1) for n in PERSONE] + [(n, 2) for n in PERSONE_2]
+    for nome, epoca in lista:
+        p, sk = persona(nome, epoca)
         verts, facce = superficie(p, 0.0055)
         for livello, facce_volute in (("", FACCE_COMPLETO), ("_leggero", FACCE_LEGGERO)):
-            n = f"persona_{nome}{livello}"
+            n = f"persona_{nome}{'_e2' if epoca == 2 else ''}{livello}"
             ob = oggetto(n, verts, facce, facce_volute, mat, sopra=sk.collo if livello == "" else None)
             prepara(ob, p, sk, 0.35)
             base.cuoci_occlusione(ob, 0.55)
@@ -468,6 +516,8 @@ def main():
             dm = ob.dimensions
             print(f"{n}: {dm.x:.2f} x {dm.y:.2f} x {dm.z:.2f} m, {len(ob.data.polygons)} facce")
             bpy.data.objects.remove(ob, do_unlink=True)
+    if solo_e2:
+        return
     for sesso, scala in (("uomo", 1.0), ("donna", SCALA_DONNA)):
         sk = Scheletro(scala)
         dati[sesso] = {

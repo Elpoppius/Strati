@@ -133,6 +133,28 @@ Script `strumenti/blender/persone.py`, cartella `gioco/asset/persone/` (proposta
 - **Attrezzi** (`attrezzo_<nome>_<uomo|donna>.glb`): zappa, ascia, lancia, bastone, cesto, già nella mano destra e girati per stare giusti nella posa "tenere" dello shader; la loro base è a mezz'aria (eccezione in `verifica_asset.gd`).
 - Perni del corpo per lo shader in `persone.json`. Foto di controllo: `test/foto_persone.gd -- uscita [dimensione] [rotazioni] [leggero]` (le sei persone nelle pose principali), immagine `docs/immagini/persone-26-11.jpg`; nel gioco `test/foto_partita.gd -- uscita 35 200 0 persone:contadino`. Ritratti ravvicinati (tre figure ferme verso la camera): `test/foto_ritratto.gd -- uscita [uomini|donne] [dimensione] [gradi] [leggero]`, immagine `docs/immagini/ritratti-prima-dopo-26-11.jpg`.
 
+### Vesti dell'epoca 2 (27/11/2026, su richiesta di Fede; proposta di Claude in `epoca2-proposte.md` § 3)
+Le stesse sei persone in `PERSONE_2`, esportate come `persona_<nome>_e2[_leggero].glb`. Comando solo per loro: `blender-py strumenti/blender/persone.py gioco/asset/persone e2` (circa 2 minuti; senza `e2` rifà tutte le persone e gli attrezzi).
+- **Uomini:** tunica appena sotto il ginocchio, cintura con la placca di bronzo, mantello fermato sulla spalla da una fibula (uomo 1 e 3), fasce alle gambe (uomo 1 e 2), berretto di feltro (uomo 2).
+- **Donne:** veste lunga alla caviglia, cintura con tre placchette, bracciali di bronzo sugli avambracci (donna 1 e 3), collana (donna 1 e 2), mantello con la fibula (donna 2).
+- **Bronzo:** sul corpo ha la classe 7 (negli attrezzi la stessa classe è la selce). Lo shader, con `epoca = 2`, lo colora di bronzo, lucido e un po' metallico, e sceglie le vesti dalla tavolozza dell'epoca: robbia, reseda, guado, con i colori naturali (`VESTI_2`, `MANTELLI_2`). `Asset.mesh_persona("<nome>_e2")` tiene il seme dei colori della persona da cui viene.
+- Foto: `test/foto_persone.gd -- uscita [dimensione] [rotazioni] e2` (davanti l'epoca 2, dietro l'epoca 1 per confronto); immagini `docs/immagini/vesti-epoca2-27-11.jpg`, `vesti-epoca2-vicino-27-11.jpg`.
+- Nel gioco non si vedono ancora: la vista le userà quando la simulazione arriverà all'epoca 2.
+
+## Lotto dell'abitato protourbano (27/11/2026, su richiesta di Fede; proposta di Claude)
+Script `strumenti/blender/protourbano.py` → `gioco/asset/protourbano/`, con i materiali del villaggio più intonaco, terra, pelle, carbone, minerale e bocca accesa (texture nuove `intonaco.png` e `terra.png`: `python3 strumenti/blender/texture_procedurali.py gioco/asset/texture protourbano`). Comando: `blender-py strumenti/blender/protourbano.py gioco/asset/protourbano [nomi,separati,da,virgola]`. Riferimenti: terramare dell'età del Bronzo e urne a capanna villanoviane.
+
+| Modello | Misure (m) | Facce | Note |
+|---|---|---|---|
+| casa_impalcato_piccola, _media | 11,4 × 5,9 / 14,4 × 6,9 | 885 / 1005 | capanna rettangolare su impalcato di pali, pareti intonacate, tetto a due falde con le corna incrociate, scaletta |
+| casa_del_capo | 26,7 × 15,7 × 8,6 | 3478 | grande, con il portico di pali e il cortile recintato |
+| recinto_tratto | 10,1 × 6,0 × 4,3 | 904 | tratto di 10 m: terrapieno, palizzata e camminamento |
+| recinto_porta | 11,0 × 6,0 × 8,2 | 1426 | due torri, camminamento coperto, battenti aperti |
+| officina_fabbro | 8,1 × 5,3 × 3,2 | 1105 | primo edificio dell'epoca 2 (Fede, 27/11): tettoia a una falda aperta davanti, incudine sul ceppo, rastrelliera degli attrezzi; fuori dalla paglia il forno a pozzetto con il camino, i mantici, la terra bruciata, carbone, minerale, vasca per temprare |
+| cantiere_officina_fabbro | 7,3 × 5,6 × 2,9 | 351 | pali, travi, metà dei correnti, forno a metà |
+
+Foto: `test/foto_cantieri.gd -- uscita dimensione rotazioni protourbano` (tutto il lotto, con una casa lunga del villaggio per confronto) e `... fabbro` (officina finita e in cantiere); immagini `docs/immagini/protourbano-27-11.jpg`, `fabbro-27-11.jpg`.
+
 ## Lotto del villaggio (24/11/2026, Fede: procedi)
 Script `strumenti/blender/villaggio.py` → `gioco/asset/villaggio/`, nello stile verosimile della prova (stessi materiali e forme, occlusione cotta). Comando: `blender-py strumenti/blender/villaggio.py gioco/asset/villaggio`, poi `godot --headless --path gioco --import` e, nei nuovi `.import` delle texture, `detect_3d/compress_to=0`.
 

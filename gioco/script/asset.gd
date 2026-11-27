@@ -138,7 +138,8 @@ static func mesh_persona(nome: String, leggero: bool = false) -> Mesh:
 	var mesh := _mesh_da("res://asset/persone/persona_%s%s.glb" % [nome, "_leggero" if leggero else ""])
 	if mesh != null:
 		for i in mesh.get_surface_count():
-			mesh.surface_set_material(i, materiale_persona(nome.begins_with("donna"), PERSONE.find(nome) * 0.137))
+			# Le persone dell'epoca 2 (`<nome>_e2`) tengono il seme dei colori della persona da cui vengono.
+			mesh.surface_set_material(i, materiale_persona(nome.begins_with("donna"), PERSONE.find(nome.trim_suffix("_e2")) * 0.137))
 	return mesh
 
 

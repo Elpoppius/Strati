@@ -179,6 +179,25 @@ def argilla():
     return np.clip(img, 0, 1)
 
 
+def intonaco():
+    """Intonaco d'argilla chiara delle case dell'abitato protourbano (27/11/2026, proposta di Claude):
+    la stessa stesura dell'argilla, schiarita verso il colore della terra calcarea dei gessi."""
+    img = argilla()
+    calce = np.array([0.80, 0.73, 0.60])
+    return np.clip(img * 0.5 + calce * 0.5 + (img - img.mean(axis=(0, 1))) * 0.25, 0, 1)
+
+
+def terra():
+    """Terra battuta del terrapieno: zolle brune con chiazze d'erba rada (27/11/2026)."""
+    n = fbm(LATO, 6, 5, 60)
+    zolle = fbm(LATO, 24, 3, 61)
+    campo = 0.75 + 0.35 * (n - 0.5) + 0.25 * (zolle - 0.5)
+    img = colore(np.array([0.46, 0.37, 0.26]), campo)
+    erba_img = erba()
+    chiazze = np.clip((fbm(LATO, 5, 4, 62) - 0.48) * 3.0, 0, 1)[..., None]
+    return np.clip(img * (1 - chiazze) + erba_img * chiazze * 0.9, 0, 1)
+
+
 def legno():
     venature = rumore_anisotropo(LATO, 48, 4, 20)
     n = fbm(LATO, 8, 3, 21)
@@ -462,10 +481,13 @@ TEXTURE_ANIMALI = [("pelo", pelo), ("lana", lana)]
 TEXTURE_CIOCCHE = [("ciocche", ciocche), ("ciocche_lana", ciocche_lana)]
 
 
+TEXTURE_PROTOURBANO = [("intonaco", intonaco), ("terra", terra)]
+
+
 def main(uscita):
     os.makedirs(uscita, exist_ok=True)
     for nome, fn in [("paglia", paglia), ("argilla", argilla), ("legno", legno), ("corteccia", corteccia),
-                     ("pietra", pietra), ("erba", erba), ("erba_secca", erba_secca), ("macchie", macchie)] + TEXTURE_ANIMALI:
+                     ("pietra", pietra), ("erba", erba), ("erba_secca", erba_secca), ("macchie", macchie)] + TEXTURE_ANIMALI + TEXTURE_PROTOURBANO:
         salva(fn(), os.path.join(uscita, nome + ".png"))
     for nome, fn in TEXTURE_CIOCCHE:
         fn().save(os.path.join(uscita, nome + ".png"))
@@ -475,7 +497,11 @@ def main(uscita):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 2 and sys.argv[2] == "animali":
+    if len(sys.argv) > 2 and sys.argv[2] == "protourbano":
+        # Solo le texture nuove dell'abitato protourbano (27/11/2026).
+        for nome, fn in TEXTURE_PROTOURBANO:
+            salva(fn(), os.path.join(sys.argv[1], nome + ".png"))
+    elif len(sys.argv) > 2 and sys.argv[2] == "animali":
         # Solo le texture degli animali, senza riscrivere le altre.
         for nome, fn in TEXTURE_ANIMALI:
             salva(fn(), os.path.join(sys.argv[1], nome + ".png"))

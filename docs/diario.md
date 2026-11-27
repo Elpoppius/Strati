@@ -2,6 +2,35 @@
 
 Voci più recenti in cima.
 
+## 27/11/2026 (mattina, 3) — si comincia l'abitato protourbano
+**Fatto**
+- **Proposte per l'epoca 2** in `docs/epoca2-proposte.md`:
+  - 14 evoluzioni del gioco dal villaggio all'abitato (§ 1);
+  - le sinergie fra zoning, recinto, fabbro e scambio, con cinque cerchi che si chiudono (§ 1b);
+  - cosa cambia per ogni edificio del villaggio (§ 2);
+  - la scheda dell'officina del fabbro come edificio (§ 2b);
+  - modelli e ordine di lavoro (§ 3–4).
+- **Modelli** (`strumenti/blender/protourbano.py`, `gioco/asset/protourbano/`):
+  - case su impalcato piccola e media, casa del capo, tratto di recinto, porta;
+  - officina del fabbro e il suo cantiere. L'officina è stata rifatta a una falda, aperta davanti e con il forno fuori dalla paglia, perché dall'alto si leggessero forno e incudine.
+  - Texture nuove: intonaco e terra.
+- **Vesti dell'epoca 2** (`persone.py`, `PERSONE_2`, `persona_*_e2`):
+  - tunica al ginocchio, veste alla caviglia, fasce, berretto;
+  - bronzi: placche, fibule, bracciali, collane.
+  - Lo shader delle persone ha `epoca`, con la tavolozza di robbia, reseda e guado e il bronzo lucido.
+- **Foto:** `test/foto_cantieri.gd` (modi `protourbano` e `fabbro`), `test/foto_persone.gd` (modo `e2`); immagini in `docs/immagini/*-27-11.jpg`.
+- 12 verifiche superate.
+
+**Decisioni** (Fede, 27/11)
+- L'abitato si gestisce con lo zoning; il recinto protegge dalle scorrerie; il fabbro rende più efficienti la raccolta del cibo e la difesa; controllare che tutto sia sinergico.
+- Il fabbro va inserito come edificio ed è il **primo edificio che si sblocca con la nuova epoca**.
+- Il resto delle proposte (§ 1, § 2, § 2b) aspetta la conferma di Fede.
+
+**Prossimo passo**
+- Fede guarda le proposte e le foto.
+- Poi il secondo lotto di modelli e la simulazione dell'epoca 2, cominciando dal fabbro.
+- Resta in attesa: la prova di Fede al PC (F3, 17 caselle) e le scorrerie da provare in gioco.
+
 ## 27/11/2026 (mattina, 2) — presagi, primo governo, passerelle
 **Fatto** (decisioni di Fede del 26/11 sera)
 - **Presagi** ("allenta i presagi, aumentali col sacerdote scontento"):
