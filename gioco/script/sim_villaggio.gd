@@ -239,10 +239,10 @@ var ultima_piena := {}
 ## Pesi e soglia: proposta di Claude, da tarare con le partite automatiche.
 const PESI_ABBONDANZA := {"cibo": 0.45, "salute": 0.3, "spazio": 0.25}
 ## Mesi di scorte che valgono "cibo che avanza" pieno.
-const MESI_PIENI := 18.0
+const MESI_PIENI := 12.0  # 18 fino al 27/11/2026 sera (calibrazione dei ritmi: si cresce da subito)
 ## Sotto questa abbondanza (0–1) la popolazione non cresce; sopra cresce fino a CRESCITA_MASSIMA.
 const SOGLIA_CRESCITA := 0.6
-const CRESCITA_MASSIMA := 0.014
+const CRESCITA_MASSIMA := 0.012  # 0,014 fino al 27/11/2026 sera (calibrazione: niente esplosione finale)
 var abbondanza := 0.0
 ## Le nascite reagiscono in ritardo (decisione di Fede del 25/11/2026, carestie B + C): seguono
 ## l'abbondanza degli ultimi ANNI_NASCITE anni circa. Negli anni buoni il villaggio cresce oltre ciò
@@ -4636,7 +4636,11 @@ func _disponi_nucleo(servono: int, ci_sono: int, paga: bool) -> void:
 				if w.x < 0 or w.y < 0 or w.x > dati.lato_metri() or w.y > dati.lato_metri():
 					continue
 				var i := px(p)
-				if not edificabile(i) or campi.has(i) or sentieri.has(i):
+				# Con la politica "Allargare l'abitato", quando l'abitato si è già allargato (raggio_extra),
+				# le case possono prendere i campi attorno, come dice la politica ("l'abitato cresce verso
+				# i campi"; corretto il 27/11/2026 sera: prima i campi bloccavano sempre le case).
+				var sui_campi := raggio_extra > 0 and politica("affollati") == "allargare"
+				if not edificabile(i) or sentieri.has(i) or (campi.has(i) and not sui_campi):
 					continue
 				# Le case lasciano un lotto libero attorno; dopo una scorreria (memoria della paura) si
 				# stringono e basta un lotto libero di lato: in diagonale possono toccarsi.
@@ -4659,11 +4663,18 @@ func _disponi_nucleo(servono: int, ci_sono: int, paga: bool) -> void:
 				# Il luogo sacro attira le case (decisione di Fede del 24/11/2026: il germe della piazza).
 				if luogo_sacro.x >= 0:
 					sc += 2.5 * clampf(1.0 - w.distance_to(luogo_sacro) / 400.0, 0.0, 1.0)
+				# Prima la terra libera, poi i campi.
+				if campi.has(i):
+					sc -= 1.5
 				if sc > punteggio:
 					punteggio = sc
 					migliore = l
 		if migliore.x == -1 and migliore.y == -1:
 			break
+		var wm := centro_lotto(migliore)
+		var im := px(px_da_mondo(wm.x, wm.y))
+		if campi.has(im):
+			campi.erase(im)
 		case.append(migliore)
 		_segna_casa(migliore)
 		occupati[migliore] = true
