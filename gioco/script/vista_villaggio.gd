@@ -39,7 +39,7 @@ func prepara(s: SimVillaggio, u: UsoSuolo, t: Terreno) -> void:
 	for k in CANTIERI:
 		for nome in [k, CANTIERI[k]]:
 			if not _scene.has(nome):
-				_scene[nome] = load(CARTELLA + nome + ".glb")
+				_scene[nome] = load((CARTELLA_EPOCA2 if nome in MODELLI_EPOCA2 else CARTELLA) + nome + ".glb")
 	_scene["passerella"] = load(CARTELLA + "passerella.glb")
 	for voce in CASE:
 		for nome in [voce[0], voce[0] + "_b"]:
@@ -533,9 +533,14 @@ func sincronizza() -> void:
 	persone.sincronizza()
 
 
+## Modelli dell'epoca 2 (strumenti/blender/protourbano.py), caricati dalla loro cartella.
+const CARTELLA_EPOCA2 := "res://asset/protourbano/"
+const MODELLI_EPOCA2 := ["officina_fabbro", "cantiere_officina_fabbro"]
+
+
 func _istanza(nome: String) -> Node3D:
 	if not _scene.has(nome):
-		_scene[nome] = load(CARTELLA + nome + ".glb")
+		_scene[nome] = load((CARTELLA_EPOCA2 if nome in MODELLI_EPOCA2 else CARTELLA) + nome + ".glb")
 	var nodo: Node3D = (_scene[nome] as PackedScene).instantiate()
 	Asset.prepara(nodo)
 	return nodo
@@ -994,7 +999,7 @@ func _sincronizza_case() -> void:
 const SCALA_EDIFICI := {"legnaia": 1.8, "capanno_pesca": 1.8, "posta_caccia": 1.8, "granaio_su_pali": 1.4}
 const CANTIERI := {"granaio_su_pali": "cantiere_granaio", "legnaia": "cantiere_legnaia",
 	"capanno_pesca": "cantiere_capanno_pesca", "posta_caccia": "cantiere_posta_caccia", "luogo_sacro": "cantiere_luogo_sacro",
-	"torre_avvistamento": "cantiere_torre_avvistamento"}
+	"torre_avvistamento": "cantiere_torre_avvistamento", "officina_fabbro": "cantiere_officina_fabbro"}
 const ALTEZZA_BARRA := 6.5
 var _edifici := {}  # punto -> {nodo, modello, raggio, barra}
 ## Cantieri aperti per le barre: punto -> [anni fatti, anni totali].
@@ -1016,6 +1021,12 @@ func _sincronizza_edifici() -> void:
 	for l in sim.legnaie:
 		var p: Vector2 = l["punto"]
 		ora[p] = ["legnaia", float(int(p.x * 7.0 + p.y * 13.0) % 360), 7.0, "legnaia", int(l["cantiere"]), SimVillaggio.ANNI_CANTIERE_LEGNAIA]
+	# Officina del fabbro (epoca 2): il davanti, con l'incudine e la bocca della fornace, guarda il
+	# centro del villaggio (nell'abitato guarderà la via).
+	for e in sim.officine:
+		var p_o: Vector2 = e["punto"]
+		var v_o := sim.mondo_di_px(sim.centro) - p_o
+		ora[p_o] = ["officina_fabbro", rad_to_deg(atan2(v_o.x, v_o.y)), 7.0, "officina", int(e["cantiere"]), SimVillaggio.ANNI_CANTIERE_OFFICINA]
 	for e in sim.capanni:
 		var v: Vector2 = e["verso"]
 		ora[e["punto"]] = ["capanno_pesca", rad_to_deg(atan2(-v.x, -v.y)), 14.0, "capanno_pesca", int(e["cantiere"]), SimVillaggio.ANNI_CANTIERE_RISORSE]

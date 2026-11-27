@@ -500,10 +500,11 @@ func _verifica_soglia(d: MappaDati) -> void:
 		s.identita["decide"] = -0.4
 		s.disuguaglianza = 0.6
 		s.scegli(dec[0]["id"], "aprirsi")
-	controlla(s.finito and s.soglia_scelta == "aprirsi" and s.primo_governo == "Casa dominante", "raccolto alle famiglie e disuguaglianza alta: Casa dominante (%s)" % s.primo_governo)
+	controlla(s.epoca == 2 and not s.finito and s.soglia_scelta == "aprirsi" and s.primo_governo == "Casa dominante", "raccolto alle famiglie e disuguaglianza alta: Casa dominante (%s), e comincia l'epoca 2" % s.primo_governo)
 	controlla(s.tecnica_corrente >= 1 and float(s.identita["apertura"]) > 0.3, "arriva l'aratro e la città nasce aperta")
-	var fine: Array = s.decisioni.filter(func(x: Dictionary) -> bool: return x["tipo"] == "fine")
+	var fine: Array = s.decisioni.filter(func(x: Dictionary) -> bool: return x["tipo"] == "epoca")
 	controlla(not fine.is_empty() and String(fine[0]["testo"]).contains("Casa dominante") and String(fine[0]["testo"]).contains("abitanti"), "il riepilogo del villaggio dice il primo governo")
+	_verifica_fabbro(s, d)
 	s.identita["terra"] = -0.6
 	s.disuguaglianza = 0.1
 	s.consenso["anziani"] = 70.0
@@ -538,6 +539,73 @@ func _verifica_soglia(d: MappaDati) -> void:
 	v.decisioni.clear()
 	var msg := v.prova_soglia()
 	controlla(v.decisioni.any(func(x: Dictionary) -> bool: return x["tipo"] == "soglia") and v.anno == SimVillaggio.ANNO_SOGLIA and v.decenni, "Prova: Metallo porta subito all'evento (%s)" % msg)
+
+
+## Epoca 2, l'officina del fabbro (decisioni di Fede del 27/11/2026; scheda in epoca2-proposte § 2b).
+func _verifica_fabbro(s: SimVillaggio, d: MappaDati) -> void:
+	while s.in_attesa():
+		s.scegli(s.decisioni[0]["id"], s.decisioni[0]["opzioni"][0]["id"])
+	controlla(s.sbloccato("officina") and s._tutorial_visti.has("fabbro"), "con l'epoca 2 si sblocca l'officina del fabbro, con la sua scheda di tutorial")
+	var c := s.mondo_di_px(s.centro)
+	s.legna = 0.0
+	var punto := Vector2.ZERO
+	for k in 40:
+		var a := k * 0.7
+		var w := c + Vector2(cos(a), sin(a)) * (60.0 + k * 6.0)
+		s.legna = 100.0
+		if s.motivo_officina(w) == "":
+			punto = w
+			break
+	controlla(punto != Vector2.ZERO, "c'è un posto per l'officina vicino al villaggio")
+	s.legna = 5.0
+	controlla(s.motivo_officina(punto).contains("legna"), "senza legna l'officina non si costruisce")
+	s.legna = 200.0
+	controlla(s.costruisci_officina(punto) == "" and int(s.officine[0]["cantiere"]) == SimVillaggio.ANNI_CANTIERE_OFFICINA, "l'officina si costruisce in %d anni" % SimVillaggio.ANNI_CANTIERE_OFFICINA)
+	controlla(s.motivo_officina(c + Vector2(30, 0)).contains("c'è già"), "ne basta una")
+	s.case = s.case.filter(func(l: Vector2i) -> bool: return s.centro_lotto(l).distance_to(s.officine[0]["punto"]) >= SimVillaggio.DISTANZA_FUOCO)
+	var prima_att := s.attrezzi
+	var g := 0
+	while g < 40 and not s.finito:
+		s.legna = 200.0
+		s.cibo = 5000.0
+		s.pop = 600.0
+		s.passo()
+		while s.in_attesa():
+			s.scegli(s.decisioni[0]["id"], s.decisioni[0]["opzioni"][0]["id"])
+		g += 1
+	controlla(s.officina_pronta(s.officine[0]) and s.attrezzi > prima_att + 0.3 and s.armi < 0.01, "il fabbro forgia attrezzi: salgono (%d%%), le armi no" % roundi(s.attrezzi * 100.0))
+	controlla(s.carbone_anno > 0.0 and s.lavoro_fabbro > 0.5, "la fornace brucia legna (%d l'anno), il fabbro lavora (%d%%)" % [roundi(s.carbone_anno), roundi(s.lavoro_fabbro * 100.0)])
+	var cause := " ".join(s.cause_di("Cibo"))
+	controlla(cause.contains("attrezzi"), "il pannello del Cibo dice degli attrezzi del fabbro")
+	s.scegli_lavoro_officina(0, "armi")
+	var att := s.attrezzi
+	g = 0
+	while g < 40 and not s.finito:
+		s.legna = 200.0
+		s.cibo = 5000.0
+		s.pop = 600.0
+		s.passo()
+		while s.in_attesa():
+			s.scegli(s.decisioni[0]["id"], s.decisioni[0]["opzioni"][0]["id"])
+		g += 1
+	controlla(s.armi > 0.3 and s.attrezzi < att, "con le armi salgono le armi (%d%%) e gli attrezzi si consumano (%d%%)" % [roundi(s.armi * 100.0), roundi(s.attrezzi * 100.0)])
+	# Isolati: poco metallo, il fabbro lavora a metà.
+	var iso := SimVillaggio.new(d, 41)
+	iso.epoca = 2
+	iso.soglia_scelta = "isolarsi"
+	iso.fondato = true
+	iso.officine = [{"punto": c, "cantiere": 0, "lavoro": "attrezzi"}]
+	iso.legna = 200.0
+	iso.metallo = 0.0
+	for k in 30:
+		iso._lavora_officine()
+	controlla(iso.lavoro_fabbro < 0.5, "isolati, il metallo è poco e il fabbro lavora a metà (%d%%)" % roundi(iso.lavoro_fabbro * 100.0))
+	# Il forno vicino alle case.
+	controlla(iso.case_vicine_al_forno(c).size() == iso.case.filter(func(l: Vector2i) -> bool: return iso.centro_lotto(l).distance_to(c) < SimVillaggio.DISTANZA_FUOCO).size(), "le case a meno di %d m dal forno sono a rischio" % roundi(SimVillaggio.DISTANZA_FUOCO))
+	# Fine del prototipo dell'epoca 2.
+	s.anno = SimVillaggio.ANNO_FINE_EPOCA2
+	s.passo()
+	controlla(s.finito and s.decisioni.any(func(x: Dictionary) -> bool: return x["tipo"] == "fine"), "verso il 700 a.C. il prototipo dell'epoca 2 finisce")
 
 
 func _gioca(sim: SimVillaggio, sito: Vector2i, scelta_presagi := "") -> Dictionary:

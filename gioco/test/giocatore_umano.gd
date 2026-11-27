@@ -37,16 +37,19 @@ func _initialize() -> void:
 	var semi := int(args[1]) if args.size() > 1 else 3
 	if args.size() > 2 and args[2] == "lunghe":
 		_anno_limite = SimVillaggio.ANNO_FINE
+	# "epoca2": fino alla fine del prototipo dell'epoca 2 (il fabbro, 27/11/2026).
+	if args.size() > 2 and args[2] == "epoca2":
+		_anno_limite = SimVillaggio.ANNO_FINE_EPOCA2 + 1
 	var profili: Array = args[3].split(",") if args.size() > 3 else ["sbaglia", "legge", "genere", "casual"]
 	# "senza_scorrerie" come quinto argomento: le stesse partite senza scorrerie (per misurarne il peso).
 	_senza_scorrerie = args.size() > 4 and args[4] == "senza_scorrerie"
 	var d: MappaDati = load("res://mappe/pedecollinare/mappa.res")
-	_righe.append("profilo,sito,seme,pop_finale,pop_minima,carestie,carestie_gravi,abbandoni,scissioni,pause,tutorial,piene_grandi,granaio_anno,cosa_ha_imparato,legnaie,casali,nucleo,poste,capanni,luogo_sacro,bosco_sacro_ha,sacerdote,capi,pascolo_ha,segni,scorrerie,case_bruciate,torre,pericolo,sentieri_km,strade,anno_fine,soglia,governo,id_terra,id_decide,anziani,disuguaglianza")
+	_righe.append("profilo,sito,seme,pop_finale,pop_minima,carestie,carestie_gravi,abbandoni,scissioni,pause,tutorial,piene_grandi,granaio_anno,cosa_ha_imparato,legnaie,casali,nucleo,poste,capanni,luogo_sacro,bosco_sacro_ha,sacerdote,capi,pascolo_ha,segni,scorrerie,case_bruciate,torre,pericolo,sentieri_km,strade,anno_fine,soglia,governo,id_terra,id_decide,anziani,disuguaglianza,officina,lavoro_fabbro,attrezzi,armi")
 	for profilo in profili:
 		for sito in d.siti:
 			for seme in range(1, semi + 1):
 				var r := _gioca(d, sito, profilo, seme * 31 + int(sito["n"]))
-				_righe.append("%s,%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%d,%d,%d,%d,%d,%d,%.1f,%d,%d,%.1f,%d,%d,%d,%d,%s,%.1f,%d,%d,%s,%s,%.2f,%.2f,%d,%.2f" % [profilo, String(sito["nome"]).replace(",", " "), seme, r["pop"], r["minima"], r["carestie"], r["gravi"], r["abbandoni"], r["scissioni"], r["pause"], r["tutorial"], r["piene"], r["granaio"], r["imparato"], r["legnaie"], r["casali"], r["nucleo"], r["poste"], r["capanni"], r["sacro"], r["bosco_sacro"], r["sacerdote"], r["capi"], r["pascolo_ha"], r["segni"], r["scorrerie"], r["case_bruciate"], r["torre"], r["pericolo"], r["sentieri_km"], r["strade"], r["anno_fine"], r["soglia"], r["governo"], r["id_terra"], r["id_decide"], r["anziani"], r["disuguaglianza"]])
+				_righe.append("%s,%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%d,%d,%d,%d,%d,%d,%.1f,%d,%d,%.1f,%d,%d,%d,%d,%s,%.1f,%d,%d,%s,%s,%.2f,%.2f,%d,%.2f,%d,%s,%.2f,%.2f" % [profilo, String(sito["nome"]).replace(",", " "), seme, r["pop"], r["minima"], r["carestie"], r["gravi"], r["abbandoni"], r["scissioni"], r["pause"], r["tutorial"], r["piene"], r["granaio"], r["imparato"], r["legnaie"], r["casali"], r["nucleo"], r["poste"], r["capanni"], r["sacro"], r["bosco_sacro"], r["sacerdote"], r["capi"], r["pascolo_ha"], r["segni"], r["scorrerie"], r["case_bruciate"], r["torre"], r["pericolo"], r["sentieri_km"], r["strade"], r["anno_fine"], r["soglia"], r["governo"], r["id_terra"], r["id_decide"], r["anziani"], r["disuguaglianza"], r["officina"], r["lavoro_fabbro"], r["attrezzi"], r["armi"]])
 	var f := FileAccess.open(file, FileAccess.WRITE)
 	f.store_string("\n".join(_righe) + "\n")
 	f.close()
@@ -100,6 +103,8 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 	var bosco_voluto := false
 	var pascolo_voluto := false
 	var torre_voluta := false
+	var officina_voluta := false
+	var lavoro_scelto := ""
 	var caccia_spenta_anno := -1
 	var raccolto_provato := false
 	while not sim.finito and sim.anno < _anno_limite:
@@ -107,9 +112,13 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 			var dec: Dictionary = sim.decisioni[0]
 			if dec["tipo"] == "tutorial":
 				tutorial += 1
+				# La scheda del metallo invoglia a provare l'officina (chi legge quasi sempre).
+				if String(dec.get("chiave", "")) == "fabbro" and caso.randf() < (0.4 if casual else 0.5 + 0.5 * legge):
+					officina_voluta = true
 				sim.scegli(dec["id"], "salta" if genere or (casual and tutorial >= 3) else "continua")
 				continue
-			if dec["tipo"] != "fine":
+			# Il riepilogo dell'evento soglia (prima "fine", ora "epoca") non si conta, come prima.
+			if dec["tipo"] != "fine" and dec["tipo"] != "epoca":
 				pause += 1
 			if dec["tipo"] == "piena" and not casual and caso.randf() < 0.5 + 0.4 * legge:
 				# La finestra spiega dove arrivano le piene: si impara a evitare le terre rosse.
@@ -130,6 +139,8 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 				granaio_voluto = genere or caso.randf() < (0.3 if casual else 0.6)
 			if t.contains("luogo sacro"):
 				sacro_voluto = genere or caso.randf() < (0.3 if casual else 0.6)
+			if t.contains("officina del fabbro") or t.contains("Officina del fabbro"):
+				officina_voluta = officina_voluta or genere or caso.randf() < (0.4 if casual else (0.8 if legge > 0.5 else 0.6))
 			if t.contains("il pascolo"):
 				pascolo_voluto = genere or caso.randf() < (0.4 if casual else 0.6)
 			if t.contains("bosco sacro"):
@@ -211,6 +222,22 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 				caccia_spenta_anno = -1
 			if sacro_voluto and sim.luogo_sacro.x < 0 and sim.sbloccato("luogo_sacro") and sim.legna >= SimVillaggio.COSTO_LUOGO_SACRO:
 				AiutiGiocatori.costruisci_luogo_sacro(sim)
+			# Officina del fabbro (epoca 2): chi conosce il genere subito e nel posto giusto.
+			if sim.sbloccato("officina") and not officina_voluta and caso.randf() < (1.0 if genere else 0.05):
+				officina_voluta = true
+			if officina_voluta and sim.officine.is_empty() and sim.sbloccato("officina") and sim.legna >= SimVillaggio.COSTO_OFFICINA + SimVillaggio.COSTO_CASA:
+				AiutiGiocatori.costruisci_officina(sim, caso, 0.9 if genere else (0.2 if casual else (0.6 if legge > 0.5 else 0.4)))
+			# Cosa forgia: chi legge sceglie attrezzi e passa alle armi dopo una scorreria; chi conosce
+			# il genere fa metà e metà se le scorrerie arrivano; il casual prova un tasto a caso.
+			if not sim.officine.is_empty() and sim.officina_pronta(sim.officine[0]):
+				var voluto := lavoro_scelto
+				if lavoro_scelto == "":
+					voluto = ["attrezzi", "armi", "meta"][caso.randi() % 3] if casual else "attrezzi"
+				elif sim.stat["scorrerie"] > 0 and lavoro_scelto == "attrezzi" and not casual and caso.randf() < (0.05 if genere else 0.02 * (1.0 + legge)):
+					voluto = "meta" if genere else "armi"
+				if voluto != lavoro_scelto:
+					lavoro_scelto = voluto
+					sim.scegli_lavoro_officina(0, voluto)
 			if torre_voluta and sim.torre.x < 0 and sim.sbloccato("torre") and sim.legna >= SimVillaggio.COSTO_TORRE + SimVillaggio.COSTO_CASA:
 				AiutiGiocatori.costruisci_torre(sim, caso, 0.9 if genere else (0.3 if casual else 0.6))
 			if pascolo_voluto and sim.pascolo.is_empty() and sim.sbloccato("pascolo"):
@@ -249,7 +276,8 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 		"segni": sim.stat["segni"], "scorrerie": sim.stat["scorrerie"], "case_bruciate": sim.stat["case_bruciate"], "torre": 1 if sim.torre_pronta() else 0, "pericolo": sim.politica("pericolo"),
 		"sentieri_km": sim.sentieri.size() * sim.dati.metri_per_px / 1000.0, "strade": sim.strade.size(),
 		"anno_fine": sim.anno, "soglia": sim.soglia_scelta, "governo": sim.primo_governo.replace(" ", "_"),
-		"id_terra": float(sim.identita["terra"]), "id_decide": float(sim.identita["decide"]), "anziani": roundi(sim.consenso["anziani"]), "disuguaglianza": sim.disuguaglianza}
+		"id_terra": float(sim.identita["terra"]), "id_decide": float(sim.identita["decide"]), "anziani": roundi(sim.consenso["anziani"]), "disuguaglianza": sim.disuguaglianza,
+		"officina": 1 if not sim.officine.is_empty() else 0, "lavoro_fabbro": lavoro_scelto if lavoro_scelto != "" else "-", "attrezzi": sim.attrezzi, "armi": sim.armi}
 
 
 ## Posta di caccia e capanno da pesca all'inizio (decisioni di Fede del 25/11/2026): chi conosce il

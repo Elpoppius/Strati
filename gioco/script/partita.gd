@@ -5,7 +5,7 @@ extends Node
 ## Tempo continuo con pausa e tre velocità; si ferma da solo nei momenti decisivi
 ## (decisione di Fede del 23/11/2026).
 
-const STRUMENTI := ["fonda", "zona", "campi", "pascolo", "sentiero", "granaio", "legnaia", "capanno", "posta", "luogo_sacro", "torre", "bosco_sacro", "demolisci"]
+const STRUMENTI := ["fonda", "zona", "campi", "pascolo", "sentiero", "granaio", "legnaia", "capanno", "posta", "luogo_sacro", "torre", "officina", "bosco_sacro", "demolisci"]
 ## Tempo massimo di calcolo della simulazione per fotogramma (ms), a decenni.
 const TEMPO_ANNI_MS := 12.0
 var _anni_da_fare := 0
@@ -101,6 +101,10 @@ func avvia(s: Node, seme_voluto: int = -1) -> void:
 		# Torre di avvistamento (scorrerie, decisione di Fede del 26/11/2026); tasto U: proposta di Claude.
 		{"id": "torre", "icona": "torre", "testo": "Torre di avvistamento (8 di legna)", "breve": "Torre", "tasto": "U",
 		 "descrizione": "Una piattaforma su pali con la catasta per il fuoco di segnalazione. Va su un dosso o un colle, entro 1200 m dal centro; ne basta una. Costa 8 di legna e due anni di lavoro. Dalla torre i segni di una scorreria arrivano prima, e quando arriva si perde meno."},
+		# Officina del fabbro (epoca 2; Fede, 27/11/2026: il primo edificio che si sblocca); tasto M,
+		# proposta di Claude.
+		{"id": "officina", "icona": "officina_fabbro", "testo": "Officina del fabbro (12 di legna)", "breve": "Fabbro", "tasto": "M",
+		 "descrizione": "Una tettoia con la fornace e l'incudine, entro 600 m dal centro; ne basta una. Costa 12 di legna e tre anni di lavoro; poi una famiglia lascia i campi e la fornace brucia legna. Forgia attrezzi (più cibo, legna più in fretta) o armi (scorrerie meno dannose): clic sull'officina per scegliere. Lontano dalle case: una scintilla basta."},
 		{"id": "capanno", "icona": "capanno_pesca", "testo": "Capanno da pesca (5 di legna)", "breve": "Capanno", "tasto": "K",
 		 "descrizione": "Costa 5 di legna. Senza capanno le famiglie pescano come capita e rendono un terzo. Va sulla riva di un fiume o di un torrente: si aggancia da solo alla riva più vicina. Il fiume dà più pesce dei torrenti; più capanni vicini si dividono il pesce di quel tratto, e troppi lo fanno calare."},
 		{"id": "posta", "icona": "posta_caccia", "testo": "Posta di caccia (5 di legna)", "breve": "Posta", "tasto": "T",
@@ -318,7 +322,7 @@ func _process(delta: float) -> void:
 	if sim.in_attesa() and not hud.modale_aperta():
 		_accumulo = 0.0
 		var d: Dictionary = sim.decisioni[0]
-		var tipi := {"sorgenti": "Presagio", "cometa": "Presagio", "primo_cattivo": "Momento decisivo", "affollamento": "Momento decisivo", "stranieri": "Evento", "pericolo": "Pericolo", "piena": "Evento", "abbandono": "Fallimento", "fine": "Fine del prototipo", "soglia": "Evento soglia"}
+		var tipi := {"sorgenti": "Presagio", "cometa": "Presagio", "primo_cattivo": "Momento decisivo", "affollamento": "Momento decisivo", "stranieri": "Evento", "pericolo": "Pericolo", "piena": "Evento", "abbandono": "Fallimento", "fine": "Fine del prototipo", "soglia": "Evento soglia", "epoca": "Nuova epoca"}
 		if d["tipo"] == "tutorial":
 			hud.mostra_tutorial(d, _scelto.bind(d["id"], d["tipo"]))
 			return
@@ -486,6 +490,8 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 				parti.append("il luogo sacro")
 			if esito.get("torre", false):
 				parti.append("la torre di avvistamento")
+			if esito.get("officine", 0) > 0:
+				parti.append("l'officina del fabbro")
 			if esito.get("bosco_sacro", 0) > 0:
 				parti.append("%d alberi del bosco sacro" % esito["bosco_sacro"])
 			if esito.get("poste", 0) > 0:
@@ -513,6 +519,14 @@ func applica(comando: String, punto: Vector3, raggio: float) -> void:
 		"torre":
 			var m := sim.costruisci_torre(Vector2(punto.x, punto.z))
 			hud.imposta_messaggio(("Torre di avvistamento in costruzione: tra %d anni si vedranno i margini del contado." % SimVillaggio.ANNI_CANTIERE_TORRE) if m == "" else m)
+		"officina":
+			# Un clic sull'officina che c'è già apre la sua scheda.
+			var ko := sim.officina_vicina(Vector2(punto.x, punto.z))
+			if ko >= 0:
+				apri_officina(ko)
+				return
+			var m := sim.costruisci_officina(Vector2(punto.x, punto.z))
+			hud.imposta_messaggio(("Officina del fabbro in costruzione: tra %d anni si accende la fornace." % SimVillaggio.ANNI_CANTIERE_OFFICINA) if m == "" else m)
 		"bosco_sacro":
 			if not sim.fondato:
 				return
@@ -644,6 +658,8 @@ func raggio_strumento(comando: String, raggio: float) -> float:
 			return 6.0
 		"torre":
 			return 5.0
+		"officina":
+			return 8.0
 	return -1.0
 
 
@@ -697,6 +713,7 @@ func aggiorna_hud() -> void:
 	aggiorna_mappe_tematiche()
 	if legnaia_aperta >= 0:
 		_aggiorna_legnaia()
+		_aggiorna_officina()
 	if famiglia != NESSUNA_CASA:
 		if on:
 			_aggiorna_famiglia()
@@ -720,7 +737,7 @@ func aggiorna_hud() -> void:
 	hud.segna("togli_pascolo", togli_pascolo)
 	hud.abilita("pascolo", on and not sim.finito and sim.sbloccato("pascolo"))
 	# Ciò che una tappa non ha ancora aperto non si vede: quando si apre, compare (Fede, 26/11/2026).
-	for id in ["pascolo", "granaio", "luogo_sacro", "bosco_sacro", "torre"]:
+	for id in ["pascolo", "granaio", "luogo_sacro", "bosco_sacro", "torre", "officina"]:
 		hud.mostra(id, sim.sbloccato(id))
 	for id in ["zona", "campi", "sentiero", "legnaia", "capanno", "posta"]:
 		hud.abilita(id, on and not sim.finito)
@@ -743,6 +760,13 @@ func aggiorna_hud() -> void:
 	if sim.torre.x >= 0:
 		testo_torre = ("Torre di avvistamento (in costruzione: ancora %d anni)" % sim.cantiere_torre) if sim.cantiere_torre > 0 else "Torre di avvistamento (già costruita)"
 	hud.cambia_testo("torre", testo_torre, "Torre")
+	# Officina del fabbro: con l'epoca 2; resta cliccabile per aprire la scheda.
+	hud.abilita("officina", on and not sim.finito and sim.sbloccato("officina"))
+	var testo_officina := "Officina del fabbro (%d di legna, %d anni di lavoro)" % [roundi(SimVillaggio.COSTO_OFFICINA), SimVillaggio.ANNI_CANTIERE_OFFICINA]
+	if not sim.officine.is_empty():
+		var e_o: Dictionary = sim.officine[0]
+		testo_officina = ("Officina del fabbro (in costruzione: ancora %d anni)" % int(e_o["cantiere"])) if int(e_o["cantiere"]) > 0 else "Officina del fabbro (clic per la scheda)"
+	hud.cambia_testo("officina", testo_officina, "Fabbro")
 	hud.abilita("bosco_sacro", on and not sim.finito and sim.sbloccato("bosco_sacro"))
 
 	# Le tappe aprono le politiche (decisione di Fede del 25/11/2026).
@@ -1093,6 +1117,16 @@ func conseguenze(cmd: String, punto: Vector2, raggio: float) -> Dictionary:
 				"territorio": "si vedono i margini del contado",
 				"costo": "%d di legna · %d anni di lavoro%s" % [roundi(c_t), SimVillaggio.ANNI_CANTIERE_TORRE, "" if sim.legna >= c_t else " (ne hai %d)" % floori(sim.legna)],
 				"resta": "un punto di guardia sull'altura"}
+		"officina":
+			if sim.officina_vicina(punto) >= 0:
+				return {}
+			var c_o := SimVillaggio.COSTO_OFFICINA
+			var vicine := sim.case_vicine_al_forno(punto)
+			return {"titolo": "Officina del fabbro", "guadagna": "Famiglie ▲  (attrezzi) · Anziani ▲  (armi)",
+				"perde": "Famiglie ▼  (la casa accanto può bruciare)" if not vicine.is_empty() else "Bosco ▼  (legna per il carbone)",
+				"territorio": ("case a meno di %d m: rischio d'incendio" % roundi(SimVillaggio.DISTANZA_FUOCO)) if not vicine.is_empty() else "fumo della fornace · più legna tagliata",
+				"costo": "%d di legna · %d anni · poi una famiglia%s" % [roundi(c_o), SimVillaggio.ANNI_CANTIERE_OFFICINA, "" if sim.legna >= c_o else " (legna: %d)" % floori(sim.legna)],
+				"resta": "la famiglia del fabbro, più ricca"}
 		"bosco_sacro":
 			if not bosco:
 				return {"titolo": "Bosco sacro", "guadagna": nessuno, "perde": nessuno, "territorio": "qui non c'è bosco da proteggere"}
@@ -1125,6 +1159,7 @@ func _conseguenze_demolizione(punto: Vector2, raggio: float) -> Dictionary:
 	var luogo := sim.luogo_sacro.x >= 0 and sim.luogo_sacro.distance_to(punto) <= raggio
 	var granaio := sim.granaio.x >= 0 and sim.granaio.distance_to(punto) <= raggio
 	var torre := sim.torre.x >= 0 and sim.torre.distance_to(punto) <= raggio
+	var officina := sim.officina_vicina(punto, raggio) >= 0
 	var perde: Array[String] = []
 	var cose: Array[String] = []
 	if n_case > 0 or n_campi > 0:
@@ -1142,6 +1177,9 @@ func _conseguenze_demolizione(punto: Vector2, raggio: float) -> Dictionary:
 		cose.append("il granaio")
 	if torre:
 		cose.append("la torre")
+	if officina:
+		perde.append("Famiglia del fabbro ▼")
+		cose.append("l'officina")
 	if cose.is_empty():
 		return {"titolo": "Demolisci", "guadagna": "nessuno", "perde": "nessuno", "territorio": "alberi e sentieri nel cerchio, se ci sono",
 			"costo": "irreversibile", "irreversibile": true, "resta": "terra libera: il bosco può ricrescere"}
@@ -1155,7 +1193,7 @@ func _conseguenze_demolizione(punto: Vector2, raggio: float) -> Dictionary:
 func leggi_per_strumento(punto: Vector3) -> void:
 	var hud: Hud = scena.hud
 	var cmd := hud.comando()
-	if not sim.fondato or not cmd in ["zona", "campi", "granaio", "legnaia", "sentiero", "capanno", "posta", "luogo_sacro", "torre", "bosco_sacro", "pascolo"]:
+	if not sim.fondato or not cmd in ["zona", "campi", "granaio", "legnaia", "sentiero", "capanno", "posta", "luogo_sacro", "torre", "officina", "bosco_sacro", "pascolo"]:
 		hud.imposta_lettura_strumento([])
 		return
 	if cmd in ["capanno", "posta"]:
@@ -1222,6 +1260,17 @@ func leggi_per_strumento(punto: Vector3) -> void:
 			voci.append(["Altura", ("%d m sopra i dintorni" % roundi(ril)) if ril >= 0.5 else "nessuna: vista chiusa", clampf(ril / 10.0, 0.0, 1.0), ril < SimVillaggio.RILIEVO_TORRE])
 			voci.append(["Distanza dal centro", "%d m" % roundi(d), 1.0 - clampf(d / SimVillaggio.DISTANZA_TORRE, 0.0, 1.0), d > SimVillaggio.DISTANZA_TORRE])
 			voci.append(["Legna", "%d / %d" % [floori(sim.legna), roundi(SimVillaggio.COSTO_TORRE)], sim.legna / SimVillaggio.COSTO_TORRE, sim.legna < SimVillaggio.COSTO_TORRE])
+		"officina":
+			var w := Vector2(punto.x, punto.z)
+			var prova := {"punto": w}
+			var acqua := sim.acqua_qualsiasi(i) > 0.3
+			var legnaia_vicina := sim.rendimento_officina(prova) > (0.95 if acqua else 0.85)
+			var n_vicine := sim.case_vicine_al_forno(w).size()
+			voci.append(["Acqua per temprare", "vicina" if acqua else "lontana", 1.0 if acqua else 0.3, false])
+			voci.append(["Legnaia per il carbone", "vicina" if legnaia_vicina else "lontana", 1.0 if legnaia_vicina else 0.3, false])
+			voci.append(["Case vicine al forno", ("%d: rischio d'incendio" % n_vicine) if n_vicine > 0 else "nessuna", 0.0 if n_vicine > 0 else 1.0, n_vicine > 0])
+			voci.append(["Distanza dal centro", "%d m" % roundi(d), 1.0 - clampf(d / SimVillaggio.DISTANZA_OFFICINA, 0.0, 1.0), d > SimVillaggio.DISTANZA_OFFICINA])
+			voci.append(["Legna", "%d / %d" % [floori(sim.legna), roundi(SimVillaggio.COSTO_OFFICINA)], sim.legna / SimVillaggio.COSTO_OFFICINA, sim.legna < SimVillaggio.COSTO_OFFICINA])
 		"luogo_sacro":
 			voci.append(["Distanza dal centro", "%d m" % roundi(d), 1.0 - clampf(d / SimVillaggio.DISTANZA_LUOGO_SACRO, 0.0, 1.0), d > SimVillaggio.DISTANZA_LUOGO_SACRO])
 			voci.append(["Legna", "%d / %d" % [floori(sim.legna), roundi(SimVillaggio.COSTO_LUOGO_SACRO)], sim.legna / SimVillaggio.COSTO_LUOGO_SACRO, sim.legna < SimVillaggio.COSTO_LUOGO_SACRO])
@@ -1493,6 +1542,7 @@ func ripristina(d: Dictionary) -> void:
 	_coda_tagli = []
 	famiglia = NESSUNA_CASA
 	legnaia_aperta = -1
+	officina_aperta = -1
 	_nomi_famiglie = {}
 	_chiave_nomi = ""
 	inizio_sentiero = Vector2i(-1, -1)
@@ -1565,6 +1615,10 @@ func clic_sulla_mappa(pos_schermo: Vector2, lotto: Vector2i) -> void:
 		if kl >= 0:
 			apri_legnaia(kl)
 			return
+		var ko := sim.officina_vicina(Vector2(p.x, p.z), 14.0)
+		if ko >= 0:
+			apri_officina(ko)
+			return
 	var l := NESSUNA_CASA
 	var f: Dictionary = vista.persone.figura_sotto(scena.cam.camera, pos_schermo)
 	if not f.is_empty() and sim.case.has(f["lotto"]):
@@ -1588,6 +1642,10 @@ func selezionabile(pos_schermo: Vector2, punto: Vector2, lotto: Vector2i) -> Dic
 	if kl >= 0:
 		var pl: Vector2 = sim.legnaie[kl]["punto"]
 		return {"lotto": sim.lotto_da_mondo(pl.x, pl.y)}
+	var ko := sim.officina_vicina(punto, 14.0)
+	if ko >= 0:
+		var po: Vector2 = sim.officine[ko]["punto"]
+		return {"lotto": sim.lotto_da_mondo(po.x, po.y)}
 	var f: Dictionary = vista.persone.figura_sotto(scena.cam.camera, pos_schermo) if vista and vista.persone else {}
 	if not f.is_empty() and sim.case.has(f["lotto"]):
 		return {"lotto": f["lotto"]}
@@ -1615,6 +1673,8 @@ func motivo_strumento(cmd: String, punto: Vector2) -> String:
 			return sim.motivo_luogo_sacro(punto)
 		"torre":
 			return sim.motivo_torre(punto)
+		"officina":
+			return "" if sim.officina_vicina(punto) >= 0 else sim.motivo_officina(punto)
 		"bosco_sacro":
 			return sim.motivo_bosco_sacro(p)
 		"capanno", "posta":
@@ -1632,6 +1692,7 @@ var _titolo_legnaia := ""
 func apri_legnaia(k: int) -> void:
 	if famiglia != NESSUNA_CASA:
 		_evidenzia_famiglia(NESSUNA_CASA)
+	officina_aperta = -1
 	legnaia_aperta = k
 	var d := dati_legnaia(k)
 	_titolo_legnaia = String(d["titolo"])
@@ -1654,6 +1715,11 @@ func dati_legnaia(k: int) -> Dictionary:
 
 
 func _scelta_focus(id: String) -> void:
+	if officina_aperta >= 0 and officina_aperta < sim.officine.size():
+		sim.scegli_lavoro_officina(officina_aperta, id)
+		scena.hud.mostra_focus(dati_officina(officina_aperta))
+		aggiorna_hud()
+		return
 	if legnaia_aperta < 0 or legnaia_aperta >= sim.legnaie.size():
 		return
 	sim.metti_a_riposo(legnaia_aperta, id == "riposo")
@@ -1670,6 +1736,58 @@ func _aggiorna_legnaia() -> void:
 		legnaia_aperta = -1
 		return
 	hud.aggiorna_focus(dati_legnaia(legnaia_aperta))
+
+
+# ---------- scheda dell'officina del fabbro (epoca 2, 27/11/2026) ----------
+
+var officina_aperta := -1
+var _titolo_officina := ""
+
+
+func apri_officina(k: int) -> void:
+	if famiglia != NESSUNA_CASA:
+		_evidenzia_famiglia(NESSUNA_CASA)
+	legnaia_aperta = -1
+	officina_aperta = k
+	var d := dati_officina(k)
+	_titolo_officina = String(d["titolo"])
+	scena.hud.mostra_focus(d)
+
+
+## La scheda dell'officina: stato, metallo, carbone, attrezzi e armi; cosa forgia (la scelta).
+func dati_officina(k: int) -> Dictionary:
+	var e: Dictionary = sim.officine[k]
+	var cantiere := int(e["cantiere"])
+	var lavoro := String(e["lavoro"])
+	var arrivo := SimVillaggio.METALLO_APERTI if sim.soglia_scelta == "aprirsi" else SimVillaggio.METALLO_ISOLATI
+	var stato := "a pieno lavoro"
+	if cantiere > 0:
+		stato = "in costruzione: ancora %d anni" % cantiere
+	elif sim.lavoro_fabbro <= 0.0:
+		stato = "fermo: mancano metallo o legna"
+	elif sim.lavoro_fabbro < 0.95:
+		stato = "lavora a metà: manca metallo" if sim.metallo < SimVillaggio.METALLO_LAVORO else "lavora poco: manca legna"
+	var righe: Array = [
+		["Stato", stato, "Il fabbro lavora quanto gli permettono il metallo e la legna per il carbone."],
+		["Metallo", "%d in scorta · %s l'anno" % [floori(sim.metallo), String.num(arrivo, 1).replace(".", ",")], "Lo portano i mercanti: poco a un villaggio isolato, di più se si è aperto alle vie. A pieno lavoro il fabbro ne usa 1 l'anno."],
+		["Carbone", "%d di legna l'anno" % roundi(sim.carbone_anno), "La fornace brucia legna: le legnaie tagliano di più."],
+		["Attrezzi", "%d%%" % roundi(sim.attrezzi * 100.0), "Con gli attrezzi di metallo i campi, la caccia, la pesca e le legnaie rendono di più. Si consumano: se il fabbro smette, calano."],
+		["Armi", "%d%%" % roundi(sim.armi * 100.0), "Con le armi di metallo le scorrerie portano via meno e bruciano meno case. Si consumano anche loro."],
+		["Rendimento", "%d%%" % roundi(sim.rendimento_officina(e) * 100.0), "Vicino all'acqua (per temprare) e a una legnaia (per il carbone) il fabbro lavora meglio."],
+	]
+	return {"scheda": "OFFICINA DEL FABBRO", "titolo": "Officina del fabbro", "valore": "in costruzione" if cantiere > 0 else {"attrezzi": "attrezzi", "armi": "armi", "meta": "metà e metà"}[lavoro],
+		"righe": righe, "scelte": [{"id": "attrezzi", "testo": "Attrezzi", "attiva": lavoro == "attrezzi"},
+			{"id": "armi", "testo": "Armi", "attiva": lavoro == "armi"}, {"id": "meta", "testo": "Metà e metà", "attiva": lavoro == "meta"}]}
+
+
+func _aggiorna_officina() -> void:
+	var hud: Hud = scena.hud
+	if officina_aperta < 0:
+		return
+	if hud.focus_aperto() != _titolo_officina or officina_aperta >= sim.officine.size():
+		officina_aperta = -1
+		return
+	hud.aggiorna_focus(dati_officina(officina_aperta))
 
 
 func apri_famiglia(l: Vector2i) -> void:

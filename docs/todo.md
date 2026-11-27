@@ -15,7 +15,7 @@ Legenda: `[x]` fatto · `[~]` in parte · `[ ]` da fare · **(?)** serve una dec
 - la **prova al PC** con la finestra F3 (17 caselle) e il Registro acceso; poi Claude legge il Registro e corregge;
 - la **direzione artistica** da guardare in prova (torre, passerella, varianti delle case, acqua della piena, maiale);
 - il **bilanciamento delle scorrerie** (Fede: "proverò in gioco"; misure in `sessioni-giocatori.md`);
-- la scelta della **prossima Era sulla carta**.
+- ~~la scelta della prossima Era sulla carta~~: per ora nessuna (Fede, 27/11: ci si concentra sull'epoca 2).
 
 Dopo la prova fisica e le correzioni: l'abitato protourbano (epoca 2), da progettare con Fede.
 
@@ -76,7 +76,7 @@ In tutto **7–10 ore di lavoro di Claude**, cioè 2–3 giornate, più le confe
 2. [x] Le decisioni 2–5 di Fede (27/11 mattina): presagi più radi a decenni e più fitti con il sacerdote scontento; soglie del primo governo rifatte sulla tabella; niente passerella sui torrenti larghi; prove dei giocatori "umani" (anche lunghe) e registro degli avvisi. Da guardare con Fede: le scorrerie nelle partite lunghe (6–16 in 3000 anni, una ogni 200–500 anni).
 3. Lettura del Registro dopo la prova di Fede e correzioni (come la voce C del 26/11).
 4. Ritocchi di direzione artistica che Fede chiede.
-5. Sulla carta: la prossima Era si decide domani con Fede (in ordine la Città in contrazione, oppure l'Età industriale come in `epoche-future.md`).
+5. Sulla carta: per ora nessuna Era nuova (Fede, 27/11).
 6. Dopo: l'abitato protourbano (epoca 2), da progettare con Fede.
 
 ## Per chi riprende: il lavoro in ordine
@@ -219,7 +219,7 @@ Un menù delle impostazioni del gioco, con dentro anche l'opzione dei tutorial (
 - **Prove di Fede, aperte (26/11/2026 sera):** legna (alberi tagliati uno alla volta), scheda della legnaia, cursori e cornice di selezione, puntatore rosso, HUD fermo e cose che compaiono, edifici più grandi, specchietti, scorrerie (Prova: Scorreria). Sono le caselle della finestra Debug (F3). Spuntate da Fede il 26/11 sera: persone (aspetto e animazioni), scheda della famiglia, maiale, fluidità con animali e figure (60 fps, minimo 33 a 40 m con 149 figure sulla GTX 1050), tutorial.
 - **Proposte di Claude in attesa di uno sguardo (26/11/2026):** i dodici nomi comuni delle famiglie, l'ordine dei desideri ("Vorrebbe"), la cornice bianca della casa; i numeri dell'umore delle famiglie (−12 piena ricordata, −8 zona delle piene, −6 legna lontana, −5 campi stanchi e casale senza sentiero, +3 focolare e luogo sacro); i numeri della popolazione visibile (150 figure, 1/2/5 persone per figura, visibili sotto i 450 m).
 - **Menù delle impostazioni (voce 10):** cosa contiene oltre ai tutorial.
-- **Partite lunghe (voce 6):** presagi e soglie del governo **fatti** il 27/11 (decisioni di Fede del 26/11). **Resta da guardare** (bilanciamento, Fede: "occhio al bilanciamento"): nelle partite lunghe le scorrerie sono 6–16 in 3000 anni (di più per chi conosce il genere, villaggi più grandi e ricchi); a decenni una scorreria ogni 200 anni circa vuol dire una ogni 20 secondi a velocità 1. Proposta di Claude: a decenni la probabilità segue i decenni come i presagi (più rade), oppure si lascia così perché sono soprattutto notifiche (la scelta sui segni ferma il gioco solo la prima volta).
+- **Partite lunghe (voce 6):** presagi e soglie del governo **fatti** il 27/11. **Scorrerie diradate a decenni** (Fede, 27/11: "diradale a decenni"): almeno 250 anni fra una e l'altra, probabilità al 40%; nelle partite lunghe da 2–20 a 1–7 (media da 9 a 4,3).
 - **Salvataggio e piene (voce 9, 26/11/2026 notte), proposte di Claude:** cartella `D:\Godot\Strati\Salvataggi`, F5 salva e F8 riprende, Strumenti › Partita, automatici a ogni tappa e ogni 50 anni (ultimi 3); acqua della piena torbida e bruna, 3 s su, 5 fermi, 7 giù.
 - **Strade (voce 5, 26/11/2026 sera), domande di Claude:**
   - Le **passerelle sui torrenti**: **niente passerella sui torrenti larghi** (Fede, 26/11/2026: servirà il ponte nell'epoca dopo); restano sui corsi stretti e sul fradicio. Da fare il 27/11.
@@ -267,12 +267,13 @@ Solo documenti, senza toccare codice o modelli (richiesta di Fede).
 **Avviato il 27/11/2026** (Fede: "prossima è abitato protourbano"). Proposte in `epoca2-proposte.md`; indicazioni di Fede: zoning per l'abitato, recinto contro le scorrerie, fabbro per cibo e difesa, **il fabbro è il primo edificio che si sblocca con la nuova epoca**.
 - [x] Proposte: evoluzioni del gioco, sinergie, funzioni degli edifici, scheda del fabbro (§ 1, 1b, 2, 2b).
 - [x] Modelli, primo lotto: case su impalcato (piccola, media), casa del capo, tratto di recinto, porta, officina del fabbro con il cantiere; vesti dell'epoca 2 con i bronzi.
-- [ ] Fede conferma le proposte del § 1, § 2 e § 2b (segnate come proposte).
+- [x] Fede conferma le proposte del § 1, § 2 e § 2b: **approvate tutte** (27/11, 11:15; correzioni quando ci si arriva).
 - [x] Fabbro rifatto (27/11, richiesta di Fede: legno, pietra, fornace riconoscibile, incudine visibile) e **fumo animato** dei camini (decisioni di Fede: non legato alla simulazione, solo officine ed edifici comunitari). Da guardare con Fede: le foto e la GIF.
 - [x] Modelli, secondo lotto (27/11): santuario, tumulo, granaio comune, pozzo, recinto del bestiame, ponte, varianti `_b` delle case pensate per la fila sulla via, cantieri di case, casa del capo, recinto, santuario, granaio comune, pozzo e ponte. Da guardare con Fede.
 - **Deciso** (Fede, 27/11): con l'abitato le strade contano di più e **le case si sviluppano sulla via** (`epoca2-proposte.md` § 1, voce 12): da fare nella simulazione con recinto e zone.
 - **Deciso** (Fede, 27/11): fumano l'officina, il santuario (fuoco dell'altare) e la casa del capo (dal colmo, più rado). Il granaio comune no. GIF del fumo approvata.
-- [ ] Simulazione dell'epoca 2, cominciando dal fabbro (strumento, scheda con la scelta attrezzi/armi, metallo, effetti su cibo e scorrerie, tutorial, specchietto delle conseguenze), poi recinto e zone.
+- [x] Simulazione dell'epoca 2, **il fabbro** (27/11): l'epoca 2 comincia dopo l'evento del metallo e dura fino al 700 a.C.; officina (M), metallo, carbone, scheda attrezzi/armi/metà, effetti su cibo, legna e scorrerie, incendio vicino alle case, prestigio della famiglia del fabbro, tutorial, conseguenze, lettura, vesti dell'epoca 2, giocatori automatici, verifiche. Regole in `prototipo0-godot.md`. Da provare con Fede (finestra F3).
+- [ ] Simulazione dell'epoca 2, il resto, voce per voce: recinto e porta, zone dentro e fuori (con le case sulla via), clan e famiglie eminenti, concessione dei lotti, capo di guerra, scambio al guado, crollo.
 - Recinto o palizzata, con terrapieno e fossato: la regolazione dello spazio della seconda epoca (decisioni di Fede del 24 e 25/11/2026).
 - Gruppi capi, clan, sacerdote; famiglie eminenti e comuni che nascono dalla disuguaglianza creata dal giocatore, con attenzione agli equilibri di potere (`era-origini.md` § 6).
 - Decisi e scartati: prologo nomade **bocciato** (25/11/2026); inizio al 6000 a.C. (i primi quattro secoli per mettere le pedine).

@@ -405,6 +405,11 @@ var cantiere_luogo_sacro := 0
 ## dalla torre; dopo una scorreria le case nuove nascono più strette (memoria della paura).
 const PROB_SCORRERIA := 0.016  # all'anno con ricchezza ed esposizione piene, senza difesa
 const ANNO_SCORRERIE_FREQUENTI := -4300
+## Scorrerie a decenni (Fede, 27/11/2026: "diradale a decenni", come i presagi; numeri proposti da
+## Claude): almeno 250 anni dall'ultima scorreria e probabilità al 40%. Prima erano 2–20 in 3000 anni
+## (una ogni 20 secondi a velocità 1 nei villaggi ricchi).
+const ANNI_TRA_SCORRERIE_DECENNI := 250
+const FATTORE_SCORRERIE_DECENNI := 0.4
 const CAPI_RICCHEZZA := 80.0  # tanti capi fanno una ricchezza "piena"
 const MESI_RICCHEZZA := 18.0
 const PASCOLO_LONTANO := 300.0  # metri dal centro: oltre, gli animali sono esposti
@@ -1339,6 +1344,8 @@ func luogo_sacro_pronto() -> bool:
 func _azzera_scorrerie() -> void:
 	torre = Vector2(-1, -1)
 	cantiere_torre = 0
+	# Una rifondazione riparte senza officina (il metallo e il livello di attrezzi e armi restano).
+	officine = []
 	segni_tra = -1
 	segni_punto = Vector2(-1, -1)
 	segni_da = ""
@@ -1423,7 +1430,12 @@ func _scorrerie() -> void:
 			_scorreria()
 		return
 	rischio_scorrerie = calcola_rischio_scorrerie()
-	if not in_attesa() and rng_scorrerie.randf() < float(rischio_scorrerie["p"]):
+	var p := float(rischio_scorrerie["p"])
+	if decenni:
+		if not ultima_scorreria.is_empty() and anno - int(ultima_scorreria["anno"]) < ANNI_TRA_SCORRERIE_DECENNI:
+			return
+		p *= FATTORE_SCORRERIE_DECENNI
+	if not in_attesa() and rng_scorrerie.randf() < p:
 		_segni()
 
 
@@ -1485,7 +1497,7 @@ func _reagisci_ai_segni() -> void:
 func _scorreria() -> void:
 	var r := calcola_rischio_scorrerie()
 	var f_politica: float = {"avanti": 1.0, "raccogliere": 0.5, "vegliare": 0.6}.get(politica("pericolo"), 1.0)
-	var f := lerpf(1.0, f_politica, efficacia_usanze()) * (PERDITE_TORRE if torre_pronta() else 1.0)
+	var f := lerpf(1.0, f_politica, efficacia_usanze()) * (PERDITE_TORRE if torre_pronta() else 1.0) * (1.0 - RIDUZIONE_ARMI * armi)
 	var quota_capi := clampf((0.1 + 0.3 * float(r["pascolo_lontano"]) * rng_scorrerie.randf_range(0.5, 1.0)) * f, 0.0, 0.4)
 	var capi_persi := floori(capi * quota_capi)
 	var cibo_perso := cibo * rng_scorrerie.randf_range(0.1, 0.25) * f * (0.7 if granaio_pronto() else 1.0)
@@ -1496,7 +1508,7 @@ func _scorreria() -> void:
 	var esposte: Array = case.filter(func(l: Vector2i) -> bool: return case_casale.has(l) or centro_lotto(l).distance_to(c) > MARGINE_ABITATO)
 	esposte.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return centro_lotto(a).distance_to(segni_punto) < centro_lotto(b).distance_to(segni_punto))
 	var bruciate := 0
-	var p_case := 0.35 * (1.0 - float(r["difesa"])) * (0.5 if politica("pericolo") == "vegliare" else 1.0) * (PERDITE_TORRE if torre_pronta() else 1.0)
+	var p_case := 0.35 * (1.0 - float(r["difesa"])) * (0.5 if politica("pericolo") == "vegliare" else 1.0) * (PERDITE_TORRE if torre_pronta() else 1.0) * (1.0 - RIDUZIONE_ARMI * armi)
 	if not esposte.is_empty() and rng_scorrerie.randf() < p_case:
 		bruciate = mini(esposte.size(), 2 if rng_scorrerie.randf() < 0.3 else 1)
 		for k in bruciate:
@@ -1592,6 +1604,174 @@ func costruisci_torre(punto: Vector2) -> String:
 	_scrivi("Si comincia a costruire la torre di avvistamento: servono %d anni di lavoro." % ANNI_CANTIERE_TORRE)
 	disponi_case()
 	return ""
+
+
+# ---------- epoca 2: l'officina del fabbro (decisioni di Fede del 27/11/2026) ----------
+# Il fabbro è il primo edificio che si sblocca con l'epoca 2 (Fede, 27/11, 09:38); la scheda di
+# `docs/epoca2-proposte.md` § 2b è approvata (Fede, 27/11, 11:15). Numeri: proposte di Claude.
+# L'officina si posa come la torre (legna, braccia, cantiere). Per lavorare toglie una famiglia ai
+# campi, brucia legna (il carbone) e consuma metallo, che arriva poco da isolati e di più con le vie
+# aperte. Nella scheda si sceglie cosa fa: attrezzi (campi, caccia, pesca e legnaie rendono di più),
+# armi (le scorrerie portano via meno) o metà e metà. Attrezzi e armi sono due livelli da 0 a 1 che
+# salgono piano finché il fabbro lavora e calano con l'usura quando smette. Il forno vicino alle case
+# può bruciarne una; la famiglia del fabbro guadagna prestigio (diventerà eminente).
+
+## L'epoca della partita: 1 il villaggio, 2 l'abitato protourbano (dopo l'evento soglia 1).
+var epoca := 1
+## L'epoca 2 è giocabile solo in parte (il fabbro; recinto, zone e clan arriveranno): il prototipo
+## finisce quando la città si dà le leggi, verso il 700 a.C. (evento soglia 2, `era-origini.md`).
+const ANNO_FINE_EPOCA2 := -700
+var officine: Array = []  # [{punto: Vector2, cantiere: int, lavoro: "attrezzi" | "armi" | "meta"}]
+var metallo := 0.0
+var attrezzi := 0.0  # 0–1: quanto l'abitato ha attrezzi di metallo
+var armi := 0.0      # 0–1: quanto l'abitato ha armi di metallo
+var lavoro_fabbro := 0.0  # quanto ha lavorato il fabbro quest'anno (0–1)
+var carbone_anno := 0.0   # legna bruciata nel forno quest'anno
+var metallo_arrivato := 0.0
+const COSTO_OFFICINA := 12.0
+const ANNI_CANTIERE_OFFICINA := 3
+const DISTANZA_OFFICINA := 600.0  # dal centro
+const DISTANZA_FUOCO := 20.0      # sotto questa distanza da una casa il forno può bruciarla
+const PROB_INCENDIO_OFFICINA := 0.006  # all'anno, se c'è una casa troppo vicina
+const METALLO_ISOLATI := 0.4   # all'anno, dai mercanti di passaggio
+const METALLO_APERTI := 1.2    # all'anno, se all'evento soglia ci si è aperti alle vie
+const METALLO_LAVORO := 1.0    # quanto ne consuma il fabbro a pieno lavoro
+const METALLO_MASSIMO := 20.0
+const CARBONE_OFFICINA := 6.0  # legna all'anno a pieno lavoro
+const BRACCIA_FABBRO := 5.0    # una famiglia tolta ai campi
+const RITMO_FABBRO := 0.05     # quanto in fretta attrezzi e armi raggiungono il livello del lavoro
+const BONUS_CAMPI := 0.2
+const BONUS_CACCIA_PESCA := 0.25
+const BONUS_LEGNAIA := 0.2
+const RIDUZIONE_ARMI := 0.4    # perdite delle scorrerie con le armi al massimo
+const LAVORI_OFFICINA := {"attrezzi": [1.0, 0.0], "armi": [0.0, 1.0], "meta": [0.5, 0.5]}
+
+
+func officina_pronta(e: Dictionary) -> bool:
+	return int(e["cantiere"]) <= 0
+
+
+func officine_pronte() -> Array:
+	return officine.filter(officina_pronta)
+
+
+## Rende di più vicino all'acqua (la vasca per temprare) e a una legnaia (il carbone): da 0,8 a 1.
+func rendimento_officina(e: Dictionary) -> float:
+	var w: Vector2 = e["punto"]
+	var r := 0.8
+	if acqua_qualsiasi(px(px_da_mondo(w.x, w.y))) > 0.3:
+		r += 0.1
+	for l in legnaie:
+		if (l["punto"] as Vector2).distance_to(w) < 300.0:
+			r += 0.1
+			break
+	return r
+
+
+## Le case troppo vicine al forno (meno di DISTANZA_FUOCO).
+func case_vicine_al_forno(punto: Vector2) -> Array:
+	return case.filter(func(l: Vector2i) -> bool: return centro_lotto(l).distance_to(punto) < DISTANZA_FUOCO)
+
+
+func officina_vicina(punto: Vector2, raggio := 12.0) -> int:
+	for k in officine.size():
+		if (officine[k]["punto"] as Vector2).distance_to(punto) <= raggio:
+			return k
+	return -1
+
+
+func motivo_officina(punto: Vector2) -> String:
+	if not fondato:
+		return "Prima bisogna fondare il villaggio."
+	if not sbloccato("officina"):
+		return "L'officina del fabbro arriva con il metallo."
+	if not officine.is_empty():
+		return "L'officina del fabbro c'è già: il metallo basta per una sola."
+	if legna < COSTO_OFFICINA:
+		return "Servono %d di legna per l'officina (ora %d)." % [roundi(COSTO_OFFICINA), floori(legna)]
+	var p := px_da_mondo(punto.x, punto.y)
+	var i := px(p)
+	if not edificabile(i) or campi.has(i) or sentieri.has(i) or p == centro:
+		return "L'officina va su terra asciutta e libera, non su campi o sentieri."
+	if punto.distance_to(mondo_di_px(centro)) > DISTANZA_OFFICINA:
+		return "L'officina va entro %d m dal centro del villaggio." % roundi(DISTANZA_OFFICINA)
+	return ""
+
+
+func costruisci_officina(punto: Vector2) -> String:
+	var m := motivo_officina(punto)
+	if m != "":
+		return m
+	var l := lotto_da_mondo(punto.x, punto.y)
+	case = case.filter(func(c: Vector2i) -> bool: return cheb(c, l) > 1)
+	officine.append({"punto": centro_lotto(l), "cantiere": ANNI_CANTIERE_OFFICINA, "lavoro": "attrezzi"})
+	legna -= COSTO_OFFICINA
+	_scrivi("Si comincia a costruire l'officina del fabbro: servono %d anni di lavoro." % ANNI_CANTIERE_OFFICINA)
+	disponi_case()
+	return ""
+
+
+func scegli_lavoro_officina(k: int, lavoro: String) -> void:
+	if k < 0 or k >= officine.size() or not LAVORI_OFFICINA.has(lavoro):
+		return
+	officine[k]["lavoro"] = lavoro
+	_scrivi({"attrezzi": "Il fabbro forgia attrezzi: falcetti, asce, punte e ami.",
+		"armi": "Il fabbro forgia armi: punte di lancia, spade, umboni per gli scudi.",
+		"meta": "Il fabbro divide il lavoro fra attrezzi e armi."}[lavoro])
+
+
+## Ogni anno: arriva il metallo, il fabbro lavora quanto glielo permettono metallo e legna, attrezzi
+## e armi si avvicinano a ciò che produce (o calano con l'usura), il forno può bruciare una casa.
+func _lavora_officine() -> void:
+	metallo_arrivato = 0.0
+	lavoro_fabbro = 0.0
+	carbone_anno = 0.0
+	var verso := [0.0, 0.0]
+	if epoca >= 2:
+		metallo_arrivato = METALLO_APERTI if soglia_scelta == "aprirsi" else METALLO_ISOLATI
+		metallo = minf(metallo + metallo_arrivato, METALLO_MASSIMO)
+	for e in officine:
+		if int(e["cantiere"]) > 0:
+			e["cantiere"] = int(e["cantiere"]) - 1
+			if int(e["cantiere"]) == 0:
+				_scrivi("L'officina del fabbro è finita: dal camino esce il fumo della fornace.", "buono")
+				tutorial(["officina_lavoro"], "L'officina al lavoro")
+			continue
+		var q := 1.0
+		q = minf(q, metallo / METALLO_LAVORO)
+		q = minf(q, legna / maxf(CARBONE_OFFICINA, 0.01))
+		q = clampf(q, 0.0, 1.0)
+		metallo -= METALLO_LAVORO * q
+		carbone_anno += CARBONE_OFFICINA * q
+		lavoro_fabbro = maxf(lavoro_fabbro, q)
+		var quote: Array = LAVORI_OFFICINA.get(e["lavoro"], [1.0, 0.0])
+		var r := rendimento_officina(e)
+		verso[0] += q * r * float(quote[0])
+		verso[1] += q * r * float(quote[1])
+		# Il forno vicino alle case: ogni tanto ne brucia una.
+		var vicine := case_vicine_al_forno(e["punto"])
+		if not vicine.is_empty() and rng.randf() < PROB_INCENDIO_OFFICINA:
+			var l: Vector2i = vicine[0]
+			_brucia_casa(l, "Una scintilla dal forno del fabbro: la casa accanto all'officina è bruciata.")
+	attrezzi += (clampf(verso[0], 0.0, 1.0) - attrezzi) * RITMO_FABBRO
+	armi += (clampf(verso[1], 0.0, 1.0) - armi) * RITMO_FABBRO
+	if attrezzi < 0.005:
+		attrezzi = 0.0
+	if armi < 0.005:
+		armi = 0.0
+
+
+## Una casa che brucia (scorrerie, forno): resta la maceria, la famiglia si sistema altrove.
+func _brucia_casa(l: Vector2i, testo: String) -> void:
+	if not case.has(l):
+		return
+	case.erase(l)
+	case_casale.erase(l)
+	macerie[l] = ANNI_MACERIE
+	rovine.append(centro_lotto(l))
+	stat["case_bruciate"] += 1
+	_scrivi(testo, "allarme")
+	_notifica(testo, false, centro_lotto(l))
 
 
 # ---------- sentieri che diventano strade (voce 5, 26/11/2026) ----------
@@ -2150,7 +2330,7 @@ func capacita_legnaia(l: Dictionary) -> float:
 		return 0.0
 	# Una legnaia su una strada porta i tronchi in fretta (accesso).
 	var strada := 1.1 if _vicino_a_strada(l["punto"], 80.0) else 1.0
-	return CAPACITA_TAGLIO * strada * clampf(1.0 - d / RAGGIO_LEGNAIA, 0.0, 1.0)
+	return CAPACITA_TAGLIO * strada * (1.0 + BONUS_LEGNAIA * attrezzi) * clampf(1.0 - d / RAGGIO_LEGNAIA, 0.0, 1.0)
 
 
 ## Legna da ardere che offre il bosco attorno alle legnaie al lavoro (m³ l'anno): ogni pixel di bosco
@@ -2798,6 +2978,11 @@ func demolisci(punto: Vector2, raggio: float) -> Dictionary:
 		cantiere_torre = 0
 		esito["torre"] = true
 		_scrivi("Demolita la torre di avvistamento.")
+	var n_officine := officine.size()
+	officine = officine.filter(fuori)
+	esito["officine"] = n_officine - officine.size()
+	if esito["officine"] > 0:
+		_scrivi("Demolita l'officina del fabbro.")
 	if luogo_sacro.x >= 0 and luogo_sacro.distance_to(punto) <= raggio:
 		luogo_sacro = Vector2(-1, -1)
 		cantiere_luogo_sacro = 0
@@ -3033,6 +3218,9 @@ func sbloccato(cosa: String) -> bool:
 	# La politica sul pericolo e la torre si aprono con i primi segni di una scorreria.
 	if cosa in ["pericolo", "torre"]:
 		return gia_segni
+	# L'officina del fabbro è il primo edificio dell'epoca 2 (Fede, 27/11/2026).
+	if cosa == "officina":
+		return epoca >= 2
 	return tappa >= tappa_di(cosa)
 
 
@@ -3324,12 +3512,16 @@ func passo() -> void:
 	# Raccolto: le braccia lavorano prima i campi più fertili. Famiglie contente lavorano di più
 	# (decisione di Fede del 25/11/2026); un cantiere aperto toglie un po' di braccia.
 	var in_cantiere := func(e: Dictionary) -> bool: return int(e["cantiere"]) > 0
-	var cantieri := (1 if cantiere_granaio > 0 else 0) + (1 if cantiere_luogo_sacro > 0 else 0) + (1 if cantiere_torre > 0 else 0) + legnaie.filter(in_cantiere).size() + poste.filter(in_cantiere).size() + capanni.filter(in_cantiere).size()
+	var cantieri := (1 if cantiere_granaio > 0 else 0) + (1 if cantiere_luogo_sacro > 0 else 0) + (1 if cantiere_torre > 0 else 0) + legnaie.filter(in_cantiere).size() + poste.filter(in_cantiere).size() + capanni.filter(in_cantiere).size() + officine.filter(in_cantiere).size()
+	# Officina del fabbro (epoca 2): cantiere, metallo, carbone, attrezzi e armi.
+	_lavora_officine()
 	var lavoro: float = (0.9 + 0.2 * consenso["famiglie"] / 100.0) * (1.0 - 0.05 * mini(cantieri, 3))
 	# Ai segni di pericolo, con la veglia ai margini, un po' di braccia lascia i campi.
 	if in_allerta() and politica("pericolo") == "vegliare":
 		lavoro *= 1.0 - 0.08 * efficacia_usanze()
 	var braccia: float = pop * 0.55 * lavoro * (1.0 + (0.0 if fonti["caccia"] else 0.2) + (0.0 if fonti["pesca"] else 0.1))
+	# La famiglia del fabbro lavora all'officina, non ai campi.
+	braccia = maxf(braccia - BRACCIA_FABBRO * 0.55 * lavoro_fabbro, 0.0)
 	var lavorabili := int(braccia / 3.0 * AREA_CELLA) if fonti["agricoltura"] else 0
 	var ordinati := campi.duplicate()
 	# Si lavorano prima i campi che rendono di più: quelli stanchi restano incolti e si riposano.
@@ -3356,6 +3548,8 @@ func passo() -> void:
 			if stanchezza[i] <= 0.0:
 				stanchezza.erase(i)
 	_serviti_fermi = false
+	# Gli attrezzi del fabbro: falcetti e zappe di metallo (epoca 2).
+	raccolto *= 1.0 + BONUS_CAMPI * attrezzi
 	ultimo_raccolto = raccolto
 	ultimi_lavorati = mini(lavorabili, ordinati.size())
 	_pascola(lavorati)
@@ -3375,13 +3569,13 @@ func passo() -> void:
 	_riprendi_scorte(scorta_selvaggina, RIPRESA_SELVAGGINA)
 	_riprendi_scorte(scorta_pesce, RIPRESA_PESCE)
 	var esito_caccia := _caccia_o_pesca(true, pop * QUOTA_CACCIA * piu_braccia if fonti["caccia"] else 0.0)
-	ultima_caccia = esito_caccia[0]
+	ultima_caccia = esito_caccia[0] * (1.0 + BONUS_CACCIA_PESCA * attrezzi)
 	# Animali e scorte raccolti vicino alle case: si caccia meno lontano finché dura il pericolo.
 	if in_allerta() and politica("pericolo") == "raccogliere":
 		ultima_caccia *= 1.0 - 0.3 * efficacia_usanze()
 	offerta_caccia = esito_caccia[1]
 	var esito_pesca := _caccia_o_pesca(false, pop * QUOTA_PESCA * piu_braccia if fonti["pesca"] else 0.0)
-	ultima_pesca = esito_pesca[0]
+	ultima_pesca = esito_pesca[0] * (1.0 + BONUS_CACCIA_PESCA * attrezzi)
 	offerta_pesca = esito_pesca[1]
 	selvaggina = _selvaggina_media()
 	_storia_selvaggina.append(selvaggina)
@@ -3399,7 +3593,7 @@ func passo() -> void:
 	# Legna (decisione di Fede del 25/11/2026): la raccolgono le legnaie, abbattendo il bosco vicino;
 	# serve ai focolari e a tenere in piedi le case.
 	consumo_focolari = pop * CONSUMO_PERSONA
-	consumo_legna = consumo_focolari + case.size() * COSTO_CASA / float(ANNI_VITA_CASA)
+	consumo_legna = consumo_focolari + case.size() * COSTO_CASA / float(ANNI_VITA_CASA) + carbone_anno
 	_lavora_legnaie()
 	legna = clampf(legna + ultima_legna - consumo_legna, 0.0, massimo_legna())
 	_aggiorna_traffico()
@@ -3520,8 +3714,10 @@ func passo() -> void:
 			arr_g.pop_front()
 	anno += 1
 	_aggiorna_decenni()
-	if anno >= ANNO_FINE and not finito:
+	if epoca == 1 and anno >= ANNO_FINE and not finito:
 		_fine()
+	if epoca == 2 and anno >= ANNO_FINE_EPOCA2 and not finito:
+		_fine_epoca2()
 
 
 ## Abbondanza (decisione di Fede del 25/11/2026): cibo che avanza (scorte in mesi), salute, spazio.
@@ -3907,6 +4103,16 @@ func _aggiorna_prestigio() -> void:
 	var c := mondo_di_px(centro)
 	var sacro := luogo_sacro_pronto()
 	var alle_famiglie := politica("raccolto") == "famiglie" and capi >= 1.0
+	# La famiglia del fabbro: la casa più vicina all'officina al lavoro (il metallo arricchisce).
+	var fabbro := Vector2i(-9999, -9999)
+	if lavoro_fabbro > 0.0 and not officine.is_empty():
+		var w: Vector2 = officine[0]["punto"]
+		var meglio := INF
+		for l in case:
+			var dl := centro_lotto(l).distance_to(w)
+			if dl < meglio:
+				meglio = dl
+				fabbro = l
 	var massimo := 0.0
 	for l in case:
 		massimo = maxf(massimo, float(prestigio_case.get(l, 0.0)))
@@ -3919,6 +4125,8 @@ func _aggiorna_prestigio() -> void:
 			d += 0.8 * clampf(1.0 - w.distance_to(luogo_sacro) / 150.0, 0.0, 1.0)
 		if alle_famiglie:
 			d += 0.5 * (p / massimo if massimo > 0.0 else 0.5)
+		if l == fabbro:
+			d += 1.5 * lavoro_fabbro
 		nuovo[l] = p + 0.02 * d
 	prestigio_case = nuovo
 
@@ -4279,16 +4487,28 @@ func _transizione(o: String) -> void:
 	tecnica_corrente = maxi(tecnica_corrente, 1)
 	_scrivi("Il villaggio sceglie di %s. Nasce il primo governo: %s." % ["aprirsi alle vie di passaggio" if o == "aprirsi" else "restare isolato", primo_governo.to_lower()], "buono")
 	_scrivi("Arriva l'aratro: i campi nuovi rendono di più, e quelli vecchi si possono rifare (Ammodernamento).")
-	finito = true
+	# Comincia l'epoca 2 (Fede, 27/11/2026: il primo edificio che si sblocca è il fabbro). Il gioco
+	# continua, a decenni, fino a quando la città si darà le leggi.
+	epoca = 2
 	var anni := anno - ANNO_INIZIO
 	var chi := consenso.keys().filter(func(g: String) -> bool: return g != "sacerdote" or sacerdote_attivo)
 	chi.sort_custom(func(a: String, b: String) -> bool: return consenso[a] > consenso[b])
-	var testo := "%d anni dalla fondazione. Il villaggio conta %d abitanti in %d case, %d nei casali; %d ettari di campi, %d strade.\nCarestie: %d · Piene grandi: %d · Scorrerie: %d · Abbandoni: %d\nConta di più: %s.\n\nIl primo governo: %s. %s\n%s\n\nArriva l'aratro. L'epoca dell'abitato protourbano è ancora sulla carta: il prototipo finisce qui." % [
+	var testo := "%d anni dalla fondazione. Il villaggio conta %d abitanti in %d case, %d nei casali; %d ettari di campi, %d strade.\nCarestie: %d · Piene grandi: %d · Scorrerie: %d · Abbandoni: %d\nConta di più: %s.\n\nIl primo governo: %s. %s\n%s\n\nArriva l'aratro, e con il metallo il fabbro. Comincia l'epoca dell'abitato." % [
 		anni, roundi(pop), case.size(), case_casale.size(), roundi(campi.size() * 0.16), strade.size(),
 		stat["carestie"], stat["piene"], stat["scorrerie"], stat["abbandoni"], ", ".join(chi.map(func(g: String) -> String: return {"anziani": "gli anziani", "famiglie": "le famiglie", "sacerdote": "il sacerdote"}[g])),
 		primo_governo, DESCRIZIONE_GOVERNI[primo_governo],
 		"La città nascerà aperta alle vie del commercio." if o == "aprirsi" else "La città nascerà chiusa e agricola, fedele alle usanze."]
-	_decidi("fine", "%s: il metallo e lo scambio" % anno_testo(anno), testo, [{"id": "ok", "testo": "Continua a guardare il villaggio", "nota": ""}])
+	_decidi("epoca", "%s: il metallo e lo scambio" % anno_testo(anno), testo, [{"id": "ok", "testo": "Comincia l'epoca dell'abitato", "nota": ""}])
+	_scrivi("Comincia l'epoca dell'abitato. Il metallo arriva %s: si può costruire l'officina del fabbro." % ("con i mercanti delle vie" if o == "aprirsi" else "poco, dai mercanti di passaggio"), "buono")
+	tutorial(["fabbro"], "Il metallo")
+
+
+## Fine del prototipo nell'epoca 2: dell'abitato si gioca per ora solo il fabbro.
+func _fine_epoca2() -> void:
+	finito = true
+	var testo := "La città sta per darsi le leggi. %d abitanti in %d case.\nScorrerie dell'epoca: %d · Case bruciate: %d · Carestie in tutta la partita: %d\nAttrezzi di metallo: %d%% · Armi: %d%%\n\nDell'epoca dell'abitato il prototipo ha per ora l'officina del fabbro: recinto, zone, clan e scambio arriveranno. Il prototipo finisce qui." % [
+		roundi(pop), case.size(), stat["scorrerie"], stat["case_bruciate"], stat["carestie"], roundi(attrezzi * 100.0), roundi(armi * 100.0)]
+	_decidi("fine", "%s: la città si dà le leggi" % anno_testo(anno), testo, [{"id": "ok", "testo": "Resta a guardare la mappa", "nota": ""}])
 
 
 # ---------- cause, per i pannelli di focus (decisione di Fede del 25/11/2026) ----------
@@ -4323,6 +4543,8 @@ func cause_di(nome: String) -> Array[String]:
 				out.append("La salute è bassa (%d): pesa sulle nascite." % roundi(salute))
 		"Cibo":
 			out.append("Quest'anno: %d dai campi, %d da caccia e raccolta, %d dalla pesca; se ne mangiano %d." % [roundi(ultimo_raccolto), roundi(ultima_caccia), roundi(ultima_pesca), roundi(pop)])
+			if attrezzi >= 0.05:
+				out.append("Gli attrezzi di metallo del fabbro: i campi rendono il %d%% in più, caccia e pesca il %d%%." % [roundi(BONUS_CAMPI * attrezzi * 100.0), roundi(BONUS_CACCIA_PESCA * attrezzi * 100.0)])
 			if cibo_anno < pop:
 				out.append("Annata magra: si attinge alle scorte.")
 			if siccita > 0:

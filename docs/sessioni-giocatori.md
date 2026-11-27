@@ -226,6 +226,9 @@ Domanda di Fede: "le scorrerie quanto influenzano la crescita? Sono molto puniti
 
 **Da guardare (bilanciamento delle scorrerie):** in 3000 anni 2–20 scorrerie a partita (in media 9; chi conosce il genere, con villaggi più grandi e ricchi, 10–20).
 
+## Scorrerie diradate a decenni (27/11/2026)
+Decisione di Fede: "diradale a decenni". A decenni servono almeno 250 anni dall'ultima scorreria e la probabilità scende al 40% (proposta di Claude). Stesse 12 partite lunghe (chi legge e chi conosce il genere × 6 siti, seme 1): scorrerie **1–7 a partita, in media 4,3** (prima 2–20, media 9); chi conosce il genere 3–7, chi legge 1–5; case bruciate 0–3. Registro degli avvisi (primi cinque secoli): 3,4 pause a partita (prima 3,6).
+
 ## Partite lunghe, fino al metallo (26/11/2026, notte)
 **Giocatori "umani"** con `lunghe` (18 partite: legge, genere, casual × 6 siti × 1 seme), fino all'evento soglia: 17 villaggi su 18 arrivano al metallo al 2999 a.C. (territorio pieno o 600 abitanti); il casual nell'Area dei gessi, rimasto a 44 abitanti, ci arriva al 1799. Nessun abbandono. A fine partita 378–1203 abitanti (mediana circa 900), 0–21 strade. Scelte a caso: 11 volte aprirsi, 7 isolarsi; governi: 11 Casa dominante, 7 Comunità, nessun Consiglio dei clan (le soglie dell'identità sono da guardare). Carestie in 3000 anni da 1 a 47 (in media circa una ogni due secoli; di più a Sbocco del fiume e Pianura aperta).
 

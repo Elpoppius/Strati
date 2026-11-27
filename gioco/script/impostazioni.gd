@@ -47,7 +47,7 @@ const COMANDI := [
 	["1–8", "mappe: normale e tematiche"],
 	["G · I", "griglia dei lotti · isoipse"],
 	["F · Z · C · N · B", "fondare, zona, campo, pascolo, bosco sacro"],
-	["L · K · T · H · O · U", "legnaia, capanno, posta, granaio, luogo sacro, torre"],
+	["L · K · T · H · O · U · M", "legnaia, capanno, posta, granaio, luogo sacro, torre, fabbro"],
 	["V · X", "sentiero · demolisci"],
 	["[ · ]", "raggio dello strumento"],
 	["P · R · Y", "politiche · rapporti di forza · anni"],

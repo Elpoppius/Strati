@@ -98,6 +98,29 @@ func _process(_d: float) -> bool:
 			if args.size() > 5 and args[5] == "senza":
 				var nero := Image.create(4, 4, false, Image.FORMAT_RG8)
 				_s.terreno.materiale.set_shader_parameter("stanchezza_campi", ImageTexture.create_from_image(nero))
+		# Epoca 2 (27/11/2026): l'evento del metallo, l'officina del fabbro posata e al lavoro per
+		# qualche anno; la vista sull'officina, con il fumo e le vesti nuove.
+		if args.size() > 4 and args[4] == "fabbro":
+			sim.decisioni.clear()
+			sim.prova_soglia()
+			while sim.in_attesa():
+				var dd: Dictionary = sim.decisioni[0]
+				sim.scegli(dd["id"], "aprirsi" if dd["tipo"] == "soglia" else dd["opzioni"][0]["id"])
+			var cf := RandomNumberGenerator.new()
+			cf.seed = 7
+			sim.legna = maxf(sim.legna, 60.0)
+			AiutiGiocatori.costruisci_officina(sim, cf, 1.0)
+			for k in 12:
+				sim.legna = maxf(sim.legna, 60.0)
+				sim.passo()
+				while sim.in_attesa():
+					sim.scegli(sim.decisioni[0]["id"], sim.decisioni[0]["opzioni"][0]["id"])
+			p.vista.sincronizza()
+			p.aggiorna_hud()
+			print("   epoca %d, officine %d, attrezzi %d%%, metallo %d" % [sim.epoca, sim.officine.size(), roundi(sim.attrezzi * 100.0), roundi(sim.metallo)])
+			if not sim.officine.is_empty():
+				c = sim.officine[0]["punto"]
+				su_edificio = true
 		if args.size() > 4 and args[4] in ["capanno", "posta"]:
 			var elenco: Array = sim.capanni if args[4] == "capanno" else sim.poste
 			if not elenco.is_empty():

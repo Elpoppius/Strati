@@ -42,6 +42,9 @@ const PROVE := [
 	"Metallo: presagi, scelta, riepilogo (Prova: Metallo)",
 	"Fotogrammi al secondo a decenni e da vicino",
 	"Impostazioni (F10): qualità, scala, schermo intero",
+	# Epoca 2 (27/11/2026): dopo Prova › Metallo, l'officina del fabbro.
+	"Fabbro (M): officina, fumo, scheda attrezzi/armi",
+	"Epoca 2: vesti nuove delle persone",
 ]
 
 var cartella := ""

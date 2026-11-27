@@ -150,6 +150,21 @@ const SCHEDE := {
 		"dettaglio": "Le regole del villaggio sono le stesse: cambia solo quanto in fretta passa il tempo. Il villaggio cresce, i campi si stancano, il bosco ricresce dieci volte più in fretta di prima. Quando arriva una scelta il tempo si ferma nell'anno in cui arriva. Più avanti, quando il villaggio avrà riempito la sua terra, dalla valle arriveranno voci di un materiale nuovo: il metallo.",
 		"avviso": "Da qui il tempo scorre a decenni.",
 	},
+	# Epoca 2 (Fede, 27/11/2026): il fabbro è il primo edificio che si sblocca.
+	"fabbro": {
+		"titolo": "Il metallo",
+		"testo": "Dalla valle arriva il metallo: lame che non si scheggiano, punte che non si spezzano. Chi sa lavorarlo può cambiare la vita del villaggio.",
+		"domanda": "Cosa fa il fabbro?",
+		"dettaglio": "In Edifici (M): l'officina del fabbro, una tettoia con la fornace e l'incudine. Servono 12 di legna e tre anni di lavoro, entro 600 m dal centro; ne basta una. Il fabbro e la sua famiglia lasciano i campi per l'officina, e la fornace brucia legna. Il metallo arriva poco dai mercanti di passaggio, di più se il villaggio si è aperto alle vie. Il fabbro lavora meglio vicino all'acqua e a una legnaia. Tienilo lontano dalle case: una scintilla basta a bruciarne una.",
+		"avviso": "Officina del fabbro (M): attrezzi e armi di metallo.",
+	},
+	"officina_lavoro": {
+		"titolo": "L'officina al lavoro",
+		"testo": "Il fabbro ha acceso la fornace. Fai clic sull'officina per decidere cosa forgia: attrezzi, armi, o un po' e un po'.",
+		"domanda": "Attrezzi o armi?",
+		"dettaglio": "Con gli attrezzi (falcetti, asce, punte, ami) i campi rendono di più, si caccia e si pesca meglio, i boscaioli tagliano più in fretta. Con le armi (punte di lancia, spade, scudi) le scorrerie portano via meno e bruciano meno case. Gli attrezzi e le armi si consumano: se il fabbro smette, in qualche decennio si torna come prima. Il metallo è poco: quello che forgia per una cosa non lo forgia per l'altra.",
+		"avviso": "Officina al lavoro: clic sull'officina per scegliere attrezzi o armi.",
+	},
 	"affollati": {
 		"titolo": "Villaggio affollato",
 		"testo": "Quando le case non bastano per tutte le famiglie, il villaggio deve scegliere: stringersi o lasciar partire qualcuno.",

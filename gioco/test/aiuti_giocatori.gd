@@ -92,6 +92,27 @@ static func costruisci_luogo_sacro(sim: SimVillaggio) -> bool:
 	return false
 
 
+## Officina del fabbro (epoca 2, 27/11/2026): qualita alta cerca il posto che rende di più (acqua e
+## legnaia vicine) e lontano dalle case; qualita bassa prende il primo che va bene, anche fra le case.
+static func costruisci_officina(sim: SimVillaggio, caso: RandomNumberGenerator, qualita: float) -> bool:
+	var c := sim.mondo_di_px(sim.centro)
+	var migliore := Vector2(-1, -1)
+	var meglio := -INF
+	var giro := caso.randf() * TAU
+	for r: float in [60.0, 120.0, 200.0, 300.0, 450.0]:
+		for k in 12:
+			var w := c + Vector2.from_angle(giro + k * TAU / 12.0) * r
+			if sim.motivo_officina(w) != "":
+				continue
+			if caso.randf() > qualita:
+				return sim.costruisci_officina(w) == ""
+			var valore := sim.rendimento_officina({"punto": w}) - (1.0 if not sim.case_vicine_al_forno(w).is_empty() else 0.0) - r / 2000.0
+			if valore > meglio:
+				meglio = valore
+				migliore = w
+	return migliore.x >= 0 and sim.costruisci_officina(migliore) == ""
+
+
 ## Torre di avvistamento (scorrerie, 26/11/2026): qualita 1 cerca l'altura più alta vicino al
 ## villaggio; qualita bassa prende la prima che va bene, girando a caso.
 static func costruisci_torre(sim: SimVillaggio, caso: RandomNumberGenerator, qualita: float) -> bool:

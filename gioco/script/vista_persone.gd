@@ -65,6 +65,10 @@ func prepara(s: SimVillaggio, t: Terreno, v: VistaVillaggio) -> void:
 			_attrezzi["%s:%s" % [a, sesso]] = _nuova_mm(Asset.mesh_attrezzo(a, sesso == "donna"))
 	for k in _corpi:
 		(_corpi[k] as Node3D).visible = k.ends_with("completo")
+	# I materiali delle persone sono condivisi fra le partite: una partita nuova riparte dalle vesti
+	# del villaggio.
+	for m in Asset._materiali_persone.values():
+		(m as ShaderMaterial).set_shader_parameter("epoca", 1)
 
 
 func _nuova_mm(mesh: Mesh) -> MultiMeshInstance3D:
@@ -80,7 +84,26 @@ func _nuova_mm(mesh: Mesh) -> MultiMeshInstance3D:
 
 
 ## Quante figure servono e che mestieri fanno: si rifà ogni anno, dalla simulazione.
+## Le vesti dell'epoca (27/11/2026): con l'epoca 2 le figure indossano tuniche, vesti tinte e bronzi
+## (`persona_*_e2`); il materiale delle persone è condiviso, quindi basta dirgli l'epoca.
+var epoca_vesti := 1
+
+
+func _aggiorna_vesti() -> void:
+	var voluta := 2 if sim.epoca >= 2 else 1
+	if voluta == epoca_vesti:
+		return
+	epoca_vesti = voluta
+	for k in Asset.PERSONE.size():
+		for livello in ["completo", "leggero"]:
+			var nome: String = Asset.PERSONE[k] + ("_e2" if voluta == 2 else "")
+			(_corpi["%d:%s" % [k, livello]] as MultiMeshInstance3D).multimesh.mesh = Asset.mesh_persona(nome, livello == "leggero")
+	for m in Asset._materiali_persone.values():
+		(m as ShaderMaterial).set_shader_parameter("epoca", voluta)
+
+
 func sincronizza() -> void:
+	_aggiorna_vesti()
 	if not sim.fondato:
 		_figure = []
 		_aggiorna_conti()

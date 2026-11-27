@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="square" stroke-linejoin="miter">
+<!-- Officina del fabbro: l'incudine sul ceppo e il martello alzato -->
+<path d="M5 15 L25 15 L27 13 L27 17 L21 19 L19 21 L13 21 L11 19 L5 17 Z" fill="#ffffff" stroke="none"/>
+<path d="M12 21 L20 21 L21 29 L11 29 Z" fill="#ffffff" stroke="none"/>
+<line x1="3" y1="29" x2="29" y2="29"/>
+<line x1="20" y1="10" x2="27" y2="3"/>
+<path d="M16 8 L20 4 L24 8 L20 12 Z" fill="#ffffff" stroke="none"/>
+</svg>
