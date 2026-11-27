@@ -10,8 +10,16 @@ Legenda: `[x]` fatto · `[~]` in parte · `[ ]` da fare · **(?)** serve una dec
 3. **Traguardi** da rispettare (`era-origini.md`, § 9): circa 2–3 pause a partita (si ferma solo per le scelte), poche notifiche, carestie rare e leggibili, nessun abbandono al livello medio, nucleo 100–300 abitanti, territorio fino a 600–800 per chi gioca molto bene.
 4. **Alla fine:** voce in cima al diario, todo aggiornato, commit e push.
 
-## A che punto siamo (26/11/2026, fine sessione)
-**Ordine (proposto da Claude e accolto da Fede il 26/11/2026 sera):** B (registro tecnico in gioco: **fatto** il 26/11/2026 sera, resta la prima lettura dal PC di Fede) → 4 (scorrerie: **fatte** il 26/11/2026 sera) → 5 (strade, con le figure sui sentieri: **fatte** il 26/11/2026 sera) → 9 (base tecnica, con il salvataggio: salvataggio, piene visibili e varianti delle case **fatti** il 26/11/2026 notte, restano le prove sui PC) → 6 (evento soglia e passo elastico: **fatti** il 26/11/2026 notte) → 10 (menù delle impostazioni) → prova fisica di Fede. In parallelo, sulla carta: l'Età industriale.
+## A che punto siamo (27/11/2026, mattina)
+**Il villaggio (epoca 1) è finito dalla parte di Claude:** tutte le voci della lista sono fatte (0–10, A, B, C). Restano solo cose che passano da Fede:
+- la **prova al PC** con la finestra F3 (17 caselle) e il Registro acceso; poi Claude legge il Registro e corregge;
+- la **direzione artistica** da guardare in prova (torre, passerella, varianti delle case, acqua della piena, maiale);
+- il **bilanciamento delle scorrerie** (Fede: "proverò in gioco"; misure in `sessioni-giocatori.md`);
+- la scelta della **prossima Era sulla carta**.
+
+Dopo la prova fisica e le correzioni: l'abitato protourbano (epoca 2), da progettare con Fede.
+
+**Ordine seguito (proposto da Claude e accolto da Fede il 26/11/2026 sera):** B → 4 → 5 → 9 → 6 → 10, tutte fatte fra il 26/11 sera e il 27/11 mattina.
 
 **Divisione del lavoro (Fede, 26/11/2026):** Fede nelle prove si sofferma sulla **direzione artistica**; le questioni tecniche (fotogrammi al secondo, tempi, errori) le raccoglie il registro tecnico della voce B, che Claude legge.
 
