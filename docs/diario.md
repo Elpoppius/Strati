@@ -2,6 +2,31 @@
 
 Voci più recenti in cima.
 
+## 27/11/2026 (sera, 2) — prova di Fede, legna rifatta, torre ovunque, registro del gioco
+**Prova di Fede** (registro `sessione-2026-11-27-184449`, letto con l'app desktop insieme ai salvataggi): nessun errore, 60 fps nei primi secoli e 41–50 a decenni. Il cibo funziona bene. Legna sempre a zero: le legnaie avevano tagliato tutto entro 600 m, e una legnaia rimessa "Al lavoro" tagliava 342 m³ il primo anno e tutto il raggio in 5 anni. La macchia scura era quasi certamente l'acqua della piena; la torre non si poteva fare perché nel sito non ci sono alture. Diagnosi completa nel todo, voce D.
+**Fatto**
+- **Legna alla maniera dei giochi di strategia** (`prototipo0-godot.md`):
+  - serve solo a costruire, il fuoco dei focolari esce dal conto;
+  - legnaia con due famiglie di boscaioli fisse, dal più vicino (metà resa a 150 m), che si fermano a catasta piena;
+  - risemina nella scheda (accesa di partenza; senza, resta la radura);
+  - legno di palude;
+  - niente famiglie che fanno legna da sole, niente salute o umore legati alla legna.
+- **Torre ovunque** entro 1200 m.
+- **Registro del gioco:** impostazioni in testa; eventi GIOCO (gesti con il punto e la risposta del gioco, politiche, scelte, velocità), NOTIFICA, PAUSA; riga STATO ogni 10 s.
+- **Prove:** 12 verifiche superate (legnaia riscritta in `verifica_villaggio.gd`, due controlli nuovi in `verifica_registro.gd`). 72 partite brevi: 869 / 977 / 908 / 214 abitanti (prima 818 / 784 / 846 / 152), carestie quasi uguali, 1–2 legnaie. Registro degli avvisi: 3,4 pause.
+
+**Decisioni** (Fede)
+- 19:14: "La torre si può costruire ovunque." "Io semplificherei la legna. Teniamo come riferimento la modalità Age of Empires, la legnaia come la segheria."
+- 19:15: "Per fare ricrescere gli alberi aggiungiamo risemina."
+- 19:16 (domande di Claude): fuoco fuori dal conto; risemina come opzione della legnaia; boscaioli fissi; le famiglie non fanno più legna da sole.
+- 19:17: "L'unico vero baco rimane la legna ed è tutto troppo angosciante e poco meditativo."
+- 19:25: "Fai in modo che il log registri anche come gioco io, per darti una indicazione."
+
+**Prossimo passo**
+- Fede riprova la legna (scheda della legnaia, risemina) con il registro del gioco acceso; Claude lo legge.
+- Senza risposta: piena più leggibile come acqua, sentieri usati anche vicino, case dell'epoca 2 nell'epoca 1 (F9 se ricapita).
+- Restano: la correzione della divisione in eminenti e comuni (scatta subito all'epoca 2), la concessione dei lotti.
+
 ## 27/11/2026 (sera) — famiglie eminenti e comuni
 **Fatto**
 - **Nomi dei gruppi dell'epoca 2** messi nei documenti (`era-origini.md` § 6, `epoca2-proposte.md`, `edifici-per-epoca.md`, `specchietto.md`).

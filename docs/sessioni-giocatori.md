@@ -284,3 +284,9 @@ Decisioni di Fede: la legnaia è la fonte professionale (fino a 80 alberi l'anno
 - **A fine partita:** eminenti 5–27, sempre al tetto (una casa su sei); eminenti contente (44–77), comuni 41–80, in metà delle partite fra 41 e 47 (con la divisione spenta le famiglie stavano fra 40 e 70); consenso 47–67 (spenta 51–67).
 - **Effetto sulle dinamiche, piccolo:** abitanti mediani 905 contro 893, carestie in media 34,2 contro 32,5 (Sperone 70 contro 63, Gessi 90 contro 84 per chi legge: le comuni scontente lavorano un po' meno). Nessun abbandono in entrambe.
 
+
+## Legna alla maniera dei giochi di strategia (27/11/2026, sera)
+Decisioni di Fede: la legna serve solo a costruire (il fuoco fuori dal conto); legnaia con due famiglie di boscaioli fisse, che si fermano a catasta piena; risemina nella scheda (accesa di partenza); niente famiglie che fanno legna da sole.
+- **Primi cinque secoli** (72 partite): mediane **869 / 977 / 908 / 214** abitanti (prima 818 / 784 / 846 / 152), carestie 3,6 / 3,8 / 4,7 / 3,6 a partita (prima 3,9 / 4,2 / 4,3 / 3,5), pause 4,6 / 4,1 / 4,1 / 4,2, legnaie in media 1,3 / 1,4 / 2,3 / 1,0, nessun abbandono (impara sbagliando, legge, conosce il genere, casual). Registro degli avvisi: 17 pause in 5 partite (3,4, come prima).
+- **Dosso nelle paludi** (verifiche): senza la legna di palude il villaggio restava a 106 abitanti (14 case); con il legno di salice e ontano nella legnaia arriva a 357 al 5500 a.C. con una sola legnaia.
+
