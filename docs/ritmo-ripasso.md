@@ -24,3 +24,9 @@ Nelle partite lunghe la cronaca arrivava a **34 righe al minuto** durante i dece
 2. **Le schede di una tappa in una finestra sola:** una pausa con più pagine (Avanti, Avanti) invece di una pausa per scheda. Le schede restano tutte; le fermate scendono da 23 a 7 (fondazione, quattro tappe, decenni, metallo).
 3. **Il tempo a decenni più lento:** a velocità 1, cinque anni al secondo invece di dieci. Il villaggio maturo si guarda crescere più a lungo, e l'epoca 2 ha il tempo di farsi giocare: la partita passerebbe da 15 a circa 23 minuti a velocità 1. Le velocità 2 e 3 restano per chi vuole andare veloce.
 4. **Da guardare più avanti:** dopo la tappa Territorio (circa 220 anni) il villaggio non sblocca più niente per 2600 anni. È il tempo per guardare, ma un obiettivo leggero (per esempio i casali da collegare, il bosco sacro, le strade) aiuterebbe. Non serve aggiungere regole: basterebbe una tappa in più a 400 abitanti con qualcosa da posare.
+
+## Decisione di Fede (27/11/2026 sera) e misure dopo
+Fede ha scelto solo la proposta 1: **il presagio delle sorgenti come gli stranieri.** La prima volta si sceglie (razionare o no), la scelta diventa l'usanza e si apre la politica "Quando le sorgenti calano" (Razionare, Non darci peso, Caso per caso); le volte dopo decide l'usanza, con una notifica grigia. Le altre proposte (schede in una finestra, decenni più lenti, tappa a 400 abitanti) **non si fanno per ora**.
+- Partite intere (5, fino al 700 a.C.): pause **da 67 a 34** (da 13 a meno di 7 a partita); restano la cometa (9), i segni di pericolo, le sorgenti la prima volta, il metallo e gli stranieri (5 ciascuno).
+- 72 partite brevi: mediane 861 / 910 / 874 / 271 abitanti, flessioni e carestie 1,5 / 1,9 / 1,8 / 1,1, pause 3,7 / 3,4 / 3,1 / 3,1 (prima 4,8 / 4,1 / 4,2 / 4,3), nessun abbandono.
+- La pausa più frequente ora è la **cometa** (quasi 2 a partita): si potrebbe trattare allo stesso modo, se Fede vuole.

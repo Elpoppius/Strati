@@ -152,6 +152,24 @@ func _verifica_sacro(d: MappaDati) -> void:
 	s.consenso["sacerdote"] = 30.0
 	controlla(falsi_contento < SimVillaggio.PRESAGI_FALSI and s.quota_presagi_falsi() > SimVillaggio.PRESAGI_FALSI and chiaro.contains("conferma") and s._testo_sorgenti().contains("non dice"), "sacerdote contento: presagi chiari (%d%% falsi); scontento: ambigui (%d%% falsi)" % [roundi(falsi_contento * 100.0), roundi(s.quota_presagi_falsi() * 100.0)])
 	s.consenso["sacerdote"] = 60.0
+	# Il presagio delle sorgenti come gli stranieri (Fede, 27/11/2026 sera): la prima volta si sceglie
+	# e la scelta diventa l'usanza; le volte dopo niente pausa.
+	var ps := SimVillaggio.new(d, 5)
+	ps.fonda(c)
+	ps.decisioni.clear()
+	controlla(not ps.sbloccato("sorgenti"), "la politica delle sorgenti non c'è prima del primo presagio")
+	ps.presagio_sorgenti()
+	controlla(ps.in_attesa() and ps.decisioni[0]["tipo"] == "sorgenti", "il primo presagio delle sorgenti ferma il gioco con la scelta")
+	ps.scegli(ps.decisioni[0]["id"], "razionare")
+	controlla(ps.sbloccato("sorgenti") and ps.politica("sorgenti") == "razionare" and ps.razionamento > 0, "la prima scelta diventa l'usanza e si apre la sua politica")
+	ps.presagio_vero = {}
+	ps.razionamento = 0
+	ps.presagio_sorgenti()
+	controlla(not ps.in_attesa() and ps.razionamento > 0 and ps.avvisi.any(func(x: Dictionary) -> bool: return String(x["testo"]).contains("usanza")), "il presagio dopo decide l'usanza da sola, con una notifica grigia")
+	ps.imposta_politica("sorgenti", "caso")
+	ps.presagio_vero = {}
+	ps.presagio_sorgenti()
+	controlla(ps.in_attesa(), "con l'usanza caso per caso il presagio ferma di nuovo il gioco")
 	# Bosco sacro.
 	var bosco := Vector2i(-1, -1)
 	for r in range(1, 25):

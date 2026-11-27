@@ -186,6 +186,13 @@ func avvia(s: Node, seme_voluto: int = -1) -> void:
 			{"id": "avanti", "testo": "Andare avanti", "nota": "Nessun costo: se arrivano, prendono quello che trovano."},
 			{"id": "raccogliere", "testo": "Raccogliere", "nota": "Animali e scorte vicino alle case: perdite dimezzate, ma meno caccia e la mandria non cresce finché dura il pericolo."},
 			{"id": "vegliare", "testo": "Vegliare", "nota": "Gli uomini vegliano ai margini: perdite minori e case più sicure, anziani contenti; qualche braccio lascia i campi."}]},
+		# Il presagio delle sorgenti come gli stranieri (Fede, 27/11/2026 sera): si apre la prima volta.
+		{"id": "sorgenti", "titolo": "Quando le sorgenti calano",
+		 "descrizione": "Le sorgenti basse annunciano una siccità; a volte è un falso allarme.",
+		 "opzioni": [
+			{"id": "razionare", "testo": "Razionare", "nota": "Per tre anni si mangia meno e si accumula: la siccità pesa meno, ma salute e consenso calano un poco."},
+			{"id": "ignorare", "testo": "Non darci peso", "nota": "Nessun costo oggi; se la siccità arriva, morde di più e gli anziani perdono credito."},
+			{"id": "caso", "testo": "Caso per caso", "nota": "A ogni presagio il tempo si ferma e gli anziani decidono."}]},
 	])
 	hud.interruttore_scelto.connect(func(_politica: String, fonte: String, accesa: bool) -> void:
 		if not sim.imposta_fonte(fonte, accesa):
@@ -860,7 +867,7 @@ func aggiorna_hud() -> void:
 
 	# Le tappe aprono le politiche (decisione di Fede del 25/11/2026).
 	# Anche le politiche compaiono quando la loro tappa le apre (Fede, 26/11/2026).
-	for id in ["raccolto", "stranieri", "affollati", "pericolo"]:
+	for id in ["raccolto", "stranieri", "affollati", "pericolo", "sorgenti"]:
 		hud.abilita_politica(id, sim.sbloccato(id))
 	for id in SimVillaggio.POLITICHE:
 		hud.imposta_politica(id, sim.politica(id))

@@ -81,12 +81,15 @@ var bonus := {"anziani": 0.0, "famiglie": 0.0, "sacerdote": 0.0}
 ## con "aperta": il primo arrivo ferma il gioco una volta e la scelta diventa la regola.
 ## pericolo (scorrerie, decisione di Fede del 26/11/2026): cosa si fa ai segni di pericolo; si apre con
 ## i primi segni, che fermano il gioco una volta: la scelta di allora diventa la regola.
-var politiche := {"raccolto": "comune", "stranieri": "aperta", "affollati": "allargare", "pericolo": "avanti"}
+var politiche := {"raccolto": "comune", "stranieri": "aperta", "affollati": "allargare", "pericolo": "avanti", "sorgenti": "caso"}
 const POLITICHE := {
 	"raccolto": ["comune", "famiglie"],
 	"stranieri": ["aperta", "caso", "chiusa"],
 	"affollati": ["allargare", "emigrare"],
 	"pericolo": ["avanti", "raccogliere", "vegliare"],
+	# Il presagio delle sorgenti come gli stranieri (Fede, 27/11/2026 sera, ripasso del ritmo): la
+	# prima volta si sceglie e la scelta diventa l'usanza; "caso" ferma il gioco ogni volta.
+	"sorgenti": ["razionare", "ignorare", "caso"],
 }
 ## Ammodernamento tecnologico (decisione di Fede del 24/11/2026), nel blocco Gestione allo stesso
 ## livello delle politiche, diviso per settore: agricolo ora; viario, abitativo… più avanti. Attivo,
@@ -450,6 +453,7 @@ const PERDITE_TORRE := 0.7
 var torre := Vector2(-1, -1)
 var cantiere_torre := 0
 var gia_segni := false
+var gia_sorgenti := false  # il primo presagio delle sorgenti apre la sua politica
 var segni_tra := -1  # anni alla scorreria annunciata dai segni (-1: nessuna)
 var segni_punto := Vector2(-1, -1)  # dove colpirà (nel mondo)
 var segni_da := ""  # da dove: "nord", "sud-est"…
@@ -3714,6 +3718,8 @@ func sbloccato(cosa: String) -> bool:
 	# La politica sul pericolo e la torre si aprono con i primi segni di una scorreria.
 	if cosa in ["pericolo", "torre"]:
 		return gia_segni
+	if cosa == "sorgenti":
+		return gia_sorgenti
 	# L'officina del fabbro è il primo edificio dell'epoca 2 (Fede, 27/11/2026).
 	if cosa == "officina":
 		return epoca >= 2
@@ -3787,6 +3793,12 @@ func imposta_politica(id: String, valore: String) -> bool:
 			_scrivi("Gli anziani decidono: gli stranieri non restano.")
 		"stranieri:caso":
 			_scrivi("Gli anziani decideranno ogni volta chi accogliere.")
+		"sorgenti:razionare":
+			_scrivi("Gli anziani decidono: quando le sorgenti calano, si raziona il cibo.")
+		"sorgenti:ignorare":
+			_scrivi("Gli anziani decidono: le sorgenti basse non fanno paura.")
+		"sorgenti:caso":
+			_scrivi("Gli anziani decideranno ogni volta che le sorgenti calano.")
 		"pericolo:avanti":
 			_scrivi("Gli anziani decidono: ai segni di pericolo si va avanti come sempre.")
 		"pericolo:raccogliere":
@@ -3858,14 +3870,11 @@ func _applica_scelta(tipo: String, o: String) -> void:
 		"soglia":
 			_transizione(o)
 		"sorgenti":
-			presagio_vero["scelta"] = o
-			if o == "razionare":
-				razionamento = 3
-				_cambia_consenso("famiglie", -3.0)
-				_cambia_consenso("sacerdote", 3.0)
-				_scrivi("Gli anziani ordinano di razionare il cibo.")
-			else:
-				_scrivi("Il villaggio non dà peso alle sorgenti basse.")
+			# La prima scelta diventa l'usanza del villaggio (come gli stranieri).
+			if not gia_sorgenti:
+				gia_sorgenti = true
+				politiche["sorgenti"] = o
+			_reagisci_sorgenti(o)
 		"cometa":
 			cometa["scelta"] = o
 			if o == "offerte":
@@ -3964,11 +3973,7 @@ func passo() -> void:
 		stat["presagi_totali"] += 1
 		if rng.randf() >= quota_presagi_falsi():
 			siccita_tra = 2 + rng.randi() % 2
-			sorgenti_basse = true
-			presagio_vero = {"scelta": ""}
-			_decidi("sorgenti", "Le sorgenti calano", _testo_sorgenti(),
-				[{"id": "razionare", "testo": "Razionare e accumulare", "nota": "Per tre anni si mangia meno: salute e consenso calano un poco."},
-				 {"id": "ignorare", "testo": "Ignorare", "nota": "Nessun costo oggi."}])
+			presagio_sorgenti()
 		else:
 			cometa = {"scelta": "", "anni": 3}
 			_decidi("cometa", "Una cometa nel cielo",
@@ -4479,6 +4484,33 @@ func _piena(disastrosa: bool) -> void:
 		_scrivi("Il fiume esce dal letto: %d case distrutte, %d campi allagati. Il ricordo del pericolo torna vivo." % [case_perse, campi_persi], "allarme")
 	else:
 		_scrivi("Il fiume esce dal letto: %d campi allagati, raccolto perso. Il limo li renderà più fertili." % campi_persi)
+
+
+## Il presagio delle sorgenti (vero): la prima volta, o con l'usanza "caso per caso", ferma il gioco
+## con la scelta; altrimenti decide l'usanza, con una notifica grigia (ritmo meditativo).
+func presagio_sorgenti() -> void:
+	sorgenti_basse = true
+	presagio_vero = {"scelta": ""}
+	var usanza := politica("sorgenti")
+	if gia_sorgenti and usanza in ["razionare", "ignorare"]:
+		_reagisci_sorgenti(usanza)
+		_notifica("Le sorgenti calano: secondo l'usanza %s." % ("si raziona il cibo" if usanza == "razionare" else "non ci si dà peso"), false, mondo_di_px(centro))
+		return
+	_decidi("sorgenti", "Le sorgenti calano", _testo_sorgenti() + ("" if gia_sorgenti else "\nLa scelta di oggi diventa l'usanza del villaggio: potrai cambiarla dalle politiche."),
+		[{"id": "razionare", "testo": "Razionare e accumulare", "nota": "Per tre anni si mangia meno: salute e consenso calano un poco."},
+		 {"id": "ignorare", "testo": "Ignorare", "nota": "Nessun costo oggi."}])
+
+
+## Cosa si fa al presagio delle sorgenti (scelta nella pausa o usanza del villaggio).
+func _reagisci_sorgenti(o: String) -> void:
+	presagio_vero["scelta"] = o
+	if o == "razionare":
+		razionamento = 3
+		_cambia_consenso("famiglie", -3.0)
+		_cambia_consenso("sacerdote", 3.0)
+		_scrivi("Gli anziani ordinano di razionare il cibo.")
+	else:
+		_scrivi("Il villaggio non dà peso alle sorgenti basse.")
 
 
 func _inizia_siccita() -> void:
