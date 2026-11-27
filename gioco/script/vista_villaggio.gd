@@ -452,7 +452,7 @@ func _anima_piena(delta: float) -> void:
 		_piena_vista = sim.ultima_piena.duplicate()
 		if sim.anno - int(_piena_vista["anno"]) <= 1:
 			_t_piena = 0.0
-			_picco_piena = 1.0 if _piena_vista["disastrosa"] else 0.55
+			_picco_piena = 1.0 if _piena_vista["disastrosa"] else 0.35  # di stagione: solo le terre più basse (27/11 sera)
 	if _t_piena < 0.0:
 		return
 	_t_piena += delta

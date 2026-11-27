@@ -676,9 +676,11 @@ void fragment() {
 		acqua = mix(acqua, pow(mix(vec3(0.72, 0.74, 0.76), vec3(0.16, 0.43, 0.71), pesce), vec3(2.2)), 0.85);
 	}
 	col = mix(col, acqua, in_acqua);
-	// Acqua della piena: torbida e bruna, più scura dove è più fonda, con le stesse increspature.
-	vec3 torbida = mix(vec3(0.3, 0.26, 0.18), vec3(0.19, 0.18, 0.13), smoothstep(0.05, 0.35, sopra_piena));
-	torbida = mix(torbida, cielo, 0.06 + 0.08 * liscio) * (0.94 + 0.12 * smoothstep(-0.4, 0.4, onde));
+	// Acqua della piena: torbida, più scura dove è più fonda, con le stesse increspature. Dal
+	// 27/11/2026 sera più chiara e con più cielo riflesso: prima, bruna, si leggeva come terra (Fede
+	// vedeva "una macchia scura che si muove dalla foresta").
+	vec3 torbida = mix(vec3(0.40, 0.37, 0.29), vec3(0.27, 0.27, 0.22), smoothstep(0.05, 0.35, sopra_piena));
+	torbida = mix(torbida, cielo, 0.22 + 0.12 * liscio) * (0.94 + 0.12 * smoothstep(-0.4, 0.4, onde));
 	col = mix(col, torbida * mix(1.0, rilievo_acqua, forza_rilievo), allagato * 0.92);
 	float lucido = max(in_acqua, allagato * 0.85);
 	// Luce: l'acqua è liscia e riflette, il terreno no. Le increspature inclinano la normale.

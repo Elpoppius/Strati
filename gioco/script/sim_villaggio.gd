@@ -581,6 +581,11 @@ var zona_piena := false
 var stat := {"carestie": 0, "flessioni": 0, "piene": 0, "siccita": 0, "fondazioni": 0, "presagi_letti": 0, "presagi_totali": 0, "abbandoni": 0, "febbri": 0, "segni": 0, "scorrerie": 0, "case_bruciate": 0}
 var storia := {"pop": [], "cibo": [], "salute": [], "legittimita": [], "abbondanza": [], "legna": [], "capi": []}
 ## Cronaca: [{anno, testo, tipo ("", "buono", "allarme")}], la più recente in testa.
+## Scala delle parole (Fede, 27/11/2026 sera: "una crisi è qualcosa di impattante, non una flessione,
+## seppur grave"; "anche le piene vanno gestite"): "allarme" e gli avvisi rossi solo per ciò che pesa
+## davvero (carestia, piena grande che distrugge case, scorreria che brucia case, il villaggio che si
+## divide o è abbandonato, il luogo sacro abbattuto). Tutto il resto è cronaca normale: annate magre,
+## flessioni, piene di stagione, febbri, siccità, segni, pascolo troppo fitto, un incendio dal forno.
 var cronaca: Array = []
 ## Tutorial alle tappe (decisione di Fede del 26/11/2026, vedi Tutorial): spenti nelle prove senza
 ## partita; la partita li accende. Ogni scheda si mostra al massimo una volta per partita.
@@ -1359,7 +1364,7 @@ func _pascola(lavorati: Dictionary) -> void:
 	var prima := pascolo_eccessivo
 	pascolo_eccessivo = clampf((capi / maxf(portata_capi, 1.0) - 0.9) / 0.1, 0.0, 1.0) * quota_pendii
 	if pascolo_eccessivo > 0.3 and prima <= 0.3:
-		_scrivi("Troppi animali sui pendii: l'erba non ricresce e la terra comincia a scendere.", "allarme")
+		_scrivi("Troppi animali sui pendii: l'erba non ricresce e la terra comincia a scendere.")
 	# Gli animali delle famiglie arricchiscono chi ne ha di più (decisione di Fede del 25/11/2026).
 	var meta := clampf(capi / 300.0, 0.0, 1.0) if famiglie else 0.0
 	disuguaglianza += (meta - disuguaglianza) * 0.05
@@ -1537,7 +1542,7 @@ func _segni() -> void:
 	var testo: String = testi[rng_scorrerie.randi() % testi.size()] % segni_da
 	if torre_pronta():
 		testo = "Dalla torre: " + testo.substr(0, 1).to_lower() + testo.substr(1)
-	_scrivi(testo, "allarme")
+	_scrivi(testo)
 	_notifica(testo, false, segni_punto)
 	# I primi segni fermano il gioco una volta: tutorial e scelta, che diventa la regola.
 	if not gia_segni:
@@ -1613,8 +1618,9 @@ func _scorreria() -> void:
 	var testo := "Scorreria da %s: portati via %s" % [segni_da, " e ".join(cosa) if not cosa.is_empty() else "poco o niente"]
 	if bruciate > 0:
 		testo += "; %s ai margini" % ("bruciata una casa" if bruciate == 1 else "bruciate %d case" % bruciate)
-	_scrivi(testo + ".", "allarme")
-	_notifica(testo + ".", true, segni_punto)
+	# Senza case bruciate è un furto, non una crisi: cronaca normale e avviso grigio.
+	_scrivi(testo + ".", "allarme" if bruciate > 0 else "")
+	_notifica(testo + ".", bruciate > 0, segni_punto)
 	segni_punto = Vector2(-1, -1)
 	disponi_case()
 
@@ -1857,7 +1863,7 @@ func _brucia_casa(l: Vector2i, testo: String) -> void:
 	macerie[l] = ANNI_MACERIE
 	rovine.append(centro_lotto(l))
 	stat["case_bruciate"] += 1
-	_scrivi(testo, "allarme")
+	_scrivi(testo)
 	_notifica(testo, false, centro_lotto(l))
 
 
@@ -3472,7 +3478,7 @@ func demolisci(punto: Vector2, raggio: float) -> Dictionary:
 	esito["bosco_sacro"] = sacri_tagliati
 	if sacri_tagliati > 0:
 		_cambia_consenso("sacerdote", -minf(25.0, 3.0 * sacri_tagliati))
-		_scrivi("Si è tagliato il bosco sacro: il sacerdote è offeso.", "allarme")
+		_scrivi("Si è tagliato il bosco sacro: il sacerdote è offeso.")
 	if granaio.x >= 0 and granaio.distance_to(punto) <= raggio:
 		granaio = Vector2(-1, -1)
 		esito["granaio"] = true
@@ -4124,8 +4130,8 @@ func passo() -> void:
 	# 25/11/2026 non ferma più il gioco; il pannello del cibo spiega cosa fare).
 	if not gia_primo_cattivo and anno > ANNO_INIZIO + 2 and raccolto + ultima_caccia + ultima_pesca < consumo and cibo < consumo * 0.25:
 		gia_primo_cattivo = true
-		_scrivi("Il raccolto non basta e le scorte sono quasi finite: %d di cibo contro un bisogno di %d." % [roundi(raccolto + ultima_caccia + ultima_pesca), roundi(consumo)], "allarme")
-		_notifica("Le scorte sono quasi finite: allarga la zona agricola o raziona (clic sul Cibo per capire).", true, mondo_di_px(centro))
+		_scrivi("Il raccolto quest'anno non basta e le scorte calano: %d di cibo contro un bisogno di %d." % [roundi(raccolto + ultima_caccia + ultima_pesca), roundi(consumo)])
+		_notifica("Le scorte calano: si può allargare la zona agricola o razionare (clic sul Cibo).", false, mondo_di_px(centro))
 	# Salute: acqua, paludi, affollamento, fame, focolari senza legna.
 	var dm := _d_palude[px(centro)]
 	var obiettivo := 72.0 + 15.0 * acqua_qualsiasi(px(centro)) - (25.0 if dm <= 3.0 else (10.0 if dm <= 6.0 else 0.0)) \
@@ -4139,7 +4145,7 @@ func passo() -> void:
 		salute -= danno
 		stat["febbri"] += 1
 		if danno >= 8.0:
-			_scrivi("Un'estate di febbri gravi: molti si ammalano.", "allarme")
+			_scrivi("Un'estate di febbri: molti si ammalano.")
 	salute = clampf(salute, 0.0, 100.0)
 	# Popolazione: le nascite seguono l'abbondanza (decisione di Fede del 25/11/2026).
 	_aggiorna_abbondanza()
@@ -4419,8 +4425,10 @@ func _piena(disastrosa: bool) -> void:
 			campi_persi += 1
 			allagati[f] = true
 			dove += mondo_di_px(px_di(f))
-	# Per la grafica: l'acqua che sale (VistaVillaggio._anima_piena).
-	if not colpiti.is_empty():
+	# Per la grafica: l'acqua che sale (VistaVillaggio._anima_piena). Le piene di stagione sono la
+	# normalità del fiume (Fede, 27/11/2026 sera: "anche le piene vanno gestite"): si vedono solo
+	# quando allagano dei campi, e salgono poco.
+	if disastrosa and not colpiti.is_empty() or campi_persi > 0:
 		ultima_piena = {"anno": anno, "disastrosa": disastrosa}
 	var granaio_colpito := disastrosa and granaio.x >= 0 and colpiti.has(px(px_da_mondo(granaio.x, granaio.y)))
 	if granaio_colpito:
@@ -4453,7 +4461,7 @@ func _piena(disastrosa: bool) -> void:
 		_cambia_consenso("famiglie", -minf(8.0, case_perse))
 		_scrivi("Il fiume esce dal letto: %d case distrutte, %d campi allagati. Il ricordo del pericolo torna vivo." % [case_perse, campi_persi], "allarme")
 	else:
-		_scrivi("Il fiume esce dal letto: %d campi allagati, raccolto perso." % campi_persi, "allarme")
+		_scrivi("Il fiume esce dal letto: %d campi allagati, raccolto perso. Il limo li renderà più fertili." % campi_persi)
 
 
 func _inizia_siccita() -> void:
@@ -4472,9 +4480,9 @@ func _inizia_siccita() -> void:
 			_scrivi("Arriva la siccità: le scorte accumulate ascoltando il presagio aiutano il villaggio.", "buono")
 		else:
 			_cambia_consenso("anziani", -8.0)
-			_scrivi("Arriva la siccità annunciata dalle sorgenti: averla ignorata costa caro agli anziani.", "allarme")
+			_scrivi("Arriva la siccità annunciata dalle sorgenti: gli anziani non l'hanno ascoltata e perdono credito.")
 		presagio_vero = {}
-	_scrivi("Siccità per %s: rendono solo i campi vicini al fiume e alle sorgenti." % ("un anno" if siccita == 1 else "%d anni" % siccita), "allarme")
+	_scrivi("Siccità per %s: rendono solo i campi vicini al fiume e alle sorgenti." % ("un anno" if siccita == 1 else "%d anni" % siccita))
 
 
 ## Abitato spontaneo (decisione di Fede): le case nascono da sole vicino al centro, all'acqua e

@@ -343,7 +343,7 @@ func _process(delta: float) -> void:
 	if sim.in_attesa() and not hud.modale_aperta():
 		_accumulo = 0.0
 		var d: Dictionary = sim.decisioni[0]
-		var tipi := {"sorgenti": "Presagio", "cometa": "Presagio", "primo_cattivo": "Momento decisivo", "affollamento": "Momento decisivo", "stranieri": "Evento", "pericolo": "Pericolo", "piena": "Evento", "abbandono": "Fallimento", "fine": "Fine del prototipo", "soglia": "Evento soglia", "epoca": "Nuova epoca"}
+		var tipi := {"sorgenti": "Presagio", "cometa": "Presagio", "primo_cattivo": "Momento decisivo", "affollamento": "Momento decisivo", "stranieri": "Evento", "pericolo": "Pericolo", "piena": "Evento", "abbandono": "Abbandono", "fine": "Fine del prototipo", "soglia": "Evento soglia", "epoca": "Nuova epoca"}
 		if d["tipo"] == "tutorial":
 			registra("pausa", "tutorial: %s" % d["titolo"])
 			hud.mostra_tutorial(d, _scelto.bind(d["id"], d["tipo"]))
