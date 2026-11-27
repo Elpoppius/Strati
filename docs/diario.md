@@ -2,6 +2,31 @@
 
 Voci più recenti in cima.
 
+## 27/11/2026 (sera) — famiglie eminenti e comuni
+**Fatto**
+- **Nomi dei gruppi dell'epoca 2** messi nei documenti (`era-origini.md` § 6, `epoca2-proposte.md`, `edifici-per-epoca.md`, `specchietto.md`).
+- **Divisione in eminenti e comuni** (`prototipo0-godot.md`):
+  - si apre quando il sesto più alto delle case tiene più del 35% del prestigio; eminenti al più una su sei, che restano tali finché hanno la casa;
+  - consenso pesato: le eminenti contano 3 volte (2 con la Comunità, 4 con la Casa dominante);
+  - cosa vogliono i due gruppi; comuni scontente al recinto a metà;
+  - disuguaglianza anche dal prestigio;
+  - tutorial, cronaca, Rapporti di forza e Conseguenze con i nomi nuovi, riga Rango con il clan nella scheda della famiglia, casa eminente più grande, casella nuova in F3.
+- **Prove:** 12 verifiche superate (13 controlli nuovi in `verifica_villaggio.gd`). 12 partite fino al 700 a.C. due volte, con la divisione e con la divisione spenta (`sessioni-giocatori.md`). Niente partite brevi: l'epoca 1 non cambia.
+  - **La divisione scatta quasi sempre nel primo anno dell'epoca 2:** il prestigio dei fondatori si accumula da 3000 anni.
+  - La divisione pesa poco sulle dinamiche: carestie 34,2 contro 32,5.
+  - Le carestie salgono comunque da 21 a 32,5 per la legna delle famiglie (rifatta nel pomeriggio).
+- Le partite lunghe ora scrivono anche divisione, eminenti, case, comuni, quota del prestigio e consenso.
+
+**Decisioni** (Fede)
+- 17:04–17:08: "capi" è fuorviante. Nell'epoca 2 le famiglie si dividono in **eminenti** (verso la nobiltà) e **comuni** (le umili); i gruppi di consenso sono eminenti, comuni e sacerdote. I **clan** sono gruppi di famiglie.
+- Linea del ceto nelle epoche dopo la 2, **confermata:** grandi famiglie → notabili → nobili.
+- 17:10: numeri **ok** (1 su 6, peso ×3, soglia 35%). "Clan = casata futura", per ora senza effetto diretto; per la narrazione "ci sta".
+
+**Prossimo passo**
+- Fede sceglie come far nascere la divisione dalla partita: prestigio con memoria corta (proposta preferita da Claude), prestigio contato dall'epoca 2, oppure soglia più alta. Poi si rifanno le 12 partite lunghe.
+- Da guardare con Fede: le carestie delle partite lunghe, salite con la legna delle famiglie.
+- Poi la voce dopo dell'epoca 2: la concessione dei lotti.
+
 ## 27/11/2026 (pomeriggio tardi) — la legnaia non tappa la legna
 **Fatto** (proposta di Claude approvata da Fede, "vai")
 - **Legnaia fonte professionale:** fino a 80 alberi l'anno (prima 20; `ALBERI_TAGLIO`), +150 di catasta per ogni legnaia finita (`MAGAZZINO_LEGNAIA`).
