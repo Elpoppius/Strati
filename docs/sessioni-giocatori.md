@@ -269,3 +269,11 @@ Decisioni di Fede: alberi che valgono il doppio (quercia 4 m³), limite della le
 
 ## Recinto e zone dell'abitato (27/11/2026, pomeriggio)
 12 partite fino al 700 a.C. (chi conosce il genere e chi legge, seme 1), con i giocatori automatici che tracciano il recinto (anello di otto punti attorno al nucleo) e dipingono la zona dell'abitato: **tutti e 12 finiscono il recinto**; dentro 32–79 case; case su impalcato 42–144; officina in tutte. Abitanti mediani 802 (prima 888): calano soprattutto al Dosso nelle paludi (274 e 257, prima 498 e 386). Carestie in media 21 a partita (prima 23). Scorrerie 3–12, case bruciate 0–5 (prima fino a 6), nessun abbandono. **Da guardare:** le case dentro restano poche perché nei villaggi grandi manca la legna per costruirle (Fede, 14:43: "va risolto diversamente, non posso stare solo a costruire legnaie").
+
+
+## La legnaia non tappa la legna (27/11/2026, pomeriggio tardi)
+Decisioni di Fede: la legnaia è la fonte professionale (fino a 80 alberi l'anno, +150 di catasta per legnaia); quando non basta le famiglie si prendono la legna da sole, con il doppio della fatica tolta ai campi l'anno dopo (al più 3 persone su 10).
+- **Primi cinque secoli** (72 partite): mediane 818 / 784 / 846 / 152 abitanti (prima 738 / 804 / 856 / 168), carestie 3,9 / 4,2 / 4,3 / 3,5 (prima 3,9 / 3,7 / 4,7 / 3,1), pause 4,4 / 4,1 / 4,1 / 3,7, scorrerie 0,8 / 0,9 / 1,1 / 0,4, nessun abbandono (impara sbagliando, legge, conosce il genere, casual). Il casual resta basso: il suo limite non è la legna ma la terra (allarga di rado la zona agricola). Registro degli avvisi: 17 pause in 5 partite (3,4, come prima).
+- **Velocità:** ricontare boschi e acque a ogni albero tagliato costava l'11% del tempo con le famiglie che tagliano ogni anno; ora si riconta solo quando cade un pixel di bosco: +2% (6 siti per 500 anni: 4086 abitanti in tutto in entrambi i casi).
+- **Fino al 700 a.C.:** da rifare (sospese su richiesta di Fede, 16:46: poco tempo su questo account).
+

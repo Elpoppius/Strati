@@ -269,7 +269,10 @@ var tappa := 0
 ##   alberi, ognuno col suo valore), dal più vicino alla legnaia verso fuori, quanto serve per rifare
 ##   le case (durano ANNI_VITA_CASA), tenere da parte legname per costruire e, quando la legna morta
 ##   non basta, anche per il fuoco dei focolari (Fede, 27/11/2026).
-## Senza legnaia non si raccoglie legna (decisione di Fede del 25/11/2026).
+## La legnaia è la fonte professionale di legna, ottimizzata e veloce, ma non tappa
+## l'approvvigionamento (Fede, 27/11/2026; prima, dal 25/11, senza legnaia non si raccoglieva legna):
+## quando le legnaie non bastano, le famiglie vanno a prendersi da sole la legna che manca nel bosco
+## vicino alle case, con il doppio della fatica, tolta ai campi l'anno dopo (`_legna_delle_famiglie`).
 var legna := 0.0
 const LEGNA_INIZIALE := 60.0
 const CONSUMO_PERSONA := 0.5  # m³ l'anno a testa nei focolari (circa 2,5 per famiglia)
@@ -291,9 +294,18 @@ const LATO_CELLA_TAGLIO := 10.0  # come la griglia dell'uso del suolo
 ## mano che il fronte del taglio si allontana; oltre RAGGIO_LEGNAIA non vanno. Conviene allora una
 ## legnaia nuova più vicina al bosco. Il limite si conta in alberi (Fede, 27/11/2026): un bosco di
 ## alberi che valgono di più (querce grandi) dà più legna con la stessa fatica.
-const ALBERI_TAGLIO := 20.0
+## Allargato a 80 il 27/11/2026 (Fede: "toglierei il tetto alle legnaie o lo espanderei"): una
+## legnaia ben piazzata regge un villaggio grande; quante farne lo decide il giocatore.
+const ALBERI_TAGLIO := 80.0
 ## Capacità di riferimento (m³ l'anno) di una legnaia in un bosco medio, per le letture e le prove.
-const CAPACITA_TAGLIO := 60.0
+const CAPACITA_TAGLIO := 240.0
+## Le famiglie che vanno a far legna da sole: quanta legna porta a casa una persona in un anno (alla
+## legnaia, organizzati, il doppio), fino a 3 persone su 10, nel bosco entro 600 m dal centro.
+const RESA_FAMIGLIE := 3.0
+const QUOTA_FAMIGLIE_LEGNA := 0.3
+var legna_famiglie := 0.0
+var fatica_legna := 0.0  # persone che hanno passato l'anno a far legna (tolte ai campi l'anno dopo)
+var _bosco_famiglie := {}  # come una legnaia al centro del villaggio, senza edificio
 const RAGGIO_LEGNAIA := 600.0  # metri: oltre, i boscaioli non vanno
 ## Il bosco tagliato ricresce in questi anni (come UsoSuolo.ANNI_CEDUO), ma solo quando la zona di
 ## taglio non è più di passaggio, cioè quando la legnaia smette di lavorare (Fede, 26/11/2026).
@@ -322,6 +334,7 @@ var _celle_px := {}  # pixel -> celle con alberi
 var _tagli_px := {}  # pixel -> celle tagliate
 ## Celle tagliate nell'ultimo anno: la partita le toglie dalla mappa, una alla volta.
 var tagli_anno: Array[Vector2i] = []
+var _pixel_caduto := false
 ## Pixel abbattuti nelle zone di taglio attive: lì il bosco non ricresce.
 var zona_attiva := {}
 var raccolta_legna := 0.0  # m³ raccolti l'ultimo anno senza abbattere
@@ -2889,9 +2902,67 @@ func _lavora_legnaie_dentro() -> void:
 			# Il debito non si porta avanti oltre una cella: se il bosco è finito, si azzera.
 			l["debito"] = clampf(float(l["debito"]), -5.0, 5.0)
 	ultima_legna = raccolta_legna + tronchi_legna
+	_legna_delle_famiglie(manutenzione)
+	ultima_legna += legna_famiglie
 	_aggiorna_zone_taglio()
-	if not tagli_anno.is_empty():
+	# Boschi e acque si ricontano l'anno dopo solo se un pixel di bosco è caduto (prima a ogni albero
+	# tagliato: con le famiglie che fanno legna ogni anno il conto si rifaceva ogni anno).
+	if _pixel_caduto:
 		_anni_risorse = mini(_anni_risorse, 1)
+	_pixel_caduto = false
+
+
+## Quando le legnaie non bastano (Fede, 27/11/2026: la legnaia non deve tappare l'approvvigionamento),
+## le famiglie vanno a prendersi da sole la legna che manca per i focolari e le case: prima rami e
+## legna morta nel bosco attorno al villaggio, poi abbattono alberi, dal più vicino al centro. Ci
+## mettono il doppio del tempo dei boscaioli: le persone che passano l'anno a far legna (fatica_legna)
+## lasciano i campi l'anno dopo. Al più 3 persone su 10.
+func _legna_delle_famiglie(manutenzione: float) -> void:
+	legna_famiglie = 0.0
+	fatica_legna = 0.0
+	if not fondato:
+		return
+	var fabbisogno := consumo_focolari + manutenzione + maxf(0.0, RISERVA_LEGNAME - legna) * 0.3
+	var disponibile := ultima_legna + maxf(0.0, legna - RISERVA_LEGNAME * 0.5)
+	var manca := minf(maxf(0.0, fabbisogno - disponibile), pop * QUOTA_FAMIGLIE_LEGNA * RESA_FAMIGLIE)
+	if manca <= 0.5:
+		return
+	var c := mondo_di_px(centro)
+	if _bosco_famiglie.is_empty() or (_bosco_famiglie["punto"] as Vector2).distance_to(c) > 1.0:
+		_bosco_famiglie = {"punto": c, "cantiere": 0, "bosco": [], "celle": _celle_di_alberi(c),
+			"debito": 0.0, "raggio": 0.0, "ultimo": anno, "riposo": false, "pixel": {}, "fatte": {}, "attiva": true}
+	# Legna morta: metà di quanto darebbe il bosco in piedi attorno al villaggio (le legnaie, dove
+	# ci sono, ne hanno già presa la loro parte).
+	var in_piedi := 0
+	var r := ceili(RAGGIO_LEGNAIA / dati.metri_per_px)
+	for dy in range(-r, r + 1, 2):
+		for dx in range(-r, r + 1, 2):
+			var q := centro + Vector2i(dx, dy)
+			if q.x < 0 or q.y < 0 or q.x >= n or q.y >= n:
+				continue
+			if mondo_di_px(q).distance_to(c) <= RAGGIO_LEGNAIA and bosco_in_piedi(px(q)):
+				in_piedi += 4
+	var morta := minf(manca, in_piedi * AREA_PIXEL_HA * RESA_RACCOLTA * 0.5)
+	var abbattuta := 0.0
+	var l := _bosco_famiglie
+	l["debito"] = manca - morta
+	var celle: Array = l["celle"]
+	for j in range(_primo_in_piedi(l), celle.size()):
+		if float(l["debito"]) <= 0.0:
+			break
+		var voce: Array = celle[j]
+		var cella: Vector2i = voce[1]
+		if not cella_in_piedi(cella):
+			continue
+		_taglia_cella(l, cella, float(voce[0]))
+		l["debito"] = float(l["debito"]) - float(voce[2])
+		abbattuta += float(voce[2])
+	l["debito"] = 0.0
+	# Niente zona di passaggio: le famiglie tagliano qua e là e il bosco ricresce da solo.
+	l["fatte"] = {}
+	l["pixel"] = {}
+	legna_famiglie = morta + abbattuta
+	fatica_legna = legna_famiglie / RESA_FAMIGLIE
 
 
 ## Taglia gli alberi di una cella: la cella resta aperta finché la legnaia lavora; quando metà delle
@@ -2907,6 +2978,7 @@ func _taglia_cella(l: Dictionary, c: Vector2i, d: float) -> void:
 	_tagli_px[i] = int(_tagli_px.get(i, 0)) + 1
 	if int(_tagli_px[i]) * 2 >= maxi(int(_celle_px.get(i, 1)), 1) and not tagliati.has(i):
 		tagliati[i] = anno
+		_pixel_caduto = true
 		(l["pixel"] as Dictionary)[i] = true
 
 
@@ -3937,8 +4009,8 @@ func passo() -> void:
 	if in_allerta() and politica("pericolo") == "vegliare":
 		lavoro *= 1.0 - 0.08 * efficacia_usanze()
 	var braccia: float = pop * 0.55 * lavoro * (1.0 + (0.0 if fonti["caccia"] else 0.2) + (0.0 if fonti["pesca"] else 0.1))
-	# La famiglia del fabbro lavora all'officina, non ai campi.
-	braccia = maxf(braccia - BRACCIA_FABBRO * 0.55 * lavoro_fabbro, 0.0)
+	# La famiglia del fabbro lavora all'officina, non ai campi; chi va a far legna da sé, nemmeno.
+	braccia = maxf(braccia - BRACCIA_FABBRO * 0.55 * lavoro_fabbro - fatica_legna * 0.55, 0.0)
 	var lavorabili := int(braccia / 3.0 * AREA_CELLA) if fonti["agricoltura"] else 0
 	var ordinati := campi.duplicate()
 	# Si lavorano prima i campi che rendono di più: quelli stanchi restano incolti e si riposano.
@@ -4150,8 +4222,15 @@ func _aggiorna_abbondanza() -> void:
 
 ## Quanta legna si può tenere da parte (le cataste marciscono): due anni di consumo più il legname per
 ## costruire (26/11/2026 sera: prima la catasta era enorme e le legnaie tagliavano per riempirla).
+## Ogni legnaia finita accatasta MAGAZZINO_LEGNAIA in più (Fede, 27/11/2026: la legnaia serve il
+## taglio e l'accumulo).
+const MAGAZZINO_LEGNAIA := 150.0
 func massimo_legna() -> float:
-	return 2.0 * maxf(consumo_legna, pop * CONSUMO_PERSONA) + RISERVA_LEGNAME + COSTO_CASA
+	var pronte := 0
+	for l in legnaie:
+		if int(l["cantiere"]) <= 0:
+			pronte += 1
+	return 2.0 * maxf(consumo_legna, pop * CONSUMO_PERSONA) + RISERVA_LEGNAME + COSTO_CASA + MAGAZZINO_LEGNAIA * pronte
 
 
 ## Mesi di cibo in scorta.
@@ -5043,9 +5122,11 @@ func cause_di(nome: String) -> Array[String]:
 					out.append("Il sacerdote vuole un bosco sacro più grande (ora %s ha su %d)." % [String.num(ettari_bosco_sacro(), 1).replace(".", ","), roundi(ETTARI_BOSCO_SACRO)])
 		"Legna":
 			if legnaie.is_empty():
-				out.append("Senza legnaia non si raccoglie legna: costruiscine una vicino al bosco (Edifici). Ora arriva solo quella del dissodamento.")
+				out.append("Senza legnaia le famiglie si prendono la legna da sole nel bosco vicino (%d l'anno), e %d persone lasciano i campi per farlo. Una legnaia vicino al bosco lo fa più in fretta (Edifici)." % [roundi(legna_famiglie), roundi(fatica_legna)])
 			else:
 				out.append("Il bosco attorno alle legnaie dà %d di legna da ardere l'anno; se ne raccolgono %d. I focolari ne bruciano %d." % [roundi(offerta_raccolta), roundi(raccolta_legna), roundi(consumo_focolari)])
+				if legna_famiglie > 0.5:
+					out.append("Le legnaie non bastano: le famiglie vanno a prendersi %d di legna da sole nel bosco vicino, e %d persone lasciano i campi per farlo. Un'altra legnaia vicino al bosco farebbe lo stesso lavoro con metà della fatica." % [roundi(legna_famiglie), roundi(fatica_legna)])
 				out.append("I boscaioli abbattono %d di tronchi l'anno (fino a %d), per rifare le case e costruire." % [roundi(tronchi_legna), roundi(capacita_taglio)])
 				if offerta_raccolta < consumo_focolari:
 					out.append("Il bosco vicino non basta per i focolari: una legnaia nuova più vicina al bosco ne raccoglierebbe di più.")

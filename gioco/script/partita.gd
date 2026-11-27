@@ -100,7 +100,7 @@ func avvia(s: Node, seme_voluto: int = -1) -> void:
 		{"id": "granaio", "icona": "granaio", "testo": "Granaio (15 di legna)", "breve": "Granaio", "tasto": "H",
 		 "descrizione": "Costa 15 di legna e qualche anno di lavoro, e va vicino al centro: le scorte si conservano meglio."},
 		{"id": "legnaia", "icona": "legnaia", "testo": "Legnaia", "breve": "Legnaia", "tasto": "L",
-		 "descrizione": "Senza legnaia non si raccoglie legna. I boscaioli abbattono gli alberi più vicini: più il bosco è vicino, più in fretta si raccoglie; la zona di taglio resta aperta finché la legnaia lavora. Clic su una legnaia: lasciar ricrescere il bosco o rimetterla al lavoro."},
+		 "descrizione": "I boscaioli tagliano e accatastano legna in fretta, il doppio di quanto farebbero le famiglie da sole, che senza legnaie vicine lasciano i campi per andarci. Abbattono gli alberi più vicini: più il bosco è vicino, più in fretta si raccoglie; la zona di taglio resta aperta finché la legnaia lavora. Clic su una legnaia: lasciar ricrescere il bosco o rimetterla al lavoro."},
 		# Capanno da pesca e Posta di caccia (decisioni di Fede del 25/11/2026): senza, caccia e pesca
 		# rendono un terzo. Tasti K e T: proposta di Claude.
 		{"id": "luogo_sacro", "icona": "luogo_sacro", "testo": "Luogo sacro (10 di legna)", "breve": "L. sacro", "tasto": "O",

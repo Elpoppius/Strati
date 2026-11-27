@@ -834,7 +834,7 @@ func _initialize() -> void:
 	tl.fonda(Vector2i(d.siti[2]["px"]))
 	tl.decisioni.clear()
 	tl.passo()
-	controlla(tl.legnaie.is_empty() and tl.ultima_legna == 0.0, "senza legnaia non si raccoglie legna")
+	controlla(tl.legnaie.is_empty() and tl.ultima_legna == 0.0, "appena fondato, con la legna portata da casa, nessuno va ancora a far legna")
 	var cg := RandomNumberGenerator.new()
 	cg.seed = 5
 	var legna_prima := tl.legna
@@ -889,8 +889,17 @@ func _initialize() -> void:
 	controlla(tl.cella_in_piedi(una), "dopo %d anni a riposo il bosco abbattuto ricresce" % SimVillaggio.ANNI_RICRESCITA)
 	tl.metti_a_riposo(0, false)
 	controlla(tl.legnaia_attiva(l0), "la legnaia torna al lavoro")
-	# La catasta è piccola: due anni di consumo più il legname per costruire.
-	controlla(tl.massimo_legna() < 2.5 * tl.consumo_legna + SimVillaggio.RISERVA_LEGNAME + SimVillaggio.COSTO_CASA + 1.0, "la catasta tiene due anni di consumo più il legname per costruire (%d)" % roundi(tl.massimo_legna()))
+	# La catasta: due anni di consumo più il legname per costruire, e quanto accatasta ogni legnaia
+	# (Fede, 27/11/2026: la legnaia serve il taglio e l'accumulo).
+	controlla(tl.massimo_legna() < 2.5 * tl.consumo_legna + SimVillaggio.RISERVA_LEGNAME + SimVillaggio.COSTO_CASA + SimVillaggio.MAGAZZINO_LEGNAIA * tl.legnaie.size() + 1.0, "la catasta tiene due anni di consumo, il legname per costruire e quanto accatastano le legnaie (%d)" % roundi(tl.massimo_legna()))
+	# Senza legnaie le famiglie vanno a far legna da sole, con il doppio della fatica (Fede, 27/11/2026).
+	var sf := SimVillaggio.new(d, 3)
+	sf.fonda(Vector2i(d.siti[2]["px"]))
+	sf.decisioni.clear()
+	sf.legna = 0.0
+	sf.passo()
+	controlla(sf.legnaie.is_empty() and sf.legna_famiglie > 0.0 and sf.fatica_legna > 0.0 and sf.legna > 0.0, "senza legnaie e senza legna le famiglie se la prendono da sole (%.0f, %.1f persone tolte ai campi)" % [sf.legna_famiglie, sf.fatica_legna])
+	controlla(sf.fatica_legna <= sf.pop * SimVillaggio.QUOTA_FAMIGLIE_LEGNA + 0.01 and absf(sf.fatica_legna * SimVillaggio.RESA_FAMIGLIE - sf.legna_famiglie) < 0.01, "a far legna da sole vanno al più 3 persone su 10 (%.1f su %.0f)" % [sf.fatica_legna, sf.pop])
 	# Campi che si stancano (decisione di Fede del 25/11/2026).
 	if not tl.campi.is_empty():
 		var cs: int = tl.campi[0]

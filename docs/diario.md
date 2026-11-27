@@ -2,6 +2,21 @@
 
 Voci più recenti in cima.
 
+## 27/11/2026 (pomeriggio tardi) — la legnaia non tappa la legna
+**Fatto** (proposta di Claude approvata da Fede, "vai")
+- **Legnaia fonte professionale:** fino a 80 alberi l'anno (prima 20; `ALBERI_TAGLIO`), +150 di catasta per ogni legnaia finita (`MAGAZZINO_LEGNAIA`).
+- **Le famiglie fanno legna da sole** quando le legnaie non bastano o mancano (`SimVillaggio._legna_delle_famiglie`): prima legna morta entro 600 m dal centro, poi alberi veri dal più vicino (spariscono dalla mappa, ricrescono in 25 anni). 3 m³ a persona l'anno, metà di un boscaiolo; al più 3 persone su 10; chi ci va lascia i campi l'anno dopo (`fatica_legna`). Riga nuova nel pannello della legna; testi della legnaia e delle cause aggiornati.
+- **Velocità:** boschi e acque si ricontano solo quando cade un pixel di bosco (prima a ogni albero: +11% di tempo con le famiglie, ora +2%, stessi risultati).
+- **Prove:** 12 verifiche superate (due nuove in `verifica_villaggio.gd`); 72 partite brevi: 818 / 784 / 846 / 152 abitanti, carestie quasi uguali; registro degli avvisi 3,4 pause. Il casual resta basso per la terra, non per la legna. Numeri in `sessioni-giocatori.md`.
+
+**Decisioni** (Fede)
+- "La legnaia è la fonte professionale di legno, ottimizzata, veloce. Ma non deve tappare l'approvvigionamento. Quindi sta a me capire se è sufficiente creare due o tre legnaie."
+- 16:46: le 12 partite lunghe si sospendono (poco tempo su questo account).
+
+**Prossimo passo**
+- Rifare le 12 partite fino al 700 a.C. e confrontarle (todo, epoca 2).
+- Fede prova al PC la legna: quante legnaie servono, quanto pesa la fatica delle famiglie sul cibo.
+
 ## 27/11/2026 (pomeriggio) — la legna rifatta
 **Fatto** (decisioni di Fede, 12:28–12:49)
 - **Alberi che valgono il doppio:** quercia 4 m³, pioppo 3, carpino 2, arbusto 0,3.
