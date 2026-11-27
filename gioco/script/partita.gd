@@ -905,6 +905,9 @@ func _testo_consenso() -> String:
 	var c: Dictionary = sim.consenso
 	var t := "Consenso del villaggio.\nAnziani: %d (le usanze%s)\nFamiglie: %d (il lavoro)" % [roundi(c["anziani"]),
 		"" if sim.efficacia_usanze() >= 1.0 else ": scontenti, le politiche valgono meno", roundi(c["famiglie"])]
+	if sim.famiglie_divise:
+		t = "Consenso dell'abitato.\nEminenti: %d (le usanze%s)\nComuni: %d (il lavoro)" % [roundi(c["anziani"]),
+			"" if sim.efficacia_usanze() >= 1.0 else ": scontente, le politiche valgono meno", roundi(c["famiglie"])]
 	if sim.sacerdote_attivo:
 		t += "\nSacerdote: %d (i presagi)" % roundi(c["sacerdote"])
 	return t
@@ -996,6 +999,17 @@ const GRUPPI := {
 	"famiglie": {"nome": "Famiglie", "parole": ["contente", "tranquille", "inquiete", "scontente"], "vuole": "Le famiglie vogliono il raccolto, case per tutti e i loro animali."},
 	"sacerdote": {"nome": "Sacerdote", "parole": ["contento", "tranquillo", "inquieto", "scontento"], "vuole": "Il sacerdote vuole il luogo sacro, un bosco sacro grande e i presagi ascoltati."},
 }
+## Epoca 2, dopo la divisione (Fede, 27/11/2026): le chiavi "anziani" e "famiglie" diventano le
+## famiglie eminenti e le comuni.
+const GRUPPI_DIVISI := {
+	"anziani": {"nome": "Eminenti", "parole": ["contente", "tranquille", "inquiete", "scontente"], "vuole": "Le eminenti vogliono prestigio, difesa e scambi: il raccolto alle famiglie, le armi, il recinto."},
+	"famiglie": {"nome": "Comuni", "parole": ["contente", "tranquille", "inquiete", "scontente"], "vuole": "Le comuni vogliono terra, cibo e protezione: il raccolto in comune, case, gli attrezzi."},
+}
+
+
+## Il gruppo con il nome di oggi: dopo la divisione dell'epoca 2, eminenti e comuni.
+func gruppo(g: String) -> Dictionary:
+	return GRUPPI_DIVISI[g] if sim.famiglie_divise and GRUPPI_DIVISI.has(g) else GRUPPI[g]
 ## Come si dice a parole dove spinge ogni asse dell'identità: [verso −1, verso +1].
 const PAROLE_IDENTITA := {
 	"terra": ["terra in comune", "terra alle famiglie"],
@@ -1012,11 +1026,11 @@ func rapporti_di_forza() -> Dictionary:
 		if pesi[g] <= 0.0:
 			continue
 		var c: float = sim.consenso[g]
-		var parole: Array = GRUPPI[g]["parole"]
+		var parole: Array = gruppo(g)["parole"]
 		var a := sim.andamento_consenso(g)
-		gruppi.append({"nome": GRUPPI[g]["nome"], "peso": pesi[g] / 0.5, "umore": c,
+		gruppi.append({"nome": gruppo(g)["nome"], "peso": pesi[g] / 0.5, "umore": c,
 			"parola": parole[0 if c >= 70.0 else (1 if c >= 55.0 else (2 if c >= 40.0 else 3))],
-			"freccia": "▲" if a > 3.0 else ("▼" if a < -3.0 else ""), "vuole": GRUPPI[g]["vuole"]})
+			"freccia": "▲" if a > 3.0 else ("▼" if a < -3.0 else ""), "vuole": gruppo(g)["vuole"]})
 	# Il perché di ogni gruppo al passaggio del puntatore: ciò che vuole e le cause di oggi.
 	var cause := sim.cause_di("Consenso")
 	for r in gruppi:
@@ -1028,8 +1042,19 @@ func rapporti_di_forza() -> Dictionary:
 		r["vuole"] = String(r["vuole"]) + ("\n" + "\n".join(sue) if not sue.is_empty() else "")
 	var te := sim.tensione()
 	return {"valore": str(roundi(sim.legittimita)), "allarme": sim.legittimita < 30.0,
-		"descrizione": "Governano gli anziani.", "gruppi": gruppi,
+		"descrizione": descrizione_governo(), "gruppi": gruppi,
 		"tensione": [te, "bassa" if te < 0.34 else ("media" if te < 0.67 else "alta")], "verso": verso_identita()}
+
+
+## Chi governa, in una riga: nel villaggio gli anziani; dopo l'evento del metallo il primo governo,
+## e con la divisione la disuguaglianza.
+func descrizione_governo() -> String:
+	if sim.primo_governo == "":
+		return "Governano gli anziani."
+	var t := "Governo: %s." % sim.primo_governo.to_lower()
+	if sim.famiglie_divise:
+		t += " Disuguaglianza %d%%." % roundi(sim.indice_disuguaglianza() * 100.0)
+	return t
 
 
 ## Dove spingono le usanze di oggi, a parole (al massimo due assi, i più netti).
@@ -1072,7 +1097,17 @@ func aggiorna_conseguenze() -> void:
 	if chiave == _chiave_conseguenze:
 		return
 	_chiave_conseguenze = chiave
-	hud.imposta_conseguenze(conseguenze(cmd, Vector2(q.x, q.z), raggio))
+	hud.imposta_conseguenze(nomi_dei_gruppi(conseguenze(cmd, Vector2(q.x, q.z), raggio)))
+
+
+## Dopo la divisione dell'epoca 2, nelle conseguenze anziani e famiglie diventano eminenti e comuni.
+func nomi_dei_gruppi(d: Dictionary) -> Dictionary:
+	if not sim.famiglie_divise:
+		return d
+	for k in ["guadagna", "perde"]:
+		if d.has(k):
+			d[k] = String(d[k]).replace("Anziani", "Eminenti").replace("Famiglie", "Comuni")
+	return d
 
 
 func _ettari_testo(ha: float) -> String:
@@ -2162,11 +2197,28 @@ func _desiderio(l: Vector2i) -> Array:
 	return ["un buon raccolto", "Per ora non manca niente di importante."]
 
 
+## Rango e clan di una famiglia, in una riga (epoca 2, dopo la divisione).
+func rango_famiglia(l: Vector2i) -> String:
+	if sim.eminente(l):
+		return "eminente · a capo del suo clan"
+	var w := sim.centro_lotto(l)
+	var meglio := INF
+	var capo := Vector2i(-9999, -9999)
+	for e in sim.eminenti:
+		var d := sim.centro_lotto(e).distance_to(w)
+		if d < meglio:
+			meglio = d
+			capo = e
+	if capo.x == -9999:
+		return "comune"
+	return "comune · clan %s" % nomi_famiglie().get(capo, "del prato")
+
+
 func dati_famiglia(l: Vector2i) -> Dictionary:
 	var nome: String = nomi_famiglie().get(l, "del prato")
 	var w := sim.centro_lotto(l)
 	var modello := VistaVillaggio.modello_casa(l)
-	var dove := ("Casa lunga " if modello.begins_with("casa") else "Capanna tonda ") + _dove_casa(l)
+	var dove := ("Casa su impalcato " if sim.casa_su_impalcato(l) else ("Casa lunga " if modello.begins_with("casa") else "Capanna tonda ")) + _dove_casa(l)
 	var nata := int(sim.nascita_case.get(l, sim.anno))
 	var da := ("arrivati da fuori nel " + SimVillaggio.anno_testo(int(sim.case_straniere[l]))) if sim.case_straniere.has(l) else "dal " + SimVillaggio.anno_testo(nata)
 	var righe: Array = []
@@ -2210,16 +2262,22 @@ func dati_famiglia(l: Vector2i) -> Dictionary:
 		ha.append("%d capi" % maxi(1, roundi(sim.capi / maxf(1.0, sim.case.size()))) if alle_famiglie else "animali in comune")
 	ha.append("il suo raccolto" if alle_famiglie else "raccolto in comune")
 	righe.append(["Ha", " · ".join(ha), "Con il raccolto alle famiglie ognuna tiene il suo, e gli animali sono suoi." if alle_famiglie else "Il raccolto e gli animali sono di tutto il villaggio."])
+	# Epoca 2 (Fede, 27/11/2026): eminente o comune, e il clan, per ora solo come racconto (il clan è
+	# la casata futura): le comuni stanno nel clan dell'eminente più vicina.
+	if sim.famiglie_divise:
+		righe.append(["Rango", rango_famiglia(l), "Le eminenti sono le case con più prestigio, al più una su sei: vanno verso la nobiltà. Le comuni sono le umili. Il clan è un gruppo di famiglie legate da parentela e vicinato."])
 	var desiderio := _desiderio(l)
 	righe.append(["Vorrebbe", desiderio[0], desiderio[1]])
 	# L'umore della famiglia (decisione di Fede del 26/11/2026): il consenso delle famiglie più ciò che
 	# vive questa casa; i motivi a parole al passaggio del puntatore.
-	var umore: Array = sim.umore_famiglie().get(l, [float(sim.consenso["famiglie"]), []])
+	var em := sim.eminente(l)
+	var umore: Array = sim.umore_famiglie().get(l, [float(sim.consenso["anziani" if em else "famiglie"]), []])
 	var c: float = umore[0]
 	var parole: Array = GRUPPI["famiglie"]["parole"]
 	var parola: String = parole[0 if c >= 70.0 else (1 if c >= 55.0 else (2 if c >= 40.0 else 3))]
 	var motivi: Array = umore[1]
-	var perche := "Come tutte le famiglie del villaggio." if motivi.is_empty() else "Come le altre famiglie, e in più:\n· " + "\n· ".join(motivi)
+	var simili := ("le eminenti" if em else "le comuni") if sim.famiglie_divise else "le famiglie"
+	var perche := ("Come tutte %s%s." % [simili, " del villaggio" if not sim.famiglie_divise else ""]) if motivi.is_empty() else "Come le altre %s, e in più:\n· " % simili.trim_prefix("le ") + "\n· ".join(motivi)
 	return {"titolo": "Famiglia " + nome, "valore": "%d persone" % quanti if quanti != 1 else "1 persona",
 		"descrizione": descrizione, "famiglia": righe, "umore": [c, parola.trim_suffix("e") + "a" if parola.ends_with("e") else parola, perche],
 		"punto": w}

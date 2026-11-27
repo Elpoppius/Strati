@@ -506,6 +506,7 @@ func _verifica_soglia(d: MappaDati) -> void:
 	controlla(not fine.is_empty() and String(fine[0]["testo"]).contains("Casa dominante") and String(fine[0]["testo"]).contains("abitanti"), "il riepilogo del villaggio dice il primo governo")
 	_verifica_fabbro(s, d)
 	_verifica_recinto(d, c)
+	_verifica_eminenti(d, c)
 	s.identita["terra"] = -0.6
 	s.disuguaglianza = 0.1
 	s.consenso["anziani"] = 70.0
@@ -621,6 +622,100 @@ func _verifica_fabbro(s: SimVillaggio, d: MappaDati) -> void:
 
 
 ## Epoca 2, il recinto e le zone dell'abitato (decisioni di Fede del 27/11/2026).
+## Epoca 2, famiglie eminenti e comuni (decisioni di Fede del 27/11/2026, era-origini.md § 6).
+func _verifica_eminenti(d: MappaDati, sito: Vector2i) -> void:
+	var r := SimVillaggio.new(d, 41)
+	r.fonda(sito)
+	r.decisioni.clear()
+	var c := r.mondo_di_px(r.centro)
+	var cl := r.lotto_da_mondo(c.x, c.y)
+	r.case = []
+	for i in 6:
+		for j in 4:
+			r.case.append(cl + Vector2i(i - 3, j - 2))
+	for l in r.case:
+		r.prestigio_case[l] = 1.0
+	# Nel villaggio, anche con il prestigio concentrato, nessuna divisione.
+	r.prestigio_case[r.case[0]] = 100.0
+	r._aggiorna_eminenti()
+	controlla(not r.famiglie_divise and r.eminenti.is_empty(), "nel villaggio le famiglie non si dividono")
+	r.epoca = 2
+	r.primo_governo = "Consiglio dei clan"
+	r.prestigio_case[r.case[0]] = 1.0
+	r._aggiorna_eminenti()
+	controlla(not r.famiglie_divise and absf(r.quota_prestigio - 4.0 / 24.0) < 0.01, "nell'epoca 2, con il prestigio diviso alla pari, nessuna divisione (quota %d%%)" % roundi(r.quota_prestigio * 100.0))
+	for k in 4:
+		r.prestigio_case[r.case[k]] = 6.0
+	r._aggiorna_eminenti()
+	var tetto := r.tetto_eminenti()
+	controlla(r.famiglie_divise and r.eminenti.size() >= 2 and r.eminenti.size() <= tetto and r._tutorial_visti.has("eminenti"), "il sesto più alto tiene più del 35%%: le famiglie si dividono (%d eminenti su %d case, tetto %d) con la sua scheda" % [r.eminenti.size(), r.case.size(), tetto])
+	controlla(r.eminente(r.case[0]) and not r.eminente(r.case[10]), "diventano eminenti le case con più prestigio")
+	var pesi := r.pesi_consenso()
+	var quota_case := float(r.eminenti.size()) / r.case.size()
+	controlla(absf(float(pesi["anziani"]) + float(pesi["famiglie"]) + float(pesi["sacerdote"]) - 1.0) < 0.001 and float(pesi["anziani"]) / (1.0 - float(pesi["sacerdote"])) > 2.5 * quota_case, "le eminenti pesano tre volte: %d%% del consenso con il %d%% delle case" % [roundi(float(pesi["anziani"]) * 100.0), roundi(quota_case * 100.0)])
+	r.primo_governo = "Casa dominante"
+	var pesi_casa := float(r.pesi_consenso()["anziani"])
+	r.primo_governo = "Comunità"
+	controlla(pesi_casa > float(r.pesi_consenso()["anziani"]), "con la Casa dominante le eminenti pesano di più che con la Comunità")
+	r.primo_governo = "Consiglio dei clan"
+	# Gli umori delle case: la media di ogni gruppo è il suo consenso.
+	r.consenso["anziani"] = 62.0
+	r.consenso["famiglie"] = 44.0
+	var umori := r.umore_famiglie()
+	var somme := [0.0, 0.0]
+	var quante := [0, 0]
+	for l in umori:
+		var g := 0 if r.eminente(l) else 1
+		somme[g] += float(umori[l][0])
+		quante[g] += 1
+	controlla(absf(somme[0] / quante[0] - 62.0) < 1.0 and absf(somme[1] / quante[1] - 44.0) < 1.0, "l'umore medio delle eminenti è il loro consenso, quello delle comuni il loro")
+	# Cosa vogliono: il raccolto alle famiglie piace alle eminenti e pesa alle comuni.
+	r.politiche["raccolto"] = "comune"
+	var em_comune := r.obiettivo_eminenti()
+	var co_comune := r.obiettivo_comuni()
+	r.politiche["raccolto"] = "famiglie"
+	controlla(r.obiettivo_eminenti() > em_comune and r.obiettivo_comuni() < co_comune, "il raccolto alle famiglie piace alle eminenti, non alle comuni")
+	r.armi = 0.0
+	var em_senza := r.obiettivo_eminenti()
+	r.armi = 1.0
+	r.attrezzi = 0.0
+	var co_senza := r.obiettivo_comuni()
+	r.attrezzi = 1.0
+	controlla(r.obiettivo_eminenti() > em_senza and r.obiettivo_comuni() > co_senza, "le armi piacciono alle eminenti, gli attrezzi alle comuni")
+	# Nuove eminenti col tempo, fino al tetto; chi perde la casa perde il rango.
+	var prima := r.eminenti.size()
+	r.anno += SimVillaggio.ANNI_NUOVA_EMINENTE
+	r._aggiorna_eminenti()
+	controlla(r.eminenti.size() == mini(prima + 1, tetto), "dopo %d anni, se il prestigio resta concentrato, sale un'altra famiglia (%d)" % [SimVillaggio.ANNI_NUOVA_EMINENTE, r.eminenti.size()])
+	var persa: Vector2i = r.case[0]
+	r.case.erase(persa)
+	r.prestigio_case.erase(persa)
+	r._aggiorna_eminenti()
+	controlla(not r.eminente(persa), "chi perde la casa non è più eminente")
+	# Comuni scontente: al recinto vanno un anno sì e uno no.
+	r.consenso["famiglie"] = 30.0
+	controlla(r.comuni_svogliate(), "sotto 40 le comuni sono svogliate")
+	var t := SimVillaggio.new(d, 41)
+	t.fonda(sito)
+	t.decisioni.clear()
+	t.epoca = 2
+	t.anno_epoca2 = t.anno
+	t.pop = 400.0
+	t.anno += SimVillaggio.ANNI_SBLOCCO_RECINTO
+	var ct := t.mondo_di_px(t.centro)
+	t.traccia_recinto([ct + Vector2(-200, -200), ct + Vector2(200, -200), ct + Vector2(200, 200), ct + Vector2(-200, 200)])
+	t.famiglie_divise = true
+	t.consenso["famiglie"] = 30.0
+	t.legna = 1000.0
+	t.ultima_legna = 0.0
+	var fatti := 0
+	for k in 4:
+		t._lavora_recinto()
+		t.anno += 1
+	fatti = t.recinto_fatti
+	controlla(fatti == 2 * SimVillaggio.TRATTI_ANNO, "con le comuni scontente il recinto va a metà (%d tratti in 4 anni)" % fatti)
+
+
 func _verifica_recinto(d: MappaDati, sito: Vector2i) -> void:
 	var r := SimVillaggio.new(d, 41)
 	r.fonda(sito)

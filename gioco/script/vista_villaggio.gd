@@ -986,6 +986,7 @@ static func modello_casa(l: Vector2i) -> String:
 
 
 var _case_impalcato := {}  # lotto -> true se disegnata su impalcato
+var _case_eminenti := {}  # lotto -> true se disegnata come casa di una famiglia eminente
 
 
 ## Rotazione (radianti) che porta la testata di una casa su impalcato (+x del modello) verso il punto
@@ -1015,8 +1016,9 @@ func _sincronizza_case() -> void:
 		# Epoca 2 (27/11/2026): le case nate o rifatte dopo l'evento del metallo sono su impalcato,
 		# con la testata e la porta (+x del modello) verso la via più vicina, o verso il centro.
 		var impalcato := sim.casa_su_impalcato(l)
+		var eminente := sim.eminente(l)
 		if _case.has(l):
-			if impalcato == _case_impalcato.has(l):
+			if impalcato == _case_impalcato.has(l) and eminente == _case_eminenti.has(l):
 				continue
 			(_case[l] as Node3D).queue_free()
 			_case.erase(l)
@@ -1030,7 +1032,15 @@ func _sincronizza_case() -> void:
 			_case_impalcato.erase(l)
 		# Varianti (todo voce 9, 26/11/2026; proposta di Claude): metà delle case ha attorno ciò
 		# che la famiglia tiene fuori (cataste, orto, tettoia, recintino, telaio per le pelli).
-		var nodo := _istanza(nome + ("_b" if _caso(l, 3) < QUOTA_VARIANTI else ""))
+		var variante := _caso(l, 3) < QUOTA_VARIANTI
+		# Le famiglie eminenti (epoca 2, 27/11/2026) hanno la casa più grande, con gli annessi.
+		if eminente:
+			nome = "casa_impalcato_media" if impalcato else "casa_lunga_grande"
+			variante = true
+			_case_eminenti[l] = true
+		else:
+			_case_eminenti.erase(l)
+		var nodo := _istanza(nome + ("_b" if variante else ""))
 		var w := sim.centro_lotto(l)
 		_posa(nodo, w, gradi)
 		_case[l] = nodo
@@ -1040,6 +1050,7 @@ func _sincronizza_case() -> void:
 			(_case[l] as Node3D).queue_free()
 			_case.erase(l)
 			_case_impalcato.erase(l)
+			_case_eminenti.erase(l)
 			var w := sim.centro_lotto(l)
 			uso.libera(uso.celle_nel_cerchio(w.x, w.y, RAGGIO_CORTILE))
 

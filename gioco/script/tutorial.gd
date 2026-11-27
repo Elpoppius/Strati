@@ -166,6 +166,13 @@ const SCHEDE := {
 		"dettaglio": "In Edifici (J): un clic dopo l'altro attorno all'abitato, e un clic sul primo punto chiude l'anello. Ogni 10 m costano 3 di legna; le braccia ne fanno una decina di tratti l'anno, e finché l'anello non è finito non protegge. Le porte si aprono da sole dove passano i sentieri e le strade. Dentro il recinto le razzie non bruciano le case e, se il granaio è dentro, rubano poco delle scorte. Fuori si resta esposti.",
 		"avviso": "Recinto (J): terrapieno e palizzata attorno all'abitato.",
 	},
+	"eminenti": {
+		"titolo": "Famiglie eminenti e comuni",
+		"testo": "Alcune famiglie si sono alzate sopra le altre. Le eminenti guardano al prestigio; le comuni chiedono terra, cibo e protezione.",
+		"domanda": "Chi sono le eminenti?",
+		"dettaglio": "Sono le case che hanno accumulato più prestigio: vicine al focolare e al luogo sacro, con più animali, la casa del fabbro, la casa dentro il recinto. Al più una casa su sei, e restano eminenti finché hanno la casa. Il loro umore pesa tre volte quello di una famiglia comune (di meno con la Comunità, di più con la Casa dominante). Le eminenti vogliono il raccolto alle famiglie, le armi del fabbro, il recinto e le vie aperte; le comuni il raccolto in comune con il granaio, case per tutti e gli attrezzi del fabbro. Se le eminenti sono scontente le usanze valgono meno; se lo sono le comuni, ai lavori del recinto vanno a metà, e qualcuna se ne va. Rapporti di forza (R) mostra chi pesa e quanto.",
+		"avviso": "Le famiglie si dividono in eminenti e comuni: Rapporti di forza (R).",
+	},
 	"abitato": {
 		"titolo": "Le zone dell'abitato",
 		"testo": "Con il recinto l'abitato si dà una regola: dove si costruisce e dove no.",

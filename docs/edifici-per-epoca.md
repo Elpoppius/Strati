@@ -60,7 +60,7 @@
 
 | Edificio | Epoche | Perché esiste nel gioco | Muove |
 |---|---|---|---|
-| Casa del capo *(spontaneo)* | 2 | segna il clan dominante: più è grande, più il potere va ai pochi (asse "chi decide") | capi, clan |
+| Casa del capo *(spontaneo)* | 2 | segna il clan dominante: più è grande, più il potere va ai pochi (asse "chi decide") | eminenti, comuni |
 | Tumulo del capo | 2 | prestigio dei morti, che unisce sacro e clan; resta nel paesaggio per millenni | capi, sacerdote, memoria |
 | Domus signorile *(spontaneo)* | 3–4 | la ricchezza visibile in città: la disuguaglianza si legge sulla mappa | famiglie eminenti |
 | Villa rustica *(spontaneo)* | 4 | la grande proprietà in campagna: rendita fuori città; nel crollo diventa castello, pieve o rovina sotto i campi | proprietari, contadini |

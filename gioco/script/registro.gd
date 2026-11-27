@@ -47,6 +47,7 @@ const PROVE := [
 	"Epoca 2: vesti nuove delle persone",
 	"Recinto (J): tracciare, chiudere, cantiere, porte",
 	"Zona dell'abitato: case dentro, sulla via, su impalcato",
+	"Eminenti e comuni: tutorial, scheda (rango, clan), R",
 ]
 
 var cartella := ""

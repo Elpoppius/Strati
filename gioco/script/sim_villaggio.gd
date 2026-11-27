@@ -535,6 +535,23 @@ var _anno_stranieri := 0
 ## vicinanza al focolare e al luogo sacro e, con il raccolto alle famiglie, con gli animali (proposta
 ## di Claude accolta da Fede). Le case ricostruite dopo una piena disastrosa la ricordano.
 var prestigio_case := {}  # lotto -> prestigio accumulato
+## Famiglie eminenti e comuni (epoca 2; decisioni di Fede del 27/11/2026, `era-origini.md` § 6). Le
+## eminenti vanno verso la nobiltà, le comuni sono le umili. La divisione nasce dalla partita: si apre
+## quando il sesto più alto delle case tiene più di SOGLIA_DIVISIONE del prestigio; diventano eminenti
+## le case con più prestigio, al più una su sei, e lo restano finché hanno la casa. Da lì i gruppi di
+## consenso sono eminenti, comuni e sacerdote (nelle chiavi di `consenso`: "anziani" per le eminenti,
+## "famiglie" per le comuni), e il consenso è la media degli umori delle case con le eminenti che
+## pesano di più. I clan (gruppi di famiglie, la casata futura) per ora sono solo racconto.
+const QUOTA_EMINENTI := 1.0 / 6.0
+const SOGLIA_DIVISIONE := 0.35
+const PESO_EMINENTI := {"Comunità": 2.0, "Consiglio dei clan": 3.0, "Casa dominante": 4.0}
+const ANNI_NUOVA_EMINENTE := 10  # al più una famiglia nuova tra le eminenti ogni tanti anni
+const CASE_DIVISIONE := 12  # sotto queste case la divisione non si apre
+var famiglie_divise := false
+var anno_divisione := 0
+var eminenti := {}  # lotto -> anno in cui la famiglia è diventata eminente
+var quota_prestigio := 0.0  # parte del prestigio in mano al sesto più alto delle case
+var _anno_eminente := 0
 var case_dopo_piena := {}  # lotto -> anno della piena che ha distrutto la casa di prima
 var _case_piena_da_fare := 0
 var _anno_piena := 0
@@ -1960,6 +1977,11 @@ func traccia_recinto(punti: Array) -> String:
 	return ""
 
 
+## Le famiglie comuni sono scontente e lavorano ai lavori comuni (recinto) a metà.
+func comuni_svogliate() -> bool:
+	return famiglie_divise and consenso["famiglie"] < 40.0
+
+
 func tratti_anno() -> int:
 	return TRATTI_ANNO_COMUNITA if primo_governo == "Comunità" else TRATTI_ANNO
 
@@ -2018,6 +2040,9 @@ func _lavora_recinto() -> void:
 	if affollamento < 0.05 or capienza < posti_zona:
 		posti_zona = move_toward(posti_zona, capienza, POSTI_ANNO)
 	if not recinto_tracciato() or recinto_pronto():
+		return
+	# Comuni scontente (sotto 40): ai lavori comuni vanno un anno sì e uno no (Fede, 27/11/2026).
+	if comuni_svogliate() and anno % 2 != 0:
 		return
 	var disponibile := legna + maxf(0.0, ultima_legna * 0.5 - legna_da_scontare)
 	var fatti := mini(mini(tratti_anno(), recinto_tratti - recinto_fatti), floori(disponibile / COSTO_TRATTO))
@@ -4154,7 +4179,7 @@ func passo() -> void:
 	# Famiglie molto scontente: qualcuna se ne va da sola, poche alla volta.
 	if consenso["famiglie"] < 30.0 and pop > 20.0 and rng.randf() < 0.1:
 		pop -= ABITANTI_PER_CASA
-		_scrivi("Una famiglia scontenta lascia il villaggio.")
+		_scrivi("Una famiglia comune, scontenta, lascia l'abitato." if famiglie_divise else "Una famiglia scontenta lascia il villaggio.")
 	# Il contado cresce con gli abitanti: lo si annuncia ogni 100 m.
 	var passo_contado := floorf(raggio_contado() / 100.0) * 100.0
 	if passo_contado > _contado_annunciato and passo_contado > CONTADO_MIN:
@@ -4272,6 +4297,9 @@ func _aggiorna_consenso() -> void:
 		"famiglie": 52.0 + (8.0 if affollamento < 0.15 else -8.0) + (-2.0 if comune else 8.0 * efficacia_usanze()) + (6.0 if abbondanza > 0.75 else 0.0),
 		"sacerdote": obiettivo_sacerdote(),
 	}
+	if famiglie_divise:
+		obiettivi["anziani"] = obiettivo_eminenti()
+		obiettivi["famiglie"] = obiettivo_comuni()
 	for g in consenso:
 		consenso[g] = clampf(consenso[g] + (clampf(obiettivi[g], 0.0, 100.0) - consenso[g]) * 0.1 + bonus[g] * 0.4, 0.0, 100.0)
 		bonus[g] *= 0.6
@@ -4287,7 +4315,34 @@ func _aggiorna_consenso() -> void:
 ## Quanto conta ogni gruppo con il governo di oggi (nel villaggio: gli anziani; il sacerdote dal
 ## luogo sacro).
 func pesi_consenso() -> Dictionary:
-	return {"anziani": 0.4, "famiglie": 0.4, "sacerdote": 0.2} if sacerdote_attivo else {"anziani": 0.5, "famiglie": 0.5, "sacerdote": 0.0}
+	var pesi := {"anziani": 0.4, "famiglie": 0.4, "sacerdote": 0.2} if sacerdote_attivo else {"anziani": 0.5, "famiglie": 0.5, "sacerdote": 0.0}
+	if famiglie_divise and not case.is_empty():
+		# Epoca 2: il consenso è la media degli umori delle case, con le eminenti che pesano di più
+		# (Fede, 27/11/2026). Gli scarti delle case si bilanciano dentro il gruppo, quindi la media
+		# pesata delle case è la media pesata dei due gruppi.
+		var e := float(mini(eminenti.size(), case.size()))
+		var k: float = PESO_EMINENTI.get(primo_governo, 3.0)
+		var resto := 1.0 - float(pesi["sacerdote"])
+		pesi["anziani"] = resto * k * e / (k * e + float(case.size()) - e)
+		pesi["famiglie"] = resto - float(pesi["anziani"])
+	return pesi
+
+
+## Cosa vogliono le famiglie eminenti (epoca 2, proposta di Claude approvata da Fede il 27/11/2026):
+## prestigio, difesa e scambi; il raccolto alle famiglie, le armi del fabbro, il recinto, l'apertura.
+func obiettivo_eminenti() -> float:
+	var alle_famiglie := politica("raccolto") == "famiglie"
+	return 52.0 + (8.0 if alle_famiglie else -6.0) + (4.0 if cibo > pop * 0.5 else -6.0) \
+		+ 8.0 * armi + (4.0 if recinto_pronto() else 0.0) + 6.0 * clampf(identita["apertura"], -1.0, 1.0)
+
+
+## Cosa vogliono le famiglie comuni: terra, cibo e protezione; il raccolto in comune con il granaio,
+## case per tutti, gli attrezzi del fabbro, il recinto che le protegge.
+func obiettivo_comuni() -> float:
+	var comune := politica("raccolto") == "comune"
+	return 50.0 + (8.0 if affollamento < 0.15 else -8.0) + (8.0 if comune else -4.0) \
+		+ (4.0 if comune and granaio_pronto() else 0.0) + (6.0 if abbondanza > 0.75 else 0.0) \
+		+ 6.0 * attrezzi + (4.0 if recinto_pronto() else 0.0)
 
 
 ## Gli assi dell'identità seguono piano le politiche (non toccano nessuna regola del villaggio).
@@ -4295,9 +4350,9 @@ func _aggiorna_identita() -> void:
 	var comune := politica("raccolto") == "comune"
 	var apertura: float = {"aperta": 0.6, "caso": 0.1, "chiusa": -0.6}.get(politica("stranieri"), 0.0)
 	identita_verso = {
-		"terra": clampf((-0.5 if comune else 0.5) + 0.5 * disuguaglianza, -1.0, 1.0),
+		"terra": clampf((-0.5 if comune else 0.5) + 0.5 * indice_disuguaglianza(), -1.0, 1.0),
 		"apertura": clampf(apertura + clampf(stranieri_accolti / 200.0, 0.0, 0.3), -1.0, 1.0),
-		"decide": clampf((0.3 if comune else -0.1) - 0.8 * disuguaglianza, -1.0, 1.0),
+		"decide": clampf((0.3 if comune else -0.1) - 0.8 * indice_disuguaglianza(), -1.0, 1.0),
 		"governo": clampf((0.3 if comune else -0.3) + (0.2 if granaio_pronto() else 0.0), -1.0, 1.0),
 	}
 	for k in identita:
@@ -4588,6 +4643,7 @@ func _disponi_nucleo(servono: int, ci_sono: int, paga: bool) -> void:
 func _segna_casa(l: Vector2i) -> void:
 	nascita_case[l] = anno
 	prestigio_case.erase(l)
+	eminenti.erase(l)
 	if _case_stranieri_da_fare > 0 and anno - _anno_stranieri <= 10:
 		case_straniere[l] = _anno_stranieri
 		_case_stranieri_da_fare -= 1
@@ -4636,6 +4692,76 @@ func _aggiorna_prestigio() -> void:
 			d += 0.5
 		nuovo[l] = p + 0.02 * d
 	prestigio_case = nuovo
+	_aggiorna_eminenti()
+
+
+## Le case in ordine di prestigio, dalla più alta.
+func _case_per_prestigio() -> Array:
+	var ordine: Array = case.duplicate()
+	ordine.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return float(prestigio_case.get(a, 0.0)) > float(prestigio_case.get(b, 0.0)))
+	return ordine
+
+
+## Quante case possono essere eminenti (una su sei).
+func tetto_eminenti() -> int:
+	return maxi(1, floori(case.size() * QUOTA_EMINENTI))
+
+
+## Famiglie eminenti e comuni (epoca 2, Fede 27/11/2026): la quota di prestigio del sesto più alto;
+## sopra la soglia la divisione si apre (una volta sola, con il tutorial) e poi, finché il prestigio
+## resta concentrato, una famiglia nuova sale fra le eminenti ogni ANNI_NUOVA_EMINENTE anni, fino al
+## tetto. Chi perde la casa perde il rango.
+func _aggiorna_eminenti() -> void:
+	for l in eminenti.keys():
+		if not prestigio_case.has(l):
+			eminenti.erase(l)
+	if epoca < 2 or case.size() < CASE_DIVISIONE:
+		quota_prestigio = 0.0
+		return
+	var ordine := _case_per_prestigio()
+	var totale := 0.0
+	for l in ordine:
+		totale += float(prestigio_case.get(l, 0.0))
+	var alte := 0.0
+	var n := maxi(1, ceili(ordine.size() * QUOTA_EMINENTI))
+	for k in n:
+		alte += float(prestigio_case.get(ordine[k], 0.0))
+	quota_prestigio = alte / totale if totale > 0.0 else 0.0
+	if not famiglie_divise:
+		if quota_prestigio < SOGLIA_DIVISIONE:
+			return
+		famiglie_divise = true
+		anno_divisione = anno
+		_anno_eminente = anno
+		# Alla divisione salgono subito le prime: metà del tetto, almeno due.
+		var prime := mini(tetto_eminenti(), maxi(2, tetto_eminenti() / 2))
+		for k in prime:
+			eminenti[ordine[k]] = anno
+		_scrivi("Alcune famiglie si sono alzate sopra le altre: %d case eminenti, che guardano al prestigio; le altre sono comuni, e chiedono terra e cibo." % prime, "buono")
+		tutorial(["eminenti"], "Famiglie eminenti e comuni")
+		return
+	if eminenti.size() >= tetto_eminenti() or quota_prestigio < SOGLIA_DIVISIONE or anno - _anno_eminente < ANNI_NUOVA_EMINENTE:
+		return
+	for l in ordine:
+		if not eminenti.has(l):
+			eminenti[l] = anno
+			_anno_eminente = anno
+			_scrivi("Una famiglia sale fra le eminenti: ora sono %d." % eminenti.size())
+			break
+
+
+## È eminente la famiglia di questa casa?
+func eminente(l: Vector2i) -> bool:
+	return eminenti.has(l)
+
+
+## Disuguaglianza da leggere (0–1): nel villaggio la mandria delle famiglie; dall'epoca 2 anche il
+## prestigio concentrato nelle case più alte (0 se è diviso alla pari, 1 se lo tiene tutto il sesto
+## più alto).
+func indice_disuguaglianza() -> float:
+	if epoca < 2:
+		return disuguaglianza
+	return maxf(disuguaglianza, clampf((quota_prestigio - QUOTA_EMINENTI) / (1.0 - QUOTA_EMINENTI), 0.0, 1.0))
 
 
 ## Umore di ogni famiglia: il consenso delle famiglie più uno scarto dalla sua situazione; gli
@@ -4645,7 +4771,6 @@ func umore_famiglie() -> Dictionary:
 	var legnaie_attive: Array = legnaie.filter(func(g: Dictionary) -> bool: return legnaia_attiva(g))
 	var sacro := luogo_sacro_pronto()
 	var scarti := {}
-	var somma := 0.0
 	for l in case:
 		var w := centro_lotto(l)
 		var i := px(px_da_mondo(w.x, w.y))
@@ -4696,12 +4821,30 @@ func umore_famiglie() -> Dictionary:
 		if sacro and w.distance_to(luogo_sacro) < 120.0:
 			s += 3.0
 			motivi.append("aiuta: il luogo sacro è vicino")
+		# Epoca 2: le eminenti vogliono la casa dentro il recinto (prestigio), le comuni ci stanno più
+		# sicure (Fede, 27/11/2026).
+		if famiglie_divise and recinto_pronto():
+			var dentro := dentro_recinto(w)
+			if eminenti.has(l):
+				s += 4.0 if dentro else -6.0
+				motivi.append("aiuta: la casa è dentro il recinto" if dentro else "pesa: la casa è fuori dal recinto")
+			elif dentro:
+				s += 3.0
+				motivi.append("aiuta: dentro il recinto è al sicuro")
 		scarti[l] = [s, motivi]
-		somma += s
-	var media := somma / maxf(1.0, case.size())
+	# Gli scarti si bilanciano dentro il gruppo: la media di ogni gruppo resta il suo consenso.
+	var somme := {true: 0.0, false: 0.0}
+	var quante := {true: 0, false: 0}
+	for l in scarti:
+		var g := famiglie_divise and eminenti.has(l)
+		somme[g] += float(scarti[l][0])
+		quante[g] += 1
 	var out := {}
 	for l in scarti:
-		out[l] = [clampf(float(consenso["famiglie"]) + float(scarti[l][0]) - media, 0.0, 100.0), scarti[l][1]]
+		var g := famiglie_divise and eminenti.has(l)
+		var base := float(consenso["anziani"] if g else consenso["famiglie"])
+		var media := float(somme[g]) / maxf(1.0, float(quante[g]))
+		out[l] = [clampf(base + float(scarti[l][0]) - media, 0.0, 100.0), scarti[l][1]]
 	return out
 
 
@@ -4847,6 +4990,11 @@ func _abbandona() -> void:
 	nascita_case = {}
 	case_straniere = {}
 	prestigio_case = {}
+	famiglie_divise = false
+	anno_divisione = 0
+	eminenti = {}
+	quota_prestigio = 0.0
+	_anno_eminente = 0
 	case_dopo_piena = {}
 	legnaie = []
 	poste = []
@@ -5092,22 +5240,43 @@ func cause_di(nome: String) -> Array[String]:
 			if acqua_qualsiasi(px(centro)) > 0.6:
 				out.append("L'acqua è vicina e buona.")
 		"Consenso":
-			if politica("raccolto") == "comune":
-				out.append("Il raccolto in comune piace agli anziani; le famiglie vorrebbero tenerne di più.")
+			if famiglie_divise:
+				# Epoca 2: eminenti e comuni (Fede, 27/11/2026).
+				out.append("Le eminenti sono %d case su %d, ma il loro umore pesa %d volte: contano per il %d%% del consenso." % [eminenti.size(), case.size(), roundi(float(PESO_EMINENTI.get(primo_governo, 3.0))), roundi(float(pesi_consenso()["anziani"]) * 100.0)])
+				if politica("raccolto") == "comune":
+					out.append("Il raccolto in comune piace alle comuni; le eminenti vorrebbero tenerne di più.")
+				else:
+					out.append("Il raccolto alle famiglie piace alle eminenti; le comuni lo vedono male.")
+				if armi > 0.2 or attrezzi > 0.2:
+					out.append("Le armi del fabbro piacciono alle eminenti, gli attrezzi alle comuni.")
+				if affollamento >= 0.15:
+					out.append("Le comuni sono scontente: mancano case.")
+				if recinto_pronto():
+					out.append("Le eminenti vogliono la casa dentro il recinto; le comuni ci stanno più sicure.")
+				if efficacia_usanze() < 1.0:
+					out.append("Le eminenti sono scontente: le usanze si rispettano meno.")
+				if comuni_svogliate():
+					out.append("Le comuni sono scontente: ai lavori del recinto vanno a metà.")
+				if consenso["famiglie"] < 30.0:
+					out.append("Le comuni molto scontente cominciano ad andarsene.")
 			else:
-				out.append("Il raccolto alle famiglie piace alle famiglie; gli anziani lo vedono male.")
-			if cibo <= pop * 0.5:
-				out.append("Gli anziani si preoccupano: le scorte sono poche.")
-			if affollamento >= 0.15:
-				out.append("Le famiglie sono scontente: mancano case.")
-			if efficacia_usanze() < 1.0:
-				out.append("Gli anziani sono scontenti: le usanze si rispettano meno.")
-			if consenso["famiglie"] < 30.0:
-				out.append("Le famiglie molto scontente cominciano ad andarsene.")
+				if politica("raccolto") == "comune":
+					out.append("Il raccolto in comune piace agli anziani; le famiglie vorrebbero tenerne di più.")
+				else:
+					out.append("Il raccolto alle famiglie piace alle famiglie; gli anziani lo vedono male.")
+				if cibo <= pop * 0.5:
+					out.append("Gli anziani si preoccupano: le scorte sono poche.")
+				if affollamento >= 0.15:
+					out.append("Le famiglie sono scontente: mancano case.")
+				if efficacia_usanze() < 1.0:
+					out.append("Gli anziani sono scontenti: le usanze si rispettano meno.")
+				if consenso["famiglie"] < 30.0:
+					out.append("Le famiglie molto scontente cominciano ad andarsene.")
+			var chi := "Le eminenti" if famiglie_divise else "Gli anziani"
 			if not ultima_scorreria.is_empty() and anno - int(ultima_scorreria["anno"]) < 10:
-				out.append("Gli anziani hanno perso credito con la scorreria del %s." % anno_testo(int(ultima_scorreria["anno"])))
+				out.append("%s hanno perso credito con la scorreria del %s." % [chi, anno_testo(int(ultima_scorreria["anno"]))])
 			if in_allerta() and politica("pericolo") == "vegliare":
-				out.append("Gli uomini vegliano ai margini: gli anziani sono contenti, ma lavorano meno nei campi.")
+				out.append("Gli uomini vegliano ai margini: %s, ma lavorano meno nei campi." % ("le eminenti sono contente" if famiglie_divise else "gli anziani sono contenti"))
 			# Il sacerdote (decisioni di Fede del 24–25/11/2026).
 			if sbloccato("luogo_sacro") and luogo_sacro.x < 0:
 				out.append("Il sacerdote è contrariato finché non si erige il luogo sacro (Edifici): i presagi si fanno ambigui e più frequenti.")

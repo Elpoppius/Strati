@@ -44,12 +44,12 @@ func _initialize() -> void:
 	# "senza_scorrerie" come quinto argomento: le stesse partite senza scorrerie (per misurarne il peso).
 	_senza_scorrerie = args.size() > 4 and args[4] == "senza_scorrerie"
 	var d: MappaDati = load("res://mappe/pedecollinare/mappa.res")
-	_righe.append("profilo,sito,seme,pop_finale,pop_minima,carestie,carestie_gravi,abbandoni,scissioni,pause,tutorial,piene_grandi,granaio_anno,cosa_ha_imparato,legnaie,casali,nucleo,poste,capanni,luogo_sacro,bosco_sacro_ha,sacerdote,capi,pascolo_ha,segni,scorrerie,case_bruciate,torre,pericolo,sentieri_km,strade,anno_fine,soglia,governo,id_terra,id_decide,anziani,disuguaglianza,officina,lavoro_fabbro,attrezzi,armi,recinto,case_dentro,zona_abitato,case_impalcato")
+	_righe.append("profilo,sito,seme,pop_finale,pop_minima,carestie,carestie_gravi,abbandoni,scissioni,pause,tutorial,piene_grandi,granaio_anno,cosa_ha_imparato,legnaie,casali,nucleo,poste,capanni,luogo_sacro,bosco_sacro_ha,sacerdote,capi,pascolo_ha,segni,scorrerie,case_bruciate,torre,pericolo,sentieri_km,strade,anno_fine,soglia,governo,id_terra,id_decide,anziani,disuguaglianza,officina,lavoro_fabbro,attrezzi,armi,recinto,case_dentro,zona_abitato,case_impalcato,divisione,eminenti,case,comuni,quota_prestigio,legittimita")
 	for profilo in profili:
 		for sito in d.siti:
 			for seme in range(1, semi + 1):
 				var r := _gioca(d, sito, profilo, seme * 31 + int(sito["n"]))
-				_righe.append("%s,%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%d,%d,%d,%d,%d,%d,%.1f,%d,%d,%.1f,%d,%d,%d,%d,%s,%.1f,%d,%d,%s,%s,%.2f,%.2f,%d,%.2f,%d,%s,%.2f,%.2f,%.1f,%d,%d,%d" % [profilo, String(sito["nome"]).replace(",", " "), seme, r["pop"], r["minima"], r["carestie"], r["gravi"], r["abbandoni"], r["scissioni"], r["pause"], r["tutorial"], r["piene"], r["granaio"], r["imparato"], r["legnaie"], r["casali"], r["nucleo"], r["poste"], r["capanni"], r["sacro"], r["bosco_sacro"], r["sacerdote"], r["capi"], r["pascolo_ha"], r["segni"], r["scorrerie"], r["case_bruciate"], r["torre"], r["pericolo"], r["sentieri_km"], r["strade"], r["anno_fine"], r["soglia"], r["governo"], r["id_terra"], r["id_decide"], r["anziani"], r["disuguaglianza"], r["officina"], r["lavoro_fabbro"], r["attrezzi"], r["armi"], r["recinto"], r["case_dentro"], r["zona_abitato"], r["case_impalcato"]])
+				_righe.append("%s,%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%d,%d,%d,%d,%d,%d,%.1f,%d,%d,%.1f,%d,%d,%d,%d,%s,%.1f,%d,%d,%s,%s,%.2f,%.2f,%d,%.2f,%d,%s,%.2f,%.2f,%.1f,%d,%d,%d,%d,%d,%d,%d,%.2f,%d" % [profilo, String(sito["nome"]).replace(",", " "), seme, r["pop"], r["minima"], r["carestie"], r["gravi"], r["abbandoni"], r["scissioni"], r["pause"], r["tutorial"], r["piene"], r["granaio"], r["imparato"], r["legnaie"], r["casali"], r["nucleo"], r["poste"], r["capanni"], r["sacro"], r["bosco_sacro"], r["sacerdote"], r["capi"], r["pascolo_ha"], r["segni"], r["scorrerie"], r["case_bruciate"], r["torre"], r["pericolo"], r["sentieri_km"], r["strade"], r["anno_fine"], r["soglia"], r["governo"], r["id_terra"], r["id_decide"], r["anziani"], r["disuguaglianza"], r["officina"], r["lavoro_fabbro"], r["attrezzi"], r["armi"], r["recinto"], r["case_dentro"], r["zona_abitato"], r["case_impalcato"], r["divisione"], r["eminenti"], r["case"], r["comuni"], r["quota_prestigio"], r["legittimita"]])
 	var f := FileAccess.open(file, FileAccess.WRITE)
 	f.store_string("\n".join(_righe) + "\n")
 	f.close()
@@ -295,7 +295,10 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 		"id_terra": float(sim.identita["terra"]), "id_decide": float(sim.identita["decide"]), "anziani": roundi(sim.consenso["anziani"]), "disuguaglianza": sim.disuguaglianza,
 		"officina": 1 if not sim.officine.is_empty() else 0, "lavoro_fabbro": lavoro_scelto if lavoro_scelto != "" else "-", "attrezzi": sim.attrezzi, "armi": sim.armi,
 		"recinto": 1.0 if sim.recinto_pronto() else (0.5 if sim.recinto_tracciato() else 0.0), "case_dentro": sim.case_dentro(), "zona_abitato": sim.zona_abitato.size(),
-		"case_impalcato": sim.case.filter(func(l: Vector2i) -> bool: return sim.casa_su_impalcato(l)).size()}
+		"case_impalcato": sim.case.filter(func(l: Vector2i) -> bool: return sim.casa_su_impalcato(l)).size(),
+		# Eminenti e comuni (epoca 2, 27/11/2026): anno della divisione (0 se non c'è stata).
+		"divisione": sim.anno_divisione if sim.famiglie_divise else 0, "eminenti": sim.eminenti.size(), "case": sim.case.size(),
+		"comuni": roundi(sim.consenso["famiglie"]), "quota_prestigio": sim.quota_prestigio, "legittimita": roundi(sim.legittimita)}
 
 
 ## Posta di caccia e capanno da pesca all'inizio (decisioni di Fede del 25/11/2026): chi conosce il
