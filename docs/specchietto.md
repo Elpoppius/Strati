@@ -61,6 +61,7 @@ Territorio e sensibilità → opere e zone → **campi del lotto** → edifici c
 - **Popolazione visibile** (voce 7): figure che fanno i lavori veri della simulazione, con animazioni; numeri da misurare con Fede.
 - **Fumo dei camini** (27/11/2026) **D**: animato, non legato alla simulazione; per ora solo officine ed edifici comunitari (niente case: "altrimenti diventa una coltre di fumo"): officina del fabbro, santuario, casa del capo. Dettagli in `asset.md`.
 - **Epoca 2 giocabile in parte** (27/11/2026) **D**: dopo l'evento del metallo la partita continua; l'officina del fabbro (M) forgia attrezzi o armi con il metallo che arriva; il prototipo finisce al 700 a.C. Dettagli in `prototipo0-godot.md`.
+- **Legna** (27/11/2026) **D**: alberi che valgono il doppio (quercia 4 m³), legnaia che abbatte fino a 20 alberi l'anno, alberi abbattuti anche per il fuoco quando la legna morta non basta; il carbone del fabbro dagli scarti (5%).
 - **Scorrerie a decenni più rade** (27/11/2026) **D**: almeno 250 anni fra una e l'altra, probabilità al 40%.
 - **Epoca 2, le case sulla via** (27/11/2026) **D**: con l'abitato le strade contano di più e le case si sviluppano lungo la strada (`epoca2-proposte.md` § 1, voce 12).
 
