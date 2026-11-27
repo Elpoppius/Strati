@@ -155,7 +155,7 @@ const SCHEDE := {
 		"titolo": "Il metallo",
 		"testo": "Dalla valle arriva il metallo: lame che non si scheggiano, punte che non si spezzano. Chi sa lavorarlo può cambiare la vita del villaggio.",
 		"domanda": "Cosa fa il fabbro?",
-		"dettaglio": "In Edifici (M): l'officina del fabbro, una tettoia con la fornace e l'incudine. Servono 12 di legna e tre anni di lavoro, entro 600 m dal centro; ne basta una. Il fabbro e la sua famiglia lasciano i campi per l'officina, e la fornace brucia legna. Il metallo arriva poco dai mercanti di passaggio, di più se il villaggio si è aperto alle vie. Il fabbro lavora meglio vicino all'acqua e a una legnaia. Tienilo lontano dalle case: una scintilla basta a bruciarne una.",
+		"dettaglio": "In Edifici (M): l'officina del fabbro, una tettoia con la fornace e l'incudine. Servono 12 di legna e tre anni di lavoro, entro 600 m dal centro; ne basta una. Il fabbro e la sua famiglia lasciano i campi per l'officina; la fornace brucia gli scarti delle legnaie. Il metallo arriva poco dai mercanti di passaggio, di più se il villaggio si è aperto alle vie. Il fabbro lavora meglio vicino all'acqua e a una legnaia. Tienilo lontano dalle case: una scintilla basta a bruciarne una.",
 		"avviso": "Officina del fabbro (M): attrezzi e armi di metallo.",
 	},
 	"officina_lavoro": {

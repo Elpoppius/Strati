@@ -267,7 +267,8 @@ var tappa := 0
 ##   alle legnaie (RESA_RACCOLTA per ettaro l'anno); i focolari ne bruciano CONSUMO_PERSONA a testa;
 ## - tronchi abbattendo: i boscaioli tagliano gli alberi uno alla volta (celle di 10 m con i loro
 ##   alberi, ognuno col suo valore), dal più vicino alla legnaia verso fuori, quanto serve per rifare
-##   le case (durano ANNI_VITA_CASA) e tenere da parte legname per costruire.
+##   le case (durano ANNI_VITA_CASA), tenere da parte legname per costruire e, quando la legna morta
+##   non basta, anche per il fuoco dei focolari (Fede, 27/11/2026).
 ## Senza legnaia non si raccoglie legna (decisione di Fede del 25/11/2026).
 var legna := 0.0
 const LEGNA_INIZIALE := 60.0
@@ -282,12 +283,17 @@ const COSTO_GRANAIO := 15.0
 const COSTO_EDIFICIO_RISORSE := 5.0  # capanno da pesca, posta di caccia (la legnaia è gratis: solo braccia)
 ## Valore di un albero (m³) per specie, per un albero di grandezza media (scala 1,15); cresce con il
 ## quadrato della scala. Quercia, carpino, pioppo, arbusto, canna (le canne non si tagliano).
-const VALORE_SPECIE := [2.0, 1.0, 1.5, 0.2, 0.0]
+## Raddoppiati il 27/11/2026 (Fede: "diamo più valore al singolo albero tagliato"; numeri di Claude):
+## il tronco e i rami grossi di un albero maturo (prima 2; 1; 1,5; 0,2).
+const VALORE_SPECIE := [4.0, 2.0, 3.0, 0.3, 0.0]
 const LATO_CELLA_TAGLIO := 10.0  # come la griglia dell'uso del suolo
-## Legnaie: i boscaioli tagliano fino a CAPACITA_TAGLIO l'anno con il bosco a ridosso, meno man mano
-## che il fronte del taglio si allontana; oltre RAGGIO_LEGNAIA non vanno. Conviene allora una legnaia
-## nuova più vicina al bosco.
-const CAPACITA_TAGLIO := 30.0
+## Legnaie: i boscaioli abbattono fino a ALBERI_TAGLIO alberi l'anno con il bosco a ridosso, meno man
+## mano che il fronte del taglio si allontana; oltre RAGGIO_LEGNAIA non vanno. Conviene allora una
+## legnaia nuova più vicina al bosco. Il limite si conta in alberi (Fede, 27/11/2026): un bosco di
+## alberi che valgono di più (querce grandi) dà più legna con la stessa fatica.
+const ALBERI_TAGLIO := 20.0
+## Capacità di riferimento (m³ l'anno) di una legnaia in un bosco medio, per le letture e le prove.
+const CAPACITA_TAGLIO := 60.0
 const RAGGIO_LEGNAIA := 600.0  # metri: oltre, i boscaioli non vanno
 ## Il bosco tagliato ricresce in questi anni (come UsoSuolo.ANNI_CEDUO), ma solo quando la zona di
 ## taglio non è più di passaggio, cioè quando la legnaia smette di lavorare (Fede, 26/11/2026).
@@ -1640,7 +1646,11 @@ const METALLO_ISOLATI := 0.4   # all'anno, dai mercanti di passaggio
 const METALLO_APERTI := 1.2    # all'anno, se all'evento soglia ci si è aperti alle vie
 const METALLO_LAVORO := 1.0    # quanto ne consuma il fabbro a pieno lavoro
 const METALLO_MASSIMO := 20.0
-const CARBONE_OFFICINA := 6.0  # legna all'anno a pieno lavoro
+## Carbone (Fede, 27/11/2026: "legato al legno, dagli scarti, una piccolissima percentuale"): il
+## fabbro brucia gli scarti del taglio (SCARTI_CARBONE della legna dell'anno); a pieno lavoro gliene
+## servono CARBONE_OFFICINA. Non pesa sulla scorta né sul consumo di legna.
+const CARBONE_OFFICINA := 2.0
+const SCARTI_CARBONE := 0.05
 const BRACCIA_FABBRO := 5.0    # una famiglia tolta ai campi
 const RITMO_FABBRO := 0.05     # quanto in fretta attrezzi e armi raggiungono il livello del lavoro
 const BONUS_CAMPI := 0.2
@@ -1746,8 +1756,8 @@ func _lavora_officine() -> void:
 			continue
 		var q := 1.0
 		q = minf(q, metallo / METALLO_LAVORO)
-		# Il carbone viene dal taglio dell'anno, prima dei focolari (il fabbro ha la precedenza).
-		q = minf(q, (legna + ultima_legna) / maxf(CARBONE_OFFICINA, 0.01))
+		# Il carbone viene dagli scarti del taglio dell'anno.
+		q = minf(q, ultima_legna * SCARTI_CARBONE / CARBONE_OFFICINA)
 		q = clampf(q, 0.0, 1.0)
 		metallo -= METALLO_LAVORO * q
 		carbone_anno += CARBONE_OFFICINA * q
@@ -2220,11 +2230,13 @@ static func valore_albero(modello: int, scala: float) -> float:
 
 
 ## Le celle da 10 m con alberi entro RAGGIO_LEGNAIA da un punto, dalla più vicina: [distanza, cella,
-## valore (somma degli alberi della cella)]. Le celle di campi e del bosco sacro restano fuori.
+## valore (somma degli alberi della cella), numero di alberi]. Le celle di campi e del bosco sacro
+## restano fuori.
 func _celle_di_alberi(punto: Vector2) -> Array:
 	var a := _alberi()
 	var k := Alberi.CAMPI
 	var valori := {}
+	var quanti := {}
 	var b0 := Vector2i(floori((punto.x - RAGGIO_LEGNAIA) / Alberi.LATO_BLOCCO), floori((punto.y - RAGGIO_LEGNAIA) / Alberi.LATO_BLOCCO))
 	var b1 := Vector2i(floori((punto.x + RAGGIO_LEGNAIA) / Alberi.LATO_BLOCCO), floori((punto.y + RAGGIO_LEGNAIA) / Alberi.LATO_BLOCCO))
 	var nb := ceili(dati.lato_metri() / Alberi.LATO_BLOCCO)
@@ -2241,13 +2253,14 @@ func _celle_di_alberi(punto: Vector2) -> Array:
 					continue
 				var c := Vector2i(floori(x / LATO_CELLA_TAGLIO), floori(z / LATO_CELLA_TAGLIO))
 				valori[c] = float(valori.get(c, 0.0)) + v
+				quanti[c] = int(quanti.get(c, 0)) + 1
 	var lista: Array = []
 	for c in valori:
 		var w := (Vector2(c) + Vector2(0.5, 0.5)) * LATO_CELLA_TAGLIO
 		var i := px(px_da_mondo(w.x, w.y))
 		if campi.has(i) or bosco_sacro.has(i):
 			continue
-		lista.append([w.distance_to(punto), c, valori[c]])
+		lista.append([w.distance_to(punto), c, valori[c], quanti[c]])
 		if not _celle_px.has(i) or int(_celle_px[i]) < 1:
 			_celle_px[i] = 0
 	lista.sort_custom(func(x: Array, y: Array) -> bool: return x[0] < y[0])
@@ -2338,7 +2351,22 @@ func capacita_legnaia(l: Dictionary) -> float:
 		return 0.0
 	# Una legnaia su una strada porta i tronchi in fretta (accesso).
 	var strada := 1.1 if _vicino_a_strada(l["punto"], 80.0) else 1.0
-	return CAPACITA_TAGLIO * strada * (1.0 + BONUS_LEGNAIA * attrezzi) * clampf(1.0 - d / RAGGIO_LEGNAIA, 0.0, 1.0)
+	return ALBERI_TAGLIO * valore_medio_legnaia(l) * strada * (1.0 + BONUS_LEGNAIA * attrezzi) * clampf(1.0 - d / RAGGIO_LEGNAIA, 0.0, 1.0)
+
+
+## Quanta legna vale in media un albero attorno alla legnaia (m³): si calcola una volta sola.
+func valore_medio_legnaia(l: Dictionary) -> float:
+	if l.has("valore_medio"):
+		return float(l["valore_medio"])
+	var tot := 0.0
+	var n := 0.0
+	for voce in l["celle"]:
+		tot += float(voce[2])
+		# Le partite salvate prima del 27/11/2026 non hanno il numero di alberi della cella.
+		n += float(voce[3]) if (voce as Array).size() > 3 else float(voce[2]) / 1.5
+	var v := tot / n if n > 0.0 else 0.0
+	l["valore_medio"] = v
+	return v
 
 
 ## Legna da ardere che offre il bosco attorno alle legnaie al lavoro (m³ l'anno): ogni pixel di bosco
@@ -2470,6 +2498,9 @@ func _lavora_legnaie_dentro() -> void:
 	# Prima i tronchi per rifare le case e tenere da parte il legname; poi la legna da ardere.
 	var manutenzione := case.size() * COSTO_CASA / float(ANNI_VITA_CASA)
 	var voluti := manutenzione + maxf(0.0, RISERVA_LEGNAME - legna) * 0.3
+	# Il fuoco: quando la legna morta non basta ai focolari, i boscaioli abbattono alberi anche per
+	# ardere (Fede, 27/11/2026: "accordato"). Il bosco attorno ai villaggi grandi arretra più in fretta.
+	voluti += maxf(0.0, consumo_focolari - offerta_raccolta)
 	voluti = clampf(voluti, 0.0, minf(capacita_taglio, braccia * 0.5))
 	raccolta_legna = clampf(minf(offerta_raccolta, consumo_focolari + spazio), 0.0, braccia - voluti)
 	if voluti > 0.0:
@@ -3601,7 +3632,7 @@ func passo() -> void:
 	# Legna (decisione di Fede del 25/11/2026): la raccolgono le legnaie, abbattendo il bosco vicino;
 	# serve ai focolari e a tenere in piedi le case.
 	consumo_focolari = pop * CONSUMO_PERSONA
-	consumo_legna = consumo_focolari + case.size() * COSTO_CASA / float(ANNI_VITA_CASA) + carbone_anno + legna_da_scontare
+	consumo_legna = consumo_focolari + case.size() * COSTO_CASA / float(ANNI_VITA_CASA) + legna_da_scontare
 	legna_da_scontare = 0.0
 	_lavora_legnaie()
 	legna = clampf(legna + ultima_legna - consumo_legna, 0.0, massimo_legna())

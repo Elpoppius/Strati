@@ -567,6 +567,12 @@ func _verifica_fabbro(s: SimVillaggio, d: MappaDati) -> void:
 	controlla(s.costruisci_officina(punto) == "" and int(s.officine[0]["cantiere"]) == SimVillaggio.ANNI_CANTIERE_OFFICINA, "l'officina si costruisce in %d anni" % SimVillaggio.ANNI_CANTIERE_OFFICINA)
 	controlla(s.motivo_officina(c + Vector2(30, 0)).contains("c'è già"), "ne basta una")
 	s.case = s.case.filter(func(l: Vector2i) -> bool: return s.centro_lotto(l).distance_to(s.officine[0]["punto"]) >= SimVillaggio.DISTANZA_FUOCO)
+	# Il carbone viene dagli scarti delle legnaie: ne serve una al lavoro.
+	var caso_l := RandomNumberGenerator.new()
+	caso_l.seed = 5
+	s.legnaie = []
+	AiutiGiocatori.costruisci_legnaia(s, caso_l, 1.0)
+	controlla(not s.legnaie.is_empty(), "c'è una legnaia per gli scarti del carbone")
 	var prima_att := s.attrezzi
 	var g := 0
 	while g < 40 and not s.finito:
@@ -578,7 +584,7 @@ func _verifica_fabbro(s: SimVillaggio, d: MappaDati) -> void:
 			s.scegli(s.decisioni[0]["id"], s.decisioni[0]["opzioni"][0]["id"])
 		g += 1
 	controlla(s.officina_pronta(s.officine[0]) and s.attrezzi > prima_att + 0.3 and s.armi < 0.01, "il fabbro forgia attrezzi: salgono (%d%%), le armi no" % roundi(s.attrezzi * 100.0))
-	controlla(s.carbone_anno > 0.0 and s.lavoro_fabbro > 0.5, "la fornace brucia legna (%d l'anno), il fabbro lavora (%d%%)" % [roundi(s.carbone_anno), roundi(s.lavoro_fabbro * 100.0)])
+	controlla(s.carbone_anno > 0.0 and s.lavoro_fabbro > 0.5, "la fornace brucia gli scarti del taglio (%.1f l'anno), il fabbro lavora (%d%%)" % [s.carbone_anno, roundi(s.lavoro_fabbro * 100.0)])
 	var cause := " ".join(s.cause_di("Cibo"))
 	controlla(cause.contains("attrezzi"), "il pannello del Cibo dice degli attrezzi del fabbro")
 	s.scegli_lavoro_officina(0, "armi")
@@ -600,6 +606,7 @@ func _verifica_fabbro(s: SimVillaggio, d: MappaDati) -> void:
 	iso.fondato = true
 	iso.officine = [{"punto": c, "cantiere": 0, "lavoro": "attrezzi"}]
 	iso.legna = 200.0
+	iso.ultima_legna = 100.0
 	iso.metallo = 0.0
 	for k in 30:
 		iso._lavora_officine()
@@ -731,7 +738,7 @@ func _initialize() -> void:
 	# Legnaia (decisione di Fede del 25/11/2026; legna rifatta il 26/11/2026 sera): senza legnaia non si
 	# raccoglie legna; la legna da ardere si raccoglie senza abbattere; i tronchi vengono dagli alberi
 	# abbattuti uno alla volta, dal più vicino, e il fronte del taglio avanza piano.
-	controlla(is_equal_approx(SimVillaggio.valore_albero(0, 1.15), 2.0) and SimVillaggio.valore_albero(7, 1.15) < 0.5 and SimVillaggio.valore_albero(9, 1.15) == 0.0, "ogni albero ha il suo valore: quercia media 2 m³, arbusto poco, canne niente")
+	controlla(is_equal_approx(SimVillaggio.valore_albero(0, 1.15), 4.0) and SimVillaggio.valore_albero(7, 1.15) < 0.5 and SimVillaggio.valore_albero(9, 1.15) == 0.0, "ogni albero ha il suo valore: quercia media 4 m³, arbusto poco, canne niente")
 	var tl := SimVillaggio.new(d, 3)
 	tl.fonda(Vector2i(d.siti[2]["px"]))
 	tl.decisioni.clear()
@@ -764,7 +771,12 @@ func _initialize() -> void:
 		if primo_taglio < 0.0 and not tl.celle_tagliate.is_empty():
 			primo_taglio = float(l0["raggio"])
 		tl.tagli_anno.clear()
-	controlla(tl.tronchi_legna <= SimVillaggio.CAPACITA_TAGLIO + 5.0 and tagli_max <= 40, "il taglio è progressivo: al massimo %d celle di alberi l'anno (tronchi %.1f)" % [tagli_max, tl.tronchi_legna])
+	controlla(tl.tronchi_legna <= cap0 + 10.0 and tagli_max <= 40, "il taglio è progressivo: al massimo %d celle di alberi l'anno (tronchi %.1f)" % [tagli_max, tl.tronchi_legna])
+	# Il limite della legnaia si conta in alberi (Fede, 27/11/2026): la capacità è ALBERI_TAGLIO alberi
+	# del valore medio del bosco attorno.
+	var vm := tl.valore_medio_legnaia(l0)
+	controlla(vm > 0.5 and cap0 > 0.0 and cap0 <= SimVillaggio.ALBERI_TAGLIO * vm * 1.1 + 0.01, "una legnaia abbatte fino a %d alberi l'anno da %.1f m³ in media (%.0f m³)" % [roundi(SimVillaggio.ALBERI_TAGLIO), vm, cap0])
+	controlla(SimVillaggio.valore_albero(0, 1.15) == 4.0 and SimVillaggio.valore_albero(0, 2.3) == 16.0, "una quercia media vale 4 m³, una grande il quadruplo")
 	controlla(primo_taglio >= 0.0 and primo_taglio < 60.0, "si comincia dagli alberi attorno alla legnaia (primo taglio a %d m)" % roundi(primo_taglio))
 	controlla(not tl.celle_tagliate.is_empty() and tl.capacita_legnaia(l0) < cap0 and float(l0["raggio"]) < 400.0, "il fronte avanza piano e i tronchi calano (%.1f → %.1f l'anno, fronte a %d m)" % [cap0, tl.capacita_legnaia(l0), roundi(float(l0["raggio"]))])
 	var vicine_in_piedi := 0

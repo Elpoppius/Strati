@@ -2,6 +2,22 @@
 
 Voci più recenti in cima.
 
+## 27/11/2026 (pomeriggio) — la legna rifatta
+**Fatto** (decisioni di Fede, 12:28–12:49)
+- **Alberi che valgono il doppio:** quercia 4 m³, pioppo 3, carpino 2, arbusto 0,3.
+- **Limite della legnaia in alberi:** fino a 20 alberi l'anno del valore medio del bosco attorno (circa 56 m³ in un bosco medio, prima 30).
+- **Carbone dagli scarti:** il fabbro usa il 5% della legna tagliata (2 a pieno lavoro); non pesa sulla scorta né sul consumo; senza legnaie al lavoro si ferma.
+- **Il fuoco:** quando la legna morta non basta ai focolari, i boscaioli abbattono alberi anche per ardere (prima i tronchi servivano solo alle case: era la causa della scorta sempre a zero).
+- **Prove:** 72 partite dei primi cinque secoli quasi come prima (carestie un poco più alte); 12 partite fino al 700 a.C.: l'officina la fanno tutti (prima 1 su 12). Numeri in `sessioni-giocatori.md`. 12 verifiche superate.
+
+**Decisioni** (Fede)
+- "Diamo più valore al singolo albero tagliato"; limite in alberi "ok"; carbone "legato al legno, dagli scarti"; abbattere per il fuoco "accordato". La legnaia "pare buggata": i problemi erano quelli del bilancio della legna.
+
+**Prossimo passo**
+- Fede prova al PC: la legna nei villaggi grandi, Prova › Metallo, l'officina (M).
+- Da guardare: carestie un poco più alte nelle partite lunghe; i giocatori automatici fermi a 4 legnaie.
+- Poi il resto dell'epoca 2: recinto e porta, zone con le case sulla via.
+
 ## 27/11/2026 (mezzogiorno) — fabbro giocabile, scorrerie più rade, il tema della legna
 **Fatto**
 - **Scorrerie diradate a decenni:** almeno 250 anni fra una e l'altra, probabilità al 40%. Nelle 12 partite lunghe da 2–20 a 1–7 in 3000 anni (media da 9 a 4,3); registro degli avvisi 3,4 pause.

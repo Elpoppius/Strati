@@ -258,3 +258,10 @@ Decisione di Fede: "diradale a decenni". A decenni servono almeno 250 anni dall'
 
 **Cosa si vede:** con la legna nuova i villaggi crescono come prima o un po' di più; oltre i 300 abitanti la legna diventa il limite (il bosco attorno alle legnaie non basta per i focolari e i campi se ne mangiano una parte), e chi apre altre legnaie verso il bosco va avanti. Una prima prova con la legnaia a 5 di legna bloccava i villaggi rimasti senza legna (mediane 112, 92, 780, 92): la legnaia è tornata gratis. Le carestie salgono un poco per chi legge (villaggi più grandi). Gli stranieri arrivano solo dalla tappa dei 150: nel registro degli avvisi le pause scendono da 4,2 a 3,4 a partita.
 
+
+
+## La legna rifatta e il fabbro (27/11/2026, pomeriggio)
+Decisioni di Fede: alberi che valgono il doppio (quercia 4 m³), limite della legnaia in alberi (20 l'anno), carbone dagli scarti del taglio (5%), alberi abbattuti anche per il fuoco quando la legna morta non basta.
+- **Primi cinque secoli** (72 partite): mediane 739 / 805 / 857 / 168 abitanti (prima 734 / 789 / 905 / 136), carestie 3,9 / 3,7 / 4,7 / 3,1 a partita (prima 3,1 / 3,9 / 4,2 / 2,6), pause 4,2 / 4,1 / 4,3 / 4,0, scorrerie 0,8 / 1,0 / 1,1 / 0,4, nessun abbandono (impara sbagliando, legge, conosce il genere, casual). Il villaggio resta quasi uguale; le carestie salgono un poco per chi impara sbagliando e per chi conosce il genere.
+- **Fino al 700 a.C.** (12 partite, chi conosce il genere e chi legge, seme 1): l'officina la costruiscono **tutti e 12** (prima della correzione della legna 1 su 12). Alla fine attrezzi e armi stanno fra 0,2 e 0,45 (un caso armi al 100%): il fabbro lavora a metà soprattutto per il metallo, poco da isolati. Abitanti mediani 888 (prima 891), carestie in media 23 a partita in 5000 anni (prima 19; da guardare: con più taglio per il fuoco il bosco arretra prima). Scorrerie 3–12, nessun abbandono.
+- **Da guardare:** i giocatori automatici non fanno più di 4 legnaie; con il taglio per il fuoco ne servirebbero di più nei villaggi grandi.
