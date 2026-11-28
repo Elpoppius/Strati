@@ -1605,6 +1605,28 @@ func _abbatti_tagli() -> void:
 	_zona_bloccata = bloccate
 
 
+## Le partite salvate fino al 28/11/2026 avevano bloccato ogni cella tagliata, anche con la
+## risemina: il bosco non ricresceva e le legnaie risultavano esaurite. Si sblocca tutto ciò che
+## non è bosco tagliato senza risemina né pascolo.
+func sblocca_tagli_riseminati() -> void:
+	var uso: UsoSuolo = scena.uso
+	var restano := {}
+	for c in sim.celle_zona_attiva:
+		restano[_cella_uso(c)] = true
+	for i in sim.pascolo:
+		for c in _celle_del_pixel(i):
+			restano[c] = true
+	var via: Array[Vector2i] = []
+	for c in uso.bloccate.keys():
+		if not restano.has(c):
+			via.append(c)
+	if not via.is_empty():
+		uso.blocca_ricrescita(via, false)
+	_celle_zona_bloccate = {}
+	for c in sim.celle_zona_attiva:
+		_celle_zona_bloccate[_cella_uso(c)] = true
+
+
 ## Toglie dalla mappa le prime `quante` celle della coda (gli alberi più vicini alla legnaia per primi).
 func _svuota_coda_tagli(quante: int) -> void:
 	if quante <= 0 or _coda_tagli.is_empty():
@@ -1615,7 +1637,8 @@ func _svuota_coda_tagli(quante: int) -> void:
 		ora.append(_coda_tagli[k])
 	_coda_tagli = _coda_tagli.slice(ora.size())
 	uso.abbatti_ceduo(ora)
-	uso.blocca_ricrescita(ora, true)
+	# Niente blocco qui (corretto il 28/11/2026): con la risemina il bosco tagliato deve ricrescere.
+	# Le celle senza risemina (sim.celle_zona_attiva) e il pascolo si bloccano in _abbatti_tagli.
 
 
 # ---------- salvataggio (todo voce 9, 26/11/2026) ----------
@@ -1707,6 +1730,10 @@ func ripristina(d: Dictionary) -> void:
 	_zona_bloccata = d.get("zona_bloccata", {})
 	_celle_zona_bloccate = d.get("celle_zona_bloccate", {})
 	_coda_tagli = []
+	sblocca_tagli_riseminati()
+	if sim.fondato and sim.versione_legna < 2:
+		sim.ricalcola_valori_legnaie()
+		sim.versione_legna = 2
 	famiglia = NESSUNA_CASA
 	legnaia_aperta = -1
 	officina_aperta = -1
@@ -1778,7 +1805,7 @@ func clic_sulla_mappa(pos_schermo: Vector2, lotto: Vector2i) -> void:
 	# Un clic su una legnaia apre la sua scheda.
 	if scena.punto_corrente != null:
 		var p: Vector3 = scena.punto_corrente
-		var kl := sim.legnaia_vicina(Vector2(p.x, p.z), 14.0)
+		var kl := sim.legnaia_vicina(Vector2(p.x, p.z), 24.0)
 		if kl >= 0:
 			apri_legnaia(kl)
 			return
@@ -1805,10 +1832,10 @@ func clic_sulla_mappa(pos_schermo: Vector2, lotto: Vector2i) -> void:
 ## Cosa c'è da scegliere sotto il puntatore senza strumenti: una persona o una casa (la famiglia) o
 ## una legnaia. {lotto} del lotto da incorniciare; vuoto se non c'è nulla.
 func selezionabile(pos_schermo: Vector2, punto: Vector2, lotto: Vector2i) -> Dictionary:
-	var kl := sim.legnaia_vicina(punto, 14.0)
+	var kl := sim.legnaia_vicina(punto, 24.0)
 	if kl >= 0:
 		var pl: Vector2 = sim.legnaie[kl]["punto"]
-		return {"lotto": sim.lotto_da_mondo(pl.x, pl.y)}
+		return {"lotto": sim.lotto_legnaia(pl), "lati": 2}
 	var ko := sim.officina_vicina(punto, 14.0)
 	if ko >= 0:
 		var po: Vector2 = sim.officine[ko]["punto"]

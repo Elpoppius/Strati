@@ -60,6 +60,9 @@ uniform vec2 lotto_evidenziato = vec2(-1.0, -1.0);
 uniform vec4 colore_lotto = vec4(1.0, 1.0, 1.0, 0.18);
 // Cursore di selezione: cornice sul lotto della casa o dell'edificio sotto il puntatore.
 uniform vec2 lotto_selezione = vec2(-99999.0, -99999.0);
+// Lotti per lato della cornice e del lotto sotto il puntatore: 2 per la legnaia (28/11/2026).
+uniform float lati_selezione = 1.0;
+uniform float lati_evidenziato = 1.0;
 // La casa della famiglia aperta nella scheda (26/11/2026): un riquadro chiaro attorno al lotto.
 uniform vec2 lotto_famiglia = vec2(-99999.0, -99999.0);
 // Strumento dell'HUD: cerchio (x, z, raggio; raggio negativo = spento) e suo colore.
@@ -503,7 +506,8 @@ void fragment() {
 		col = mix(col, pow(vec3(0.12, 0.16, 0.15), vec3(2.2)), max(l.x, l.y) * alfa_griglia);
 	}
 	// Lotto sotto il puntatore.
-	if (lotto_evidenziato.x >= 0.0 && floor(pos_mondo.xz / lato_lotto) == lotto_evidenziato) {
+	vec2 lotto_qui = floor(pos_mondo.xz / lato_lotto) - lotto_evidenziato;
+	if (lotto_evidenziato.x >= 0.0 && lotto_qui.x >= 0.0 && lotto_qui.y >= 0.0 && lotto_qui.x < lati_evidenziato && lotto_qui.y < lati_evidenziato) {
 		col = mix(col, pow(colore_lotto.rgb, vec3(2.2)), colore_lotto.a);
 	}
 	{
@@ -520,8 +524,9 @@ void fragment() {
 	}
 	{
 		vec2 q = pos_mondo.xz / lato_lotto - lotto_selezione;
-		if (q.x > -0.25 && q.y > -0.25 && q.x < 1.25 && q.y < 1.25) {
-			vec2 e = abs(q - 0.5) - 0.5;
+		float ls = lati_selezione;
+		if (q.x > -0.25 && q.y > -0.25 && q.x < ls + 0.25 && q.y < ls + 0.25) {
+			vec2 e = abs(q - 0.5 * ls) - 0.5 * ls;
 			float fw = max(fwidth(q.x), 1e-4);
 			float bordo = 1.0 - smoothstep(fw * 1.0, fw * 2.5, abs(max(e.x, e.y)));
 			col = mix(col, vec3(1.0), bordo * 0.6);

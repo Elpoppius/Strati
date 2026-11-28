@@ -293,17 +293,22 @@ const COSTO_EDIFICIO_RISORSE := 5.0  # capanno da pesca, posta di caccia (la leg
 ## quadrato della scala. Quercia, carpino, pioppo, arbusto, canna (le canne non si tagliano).
 ## Raddoppiati il 27/11/2026 (Fede: "diamo più valore al singolo albero tagliato"; numeri di Claude):
 ## il tronco e i rami grossi di un albero maturo (prima 2; 1; 1,5; 0,2).
-const VALORE_SPECIE := [4.0, 2.0, 3.0, 0.3, 0.0]
+## Quadruplicati il 28/11/2026 (Fede: "dare molto più valore al singolo albero e rallentare
+## drasticamente la progressione dell'area di taglio"; numeri di Claude): un albero maturo vale
+## mezza casa, e la stessa legna viene da un quarto delle celle.
+const VALORE_SPECIE := [16.0, 8.0, 12.0, 1.2, 0.0]
 const LATO_CELLA_TAGLIO := 10.0  # come la griglia dell'uso del suolo
 ## Legno di palude per cella da 10 m (salici, ontani, fascine): m³ e quanto conta in "alberi" per il
 ## limite della legnaia (leggero da portare).
-const VALORE_CELLA_PALUDE := 0.25
+const VALORE_CELLA_PALUDE := 1.0
 const ALBERI_CELLA_PALUDE := 0.1
 ## Legnaie (27/11/2026 sera, numeri di Claude): i boscaioli abbattono fino a ALBERI_TAGLIO alberi
 ## l'anno con il bosco a ridosso, la metà a DISTANZA_META_LEGNAIA metri, sempre meno più lontano;
 ## oltre RAGGIO_LEGNAIA non vanno. Il limite si conta in alberi (Fede, 27/11/2026): un bosco di alberi
 ## che valgono di più (querce grandi) dà più legna con la stessa fatica.
-const ALBERI_TAGLIO := 40.0
+## 40 fino al 27/11/2026; 12 dal 28/11 (Fede), con gli alberi che valgono quattro volte tanto: la
+## stessa legna, un quarto delle celle tagliate.
+const ALBERI_TAGLIO := 12.0
 const DISTANZA_META_LEGNAIA := 150.0
 const BOSCAIOLI_LEGNAIA := 2.0 * ABITANTI_PER_CASA  # due famiglie
 const RESA_RISEMINA := 0.8
@@ -486,6 +491,15 @@ const ANNI_STANCHEZZA := 60.0
 const PERDITA_STANCHEZZA := 0.35
 const RIPOSO_PER_ANNO := 4.0
 var stanchezza := {}  # indice del pixel -> anni di coltura di fila
+## Maggese dei campi stanchi (28/11/2026; la regola è di Fede del 25/11: "un campo stanco o incolto
+## diventa maggese e torna coltivato quando è buono"; prima un campo riposava solo se mancavano le
+## braccia, e con abbastanza famiglie nessun campo rinasceva mai). Quando un campo ha perso un po'
+## di resa le famiglie lo lasciano a riposo finché non torna buono; la soglia cambia da campo a
+## campo (da 15 a 45 anni oltre i primi segni di stanchezza), così non riposano tutti insieme.
+## Numeri: proposta di Claude, da confermare.
+const RIPOSO_DOPO_MIN := 15.0
+const RIPOSO_DOPO_SPAZIO := 30
+var a_riposo := {}  # campi lasciati a maggese finché non tornano buoni
 ## Pascolo e animali (decisioni di Fede del 25/11/2026): dalla tappa dei 100 abitanti. Zona di
 ## pascolo a pennello (come la zona agricola, le famiglie portano gli animali da sole) su prati,
 ## radure e margini del bosco, che lì non ricresce. Le due zone si parlano senza entrare in
@@ -876,10 +890,16 @@ func puo_fondare(p: Vector2i) -> bool:
 	return not fondato and not finito and p.x >= 0 and edificabile(px(p))
 
 
+## Valori degli alberi nelle celle delle legnaie: 1 fino al 27/11/2026, 2 con gli alberi che valgono
+## quattro volte tanto (28/11). Le partite fondate prima restano a 1 e si aggiornano al caricamento.
+var versione_legna := 1
+
+
 func fonda(p: Vector2i) -> void:
 	if not puo_fondare(p):
 		return
 	fondato = true
+	versione_legna = 2
 	centro = p
 	pop = 30.0
 	cibo = 45.0
@@ -940,6 +960,8 @@ func fonda(p: Vector2i) -> void:
 	var v := valuta_sito(p)
 	var nome := (" presso il " + String(v["sito"]["nome"]).to_lower()) if v["sito"] != null else ""
 	_scrivi("Fondazione%s. Acqua %s, rischio di piena %s." % [nome, v["acqua"][0], v["piena"][0]], "buono")
+	# Le prime case sono gratis (si costruiscono con il bosco del sito).
+	case_in_piedi = 9999
 	disponi_case()
 	# Tutorial della fondazione (Fede, 26/11/2026): gli strumenti del villaggio appena nato.
 	tutorial(Tutorial.DOPO_FONDAZIONE, "Fondazione")
@@ -1362,8 +1384,7 @@ func _pascola(lavorati: Dictionary) -> void:
 				maggese[i] = true
 				if stanchezza.has(i):
 					stanchezza[i] = float(stanchezza[i]) - RIPOSO_PER_ANNO
-					if stanchezza[i] <= 0.0:
-						stanchezza.erase(i)
+					_fine_riposo(i)
 		elif bosco_in_piedi(i):
 			portata_capi += CAPI_HA_BOSCO * AREA_PIXEL_HA
 		else:
@@ -1619,6 +1640,7 @@ func _scorreria() -> void:
 			case_casale.erase(l)
 			macerie[l] = ANNI_MACERIE
 			rovine.append(centro_lotto(l))
+		case_in_piedi -= bruciate
 		pop -= minf(pop, bruciate * 2.5)
 	for l in case:
 		if centro_lotto(l).distance_to(segni_punto) < 300.0:
@@ -1881,6 +1903,7 @@ func _brucia_casa(l: Vector2i, testo: String) -> void:
 		return
 	case.erase(l)
 	case_casale.erase(l)
+	case_in_piedi -= 1
 	macerie[l] = ANNI_MACERIE
 	rovine.append(centro_lotto(l))
 	stat["case_bruciate"] += 1
@@ -2198,7 +2221,7 @@ func _disponi_nelle_zone(servono: int, ci_sono: int, occupati: Dictionary, paga:
 	var ordine := punteggi.keys()
 	ordine.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return punteggi[a] > punteggi[b])
 	for l in ordine:
-		if ci_sono >= servono or (paga and legna < COSTO_CASA):
+		if ci_sono >= servono or not _puo_costruire_casa(paga):
 			break
 		# Dentro il recinto le case si toccano (case fitte); fuori lasciano un lotto libero di lato.
 		var w := centro_lotto(l)
@@ -2219,8 +2242,7 @@ func _disponi_nelle_zone(servono: int, ci_sono: int, occupati: Dictionary, paga:
 		_segna_casa(l)
 		occupati[l] = true
 		ci_sono += 1
-		if paga:
-			legna -= COSTO_CASA
+		_paga_casa(paga)
 	return ci_sono
 
 
@@ -2599,19 +2621,43 @@ func legno_in_piedi(i: int) -> bool:
 	return bosco_in_piedi(i) and not campi.has(i)
 
 
+## La legnaia occupa due lotti per due (richiesta di Fede del 28/11/2026): sta sull'incrocio di
+## quattro lotti, il più vicino al punto scelto.
+func angolo_legnaia(punto: Vector2) -> Vector2:
+	return Vector2(roundf(punto.x / LOTTO), roundf(punto.y / LOTTO)) * LOTTO
+
+
+## Il primo (a nord-ovest) dei quattro lotti di una legnaia.
+func lotto_legnaia(p: Vector2) -> Vector2i:
+	return lotto_da_mondo(p.x - LOTTO * 0.5, p.y - LOTTO * 0.5)
+
+
+## I quattro lotti della legnaia e quelli attorno (il cortile non si costruisce addosso).
+func _lotto_presso_legnaia(p: Vector2, l: Vector2i) -> bool:
+	var a := lotto_legnaia(p)
+	return l.x >= a.x - 1 and l.x <= a.x + 2 and l.y >= a.y - 1 and l.y <= a.y + 2
+
+
 func motivo_legnaia(punto: Vector2) -> String:
 	if not fondato:
 		return "Prima bisogna fondare il villaggio."
+	punto = angolo_legnaia(punto)
 	var p := px_da_mondo(punto.x, punto.y)
 	var i := px(p)
 	if not edificabile(i) or campi.has(i) or sentieri.has(i) or p == centro:
 		return "La legnaia va su terra asciutta e libera, non su campi o sentieri."
+	var a := lotto_legnaia(punto)
+	for d in [Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, 1)]:
+		var w := centro_lotto(a + d)
+		if w.x < 0.0 or w.y < 0.0 or w.x > dati.lato_metri() or w.y > dati.lato_metri() or not edificabile(px(px_da_mondo(w.x, w.y))):
+			return "La legnaia va su terra asciutta: occupa quattro lotti, tutti fuori dall'acqua."
 	if punto.distance_to(mondo_di_px(centro)) > DISTANZA_MASSIMA_LEGNAIA:
 		return "Troppo lontano dal villaggio: la legnaia va entro %d m dal centro." % roundi(DISTANZA_MASSIMA_LEGNAIA)
 	# Nessuna distanza minima tra legnaie (Fede, 25/11/2026): chi ne mette tante nello stesso
-	# bosco lo esaurisce prima, ed è una scelta sua. Solo non due sullo stesso lotto.
+	# bosco lo esaurisce prima, ed è una scelta sua. Solo non una sopra l'altra.
 	for l in legnaie:
-		if px_da_mondo((l["punto"] as Vector2).x, (l["punto"] as Vector2).y) == p:
+		var q: Vector2 = l["punto"]
+		if absf(q.x - punto.x) < 2.0 * LOTTO and absf(q.y - punto.y) < 2.0 * LOTTO:
 			return "C'è già una legnaia qui."
 	# La legnaia non costa legna, solo braccia: senza legna si deve poterne fare una (altrimenti un
 	# villaggio rimasto senza legna non ne uscirebbe più).
@@ -2646,6 +2692,7 @@ func costruisci_legnaia(punto: Vector2) -> String:
 	var m := motivo_legnaia(punto)
 	if m != "":
 		return m
+	punto = angolo_legnaia(punto)
 	var p := px_da_mondo(punto.x, punto.y)
 	var r := ceili(RAGGIO_LEGNAIA / dati.metri_per_px)
 	var lista: Array = []
@@ -2659,9 +2706,8 @@ func costruisci_legnaia(punto: Vector2) -> String:
 			if d <= RAGGIO_LEGNAIA and (dati.copertura[px(q)] > 127 or dati.tipo[px(q)] == MappaDati.PALUDE):
 				lista.append([d, px(q)])
 	lista.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
-	var l := lotto_da_mondo(punto.x, punto.y)
-	var centro_l := centro_lotto(l)
-	case = case.filter(func(c: Vector2i) -> bool: return cheb(c, l) > 1)
+	var centro_l := punto
+	case = case.filter(func(c: Vector2i) -> bool: return not _lotto_presso_legnaia(centro_l, c))
 	legnaie.append({"punto": centro_l, "cantiere": ANNI_CANTIERE_LEGNAIA, "bosco": lista, "celle": _celle_di_alberi(centro_l),
 		"debito": 0.0, "raggio": 0.0, "ultimo": anno, "riposo": false, "risemina": true, "pixel": {}, "fatte": {}, "attiva": true})
 	_scrivi("Si comincia a costruire una legnaia: tra %d anni i boscaioli taglieranno gli alberi attorno." % ANNI_CANTIERE_LEGNAIA)
@@ -2829,6 +2875,17 @@ func capacita_legnaia(l: Dictionary) -> float:
 	return ALBERI_TAGLIO * valore_medio_legnaia(l) * strada * risemina * (1.0 + BONUS_LEGNAIA * attrezzi) / (1.0 + d / DISTANZA_META_LEGNAIA)
 
 
+## Partite salvate prima del 28/11/2026: le celle delle legnaie hanno i valori vecchi degli alberi.
+## Le ricalcola dal bosco di adesso (le celle già tagliate restano tagliate in celle_tagliate).
+func ricalcola_valori_legnaie() -> void:
+	for l in legnaie:
+		l["celle"] = _celle_di_alberi(l["punto"])
+		l.erase("valore_medio")
+		l["primo"] = 0
+		l["rinascita"] = 1 << 30
+		l["debito"] = 0.0
+
+
 ## La risemina di una legnaia (accesa se non detto: le partite salvate prima del 27/11 sera).
 func risemina_legnaia(l: Dictionary) -> bool:
 	return bool(l.get("risemina", true))
@@ -2961,6 +3018,7 @@ func _lavora_legnaie_dentro() -> void:
 		boscaioli += BOSCAIOLI_LEGNAIA * quota / capacita[k]
 		l["debito"] = float(l["debito"]) + quota
 		var celle: Array = l["celle"]
+		var ultima_cella := 5.0
 		for j in range(_primo_in_piedi(l), celle.size()):
 			var voce: Array = celle[j]
 			if float(l["debito"]) <= 0.0:
@@ -2970,10 +3028,13 @@ func _lavora_legnaie_dentro() -> void:
 				continue
 			_taglia_cella(l, c, float(voce[0]))
 			l["debito"] = float(l["debito"]) - float(voce[2])
+			ultima_cella = maxf(float(voce[2]), 5.0)
 			tronchi_legna += float(voce[2])
 			l["tagliato"] = float(l["tagliato"]) + float(voce[2])
-		# Il debito non si porta avanti oltre una cella: se il bosco è finito, si azzera.
-		l["debito"] = clampf(float(l["debito"]), -5.0, 5.0)
+		# Il debito non si porta avanti oltre una cella: se il bosco è finito, si azzera. La legna
+		# presa in più con l'ultima cella si sconta l'anno dopo (28/11/2026: con alberi che valgono
+		# di più una cella vale anni di taglio, e senza lo sconto l'area cresceva lo stesso).
+		l["debito"] = clampf(float(l["debito"]), -ultima_cella, 5.0)
 	ultima_legna = tronchi_legna
 	fatica_legna = boscaioli
 	_aggiorna_zone_taglio()
@@ -4046,23 +4107,26 @@ func passo() -> void:
 	var lavorati := {}
 	_aggiorna_campi_serviti()
 	_serviti_fermi = true
+	var n_lavorati := 0
 	for k in ordinati.size():
 		var i: int = ordinati[k]
 		var r := _resa(i)
 		raccolto_potenziale += r
-		if k < lavorabili:
+		if n_lavorati < lavorabili and not a_riposo.has(i):
 			raccolto += r
 			lavorati[i] = true
+			n_lavorati += 1
 			stanchezza[i] = float(stanchezza.get(i, 0.0)) + 1.0
+			if float(stanchezza[i]) >= soglia_riposo(i):
+				a_riposo[i] = true
 		elif stanchezza.has(i):
 			stanchezza[i] = float(stanchezza[i]) - RIPOSO_PER_ANNO
-			if stanchezza[i] <= 0.0:
-				stanchezza.erase(i)
+			_fine_riposo(i)
 	_serviti_fermi = false
 	# Gli attrezzi del fabbro: falcetti e zappe di metallo (epoca 2).
 	raccolto *= 1.0 + BONUS_CAMPI * attrezzi
 	ultimo_raccolto = raccolto
-	ultimi_lavorati = mini(lavorabili, ordinati.size())
+	ultimi_lavorati = n_lavorati
 	_pascola(lavorati)
 	var piu_braccia := 1.0 if fonti["agricoltura"] else 1.5
 	# Caccia, raccolta e pesca (economia mista): la selvaggina cala se si caccia troppo e ricresce
@@ -4264,6 +4328,20 @@ func massimo_legna() -> float:
 
 
 ## Mesi di cibo in scorta.
+## Anni di coltura dopo cui le famiglie lasciano a riposo il campo `i`.
+func soglia_riposo(i: int) -> float:
+	return ANNI_PRIMA_STANCHEZZA + RIPOSO_DOPO_MIN + float((i * 2654435761) & 0x7fffffff) / float(0x7fffffff) * RIPOSO_DOPO_SPAZIO
+
+
+## Un campo a riposo torna buono quando la stanchezza è sparita (o è sotto i primi segni).
+func _fine_riposo(i: int) -> void:
+	if float(stanchezza.get(i, 0.0)) <= 0.0:
+		stanchezza.erase(i)
+		a_riposo.erase(i)
+	elif a_riposo.has(i) and float(stanchezza[i]) <= ANNI_PRIMA_STANCHEZZA:
+		a_riposo.erase(i)
+
+
 func fattore_stanchezza(i: int) -> float:
 	var a := float(stanchezza.get(i, 0.0))
 	if a <= ANNI_PRIMA_STANCHEZZA:
@@ -4442,6 +4520,7 @@ func _piena(disastrosa: bool) -> void:
 			else:
 				rimaste.append(c)
 		case = rimaste
+		case_in_piedi -= case_perse
 	var dove := Vector2.ZERO
 	for f in campi:
 		if colpiti.has(f):
@@ -4554,20 +4633,52 @@ func disponi_case(paga := false) -> void:
 			case_casale.erase(l)
 	var servono_n := ceili(abitanti_nucleo() / ABITANTI_PER_CASA)
 	var servono_c := ceili(abitanti_casali() / ABITANTI_PER_CASA)
-	# Troppe case: si tolgono prima quelle dei casali, poi quelle del nucleo (le più recenti).
+	# Case gratis (28/11/2026): fuori dal passo annuale si rimettono solo le case spostate da un
+	# edificio, un sentiero o una demolizione, non quelle bruciate o mai costruite (prima una
+	# scorreria senza legna rimetteva in piedi decine di case).
+	if case_in_piedi < 0:
+		case_in_piedi = case.size()
+	_case_gratis = 0 if paga else maxi(0, case_in_piedi - case.size())
+	# Troppe case: si tolgono prima quelle dei casali, poi quelle del nucleo (le più recenti). Una
+	# casa vuota resta in piedi qualche anno (28/11/2026): si tolgono solo oltre un margine, così
+	# un anno con qualche abitante in meno non butta giù case che senza legna non si rifanno.
 	var nel_casale := case.filter(func(c: Vector2i) -> bool: return case_casale.has(c))
-	while nel_casale.size() > servono_c:
+	while nel_casale.size() > servono_c + _margine_case(servono_c):
 		var via: Vector2i = nel_casale.pop_back()
 		case.erase(via)
 		case_casale.erase(via)
 	var nel_nucleo := case.filter(func(c: Vector2i) -> bool: return not case_casale.has(c))
-	while nel_nucleo.size() > servono_n:
+	while nel_nucleo.size() > servono_n + _margine_case(servono_n):
 		var via: Vector2i = nel_nucleo.pop_back()
 		case.erase(via)
 	_disponi_nucleo(servono_n, nel_nucleo.size(), paga)
 	_disponi_casali(servono_c, paga)
+	_case_gratis = 0
+	case_in_piedi = case.size()
 	var servono := servono_n + servono_c
 	affollamento = clampf(float(servono - case.size()) / servono, 0.0, 1.0) if servono > 0 else 0.0
+
+
+## Case in piedi dopo l'ultima sistemazione (-1: non ancora contate) e case da rimettere gratis.
+var case_in_piedi := -1
+var _case_gratis := 0
+
+
+## Case vuote tollerate prima di toglierne: una ogni dieci, almeno una.
+static func _margine_case(servono: int) -> int:
+	return maxi(1, ceili(servono * 0.1))
+
+
+## Una casa nuova: pagando costa legna; fuori dal passo annuale conta tra quelle da rimettere.
+func _puo_costruire_casa(paga: bool) -> bool:
+	return legna >= COSTO_CASA if paga else _case_gratis > 0
+
+
+func _paga_casa(paga: bool) -> void:
+	if paga:
+		legna -= COSTO_CASA
+	else:
+		_case_gratis -= 1
 
 
 ## Abitanti del nucleo e dei casali.
@@ -4622,7 +4733,7 @@ func _disponi_nucleo(servono: int, ci_sono: int, paga: bool) -> void:
 					if cheb(lq, lc) > r:
 						candidati.append(lq)
 	var tentativi := 0
-	while ci_sono < servono and tentativi < 200 and (not paga or legna >= COSTO_CASA):
+	while ci_sono < servono and tentativi < 200 and _puo_costruire_casa(paga):
 		tentativi += 1
 		var migliore := Vector2i(-1, -1)
 		var punteggio := -1e9
@@ -4680,8 +4791,7 @@ func _disponi_nucleo(servono: int, ci_sono: int, paga: bool) -> void:
 		_segna_casa(migliore)
 		occupati[migliore] = true
 		ci_sono += 1
-		if paga:
-			legna -= COSTO_CASA
+		_paga_casa(paga)
 
 
 ## Memoria della scheda della famiglia: quando nasce una casa e se è di chi è arrivato da fuori.
@@ -4886,7 +4996,10 @@ func umore_famiglie() -> Dictionary:
 
 
 func _vicino_a_legnaia(l: Vector2i) -> bool:
-	for g in legnaie + poste + capanni:
+	for g in legnaie:
+		if _lotto_presso_legnaia(g["punto"], l):
+			return true
+	for g in poste + capanni:
 		var p: Vector2 = g["punto"]
 		if cheb(lotto_da_mondo(p.x, p.y), l) <= 1:
 			return true
@@ -4901,7 +5014,7 @@ func _disponi_casali(servono: int, paga: bool) -> void:
 	for c in case:
 		occupati[c] = true
 	var tentativi := 0
-	while ci_sono < servono and tentativi < 60 and (not paga or legna >= COSTO_CASA):
+	while ci_sono < servono and tentativi < 60 and _puo_costruire_casa(paga):
 		tentativi += 1
 		# Un casale con posto, altrimenti uno nuovo.
 		var k := -1
@@ -4929,8 +5042,7 @@ func _disponi_casali(servono: int, paga: bool) -> void:
 		case_casale[lotto] = k
 		occupati[lotto] = true
 		ci_sono += 1
-		if paga:
-			legna -= COSTO_CASA
+		_paga_casa(paga)
 	# Le chiavi fittizie dei casali pieni non contano come case.
 	for l in case_casale.keys():
 		if l.x <= -100000:
@@ -5262,8 +5374,14 @@ func cause_di(nome: String) -> Array[String]:
 			var stanchi := campi_stanchi()
 			if stanchi > 0:
 				out.append("%d campi sono stanchi dopo tanti anni di coltura: rendono meno. Lasciati incolti si riposano; il limo di una piena li rinnova." % stanchi)
-			if ultimi_lavorati < campi.size():
-				out.append("Mancano braccia: %d campi su %d restano incolti." % [campi.size() - ultimi_lavorati, campi.size()])
+			var riposano := 0
+			for i in campi:
+				if a_riposo.has(i):
+					riposano += 1
+			if riposano > 0:
+				out.append("%d campi stanchi sono lasciati a maggese: tornano buoni in pochi anni, prima se ci pascolano gli animali." % riposano)
+			if ultimi_lavorati + riposano < campi.size():
+				out.append("Mancano braccia: %d campi su %d restano incolti." % [campi.size() - ultimi_lavorati - riposano, campi.size()])
 		"Salute":
 			var dm := _d_palude[px(centro)]
 			if dm <= 6.0:

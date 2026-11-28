@@ -110,6 +110,7 @@ var bloccate := {}
 var _toccati := PackedByteArray()
 var _nb := 0
 var _cambiati: Array[Vector2i] = []
+var _cambiati_insieme := {}  # gli stessi blocchi (indice y * _nb + x), per cercarli in fretta
 
 
 func _init(a: Alberi) -> void:
@@ -288,23 +289,30 @@ func libera(lista: Array[Vector2i]) -> void:
 ## alberi che portano semi. Le celle senza semi vicini aspettano.
 func avanza_anni(quanti: int) -> void:
 	var toccate: Array[Vector2i] = []
+	var tornati := false
 	for _a in quanti:
+		# A turno (28/11/2026, prestazioni): ogni anno crescono di ANNI_VISTA_RICRESCITA anni le celle
+		# di un quarto dei blocchi; in media il bosco ricresce alla stessa velocità di prima.
+		_anno_vista += 1
+		var fase := _anno_vista % ANNI_VISTA_RICRESCITA
 		var crescono: Array[Vector2i] = []
-		for c in _in_ricrescita.keys():
+		for c in (_fasi[fase] as Dictionary).keys():
 			if bloccate.has(c):
 				continue
 			if ceppaie.has(c) or _semi_vicini(c):
 				crescono.append(c)
 		for c in crescono:
 			var i: int = c.y * n + c.x
-			var eta := mini(int(anni[i]) + 1, 255)
+			var eta := mini(int(anni[i]) + ANNI_VISTA_RICRESCITA, 255)
 			anni[i] = eta
 			if eta >= (ANNI_CEDUO if ceppaie.has(c) else ANNI_MATURO):
 				# Il bosco è tornato: la cella torna naturale, con la memoria del taglio.
 				celle[i] = NATURALE | MEMORIA_BOSCO
 				anni[i] = 0
 				_in_ricrescita.erase(c)
+				(_fasi[fase] as Dictionary).erase(c)
 				ceppaie.erase(c)
+				tornati = true
 			toccate.append(c)
 	if toccate.is_empty():
 		return
@@ -315,13 +323,30 @@ func avanza_anni(quanti: int) -> void:
 	lista.assign(uniche.keys())
 	for c in lista:
 		_tocca_blocco(c)
-	_aggiorna_immagine(lista)
+	# La memoria del bosco cambia solo dove il bosco è tornato.
+	_aggiorna_immagine(lista, tornati)
+
+
+## La ricrescita va a turno (28/11/2026, prestazioni: con migliaia di celle in ricrescita ogni
+## anno si rifacevano tutti i blocchi di alberi e l'immagine del suolo, oltre 40 ms l'anno): ogni
+## blocco cresce e si ridisegna ogni ANNI_VISTA_RICRESCITA anni, un quarto dei blocchi l'anno.
+const ANNI_VISTA_RICRESCITA := 4
+var _anno_vista := 0
+## Le celle in ricrescita divise per turno (lo stesso insieme di _in_ricrescita).
+var _fasi: Array = [{}, {}, {}, {}]
+
+
+func _fase_blocco(c: Vector2i) -> int:
+	var p := centro(c)
+	var b := Vector2i(floori(p.x / Alberi.LATO_BLOCCO), floori(p.y / Alberi.LATO_BLOCCO))
+	return absi(b.x * 7 + b.y * 13) % ANNI_VISTA_RICRESCITA
 
 
 ## Blocchi di alberi cambiati dall'ultima chiamata (per la vista).
 func prendi_cambiati() -> Array[Vector2i]:
 	var out := _cambiati
 	_cambiati = []
+	_cambiati_insieme = {}
 	return out
 
 
@@ -388,21 +413,29 @@ func _imposta(c: Vector2i, nuovo: int, taglio: bool) -> void:
 	# (NON_DIPINTA si azzera qui: lo rimette edifica() quando serve.)
 	if nuovo == LIBERO and memoria != 0:
 		_in_ricrescita[c] = true
+		(_fasi[_fase_blocco(c)] as Dictionary)[c] = true
 	else:
 		_in_ricrescita.erase(c)
+		(_fasi[_fase_blocco(c)] as Dictionary).erase(c)
 	_tocca_blocco(c)
 
 
 func _tocca_blocco(c: Vector2i) -> void:
 	var p := centro(c)
-	# Un albero può stare fino a mezza cella fuori dal centro: si toccano anche i blocchi vicini.
-	for o in [Vector2(-passo, -passo), Vector2(passo, -passo), Vector2(-passo, passo), Vector2(passo, passo)]:
-		var b := Vector2i(floori((p.x + o.x) / Alberi.LATO_BLOCCO), floori((p.y + o.y) / Alberi.LATO_BLOCCO))
-		if b.x < 0 or b.y < 0 or b.x >= _nb or b.y >= _nb:
-			continue
-		_toccati[b.y * _nb + b.x] = 1
-		if not _cambiati.has(b):
-			_cambiati.append(b)
+	# Un albero può stare fino a mezza cella fuori dal centro: si toccano anche i blocchi vicini
+	# (quasi sempre è uno solo: si guardano solo quelli diversi, 28/11/2026).
+	var x0 := floori((p.x - passo) / Alberi.LATO_BLOCCO)
+	var x1 := floori((p.x + passo) / Alberi.LATO_BLOCCO)
+	var y0 := floori((p.y - passo) / Alberi.LATO_BLOCCO)
+	var y1 := floori((p.y + passo) / Alberi.LATO_BLOCCO)
+	for by in range(maxi(y0, 0), mini(y1, _nb - 1) + 1):
+		for bx in range(maxi(x0, 0), mini(x1, _nb - 1) + 1):
+			var k := by * _nb + bx
+			if _toccati[k] != 0 and _cambiati_insieme.has(k):
+				continue
+			_toccati[k] = 1
+			_cambiati_insieme[k] = true
+			_cambiati.append(Vector2i(bx, by))
 
 
 ## Semi: entro RAGGIO_SEMI celle c'è un bosco naturale in piedi o un'area in ricrescita che
@@ -423,7 +456,7 @@ func _semi_vicini(c: Vector2i) -> bool:
 	return false
 
 
-func _aggiorna_immagine(lista: Array[Vector2i]) -> void:
+func _aggiorna_immagine(lista: Array[Vector2i], memoria := true) -> void:
 	if lista.is_empty():
 		return
 	for c in lista:
@@ -451,7 +484,8 @@ func _aggiorna_immagine(lista: Array[Vector2i]) -> void:
 		immagine.set_pixel(c.x, c.y, Color(bosco, nuda, campo, sigillo))
 		immagine_memoria.set_pixel(c.x, c.y, Color(1.0 if s != NATURALE and v & MEMORIA_BOSCO else 0.0, 0, 0))
 	texture.update(immagine)
-	texture_memoria.update(immagine_memoria)
+	if memoria:
+		texture_memoria.update(immagine_memoria)
 
 
 # ---------- salvataggio (todo voce 9, 26/11/2026) ----------
@@ -460,7 +494,7 @@ func _aggiorna_immagine(lista: Array[Vector2i]) -> void:
 ## le immagini per lo shader (rifarle da capo pixel per pixel richiederebbe secondi).
 func stato_salvato() -> Dictionary:
 	return {"n": n, "celle": celle, "anni": anni, "tecniche": tecniche, "in_ricrescita": _in_ricrescita,
-		"ceppaie": ceppaie, "bloccate": bloccate, "toccati": _toccati,
+		"ceppaie": ceppaie, "bloccate": bloccate, "toccati": _toccati, "anno_vista": _anno_vista,
 		"immagine": immagine.get_data(), "memoria": immagine_memoria.get_data(), "immagine_tecniche": immagine_tecniche.get_data()}
 
 
@@ -474,6 +508,10 @@ func ripristina(d: Dictionary) -> void:
 	anni = d["anni"]
 	tecniche = d["tecniche"]
 	_in_ricrescita = d["in_ricrescita"]
+	_anno_vista = int(d.get("anno_vista", 0))
+	_fasi = [{}, {}, {}, {}]
+	for c in _in_ricrescita:
+		(_fasi[_fase_blocco(c)] as Dictionary)[c] = true
 	ceppaie = d["ceppaie"]
 	bloccate = d["bloccate"]
 	_toccati = d["toccati"]
@@ -484,6 +522,7 @@ func ripristina(d: Dictionary) -> void:
 	texture_memoria.update(immagine_memoria)
 	texture_tecniche.update(immagine_tecniche)
 	_cambiati = []
+	_cambiati_insieme = {}
 	for k in _toccati.size():
 		if _toccati[k] != 0 or prima[k] != 0:
 			_cambiati.append(Vector2i(k % _nb, k / _nb))

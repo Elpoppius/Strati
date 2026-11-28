@@ -568,7 +568,15 @@ func aggiorna_lettura(pos_schermo: Vector2) -> void:
 func _aggiorna_puntatore(pos_schermo: Vector2, p: Vector3) -> void:
 	var cmd := hud.comando()
 	var sel := Vector2(-99999, -99999)
+	var lati_sel := 1.0
 	var scegli := false
+	# La legnaia occupa due lotti per due (28/11/2026): lo strumento mostra i quattro lotti.
+	var lati := 1.0
+	if cmd == "legnaia" and partita and partita.sim:
+		var a := partita.sim.angolo_legnaia(Vector2(p.x, p.z))
+		terreno.materiale.set_shader_parameter("lotto_evidenziato", Vector2(partita.sim.lotto_legnaia(a)))
+		lati = 2.0
+	terreno.materiale.set_shader_parameter("lati_evidenziato", lati)
 	if cmd == "":
 		terreno.materiale.set_shader_parameter("colore_lotto", Vector4(1, 1, 1, 0))
 		if partita and partita.sim and partita.sim.fondato:
@@ -576,11 +584,13 @@ func _aggiorna_puntatore(pos_schermo: Vector2, p: Vector3) -> void:
 			if not cosa.is_empty():
 				scegli = true
 				sel = Vector2(cosa["lotto"])
+				lati_sel = float(cosa.get("lati", 1))
 	else:
 		var motivo := partita.motivo_strumento(cmd, Vector2(p.x, p.z)) if partita else ""
 		var rosso := cmd == "demolisci" or motivo != ""
 		terreno.materiale.set_shader_parameter("colore_lotto", Vector4(0.71, 0.26, 0.18, 0.55) if rosso else Vector4(1, 1, 1, 0.18))
 	terreno.materiale.set_shader_parameter("lotto_selezione", sel)
+	terreno.materiale.set_shader_parameter("lati_selezione", lati_sel)
 	Cursori.imposta(Cursori.SCEGLI if scegli else (Cursori.FRECCIA if cmd == "" else Cursori.STRUMENTO))
 
 

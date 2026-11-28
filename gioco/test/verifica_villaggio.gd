@@ -135,10 +135,11 @@ func _verifica_sacro(d: MappaDati) -> void:
 	var senza := SimVillaggio.new(d, 11)
 	senza.fonda(c)
 	senza.pop = 200.0
-	senza.disponi_case()
+	senza.legna = 1000.0
+	senza.disponi_case(true)
 	s.pop = 200.0
 	s.legna = 1000.0
-	s.disponi_case()
+	s.disponi_case(true)
 	var media := func(t: SimVillaggio) -> float:
 		var somma := 0.0
 		for l in t.case:
@@ -396,13 +397,13 @@ func _verifica_scorrerie(d: MappaDati) -> void:
 	calmo.fonda(c)
 	calmo.pop = 200.0
 	calmo.legna = 500.0
-	calmo.disponi_case(false)
+	calmo.disponi_case(true)
 	var impaurito := SimVillaggio.new(d, 23)
 	impaurito.fonda(c)
 	impaurito.memoria_scorrerie = 100.0
 	impaurito.pop = 200.0
 	impaurito.legna = 500.0
-	impaurito.disponi_case(false)
+	impaurito.disponi_case(true)
 	controlla(media.call(impaurito) < media.call(calmo), "dopo una scorreria l'abitato si stringe (%d m contro %d m dal centro)" % [roundi(media.call(impaurito)), roundi(media.call(calmo))])
 
 
@@ -467,7 +468,7 @@ func _verifica_strade(d: MappaDati) -> void:
 	u._aggiorna_strade()
 	u.pop = 300.0
 	u.legna = 2000.0
-	u.disponi_case(false)
+	u.disponi_case(true)
 	var lontane := u.case.filter(func(l: Vector2i) -> bool: return u.centro_lotto(l).distance_to(cm) > 250.0)
 	controlla(not lontane.is_empty(), "le case crescono anche lungo la strada (%d oltre 250 m)" % lontane.size())
 	# Le figure seguono la rete.
@@ -812,7 +813,8 @@ func _verifica_recinto(d: MappaDati, sito: Vector2i) -> void:
 	var messi := r.aggiungi_zona_abitato(lotti)
 	controlla(messi > 200, "la zona dell'abitato si dipinge a lotti (%d)" % messi)
 	r.pop = 300.0
-	r.disponi_case()
+	r.legna = 10000.0
+	r.disponi_case(true)
 	var dentro := r.case.filter(func(l: Vector2i) -> bool: return r.dentro_recinto(r.centro_lotto(l))).size()
 	var in_zona := r.case.filter(func(l: Vector2i) -> bool: return r.zona_abitato.has(l)).size()
 	controlla(in_zona == r.case.size() and dentro == r.case.size(), "le case nuove nascono nella zona, dentro il recinto (%d su %d)" % [dentro, r.case.size()])
@@ -945,7 +947,7 @@ func _initialize() -> void:
 	# Legnaia (decisione di Fede del 25/11/2026; legna rifatta il 26/11/2026 sera): senza legnaia non si
 	# raccoglie legna; la legna da ardere si raccoglie senza abbattere; i tronchi vengono dagli alberi
 	# abbattuti uno alla volta, dal più vicino, e il fronte del taglio avanza piano.
-	controlla(is_equal_approx(SimVillaggio.valore_albero(0, 1.15), 4.0) and SimVillaggio.valore_albero(7, 1.15) < 0.5 and SimVillaggio.valore_albero(9, 1.15) == 0.0, "ogni albero ha il suo valore: quercia media 4 m³, arbusto poco, canne niente")
+	controlla(is_equal_approx(SimVillaggio.valore_albero(0, 1.15), 16.0) and SimVillaggio.valore_albero(7, 1.15) < 2.0 and SimVillaggio.valore_albero(9, 1.15) == 0.0, "ogni albero ha il suo valore: quercia media 16 m³, arbusto poco, canne niente")
 	var tl := SimVillaggio.new(d, 3)
 	tl.fonda(Vector2i(d.siti[2]["px"]))
 	tl.decisioni.clear()
@@ -988,7 +990,7 @@ func _initialize() -> void:
 	var vm := tl.valore_medio_legnaia(l0)
 	controlla(vm > 0.5 and cap0 > 0.0 and cap0 <= SimVillaggio.ALBERI_TAGLIO * vm * 1.1 + 0.01, "una legnaia abbatte fino a %d alberi l'anno da %.1f m³ in media (%.0f m³)" % [roundi(SimVillaggio.ALBERI_TAGLIO), vm, cap0])
 	controlla(tl.fatica_legna > 0.0 and tl.fatica_legna <= SimVillaggio.BOSCAIOLI_LEGNAIA + 0.01, "i boscaioli sono tolti ai campi solo quando tagliano (%.1f su %d)" % [tl.fatica_legna, roundi(SimVillaggio.BOSCAIOLI_LEGNAIA)])
-	controlla(SimVillaggio.valore_albero(0, 1.15) == 4.0 and SimVillaggio.valore_albero(0, 2.3) == 16.0, "una quercia media vale 4 m³, una grande il quadruplo")
+	controlla(SimVillaggio.valore_albero(0, 1.15) == 16.0 and SimVillaggio.valore_albero(0, 2.3) == 64.0, "una quercia media vale 16 m³, una grande il quadruplo")
 	controlla(primo_taglio >= 0.0 and primo_taglio < 60.0, "si comincia dagli alberi attorno alla legnaia (primo taglio a %d m)" % roundi(primo_taglio))
 	controlla(not tl.celle_tagliate.is_empty() and tl.capacita_legnaia(l0) < cap0 and float(l0["raggio"]) < 400.0, "il fronte avanza piano e i tronchi calano (%.1f → %.1f l'anno, fronte a %d m)" % [cap0, tl.capacita_legnaia(l0), roundi(float(l0["raggio"]))])
 	var vicine_in_piedi := 0
@@ -1048,6 +1050,33 @@ func _initialize() -> void:
 		tl.stanchezza[cs] = SimVillaggio.ANNI_PRIMA_STANCHEZZA + SimVillaggio.ANNI_STANCHEZZA
 		controlla(tl._resa(cs) < resa0 * 0.7 and tl.campi_stanchi() >= 1, "un campo coltivato per cento anni di fila rende meno (%.2f → %.2f)" % [resa0, tl._resa(cs)])
 		tl.stanchezza.erase(cs)
+
+	# Maggese (28/11/2026): un campo stanco le famiglie lo lasciano a riposo e torna buono, anche
+	# quando le braccia per lavorarlo ci sono.
+	var mg := SimVillaggio.new(d, 31)
+	mg.fonda(Vector2i(d.siti[2]["px"]))
+	var cm_px := -1
+	for r in range(3, 12):
+		for k in 16:
+			var q := mg.centro + Vector2i(roundi(cos(TAU * k / 16.0) * r), roundi(sin(TAU * k / 16.0) * r))
+			if cm_px < 0 and mg.edificabile(mg.px(q)) and not mg.campi.has(mg.px(q)):
+				cm_px = mg.px(q)
+	mg.campi.append(cm_px)
+	var soglia := mg.soglia_riposo(cm_px)
+	controlla(soglia >= SimVillaggio.ANNI_PRIMA_STANCHEZZA + SimVillaggio.RIPOSO_DOPO_MIN and soglia <= SimVillaggio.ANNI_PRIMA_STANCHEZZA + SimVillaggio.RIPOSO_DOPO_MIN + SimVillaggio.RIPOSO_DOPO_SPAZIO, "la soglia del riposo cambia da campo a campo (%.0f anni)" % soglia)
+	mg.stanchezza[cm_px] = soglia - 0.5
+	mg.pop = 200.0
+	mg.decisioni.clear()
+	mg.cibo = mg.pop * 3.0
+	mg.passo()
+	controlla(mg.a_riposo.has(cm_px) and not mg.campi.is_empty(), "un campo coltivato oltre la sua soglia resta a maggese anche se le braccia ci sono (%d campi, %d lavorati)" % [mg.campi.size(), mg.ultimi_lavorati])
+	var anni_riposo := 0
+	while mg.a_riposo.has(cm_px) and anni_riposo < 30:
+		mg.decisioni.clear()
+		mg.cibo = maxf(mg.cibo, mg.pop * 3.0)
+		mg.passo()
+		anni_riposo += 1
+	controlla(not mg.a_riposo.has(cm_px) and anni_riposo <= 20 and mg.fattore_stanchezza(cm_px) == 1.0, "dopo qualche anno di maggese il campo torna buono e si coltiva (%d anni)" % anni_riposo)
 	# Politiche: cambiarle costa consenso, gli stranieri seguono la regola in vigore.
 	controlla(t.politica("raccolto") == "comune" and t.politica("stranieri") == "aperta", "politiche iniziali: raccolto in comune, stranieri accolti")
 	var b0: float = t.bonus["anziani"]

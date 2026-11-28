@@ -718,14 +718,19 @@ func _process(_d: float) -> bool:
 		controlla(sim.pascolo.is_empty() and sim.campi.size() == campi_prima, "con Togli il pennello toglie il pascolo e lascia i campi")
 		p._azione("togli_pascolo")
 		h.seleziona_comando("")
+	# Le celle tagliate da poco (dal 28/11/2026 il bosco tagliato con la risemina ricresce: si
+	# guardano le celle tagliate da uno a vent'anni, non ancora ricresciute).
 	var tagliati_visibili := 0
-	for i in sim.tagliati:
-		if sim.dati.tipo[i] == MappaDati.PALUDE:
-			continue
-		var w := sim.mondo_di_px(sim.px_di(i))
+	var recenti: Array[Vector2i] = []
+	for cl in sim.celle_tagliate:
+		var eta: int = sim.anno - int(sim.celle_tagliate[cl])
+		if eta >= 1 and eta < 20:
+			recenti.append(cl)
+	for cl in recenti:
+		var w := (Vector2(cl) + Vector2(0.5, 0.5)) * SimVillaggio.LATO_CELLA_TAGLIO
 		if _s.uso.stato(w.x, w.y) != UsoSuolo.NATURALE:
 			tagliati_visibili += 1
-	controlla(sim.tagliati.is_empty() or tagliati_visibili > 0, "gli alberi abbattuti dalla legnaia spariscono dalla mappa (%d su %d)" % [tagliati_visibili, sim.tagliati.size()])
+	controlla(recenti.is_empty() or tagliati_visibili == recenti.size(), "gli alberi abbattuti dalla legnaia spariscono dalla mappa (%d su %d)" % [tagliati_visibili, recenti.size()])
 	controlla(p.vista.numero_case() == sim.case.size(), "case disegnate allineate alla simulazione (%d)" % sim.case.size())
 	# Mappe tematiche della partita (voce 8 del todo, 25/11/2026 sera): 6 Caccia e pesca, 7 Abitato e
 	# contado, 8 Memoria del suolo (indici 5, 6, 7).
@@ -745,12 +750,12 @@ func _process(_d: float) -> bool:
 	controlla(ab.z > 0.0 and ab.w >= ab.z and is_equal_approx(ab.w, sim.raggio_contado()), "abitato e contado: abitato (%d m) dentro il contado (%d m)" % [roundi(ab.z), roundi(ab.w)])
 	_s.imposta_modo(7)
 	var ex_bosco := 0
-	for i in sim.tagliati:
-		var w := sim.mondo_di_px(sim.px_di(i))
+	for cl in recenti:
+		var w := (Vector2(cl) + Vector2(0.5, 0.5)) * SimVillaggio.LATO_CELLA_TAGLIO
 		var cu: Vector2i = _s.uso.cella(w.x, w.y)
 		if _s.uso.immagine_memoria.get_pixel(cu.x, cu.y).r > 0.5:
 			ex_bosco += 1
-	controlla(mt.get_shader_parameter("memoria_suolo") != null and (sim.tagliati.is_empty() or ex_bosco > 0), "memoria del suolo: il bosco tagliato resta nella memoria (%d)" % ex_bosco)
+	controlla(mt.get_shader_parameter("memoria_suolo") != null and (recenti.is_empty() or ex_bosco > 0), "memoria del suolo: il bosco tagliato resta nella memoria (%d)" % ex_bosco)
 	_s.imposta_modo(0)
 	print("   %d abitanti, %d campi, %d case, abbandoni %d" % [roundi(sim.pop), sim.campi.size(), sim.case.size(), sim.stat["abbandoni"]])
 	controlla(sim.fondato and sim.stat["abbandoni"] == 0, "con i campi il villaggio vive")

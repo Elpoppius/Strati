@@ -209,5 +209,5 @@ Foto di controllo: `gioco/test/foto_villaggio.gd` compone a mano un villaggio su
 Tre SVG da 32 × 32 px in `gioco/asset/cursori/`, fatti da noi: `freccia.svg` (punta in 3, 2), `scegli.svg` (la freccia con un quadratino, quando sotto il puntatore c'è qualcosa da scegliere), `strumento.svg` (mirino squadrato, punta al centro). Bianco #f4f4f0 con il bordo #1b1b1b, come l'HUD. Si impostano con `Cursori.imposta()`.
 
 ## Grandezza degli edifici delle risorse (26/11/2026 sera)
-Fede: capanno, legnaia e gli altri vanno ingranditi alla misura delle case. I modelli restano quelli di `villaggio.py`; nel gioco si disegnano 1,8 volte più grandi legnaia, capanno da pesca e posta di caccia (e i loro cantieri), 1,4 il granaio (`VistaVillaggio.SCALA_EDIFICI`).
+Fede: capanno, legnaia e gli altri vanno ingranditi alla misura delle case. I modelli restano quelli di `villaggio.py`; nel gioco si disegnano 1,8 volte più grandi legnaia, capanno da pesca e posta di caccia (e i loro cantieri), 1,4 il granaio (`VistaVillaggio.SCALA_EDIFICI`). Dal 28/11/2026 (richiesta di Fede) la legnaia occupa due lotti per due: il modello è un cortile di 20 unità per lato (36 m nel gioco), con la tettoia lunga in fondo, le cataste, i tronchi interi, i ceppi e la slitta; il cortile si gira solo di quarti di giro. Cantiere uguale con la tettoia senza falda e i materiali a terra.
 

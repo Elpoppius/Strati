@@ -25,6 +25,10 @@ const LENTI_PER_INTERVALLO := 5
 ## o se ne apre una nuova, si cambia questo elenco.
 const PROVE := [
 	# Tutte le prove aperte per la prova al PC di Fede (aggiornate il 26/11/2026 notte, todo).
+	"Legnaia 2×2: il bosco riseminato ricresce, legna non a zero",
+	"Maggese: i campi stanchi riposano e tornano buoni",
+	"Case: niente crolli e ritorni con la legna a zero",
+	"Fps a decenni con molto bosco tagliato",
 	"Legna: alberi tagliati uno alla volta dalla legnaia",
 	"Scheda della legnaia (al lavoro, a riposo)",
 	"Cursori, cornice di selezione, puntatore rosso",

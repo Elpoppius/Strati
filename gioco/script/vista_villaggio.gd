@@ -487,14 +487,15 @@ func _sincronizza_stanchezza() -> void:
 		_immagine_stanchezza = Image.create(sim.n, sim.n, false, Image.FORMAT_RG8)
 		_texture_stanchezza = ImageTexture.create_from_image(_immagine_stanchezza)
 		terreno.materiale.set_shader_parameter("stanchezza_campi", _texture_stanchezza)
-	var firma := hash([sim.stanchezza, sim.maggese, sim.campi.size()])
+	var firma := hash([sim.stanchezza, sim.maggese, sim.a_riposo, sim.campi.size()])
 	if firma == _firma_stanchezza:
 		return
 	_firma_stanchezza = firma
 	_immagine_stanchezza.fill(Color(0, 0, 0))
 	for i in sim.campi:
 		var st := (1.0 - sim.fattore_stanchezza(i)) / SimVillaggio.PERDITA_STANCHEZZA
-		var mg := 1.0 if sim.maggese.has(i) else 0.0
+		# Maggese: a pascolo (gli animali) o lasciato a riposo perché stanco (erba, 28/11/2026).
+		var mg := 1.0 if sim.maggese.has(i) else (0.7 if sim.a_riposo.has(i) else 0.0)
 		if st > 0.0 or mg > 0.0:
 			var p := sim.px_di(i)
 			_immagine_stanchezza.set_pixel(p.x, p.y, Color(st, mg, 0))
@@ -1088,7 +1089,8 @@ func _sincronizza_edifici() -> void:
 		ora[sim.torre] = ["torre_avvistamento", rad_to_deg(atan2(-v.x, -v.y)), 6.0, "torre_avvistamento", sim.cantiere_torre, SimVillaggio.ANNI_CANTIERE_TORRE]
 	for l in sim.legnaie:
 		var p: Vector2 = l["punto"]
-		ora[p] = ["legnaia", float(int(p.x * 7.0 + p.y * 13.0) % 360), 7.0, "legnaia", int(l["cantiere"]), SimVillaggio.ANNI_CANTIERE_LEGNAIA]
+		# Due lotti per due (28/11/2026): il cortile quadrato si gira solo di quarti di giro.
+		ora[p] = ["legnaia", float((int(p.x * 7.0 + p.y * 13.0) / 20) % 4) * 90.0, 18.0, "legnaia", int(l["cantiere"]), SimVillaggio.ANNI_CANTIERE_LEGNAIA]
 	# Officina del fabbro (epoca 2): il davanti, con l'incudine e la bocca della fornace, guarda il
 	# centro del villaggio (nell'abitato guarderà la via).
 	for e in sim.officine:

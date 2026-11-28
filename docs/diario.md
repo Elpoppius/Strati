@@ -2,6 +2,31 @@
 
 Voci più recenti in cima.
 
+## 28/11/2026 (mattina) — partita di Fede: legna, case che crollano, maggese, prestazioni, legnaia 2×2
+**Partita di Fede** (registro `sessione-2026-11-28-091218`, commit 245e35d, GTX 1050; salvataggi `partita-2026-11-28-091724` e `automatico-2026-11-28-093227`, letti con l'app desktop): dal 6000 al 700 a.C. in 20 minuti a velocità 1, 130 gesti (38 sentieri, 16 legnaie, 5 zone agricole), 31 pause (24 tutorial), 12 scorrerie, 9 volte le sorgenti. Fine: 374 abitanti, 8 case (89% delle famiglie senza casa), 255 campi, cibo a posto, legna 0 da metà partita, officina mai costruita (mancava la legna), salute 61. Fotogrammi lenti: 282, quasi tutti "anno che passa" (100–150 ms); 8–17 fps a decenni.
+**Diagnosi di Claude**
+- **Legna a zero:** baco. `Partita._svuota_coda_tagli` bloccava la ricrescita di ogni cella tagliata, anche con la risemina: il bosco non tornava mai, le legnaie si dicevano "esaurite" e la zona cresceva senza fine (10 672 celle bloccate attorno alla legnaia 3). Le legnaie in più di Fede erano la risposta alla mancanza di legna (Fede, 10:32), non una scelta.
+- **Case da 85 a 21 e ritorno:** con la legna a zero ogni anno con qualche abitante in meno toglieva case (`disponi_case`) che poi non si potevano rifare; dopo una scorreria `disponi_case()` le rimetteva tutte gratis. Da qui l'altalena 79 ↔ 33 del registro.
+- **Maggese:** un campo riposava solo se mancavano le braccia; con 400 abitanti si lavoravano tutti i campi e nessuno rinasceva.
+- **Prestazioni:** l'anno costava 43 ms nell'uso del suolo (tutte le celle in ricrescita ridisegnate ogni anno, con i blocchi di alberi) più 20 ms di simulazione.
+**Fatto**
+- Ricrescita sbloccata per le celle riseminate; al caricamento le partite vecchie si correggono (`sblocca_tagli_riseminati`, `ricalcola_valori_legnaie`, `versione_legna`).
+- **Alberi che valgono quattro volte tanto, 12 alberi l'anno per legnaia** (era 40): la stessa legna da un quarto delle celle; la legna presa in più con l'ultima cella si sconta l'anno dopo. Rigiocata la partita di Fede dal 5841 a.C. per 200 anni: catasta piena, 1,3 celle tagliate l'anno, zona ferma a 74 m.
+- **Legnaia su due lotti per due:** modello nuovo (cortile di 36 m con tettoia lunga, cataste, tronchi interi, ceppi, slitta) e cantiere; si posa sull'incrocio di quattro lotti; strumento e cornice mostrano i quattro lotti. Foto `docs/immagini/legnaia-2x2-28-11.jpg`.
+- **Case:** una casa vuota resta finché le case non superano di un decimo quelle che servono; fuori dal passo annuale si rimettono gratis solo le case spostate (edifici, sentieri, demolizioni), non quelle bruciate o allagate.
+- **Maggese:** i campi stanchi si lasciano a riposo finché non tornano buoni (soglia diversa per campo); sulla mappa a erba; riga nel pannello del cibo.
+- **Prestazioni:** ricrescita a turno per blocchi (un quarto l'anno, quattro anni alla volta) e blocchi toccati senza ricerche in lista: l'uso del suolo da 43 a 6 ms l'anno.
+- Prove: 12 verifiche superate (aggiornati i valori degli alberi, i tagli visibili, le case pagate nei test; nuova prova del maggese). 72 partite brevi: 955 / 860 / 1012 / 322 abitanti (prima 847 / 902 / 898 / 378), carestie simili, legna stabile (catasta a metà o più, taglio 116 contro 94 di consumo a fine partita).
+
+**Decisioni** (Fede)
+- 09:33: "Ingrandire il modello delle legnaie in un 2x2 quadretti." "Io propongo di dare molto più valore al singolo albero e rallentare drasticamente la progressione dell'area di taglio." Numeri di Claude (valore ×4, 12 alberi l'anno), da provare.
+- 10:26: chiede un profilo di giocatore che giochi come lui, ricavato dal suo registro. 10:32: le tante legnaie erano la risposta alla mancanza di legna, non una strategia.
+- Proposte di Claude da confermare: soglia del maggese (15–45 anni oltre i primi segni di stanchezza), margine di un decimo per le case vuote, ricrescita a turno.
+
+**Prossimo passo**
+- Commentare l'analisi con Fede; poi il profilo "fede" in `giocatore_umano.gd`.
+- Restano: fotogrammi lenti con gli strumenti sentiero, pascolo e legnaia (senza anno che passa: 18, 9 e 9); scorrerie frequenti (12 in una partita); la divisione delle famiglie eminenti all'inizio dell'epoca 2.
+
 ## 27/11/2026 (sera, 2) — prova di Fede, legna rifatta, torre ovunque, registro del gioco
 **Prova di Fede** (registro `sessione-2026-11-27-184449`, letto con l'app desktop insieme ai salvataggi): nessun errore, 60 fps nei primi secoli e 41–50 a decenni. Il cibo funziona bene. Legna sempre a zero: le legnaie avevano tagliato tutto entro 600 m, e una legnaia rimessa "Al lavoro" tagliava 342 m³ il primo anno e tutto il raggio in 5 anni. La macchia scura era quasi certamente l'acqua della piena; la torre non si poteva fare perché nel sito non ci sono alture. Diagnosi completa nel todo, voce D.
 **Fatto**
