@@ -5449,6 +5449,10 @@ func cause_di(nome: String) -> Array[String]:
 				out.append("Senza legnaia non arriva legna: costruiscine una vicino al bosco (Edifici).")
 			else:
 				out.append("I boscaioli hanno tagliato %d di tronchi quest'anno (fino a %d)." % [roundi(tronchi_legna), roundi(capacita_taglio)])
+				# Quando il taglio possibile non basta più alle case (28/11/2026): lo si dice chiaro.
+				var servono := consumo_legna + maxf(0.0, ceili(pop / ABITANTI_PER_CASA) - case.size()) * COSTO_CASA / 10.0
+				if capacita_taglio > 0.0 and capacita_taglio < servono * 0.95:
+					out.append("Le legnaie al lavoro portano fino a %d l'anno, le case ne chiedono circa %d: serve un'altra legnaia vicino al bosco, o rimetterne al lavoro una a riposo." % [roundi(capacita_taglio), roundi(servono)])
 				for k in legnaie.size():
 					var l: Dictionary = legnaie[k]
 					var d := _bosco_vicino_legnaia(l)

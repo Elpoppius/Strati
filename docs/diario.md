@@ -23,8 +23,10 @@ Voci più recenti in cima.
 - 10:26: chiede un profilo di giocatore che giochi come lui, ricavato dal suo registro. 10:32: le tante legnaie erano la risposta alla mancanza di legna, non una strategia.
 - Proposte di Claude da confermare: soglia del maggese (15–45 anni oltre i primi segni di stanchezza), margine di un decimo per le case vuote, ricrescita a turno.
 
+**Legna nelle partite lunghe** (10:44, Fede: "focus sul legno per ora"; 24 partite fino all'evento soglia con le serie, colonne nuove `celle_tagliate`, `raggio_taglio`, `attese_casa`): villaggi attorno a 900 abitanti e 160 case; le legnaie portano 120–140 l'anno contro 105–110 di consumo, ma con 20–25 case che mancano la legna è sotto 20 metà del tempo per chi non aggiunge legnaie (chi conosce il genere ne fa 3–4 e non resta mai senza: 1%). Una legnaia regge circa 500 abitanti. Zona di taglio media 250–270 m di raggio (fino a 600 m per le legnaie che lavorano sempre). Fatto: nel pannello della legna una riga dice quando le legnaie al lavoro non bastano più alle case.
+
 **Prossimo passo**
-- Commentare l'analisi con Fede; poi il profilo "fede" in `giocatore_umano.gd`.
+- Decidere con Fede come regge la legna un villaggio che cresce (proposte nella conversazione del 28/11 mattina); poi il profilo "fede" in `giocatore_umano.gd`.
 - Restano: fotogrammi lenti con gli strumenti sentiero, pascolo e legnaia (senza anno che passa: 18, 9 e 9); scorrerie frequenti (12 in una partita); la divisione delle famiglie eminenti all'inizio dell'epoca 2.
 
 ## 27/11/2026 (sera, 2) — prova di Fede, legna rifatta, torre ovunque, registro del gioco
