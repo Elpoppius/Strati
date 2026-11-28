@@ -84,7 +84,7 @@ Più risorse, più crescita; la pianificazione dei cicli e l'uso delle risorse r
   - **[Deciso]** (Fede, 25/11/2026, su proposta di Claude) La posta si aggancia come il capanno: al margine del bosco più vicino al puntatore, entro 60 m, con la schiena al bosco; se non c'è margine, anteprima rossa ("Serve il margine di un bosco"). Tasti K (capanno) e T (posta). Una posta o un capanno rende al massimo 35 di cibo l'anno; la posta caccia entro 1000 m, il capanno pesca entro 600 m.
 
 ### Casali
-**[Deciso, 25/11/2026]** Dalla tappa "Territorio" (250 abitanti) il nucleo tiene fino a circa 280 abitanti; la crescita in più va nei casali: 2–4 case nel contado, a 300–800 m dal centro, vicino ai campi, lontano dalle terre a rischio di piena finché il ricordo è vivo, ad almeno 200 m l'uno dall'altro. Costano legna come le altre case. Si contano gli abitanti in tutto; la densità si misura sul nucleo. Più avanti, con le scorrerie, i casali saranno più esposti.
+**[Deciso, 25/11/2026; numeri cambiati da Fede il 28/11/2026: più posto nei casali]** Dalla tappa "Territorio" (250 abitanti) il nucleo tiene fino a circa 280 abitanti; la crescita in più va nei casali: 2–6 case nel contado (erano 2–4), a 300–1200 m dal centro (erano 300–800), vicino ai campi, lontano dalle terre a rischio di piena finché il ricordo è vivo, ad almeno 200 m l'uno dall'altro. Costano legna come le altre case. Si contano gli abitanti in tutto; la densità si misura sul nucleo. Più avanti, con le scorrerie, i casali saranno più esposti.
 
 ### Tappe
 **[Deciso, 25/11/2026]** Soglie di abitanti che aprono gli strumenti; una volta raggiunte restano. Cambia solo l'effetto (il luogo sacro rende quanto è contento il sacerdote). Soglie di partenza, da tarare:

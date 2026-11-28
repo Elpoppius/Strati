@@ -291,3 +291,11 @@ Decisioni di Fede: la legna serve solo a costruire (il fuoco fuori dal conto); l
 - **Fino al 700 a.C.** (12 partite, chi legge e chi conosce il genere, con la legna nuova ma prima dei cambi del ritmo): abitanti mediani **1025** (prima 893), Dosso nelle paludi 769 e 762 (prima 273 e 509), case dentro il recinto 51–212 (mediana 60), legnaie in media 2,2, nessun abbandono. Carestie ancora 35 in media a partita: erano con la soglia vecchia (5%); **da rifare** con la soglia del 15%.
 - **Dosso nelle paludi** (verifiche): senza la legna di palude il villaggio restava a 106 abitanti (14 case); con il legno di salice e ontano nella legnaia arriva a 357 al 5500 a.C. con una sola legnaia.
 - **Ritmo meditativo** (stessa sera; carestia sopra il 15%, piene grandi dimezzate, avvisi rossi uno ogni 50 anni per tipo): 72 partite brevi, mediane 861 / 938 / 875 / 232 abitanti, **carestie 1,4 / 2,1 / 2,4 / 1,4 a partita** (prima 3,6 / 3,8 / 4,7 / 3,6), piene grandi 0,4–0,6 a partita, pause 4,8 / 4,1 / 4,2 / 4,3, nessun abbandono. Registro degli avvisi: 17 pause in 5 partite (3,4), righe d'allarme in cronaca da 77 a 50.
+
+## Calibrazione dei ritmi (27–28/11/2026, notte)
+Serie ogni 10 anni (24 partite: `giocatore_umano.gd -- uscita 1 normale sbaglia,legge,genere,casual serie`). Cambi: scorte piene a 12 mesi, crescita massima 1,2%, case sui campi con "Allargare", casali fino a 6 case e 1200 m.
+- **Tempi:** 60 abitanti in 90 / 120 / 90 / 155 anni (prima 110 / 135 / 110 / 165), 100 in 150 / 185 / 145 / 300, 250 in 260 / 280 / 235 anni.
+- **Case:** famiglie senza casa a fine partita da 22–34% a 0–2%.
+- **Tetto:** 900–1000 abitanti verso il 400° anno; ora lo fissa la terra da coltivare (scorte di 2–9 mesi alla fine).
+- **72 partite brevi:** mediane 928 / 960 / 950 / 438 abitanti (prima 861 / 910 / 874 / 271), flessioni e carestie 3,0 / 3,3 / 4,1 / 1,6 a partita (prima 1,5 / 1,9 / 1,8 / 1,1: senza il freno delle case il villaggio arriva fino al limite del cibo), pause 3,1–3,5, casali in media 25–31 (casual 6), nessun abbandono.
+

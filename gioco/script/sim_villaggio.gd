@@ -524,11 +524,12 @@ var piena_tra := -1
 ## Siccità dopo un presagio ignorato: dura di più e i campi rendono meno (carestie B).
 var siccita_grave := false
 ## Casali (decisione di Fede del 25/11/2026): dalla tappa "Territorio" il nucleo tiene fino a
-## NUCLEO_MASSIMO abitanti; la crescita in più va in casali di 2–4 case nel contado.
+## NUCLEO_MASSIMO abitanti; la crescita in più va in casali di 2–6 case nel contado (fino a 4 e a
+## 800 m fino al 28/11/2026).
 const NUCLEO_MASSIMO := 280.0
-const CASE_PER_CASALE := 4
+const CASE_PER_CASALE := 6  # 4 fino al 28/11/2026 (Fede: più posto nei casali)
 const CASALE_DISTANZA_MIN := 300.0
-const CASALE_DISTANZA_MAX := 800.0
+const CASALE_DISTANZA_MAX := 1200.0  # 800 fino al 28/11/2026 (Fede: più posto nei casali)
 const CASALE_SPAZIO := 200.0
 var casali: Array[Vector2i] = []  # lotto al centro di ogni casale
 var case_casale := {}  # lotto di una casa -> indice del casale
