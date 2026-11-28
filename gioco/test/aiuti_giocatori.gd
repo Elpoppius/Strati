@@ -269,3 +269,44 @@ static func traccia_sentieri_lavoro(sim: SimVillaggio, caso: RandomNumberGenerat
 			fatti += 1
 	return fatti
 
+
+
+## Alberi tolti alla vista (28/11/2026, domanda di Fede: "quanti alberi vengono abbattuti
+## visivamente, in percentuale?"). Conta gli alberi veri della mappa (non arbusti e canne) entro
+## ciascun raggio dal centro (0 = tutta la mappa) e quanti mancano: per i campi, per il taglio
+## delle legnaie non ancora ricresciuto o senza risemina, per le case. Restituisce, per ogni
+## raggio, [alberi, tolti dai campi, tolti dal taglio, tolti dalle case].
+static func alberi_tolti(sim: SimVillaggio, raggi: Array) -> Dictionary:
+	var a := sim._alberi()
+	var k := Alberi.CAMPI
+	var c := sim.mondo_di_px(sim.centro)
+	var limite := int(Alberi.VARIANTI[Alberi.CESPUGLIO][0])
+	var out := {}
+	for r in raggi:
+		out[r] = [0, 0, 0, 0]
+	var nb := int(ceil(sim.dati.lato_metri() / Alberi.LATO_BLOCCO))
+	for by in nb:
+		for bx in nb:
+			var arr := a.alberi_nel_blocco(Vector2i(bx, by))
+			for t in arr.size() / k:
+				if int(arr[t * k + 4]) >= limite:
+					continue
+				var x := arr[t * k]
+				var z := arr[t * k + 1]
+				var d := Vector2(x, z).distance_to(c)
+				var i := sim.px(sim.px_da_mondo(x, z))
+				var cella := Vector2i(floori(x / SimVillaggio.LATO_CELLA_TAGLIO), floori(z / SimVillaggio.LATO_CELLA_TAGLIO))
+				var come := 0
+				if sim.campi.has(i):
+					come = 1
+				elif sim.celle_tagliate.has(cella) and (sim.celle_spoglie.has(cella) or sim.anno - int(sim.celle_tagliate[cella]) < SimVillaggio.ANNI_RICRESCITA):
+					come = 2
+				elif sim.case.has(sim.lotto_da_mondo(x, z)):
+					come = 3
+				for r in raggi:
+					if r == 0 or d <= float(r):
+						var v: Array = out[r]
+						v[0] += 1
+						if come > 0:
+							v[come] += 1
+	return out

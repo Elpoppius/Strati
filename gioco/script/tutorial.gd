@@ -52,7 +52,7 @@ const SCHEDE := {
 		"titolo": "Legnaia",
 		"testo": "Per costruire e rifare le case serve legna. Manda i boscaioli nel bosco.",
 		"domanda": "Cosa fa una legnaia?",
-		"dettaglio": "In Edifici (L), vicino al bosco; costa solo braccia. Due famiglie di boscaioli abbattono gli alberi uno alla volta, dai più vicini alla legnaia, e portano i tronchi alla catasta; ogni albero vale secondo la sua specie e la sua grandezza. Più gli alberi si allontanano, più i boscaioli camminano e meno portano: allora conviene una legnaia nuova più vicina al bosco. Quando la catasta è piena tornano ai campi. Nella scheda della legnaia (clic) scegli se riseminare: con la risemina il bosco ricresce in 25 anni e si taglia di nuovo; senza, resta la radura. Il fuoco delle case lo fanno le famiglie da sole, con i rami del bosco. Attento ai boschi lungo il fiume: senza alberi, le piene corrono più forti.",
+		"dettaglio": "In Edifici (L), vicino al bosco; costa solo braccia. Due famiglie di boscaioli abbattono gli alberi uno alla volta, dai più vicini alla legnaia, e portano i tronchi alla catasta; ogni albero vale secondo la sua specie e la sua grandezza. Più gli alberi si allontanano, più i boscaioli camminano e meno portano: allora conviene una legnaia nuova più vicina al bosco. Quando la catasta è piena tornano ai campi; quando è quasi vuota vanno a tagliare altre due famiglie. Nella scheda della legnaia (clic) scegli se riseminare: con la risemina il bosco ricresce in 25 anni e si taglia di nuovo; senza, resta la radura. Il fuoco delle case lo fanno le famiglie da sole, con i rami del bosco. Attento ai boschi lungo il fiume: senza alberi, le piene corrono più forti.",
 		"avviso": "Legnaia (L): senza boscaioli non arriva legna.",
 	},
 	"capanno": {

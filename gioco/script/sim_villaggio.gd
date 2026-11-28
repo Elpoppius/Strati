@@ -311,6 +311,20 @@ const ALBERI_CELLA_PALUDE := 0.1
 const ALBERI_TAGLIO := 12.0
 const DISTANZA_META_LEGNAIA := 150.0
 const BOSCAIOLI_LEGNAIA := 2.0 * ABITANTI_PER_CASA  # due famiglie
+## Serve legna: le case aspettano o la catasta non arriva a un anno di consumo e due case.
+func legna_serve() -> bool:
+	return legna < consumo_legna + 2.0 * COSTO_CASA or affollamento > 0.0
+
+
+## Legnaia che si allarga da sola (28/11/2026, opzione scelta da Fede: "l'opzione 2 intanto è
+## buona"): quando la catasta è quasi vuota (sotto un quarto) a ogni legnaia vanno quattro
+## famiglie di boscaioli invece di due, e tagliano il doppio; tornano due quando la catasta è
+## risalita oltre il 60%. Le famiglie in più lasciano i campi. Soglie: proposta di Claude.
+const FAMIGLIE_LEGNAIA := 2
+const FAMIGLIE_LEGNAIA_RINFORZO := 4
+const SOGLIA_RINFORZO := 0.25
+const SOGLIA_FINE_RINFORZO := 0.6
+var boscaioli_rinforzo := false
 const RESA_RISEMINA := 0.8
 ## Capacità di riferimento (m³ l'anno) di una legnaia a ridosso di un bosco medio, per le letture.
 const CAPACITA_TAGLIO := 100.0
@@ -2872,7 +2886,12 @@ func capacita_legnaia(l: Dictionary) -> float:
 	# Una legnaia su una strada porta i tronchi in fretta (accesso).
 	var strada := 1.1 if _vicino_a_strada(l["punto"], 80.0) else 1.0
 	var risemina := RESA_RISEMINA if risemina_legnaia(l) else 1.0
-	return ALBERI_TAGLIO * valore_medio_legnaia(l) * strada * risemina * (1.0 + BONUS_LEGNAIA * attrezzi) / (1.0 + d / DISTANZA_META_LEGNAIA)
+	return ALBERI_TAGLIO * float(famiglie_legnaia()) / FAMIGLIE_LEGNAIA * valore_medio_legnaia(l) * strada * risemina * (1.0 + BONUS_LEGNAIA * attrezzi) / (1.0 + d / DISTANZA_META_LEGNAIA)
+
+
+## Famiglie di boscaioli per legnaia: due, quattro con la catasta quasi vuota.
+func famiglie_legnaia() -> int:
+	return FAMIGLIE_LEGNAIA_RINFORZO if boscaioli_rinforzo else FAMIGLIE_LEGNAIA
 
 
 ## Partite salvate prima del 28/11/2026: le celle delle legnaie hanno i valori vecchi degli alberi.
@@ -2973,7 +2992,7 @@ func stato_legnaia(l: Dictionary) -> String:
 		return "esaurita: entro %d m non restano alberi" % roundi(RAGGIO_LEGNAIA)
 	if float(l.get("tagliato", 1.0)) <= 0.0 and legna >= massimo_legna() - 1.0:
 		return "ferma: la catasta è piena"
-	return "al lavoro, alberi a %d m" % roundi(_bosco_vicino_legnaia(l))
+	return "al lavoro, alberi a %d m%s" % [roundi(_bosco_vicino_legnaia(l)), " (quattro famiglie: la catasta è quasi vuota)" if boscaioli_rinforzo else ""]
 
 
 ## Un anno di lavoro delle legnaie (27/11/2026 sera): i boscaioli tagliano gli alberi uno alla volta,
@@ -2995,6 +3014,15 @@ func _lavora_legnaie_dentro() -> void:
 	capacita_taglio = 0.0
 	offerta_raccolta = 0.0
 	legna_famiglie = 0.0
+	# Rinforzo dei boscaioli: con la catasta quasi vuota vanno quattro famiglie per legnaia.
+	var riempita := legna / maxf(massimo_legna(), 1.0)
+	if not boscaioli_rinforzo and riempita < SOGLIA_RINFORZO and legna_serve():
+		boscaioli_rinforzo = true
+		if legnaie.any(func(l: Dictionary) -> bool: return legnaia_attiva(l)):
+			_scrivi_raro("rinforzo", "La catasta è quasi vuota: altre famiglie vanno con i boscaioli alle legnaie.", 30)
+	elif boscaioli_rinforzo and riempita > SOGLIA_FINE_RINFORZO:
+		boscaioli_rinforzo = false
+		_scrivi_raro("fine_rinforzo", "La catasta è risalita: le famiglie in più tornano dalle legnaie ai campi.", 30)
 	var capacita: Array[float] = []
 	for l in legnaie:
 		if int(l["cantiere"]) > 0:
@@ -3015,7 +3043,7 @@ func _lavora_legnaie_dentro() -> void:
 		if capacita[k] <= 0.0:
 			continue
 		var quota := voluti * capacita[k] / capacita_taglio
-		boscaioli += BOSCAIOLI_LEGNAIA * quota / capacita[k]
+		boscaioli += float(famiglie_legnaia()) * ABITANTI_PER_CASA * quota / capacita[k]
 		l["debito"] = float(l["debito"]) + quota
 		var celle: Array = l["celle"]
 		var ultima_cella := 5.0

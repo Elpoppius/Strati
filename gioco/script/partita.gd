@@ -100,7 +100,7 @@ func avvia(s: Node, seme_voluto: int = -1) -> void:
 		{"id": "granaio", "icona": "granaio", "testo": "Granaio (15 di legna)", "breve": "Granaio", "tasto": "H",
 		 "descrizione": "Costa 15 di legna e qualche anno di lavoro, e va vicino al centro: le scorte si conservano meglio."},
 		{"id": "legnaia", "icona": "legnaia", "testo": "Legnaia", "breve": "Legnaia", "tasto": "L",
-		 "descrizione": "Due famiglie di boscaioli tagliano gli alberi più vicini e portano i tronchi alla catasta: più il bosco è vicino, più legna arriva. La legna serve a costruire e a rifare le case. Quando la catasta è piena i boscaioli tornano ai campi. Clic su una legnaia: al lavoro o a riposo, con o senza risemina."},
+		 "descrizione": "Due famiglie di boscaioli (quattro quando la catasta è quasi vuota) tagliano gli alberi più vicini e portano i tronchi alla catasta: più il bosco è vicino, più legna arriva. La legna serve a costruire e a rifare le case. Quando la catasta è piena i boscaioli tornano ai campi. Clic su una legnaia: al lavoro o a riposo, con o senza risemina."},
 		# Capanno da pesca e Posta di caccia (decisioni di Fede del 25/11/2026): senza, caccia e pesca
 		# rendono un terzo. Tasti K e T: proposta di Claude.
 		{"id": "luogo_sacro", "icona": "luogo_sacro", "testo": "Luogo sacro (10 di legna)", "breve": "L. sacro", "tasto": "O",
@@ -1904,7 +1904,7 @@ func dati_legnaia(k: int) -> Dictionary:
 	var riposo := bool(l["riposo"])
 	var risemina := sim.risemina_legnaia(l)
 	var righe: Array = [
-		["Stato", sim.stato_legnaia(l), "Al lavoro due famiglie di boscaioli tagliano gli alberi, dal più vicino, finché la catasta non è piena; poi tornano ai campi. A riposo restano ai campi."],
+		["Stato", sim.stato_legnaia(l), "Al lavoro due famiglie di boscaioli tagliano gli alberi, dal più vicino, finché la catasta non è piena; poi tornano ai campi. Con la catasta quasi vuota le famiglie diventano quattro e tagliano il doppio. A riposo restano ai campi."],
 		["Alberi", ("i più vicini a %d m" % roundi(vicino)) if vicino >= 0.0 else "nessuno entro %d m" % roundi(SimVillaggio.RAGGIO_LEGNAIA), "Più gli alberi sono lontani, più i boscaioli camminano e meno portano: la metà a %d m." % roundi(SimVillaggio.DISTANZA_META_LEGNAIA)],
 		["Tronchi", "fino a %d m³ l'anno" % roundi(sim.capacita_legnaia(l)), "Quanti tronchi può portare in un anno, con gli alberi a questa distanza."],
 		["Risemina", "sì: il bosco ricresce in %d anni" % SimVillaggio.ANNI_RICRESCITA if risemina else "no: dietro resta la radura", "Con la risemina i boscaioli ripiantano dietro di sé: portano un quinto di tronchi in meno, ma il bosco ricresce e si taglia di nuovo. Senza, il bosco tagliato resta radura: utile per far posto ai campi."],

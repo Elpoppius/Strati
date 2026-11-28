@@ -57,7 +57,7 @@ func _initialize() -> void:
 				_righe.append("%s,%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%d,%d,%d,%d,%d,%d,%.1f,%d,%d,%.1f,%d,%d,%d,%d,%s,%.1f,%d,%d,%s,%s,%.2f,%.2f,%d,%.2f,%d,%s,%.2f,%.2f,%.1f,%d,%d,%d,%d,%d,%d,%d,%.2f,%d" % [profilo, String(sito["nome"]).replace(",", " "), seme, r["pop"], r["minima"], r["carestie"], r["gravi"], r["abbandoni"], r["scissioni"], r["pause"], r["tutorial"], r["piene"], r["granaio"], r["imparato"], r["legnaie"], r["casali"], r["nucleo"], r["poste"], r["capanni"], r["sacro"], r["bosco_sacro"], r["sacerdote"], r["capi"], r["pascolo_ha"], r["segni"], r["scorrerie"], r["case_bruciate"], r["torre"], r["pericolo"], r["sentieri_km"], r["strade"], r["anno_fine"], r["soglia"], r["governo"], r["id_terra"], r["id_decide"], r["anziani"], r["disuguaglianza"], r["officina"], r["lavoro_fabbro"], r["attrezzi"], r["armi"], r["recinto"], r["case_dentro"], r["zona_abitato"], r["case_impalcato"], r["divisione"], r["eminenti"], r["case"], r["comuni"], r["quota_prestigio"], r["legittimita"]])
 	if _serie:
 		var fs := FileAccess.open(file + ".serie.csv", FileAccess.WRITE)
-		fs.store_string("profilo,sito,seme,eta,pop,case,affollamento,cibo,raccolto,caccia,pesca,consumo,abbondanza,legna,massimo_legna,tronchi,consumo_legna,capacita_taglio,legnaie,campi,zona,boscaioli,salute,consenso,tappa,decenni,celle_tagliate,raggio_taglio,attese_casa\n" + "\n".join(_righe_serie) + "\n")
+		fs.store_string("profilo,sito,seme,eta,pop,case,affollamento,cibo,raccolto,caccia,pesca,consumo,abbondanza,legna,massimo_legna,tronchi,consumo_legna,capacita_taglio,legnaie,campi,zona,boscaioli,salute,consenso,tappa,decenni,celle_tagliate,raggio_taglio,attese_casa,alberi_1km,campi_1km,taglio_1km,case_1km,alberi_3km,campi_3km,taglio_3km,case_3km,alberi_mappa,tolti_mappa\n" + "\n".join(_righe_serie) + "\n")
 		fs.close()
 	var f := FileAccess.open(file, FileAccess.WRITE)
 	f.store_string("\n".join(_righe) + "\n")
@@ -295,6 +295,13 @@ func _gioca(d: MappaDati, sito: Dictionary, profilo: String, seme: int) -> Dicti
 				sim.legnaie.size(), sim.campi.size(), sim.zona.size(), roundi(sim.fatica_legna), roundi(sim.salute), roundi(sim.legittimita), sim.tappa, 1 if sim.decenni else 0,
 				sim.celle_tagliate.size(), roundi(sim.legnaie.reduce(func(m: float, l: Dictionary) -> float: return maxf(m, float(l["raggio"])), 0.0)),
 				maxi(0, ceili(sim.pop / SimVillaggio.ABITANTI_PER_CASA) - sim.case.size())])
+			# Alberi tolti alla vista, ogni 250 anni (costa mezzo secondo).
+			var riga := ",-1,-1,-1,-1,-1,-1,-1,-1,-1,-1"
+			if (sim.anno - SimVillaggio.ANNO_INIZIO) % 250 == 0:
+				var t := AiutiGiocatori.alberi_tolti(sim, [1000, 3000, 0])
+				var m: Array = t[0]
+				riga = ",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d" % [t[1000][0], t[1000][1], t[1000][2], t[1000][3], t[3000][0], t[3000][1], t[3000][2], t[3000][3], m[0], m[1] + m[2] + m[3]]
+			_righe_serie[-1] += riga
 		if sim.stat["carestie"] + int(sim.stat.get("flessioni", 0)) > prima and sim.pop < pop_prima * 0.9:
 			gravi += 1
 		if sim.fondato:

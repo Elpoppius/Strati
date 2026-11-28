@@ -25,8 +25,12 @@ Voci più recenti in cima.
 
 **Legna nelle partite lunghe** (10:44, Fede: "focus sul legno per ora"; 24 partite fino all'evento soglia con le serie, colonne nuove `celle_tagliate`, `raggio_taglio`, `attese_casa`): villaggi attorno a 900 abitanti e 160 case; le legnaie portano 120–140 l'anno contro 105–110 di consumo, ma con 20–25 case che mancano la legna è sotto 20 metà del tempo per chi non aggiunge legnaie (chi conosce il genere ne fa 3–4 e non resta mai senza: 1%). Una legnaia regge circa 500 abitanti. Zona di taglio media 250–270 m di raggio (fino a 600 m per le legnaie che lavorano sempre). Fatto: nel pannello della legna una riga dice quando le legnaie al lavoro non bastano più alle case.
 
+**Alberi tolti alla vista** (11:57, domanda di Fede: "quanti alberi vengono abbattuti visivamente, in percentuale? Vedo disboscamenti ancora in epoca 1"; misura nuova `AiutiGiocatori.alberi_tolti`, colonne della serie ogni 250 anni; 24 partite lunghe): entro 1 km dal villaggio mancano il 12% degli alberi veri a 250 anni, il 40% a 500, il 46–49% da lì all'evento soglia (campi 44, legnaie 3, case 2); entro 3 km il 4%, su tutta la mappa l'1,2%. Il disboscamento lo fanno i campi; quello visto da Fede era in buona parte il baco della ricrescita (circa 1 km² bloccato attorno a una legnaia).
+**Rifacimento delle case** (domanda di Fede: "da dove nasce?"): proposta di Claude del 26/11 sera (20 m³ ogni 30 anni), confermata da Fede con i numeri della legna ("se in prova non convincono, si cambiano"). Da rivedere se serve.
+**Legnaia che si allarga** (opzione 2, scelta da Fede alle 11:57): fatta. 72 partite brevi a confronto: legna sotto 20 dopo il 300° anno dal 32% al 14% del tempo (chi impara sbagliando dal 54% al 24%), famiglie senza casa dal 7% al 2%, abitanti a 500 anni 806 contro 787; taglio entro 1 km dal 3% al 3,7% degli alberi.
+
 **Prossimo passo**
-- Decidere con Fede come regge la legna un villaggio che cresce (proposte nella conversazione del 28/11 mattina); poi il profilo "fede" in `giocatore_umano.gd`.
+- Fede prova al PC la legna nuova (Pull). Poi il profilo "fede" in `giocatore_umano.gd` (una legnaia nuova solo quando la legna manca).
 - Restano: fotogrammi lenti con gli strumenti sentiero, pascolo e legnaia (senza anno che passa: 18, 9 e 9); scorrerie frequenti (12 in una partita); la divisione delle famiglie eminenti all'inizio dell'epoca 2.
 
 ## 27/11/2026 (sera, 2) — prova di Fede, legna rifatta, torre ovunque, registro del gioco

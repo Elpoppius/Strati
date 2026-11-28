@@ -984,15 +984,17 @@ func _initialize() -> void:
 		if primo_taglio < 0.0 and not tl.celle_tagliate.is_empty():
 			primo_taglio = float(l0["raggio"])
 		tl.tagli_anno.clear()
-	controlla(tl.tronchi_legna <= cap0 + 10.0 and tagli_max <= 40, "il taglio è progressivo: al massimo %d celle di alberi l'anno (tronchi %.1f)" % [tagli_max, tl.tronchi_legna])
+	# Con la catasta sempre vuota le famiglie sono quattro (28/11/2026): il limite raddoppia.
+	var fam := float(tl.famiglie_legnaia()) / SimVillaggio.FAMIGLIE_LEGNAIA
+	controlla(tl.tronchi_legna <= cap0 * fam + 10.0 and tagli_max <= 40, "il taglio è progressivo: al massimo %d celle di alberi l'anno (tronchi %.1f)" % [tagli_max, tl.tronchi_legna])
 	# Il limite della legnaia si conta in alberi (Fede, 27/11/2026): la capacità è ALBERI_TAGLIO alberi
 	# del valore medio del bosco attorno.
 	var vm := tl.valore_medio_legnaia(l0)
 	controlla(vm > 0.5 and cap0 > 0.0 and cap0 <= SimVillaggio.ALBERI_TAGLIO * vm * 1.1 + 0.01, "una legnaia abbatte fino a %d alberi l'anno da %.1f m³ in media (%.0f m³)" % [roundi(SimVillaggio.ALBERI_TAGLIO), vm, cap0])
-	controlla(tl.fatica_legna > 0.0 and tl.fatica_legna <= SimVillaggio.BOSCAIOLI_LEGNAIA + 0.01, "i boscaioli sono tolti ai campi solo quando tagliano (%.1f su %d)" % [tl.fatica_legna, roundi(SimVillaggio.BOSCAIOLI_LEGNAIA)])
+	controlla(tl.fatica_legna > 0.0 and tl.fatica_legna <= SimVillaggio.BOSCAIOLI_LEGNAIA * fam + 0.01, "i boscaioli sono tolti ai campi solo quando tagliano (%.1f su %d)" % [tl.fatica_legna, roundi(SimVillaggio.BOSCAIOLI_LEGNAIA)])
 	controlla(SimVillaggio.valore_albero(0, 1.15) == 16.0 and SimVillaggio.valore_albero(0, 2.3) == 64.0, "una quercia media vale 16 m³, una grande il quadruplo")
 	controlla(primo_taglio >= 0.0 and primo_taglio < 60.0, "si comincia dagli alberi attorno alla legnaia (primo taglio a %d m)" % roundi(primo_taglio))
-	controlla(not tl.celle_tagliate.is_empty() and tl.capacita_legnaia(l0) < cap0 and float(l0["raggio"]) < 400.0, "il fronte avanza piano e i tronchi calano (%.1f → %.1f l'anno, fronte a %d m)" % [cap0, tl.capacita_legnaia(l0), roundi(float(l0["raggio"]))])
+	controlla(not tl.celle_tagliate.is_empty() and tl.capacita_legnaia(l0) / fam < cap0 and float(l0["raggio"]) < 400.0, "il fronte avanza piano e i tronchi calano (%.1f → %.1f l'anno a famiglie uguali, fronte a %d m)" % [cap0, tl.capacita_legnaia(l0) / fam, roundi(float(l0["raggio"]))])
 	var vicine_in_piedi := 0
 	for voce in l0["celle"]:
 		if float(voce[0]) < float(l0["raggio"]) * 0.5 and tl.cella_in_piedi(voce[1]):
@@ -1036,6 +1038,19 @@ func _initialize() -> void:
 	tl.passo()
 	controlla(tl.tronchi_legna <= tl.consumo_legna + 5.0 and tl.fatica_legna < 1.0, "con la catasta piena i boscaioli tagliano solo quel che si consuma (%.1f) e tornano ai campi" % tl.tronchi_legna)
 	controlla(absf(tl.massimo_legna() - (SimVillaggio.RISERVA_LEGNAME + 2.0 * SimVillaggio.COSTO_CASA + tl.consumo_legna + SimVillaggio.MAGAZZINO_LEGNAIA)) < 0.01, "la catasta tiene il legname da parte, due case, un anno di consumo e quanto accatasta ogni legnaia (%d)" % roundi(tl.massimo_legna()))
+	# Legnaia che si allarga (28/11/2026, opzione 2 di Fede): con la catasta quasi vuota quattro famiglie.
+	var cap_due := tl.capacita_legnaia(tl.legnaie[0])
+	tl.boscaioli_rinforzo = false
+	tl.legna = 0.0
+	tl.decisioni.clear()
+	tl.passo()
+	controlla(tl.boscaioli_rinforzo and tl.famiglie_legnaia() == SimVillaggio.FAMIGLIE_LEGNAIA_RINFORZO, "con la catasta quasi vuota vanno quattro famiglie di boscaioli")
+	controlla(cap_due <= 0.0 or tl.capacita_legnaia(tl.legnaie[0]) > cap_due * 1.5, "quattro famiglie tagliano circa il doppio (%d → %d)" % [roundi(cap_due), roundi(tl.capacita_legnaia(tl.legnaie[0]))])
+	controlla(tl.fatica_legna <= 4.0 * SimVillaggio.ABITANTI_PER_CASA + 0.01, "le famiglie in più lasciano i campi (%.1f persone)" % tl.fatica_legna)
+	tl.legna = tl.massimo_legna()
+	tl.decisioni.clear()
+	tl.passo()
+	controlla(not tl.boscaioli_rinforzo, "con la catasta risalita tornano due famiglie")
 	# Senza legnaie la legna non arriva (Fede, 27/11/2026 sera: niente famiglie che fanno legna da sole).
 	var sf := SimVillaggio.new(d, 3)
 	sf.fonda(Vector2i(d.siti[2]["px"]))
